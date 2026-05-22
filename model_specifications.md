@@ -113,8 +113,8 @@ The model has $N$ agents (default 1000) and a single broker. Agents are nodes in
 Each agent $i$ is characterized by:
 
 - **Type** $\mathbf{x}_i \in \mathbb{R}^d$: a fixed vector of observable characteristics assigned at initialization. Types determine general quality and productive compatibility with other agents through the matching function (§1). The dimensionality $d = 8$ is fixed.
-- **Current-period matches** $M_i^t$: the list of matches involving $i$ that have already formed in period $t$. The same counterparty may appear multiple times (concurrent matches with the same partner are allowed). The length $|M_i^t| \leq K$ (default $K = 5$).
-- **Available capacity**: $K - |M_i^t|$, the number of additional matches the agent can enter.
+- **Current-period matches** $M_i^t$: the list of active bilateral relationships involving $i$ that have already formed in period $t$. Each counterparty can appear at most once in $M_i^t$ during a period. The length $|M_i^t| \leq K$ (default $K = 5$), so $K$ is the maximum number of distinct active counterparties an agent can maintain in a period.
+- **Available capacity**: $K - |M_i^t|$, the number of additional distinct counterparties the agent can enter relationships with in the current period.
 - **Experience history** $\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}$: the set of (other party's type, realized match output) pairs from all matches $i$ has participated in, regardless of whether $i$ was the demander or the counterparty (§2a). Because the matching function is symmetric (§1a), both roles produce the same prediction target.
 - **Satisfaction indices** $s_{i,c}^t$: one scalar per search channel $c \in \{\text{self}, \text{broker}\}$, tracking realized match value via an EWMA (§6a). Drives the outsourcing decision (§6).
 
@@ -355,12 +355,12 @@ $$
 
 At the baseline $\lambda_c = 0.15$, the common friction level is $0.15\cdot(\bar{q}_{\text{cal}} - r)$. The distinction between $\phi$ and $c_s$ is therefore not their magnitude, but how that same friction enters realized payoffs:
 
-- **Self-search** labels the common friction as $c_s$ and charges it on each demanded slot routed through self-search, whether or not that slot is filled.
+- **Self-search** labels the common friction as $c_s$ and charges it on each demanded relationship position routed through self-search, whether or not that position is filled.
 - **Standard brokerage** labels the same friction as $\phi$ and charges it only on successful **standard** brokered placements.
 
 The common friction is independent of realized match quality. Under principal mode (§12), no $\phi$ is charged to the demander because the broker is no longer acting as a pure intermediary.
 
-An economically important asymmetry in the illustrative markets is **search-risk transfer**. Self-search typically requires the agent to incur time, attention, or internal business-development costs for each sought transaction slot whether or not the search succeeds: calling dealers, screening counterparties, traveling to trade events, preparing offers, or canvassing foreign buyers. By contrast, broker compensation is often at least partly contingent on success: a broker or intermediary is usually paid when a transaction clears, not merely for having searched. In that sense, outsourcing shifts part of the risk of failed search from the agent to the intermediary. This creates a motive for brokerage that is distinct from pure informational superiority. Even when the broker and the agent faced the same cost level $\lambda_c$, the broker could still be valuable by absorbing failed-search risk.
+An economically important asymmetry in the illustrative markets is **search-risk transfer**. Self-search typically requires the agent to incur time, attention, or internal business-development costs for each sought relationship position whether or not the search succeeds: calling dealers, screening counterparties, traveling to trade events, preparing offers, or canvassing foreign buyers. By contrast, broker compensation is often at least partly contingent on success: a broker or intermediary is usually paid when a relationship clears, not merely for having searched. In that sense, outsourcing shifts part of the risk of failed search from the agent to the intermediary. This creates a motive for brokerage that is distinct from pure informational superiority. Even when the broker and the agent faced the same cost level $\lambda_c$, the broker could still be valuable by absorbing failed-search risk.
 
 ### 4. Network Structure and Turnover
 
@@ -386,17 +386,17 @@ The entrant is added to $G$ with $\lfloor k/2 \rfloor$ edges to agents sampled f
 
 ### 5. Search
 
-At the start of each period, all $K$ slots are open. Each slot independently generates demand with probability $p_{\text{demand}}$ (default 0.50), so agent $i$ draws demand $d_i \sim \text{Binomial}(K,\; p_{\text{demand}})$. If $d_i > 0$, the agent chooses **one channel for the batch** of current-period demand (§6): self-search or broker. Conditional on that batch decision, the chosen channel attempts to fill the batch through a finite sequence of within-period rounds rather than through a single pooled proposal pass.
+At the start of each period, all $K$ relationship positions are open. Each position independently generates demand with probability $p_{\text{demand}}$ (default 0.50), so agent $i$ draws desired relationship demand $d_i \sim \text{Binomial}(K,\; p_{\text{demand}})$. If $d_i > 0$, the agent chooses **one channel for the batch** of current-period demand (§6): self-search or broker. Conditional on that batch decision, the chosen channel attempts to fill the batch through a finite sequence of within-period rounds rather than through a single pooled proposal pass.
 
-Let $u_i^0 = d_i$ denote agent $i$'s remaining unfilled demand at the start of within-period matching. Round $\ell$ gives every still-active demander with $u_i^{\ell-1} > 0$ one opportunity to fill **one** additional slot through its chosen channel. If agent $i$ secures a match in round $\ell$, then $u_i^\ell = u_i^{\ell-1} - 1$; otherwise $i$ either continues to its next feasible candidate within the same round or, if it exhausts that list, exits matching for the rest of the period with remaining demand unfilled.
+Let $u_i^0 = d_i$ denote agent $i$'s remaining unfilled demand at the start of within-period matching. Round $\ell$ gives every still-active demander with $u_i^{\ell-1} > 0$ one opportunity to fill **one** additional relationship position through its chosen channel. If agent $i$ secures a match in round $\ell$, then $u_i^\ell = u_i^{\ell-1} - 1$; otherwise $i$ either continues to its next feasible candidate within the same round or, if it exhausts that list, exits matching for the rest of the period with remaining demand unfilled.
 
 #### 5a. Self-search
 
 In each round, agent $i$'s self-search candidate pool has two components, evaluated using current capacities after all previously accepted rounds have been finalized:
 
-**Known neighbors.** Direct network neighbors in $G$ with available capacity and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Not every graph neighbor is known in this sense: the initial network contains edges created by the network initialization, but each agent's seed history records only a subset of neighbor pairings (§11c). Neighbors with no stored partner mean are omitted from the known-neighbor component rather than being reclassified as strangers.
+**Known neighbors.** Direct network neighbors in $G$ with available capacity, no active current-period relationship with $i$, and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Not every graph neighbor is known in this sense: the initial network contains edges created by the network initialization, but each agent's seed history records only a subset of neighbor pairings (§11c). Neighbors with no stored partner mean are omitted from the known-neighbor component rather than being reclassified as strangers.
 
-**Strangers.** $\min(n_s, |\text{eligible}|)$ agents sampled uniformly from the population (excluding current neighbors and the broker node), where $n_s = 5$ (default) and eligible agents are those with available capacity. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
+**Strangers.** $\min(n_s, |\text{eligible}|)$ agents sampled uniformly from the population (excluding current neighbors, current-period counterparties, and the broker node), where $n_s = 5$ (default) and eligible agents are those with available capacity. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
 
 Within a round, agent $i$ orders all feasible self-search candidates by this demander-side evaluation, dropping any candidate whose evaluation fails the demand-side participation constraint $\hat{q}_i(\mathbf{x}_j) \le r$ (§3b). If the agent is rejected by the highest-ranked candidate, it immediately tries the next-best candidate in the same round, and so on until it either secures a tentative hold or exhausts its round-specific candidate list.
 
@@ -410,17 +410,17 @@ $$A^t = \text{Roster}^t \cup D^t.$$
 
 In each round, the broker considers the currently available accessible counterparties
 
-$$A^t \cap \{\text{agents with available capacity after earlier accepted rounds}\}.$$
+$$A^t \cap \{\text{agents with available capacity after earlier accepted rounds and no active current-period relationship with } i\}.$$
 
-For every active broker-client demander $i$ in the round and every accessible counterparty $j \in A^t$ with current capacity, the broker computes predicted match quality $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$. It then constructs an ordered list of feasible candidates for each outsourced demander, ranked by the broker's prediction, dropping any candidate with non-positive predicted surplus $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) \le r$. If the broker's top candidate for demander $i$ is rejected within the round, the broker immediately tries the next-best candidate for the same demander in that round, and so on until demander $i$ either secures a tentative hold or exhausts its feasible list.
+For every active broker-client demander $i$ in the round and every accessible counterparty $j \in A^t$ with current capacity and no active current-period relationship with $i$, the broker computes predicted match quality $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$. It then constructs an ordered list of feasible candidates for each outsourced demander, ranked by the broker's prediction, dropping any candidate with non-positive predicted surplus $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) \le r$. If the broker's top candidate for demander $i$ is rejected within the round, the broker immediately tries the next-best candidate for the same demander in that round, and so on until demander $i$ either secures a tentative hold or exhausts its feasible list.
 
 Agents already on the standing roster remain on it whether or not they outsource in the current period; current clients expand access only for the current period and do not become lagged standing members for that reason.
 
-**Implementation note (exact-preserving).** The code may realize these same rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: self-search strangers are still sampled uniformly without replacement from the current eligible set, broker-side candidate rankings still reflect the same round-specific ordering implied by $\hat{q}_b$, and neural-network training still uses the same data windows and gradient steps. These implementation details are not separate model assumptions.
+**Implementation note (exact-preserving).** The code may realize these same rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: self-search strangers are still sampled uniformly without replacement from the current eligible set, broker-side candidate rankings still reflect the same round-specific ordering implied by $\hat{q}_b$, current-period pair exclusion may be implemented with a period-local exact index of $M_i^t$ rather than repeated scans of match lists, and neural-network training still uses the same data windows and gradient steps. These implementation details are not separate model assumptions.
 
 #### 5c. Within-round proposal and acceptance
 
-Within a round, all still-active demanders attempt to fill one slot through a decentralized deferred-acceptance protocol with capacity.
+Within a round, all still-active demanders attempt to fill one relationship position through a decentralized deferred-acceptance protocol with capacity.
 
 1. Each active demander proposes to its highest-ranked not-yet-rejected feasible candidate under its chosen channel.
 2. Each counterparty $j$ evaluates the offers it receives that round:
@@ -429,13 +429,13 @@ Within a round, all still-active demanders attempt to fill one slot through a de
 4. Any rejected demander immediately proposes to its next-best feasible candidate in the same round.
 5. Steps 2-4 repeat until no rejected demander has any feasible candidate left to try.
 
-Two capacity rules matter. First, a counterparty can hold only up to its current spare capacity. Second, an agent can be both a demander and a counterparty in the same round, but both roles use the same total capacity $K$. Accordingly, if agent $i$ secures a tentative demander-side match while already tentatively holding incoming counterparty offers up to capacity, the lowest-ranked incoming counterparty hold is released so that total tentative commitments for $i$ do not exceed its current spare capacity.
+Three capacity rules matter. First, a counterparty can hold only up to its current spare capacity. Second, an agent can be both a demander and a counterparty in the same round, but both roles use the same total capacity $K$. Accordingly, if agent $i$ secures a tentative demander-side match while already tentatively holding incoming counterparty offers up to capacity, the lowest-ranked incoming counterparty hold is released so that total tentative commitments for $i$ do not exceed its current spare capacity. Third, a pair can hold at most one current-period relationship: repeated and reciprocal same-pair proposals are rejected or discarded before realization.
 
 A demander **fails in the round** if it exhausts its feasible candidate list without securing a tentative hold. Failure is terminal for the rest of the period: because previously accepted rounds only reduce capacities, no later round can create a newly feasible opportunity that was absent when the demander exhausted its current round-specific list.
 
 At the end of the round, all tentative holds are finalized as accepted matches. Realized outputs are drawn, histories and partner means are updated immediately, and any standard match adds an edge in $G$. These updates feed into later rounds in the same period.
 
-The within-period process stops when all demand is filled, when a round produces no accepted matches, or when no still-unfilled demander has any feasible candidate left. Because a demander can fill at most one slot per round, the maximum number of rounds in a period is
+The within-period process stops when all demand is filled, when a round produces no accepted matches, or when no still-unfilled demander has any feasible candidate left. Because a demander can fill at most one relationship position per round, the maximum number of rounds in a period is
 
 $$
 R_{\max} = \max_i d_i \le K.
@@ -455,15 +455,15 @@ The index is an exponentially weighted moving average (recency weight $\omega = 
 
 $$s_{i,c}^{t+1} = (1 - \omega)\,s_{i,c}^t + \omega \cdot \tilde{q}$$
 
-where $\tilde{q}$ is the satisfaction input for the period. The averaging unit is the agent's **requested slot demand** $d_i$: realized outcomes from accepted matches are summed, unfilled slots contribute zero output, and the total is divided by $d_i$. This makes partial fill mechanically lower satisfaction relative to full fill.
+where $\tilde{q}$ is the satisfaction input for the period. The averaging unit is the agent's **requested relationship demand** $d_i$: realized outcomes from accepted matches are summed, unfilled requested positions contribute zero output, and the total is divided by $d_i$. This makes partial fill mechanically lower satisfaction relative to full fill.
 
 | Channel | Satisfaction input $\tilde{q}$ |
 |---------|-------------------------------|
-| Self-search | $\dfrac{\sum q_{ij} - c_s \cdot d_i}{d_i} = \dfrac{\sum q_{ij}}{d_i} - c_s$, summing over accepted self-search slots |
-| Standard brokered (base model) | $\dfrac{\sum (q_{ij} - \phi)}{d_i}$, summing over accepted brokered slots |
+| Self-search | $\dfrac{\sum q_{ij} - c_s \cdot d_i}{d_i} = \dfrac{\sum q_{ij}}{d_i} - c_s$, summing over accepted self-search relationships |
+| Standard brokered (base model) | $\dfrac{\sum (q_{ij} - \phi)}{d_i}$, summing over accepted brokered relationships |
 | Broker channel under principal mode (M1, §12) | $\dfrac{\sum_{\text{standard}} (q_{ij} - \phi) + \sum_{\text{principal}} q_{ij}}{d_i}$ |
 
-This implies an intentional asymmetry in total-failure episodes. If a brokered batch fails completely, then $\tilde{q}=0$ and broker satisfaction decays toward zero. If a self-search batch fails completely, then $\tilde{q}=-c_s$ because the per-slot search effort was paid despite filling no slot. Satisfaction indices are not floored: they can go negative. The EWMA's recency weighting ensures recovery from negative values within a few good observations.
+This implies an intentional asymmetry in total-failure episodes. If a brokered batch fails completely, then $\tilde{q}=0$ and broker satisfaction decays toward zero. If a self-search batch fails completely, then $\tilde{q}=-c_s$ because the per-position search effort was paid despite filling no position. Satisfaction indices are not floored: they can go negative. The EWMA's recency weighting ensures recovery from negative values within a few good observations.
 
 Under the approved simplification, $s_{i,\text{self}}^t$ is interpreted as the reduced-form value of the entire internal-search channel. It summarizes realized self-search outcomes, including cases where the agent reused known partners directly, rather than separating out a distinct contemporaneous "known partners" score at decision time.
 
@@ -475,7 +475,7 @@ Under the approved simplification, $s_{i,\text{self}}^t$ is interpreted as the r
 
 #### 6b. Decision rule
 
-Each period, an agent with $d_i$ demand slots compares two scores:
+Each period, an agent with $d_i$ requested relationship positions compares two scores:
 
 - **$\text{score}_{\text{self}}$** $= s_{i,\text{self}}^t$: the EWMA satisfaction from past self-search outcomes. This is a reduced-form internal-search score and is interpreted as already incorporating the value of exploiting known partners under the self-search channel.
 - **$\text{score}_{\text{broker}}$** $= s_{i,\text{broker}}^t$ if the agent has tried the broker, otherwise the broker's reputation $\text{rep}_b^t$.
@@ -484,7 +484,7 @@ The agent outsources if $\text{score}_{\text{broker}} > \text{score}_{\text{self
 
 This simplification treats the self-search channel as a single reduced-form outside option. Agents do not separately compute a contemporaneous "best known partners" score at decision time; instead, the value of having discovered good partners is assumed to be reflected over time in realized self-search outcomes and therefore in $s_{i,\text{self}}^t$.
 
-The search-risk-transfer asymmetry sharpens this comparison. Self-search exposes the agent to the risk of paying for effort on requested slots that yield no placement, whereas standard brokerage shifts more of that downside onto the intermediary because compensation is tied more closely to successful matching. As a result, outsourcing can be attractive not only because the broker has better information or broader access, but also because it converts some search cost from a non-contingent expenditure into a contingent payment. This mechanism is especially relevant for agents facing uncertain fill rates, sparse networks, or highly lumpy demand.
+The search-risk-transfer asymmetry sharpens this comparison. Self-search exposes the agent to the risk of paying for effort on requested relationship positions that yield no placement, whereas standard brokerage shifts more of that downside onto the intermediary because compensation is tied more closely to successful matching. As a result, outsourcing can be attractive not only because the broker has better information or broader access, but also because it converts some search cost from a non-contingent expenditure into a contingent payment. This mechanism is especially relevant for agents facing uncertain fill rates, sparse networks, or highly lumpy demand.
 
 **Initial conditions.** Self-satisfaction is initialized from each agent's seed match outcomes (mean of 5 neighbor pairings). Broker-satisfaction is initialized to the broker's seed-data reputation (mean of 100 seed broker match outcomes). Both values are grounded in actual data, not an arbitrary constant. Since the broker's seed reputation and the typical agent's seed self-satisfaction are close but not identical, the first period's outsourcing decisions reflect genuine (if noisy) differences in local match quality rather than a symmetric coin flip. Agents with above-average self-satisfaction prefer self-search; those with below-average self-satisfaction are more open to outsourcing. The broker's early client base is thus self-selected rather than random.
 
@@ -514,11 +514,11 @@ then the broker samples without replacement from $\{1,\ldots,N\}\setminus \widet
 
 **Broker edges in $G$.** Broker-node edges are synchronized to the standing roster, the current client set, and agents currently engaged in broker-channel matches. This means the broker is always adjacent in $G$ to its maintained access base and its current broker clients, while current broker-mediated relationships are also represented in the period graph even when the matched agents were not already on the standing roster. Because turnover removes exiting agents immediately but replenishment occurs at the next period start, the internal standing roster can temporarily fall below $R^*$ between the exit step and the next refresh.
 
-**Availability.** A roster member is available as a counterparty in a given period if it has spare capacity ($|M_j^t| < K$). An agent may act as both a demander (seeking matches for its own slots) and a counterparty (being matched with other demanders) in the same period, provided it still has open slots. Self-matches are excluded: the broker never matches an agent with itself.
+**Availability.** A roster member is available as a counterparty in a given period if it has spare capacity ($|M_j^t| < K$) and is not already matched with the focal demander in that period. An agent may act as both a demander (seeking matches for its own relationship positions) and a counterparty (being matched with other demanders) in the same period, provided it still has open positions. Self-matches are excluded: the broker never matches an agent with itself.
 
 ### 8. Match Lifecycle
 
-Matches are transactional within a period. Once a match is finalized in a within-period round, it occupies one slot for each side for the remainder of that period, both parties observe the realized match output immediately, and all slots reopen before the next period begins.
+Matches are relationship positions within a period. Once a match is finalized in a within-period round, it occupies one distinct counterparty position for each side for the remainder of that period, both parties observe the realized match output immediately, and all positions reopen before the next period begins. The same unordered pair cannot form a second active relationship in the same period.
 
 **At round finalization, for each accepted match:**
 1. Realized output is drawn: $q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}$.
@@ -528,7 +528,7 @@ Matches are transactional within a period. Once a match is finalized in a within
 
 These updates take effect immediately and therefore influence feasible capacities, known-neighbor sets, and learned partner means in later rounds of the same period.
 
-**Before the next period begins:** clear the current-period match lists $M_i^t$ and $M_j^t$. Both sides regain the slot, so all $K$ slots are open again at the start of the next period.
+**Before the next period begins:** clear the current-period match lists $M_i^t$ and $M_j^t$. Both sides regain the relationship position, so all $K$ positions are open again at the start of the next period.
 
 ### 9. Base Model Pseudocode
 
@@ -566,14 +566,14 @@ Each period proceeds through six steps (plus recording).
 > **PERIOD $t$:**
 >
 > **0. CURRENT-PERIOD MATCH RESET**
-> 0.1. &emsp;For each agent $i$: set $M_i^t \leftarrow \emptyset$, so all $K$ slots are open at the start of period $t$.
+> 0.1. &emsp;For each agent $i$: set $M_i^t \leftarrow \emptyset$, so all $K$ relationship positions are open at the start of period $t$.
 > 0.2. &emsp;Clear the prior period's client overlay $D^{t-1}$. Refresh standing broker roster (§7): each current roster member exits independently with probability $p_{\text{roster}}$; then replenish uniformly without replacement from non-roster agents until the target size $R^* = \lceil 0.20 \cdot N \rceil$ is restored. Synchronize broker-agent edges in $G$ to the refreshed standing roster.
 >
 > **1. DEMAND GENERATION AND OUTSOURCING DECISIONS**
 > 1.1. &emsp;For each agent $i$: draw demand count $d_i \sim \text{Binomial}(K,\; p_{\text{demand}})$.
 > 1.2. &emsp;For each agent $i$ with $d_i > 0$:
 > &emsp;&emsp;Compute $\text{score}_{\text{self}}, \text{score}_{\text{broker}}$ as in §6b.
-> &emsp;&emsp;$\text{decision}_i \leftarrow \text{broker}$ if $\text{score}_{\text{broker}} > \text{score}_{\text{self}}$; else $\text{self}$. Ties broken uniformly at random. (Channel choice applies to all $d_i$ slots.)
+> &emsp;&emsp;$\text{decision}_i \leftarrow \text{broker}$ if $\text{score}_{\text{broker}} > \text{score}_{\text{self}}$; else $\text{self}$. Ties broken uniformly at random. (Channel choice applies to all $d_i$ requested positions.)
 > 1.3. &emsp;Form the current broker client set $D^t = \{i : \text{decision}_i = \text{broker}\}$. Synchronize broker-agent edges in $G$ so the broker is connected to the standing roster and all current clients. Output: for each demander, channel choice and demand count $d_i$. Broker client list $D^t$ with per-agent demand counts. Current standing roster $\text{Roster}^t$.
 >
 > **2. CANDIDATE EVALUATION**
@@ -601,7 +601,7 @@ Each period proceeds through six steps (plus recording).
 >
 > 3.3.2. &emsp;For each $i \in U^\ell$ with $\text{decision}_i = \text{broker}$:
 > &emsp;&emsp;Form broker access set $A^t \leftarrow \text{Roster}^t \cup D^t$.
-> &emsp;&emsp;Restrict to currently available accessible counterparties.
+> &emsp;&emsp;Restrict to currently available accessible counterparties that are not already current-period counterparties of $i$.
 > &emsp;&emsp;Compute broker predictions $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$ for all feasible $j \in A^t$, $j \neq i$.
 > &emsp;&emsp;Drop any candidate with $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) \le r$, and order the remaining feasible candidates from best to worst.
 >
@@ -634,9 +634,9 @@ Each period proceeds through six steps (plus recording).
 >
 > 4.2. &emsp;Update satisfaction indices (§6a):
 > &emsp;&emsp;For each agent $i$ with $d_i > 0$, let $c$ be $i$'s chosen channel:
-> &emsp;&emsp;&emsp;Sum realized outputs over $i$'s accepted matches through $c$; unfilled slots contribute zero.
+> &emsp;&emsp;&emsp;Sum realized outputs over $i$'s accepted matches through $c$; unfilled requested positions contribute zero.
 > &emsp;&emsp;&emsp;If $c = \text{self}$: compute $\tilde{q} = (\sum q_{ij} - c_s \cdot d_i) / d_i = \sum q_{ij}/d_i - c_s$.
-> &emsp;&emsp;&emsp;If $c = \text{broker}$ in the base model: compute $\tilde{q} = \sum (q_{ij} - \phi) / d_i$ over accepted brokered slots.
+> &emsp;&emsp;&emsp;If $c = \text{broker}$ in the base model: compute $\tilde{q} = \sum (q_{ij} - \phi) / d_i$ over accepted brokered relationships.
 > &emsp;&emsp;&emsp;Update: $s_{i,c}^{t+1} = (1 - \omega)\, s_{i,c}^t + \omega \cdot \tilde{q}$.
 >
 > 4.3. &emsp;Update broker reputation (§6c):
@@ -652,7 +652,7 @@ Each period proceeds through six steps (plus recording).
 > &emsp;&emsp;&emsp;Replace with entrant $i'$: fresh type from curve + noise; empty histories; added to $G$ with $\lfloor k/2 \rfloor$ edges to type-similar agents ($\propto \exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)$). Self-satisfaction $\leftarrow$ mean of new neighbors' self-satisfaction; broker-satisfaction $\leftarrow$ current broker reputation (§6a).
 >
 > **6. RECORDING AND MEASUREMENT**
-> 6.1. &emsp;Record period aggregates: match quality by channel; outsourcing rate (outsourced slots / total demand slots); mean self- and broker-satisfaction across agents; available-agent count.
+> 6.1. &emsp;Record period aggregates: match quality by channel; outsourcing rate (outsourced requested positions / total requested positions); mean self- and broker-satisfaction across agents; available-agent count.
 > 6.2. &emsp;Record broker state: reputation $\text{rep}^t$; standing roster size; broker access size; $|\mathcal{H}_b^t|$.
 > 6.3. &emsp;Compute per-agent averaged holdout prediction quality ($R^2$, bias, rank correlation) for broker and agents (§10), excluding fresh entrants with no match history. This runs every period because the cost is small (≈4,000 NN forward passes) and finer time resolution benefits the headline figures that track the informational gap over time.
 > 6.4. &emsp;Every $M$ periods (default $M = 20$): compute network measures on $G$ (§10): betweenness centrality $C_B(b)$; Burt's constraint (broker's ego network); effective size (broker's ego network). The $M$-period cadence reflects the cost of Brandes BFS on the full graph, not a conceptual alignment with holdout measurement.
@@ -716,7 +716,7 @@ The broker-agent gap in holdout $R^2$ is the purest measure of the informational
 
 **Mean channel satisfaction.** Cross-agent means of the two satisfaction states, $N^{-1}\sum_i s_{i,\text{self}}^t$ and $N^{-1}\sum_i s_{i,\text{broker}}^t$. These summarize how the market's recent realized experience with each channel evolves over time.
 
-**Outsourcing rate.** Fraction of demand slots that are outsourced to the broker: outsourced slots / total demand slots. A demander-level outsourcing share (fraction of demanders choosing the broker channel) is retained as a secondary diagnostic in the code, but the slot share is the primary quantity because the model's demand object is the slot.
+**Outsourcing rate.** Fraction of requested relationship positions that are outsourced to the broker: outsourced requested positions / total requested positions. A demander-level outsourcing share (fraction of demanders choosing the broker channel) is retained as a secondary diagnostic in the code, but the requested-position share is the primary quantity because the model's demand object is the relationship position.
 
 **Standing roster size.** Number of agents currently on the broker's standing roster (§7). In the recorded period outputs, this is measured after the start-of-period refresh and before Step 5 entry/exit, so it typically equals the target $R^*$. Internally, the roster can dip below target immediately after exits and is replenished at the next period start.
 
@@ -740,7 +740,7 @@ Parameters are organized into four categories reflecting their role in the analy
 | $k$ | Network mean degree | 6 | Watts-Strogatz ring lattice degree |
 | $p_{\text{rewire}}$ | Network rewiring probability | 0.1 | Watts-Strogatz rewiring |
 | $\omega$ | Satisfaction recency weight (§6a) | 0.2 | EWMA weight |
-| $p_{\text{demand}}$ | Per-slot demand probability | 0.50 | All $K$ slots are open at period start; $d_i \sim \text{Binomial}(K, p_{\text{demand}})$ |
+| $p_{\text{demand}}$ | Per-position demand probability | 0.50 | All $K$ relationship positions are open at period start; $d_i \sim \text{Binomial}(K, p_{\text{demand}})$ |
 | $n_s$ | Max strangers in self-search | 5 | Sampled uniformly from non-neighbors with capacity |
 | $\sigma_x$ | Type noise scale | 0.5 | Expected distance from agent to curve position |
 | $\alpha_R$ | Target roster share (§7) | 0.20 | Standing roster target size is $R^* = \lceil \alpha_R N \rceil$ |
@@ -758,7 +758,7 @@ Parameters are organized into four categories reflecting their role in the analy
 | $b_2^{(0)}$ | Initial output bias | $Q$ | Untrained networks predict population-mean quality rather than zero |
 | $\sigma_\varepsilon$ | Match output noise SD | 0.10 | |
 | $\delta$ | Regime gain strength (§1c) | 0.5 | $\delta = 0$: no regime effect; $\delta = 1$: maximum gain contrast |
-| $\lambda_c$ | Shared search-cost rate | 0.15 | $\phi = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$, $c_s = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$; $c_s$ is a self-search cost per demanded slot, $\phi$ a successful standard-placement fee; §11b |
+| $\lambda_c$ | Shared search-cost rate | 0.15 | $\phi = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$, $c_s = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$; $c_s$ is a self-search cost per demanded relationship position, $\phi$ a successful standard-placement fee; §11b |
 | $p_{\text{roster}}$ | Standing-roster churn probability (§7) | 0.02 | Each roster member is dropped independently at the start of a period, before uniform replenishment back to $R^*$ |
 
 **Phase diagram axes.** Primary parameters of interest.
@@ -778,12 +778,12 @@ Parameters are organized into four categories reflecting their role in the analy
 
 | Symbol | Meaning | Default | Sweep | Notes |
 |--------|---------|---------|-------|-------|
-| $K$ | Match capacity | 5 | {1, 2, 5, 10, 20, 50} | Exclusive at $K = 1$; concurrent at $K > 1$ |
-| $p_{\text{demand}}$ | Per-slot demand probability | 0.50 | {0.10, 0.25, 0.50, 0.75, 0.90} | Higher values produce a thicker, faster-moving market |
+| $K$ | Distinct-counterparty capacity | 5 | {1, 2, 5, 10, 20, 50} | Exclusive at $K = 1$; multiple concurrent counterparties at $K > 1$ |
+| $p_{\text{demand}}$ | Per-position demand probability | 0.50 | {0.10, 0.25, 0.50, 0.75, 0.90} | Higher values produce a thicker, faster-moving market |
 | $\eta$ | Agent entry/exit rate | 0.02 | {0.01, 0.02, 0.05, 0.10} | |
 | $\delta$ | Regime gain strength | 0.5 | {0, 0.25, 0.50, 0.75} | $\delta = 0$: no regime effect (pure statistical advantage) |
 
-The activity parameters $p_{\text{demand}}$ and $K$ jointly determine the market regime. Because demand is per-slot, the expected demand volume scales with $K \cdot p_{\text{demand}}$: high-capacity agents in high-demand environments generate more opportunities per period, reflecting a thicker, faster-moving market. Different combinations map to the illustrative domains:
+The activity parameters $p_{\text{demand}}$ and $K$ jointly determine the market regime. Because demand is per relationship position, the expected demand volume scales with $K \cdot p_{\text{demand}}$: high-capacity agents in high-demand environments generate more opportunities per period, reflecting a thicker, faster-moving market. Different combinations map to the illustrative domains:
 
 | Domain | $p_{\text{demand}}$ | $K$ | Rationale |
 |--------|---------------------|-----|-----------|
@@ -809,7 +809,7 @@ $$
 c_s = \lambda_c \cdot (\bar{q}_{\text{cal}} - r).
 $$
 
-In the default $\lambda_c = 0.15$, both channels use the same friction level. The two quantities are computed once at initialization and held constant thereafter, but they enter realized payoffs asymmetrically: $c_s$ is charged on each self-search demand slot regardless of fill, whereas $\phi$ is charged only on successful standard brokered placements.
+In the default $\lambda_c = 0.15$, both channels use the same friction level. The two quantities are computed once at initialization and held constant thereafter, but they enter realized payoffs asymmetrically: $c_s$ is charged on each requested self-search relationship position regardless of fill, whereas $\phi$ is charged only on successful standard brokered placements.
 
 #### 11c. Initial conditions
 
@@ -838,51 +838,51 @@ Under resource capture, the broker transitions from intermediary to principal. I
 
 Throughout Model 1, "demanders" means agents currently expressing **demand for matching** in the period. Depending on the empirical domain, these can stand in for buyers, sellers, producers, importers, dealers seeking an offsetting trade, or any other side currently seeking a match. The label refers to the direction of current matching demand, not to a fixed market role.
 
-**State additions.** Matches gain a flag: *standard* (brokerage as in the base model) or *principal* (broker takes one side). The matching mechanism adds no new persistent agent-level behavioral state. For diagnostics, however, the implementation maintains two cumulative agent-level counters used only for broker-dependency measurement in §12i: total matches participated in, and principal-mode acquisitions as counterparty. On the broker side, Model 1 tracks a scalar confidence state $\kappa_b^t$, defined from realized **broker-controlled exposure** errors. The implementation also maintains period-local broker-owned inventory for acquired slots during the current period only.
+**State additions.** Matches gain a flag: *standard* (brokerage as in the base model) or *principal* (broker takes one side). The matching mechanism adds no new persistent agent-level behavioral state. For diagnostics, however, the implementation maintains two cumulative agent-level counters used only for broker-dependency measurement in §12i: total matches participated in, and principal-mode acquisitions as counterparty. On the broker side, Model 1 tracks a scalar confidence state $\kappa_b^t$, defined from realized **broker-controlled exposure** errors. The implementation also maintains period-local broker-owned inventory for acquired relationship positions during the current period only.
 
 #### 12b. Mechanism
 
-Model 1 moves the capture decision **before the round loop**. After current demand and outsourcing choices have been realized, the broker evaluates whether any currently available accessible counterparty block is worth buying outright for the current period. The broker then enters the round-by-round matching flow already owning those acquired slots.
+Model 1 moves the capture decision **before the round loop**. After current demand and outsourcing choices have been realized, the broker evaluates whether any currently available accessible counterparty block is worth buying outright for the current period. The broker then enters the round-by-round matching flow already owning those acquired relationship positions.
 
 For any currently available accessible counterparty $j \in A^t$:
 
-1. Let $c_j^t$ be $j$'s currently available block size at the moment of acquisition planning, that is, the number of slots it could still supply in the current period. At the start of period matching this is the full current block, net only of earlier acquired blocks in the same pre-period planning pass.
+1. Let $c_j^t$ be $j$'s currently available block size at the moment of acquisition planning, that is, the number of distinct relationship positions it could still supply in the current period. At the start of period matching this is the full current block, net only of earlier acquired blocks in the same pre-period planning pass.
 2. Let $\bar{q}_j$ be $j$'s acquisition reservation, equal to the mean of all outputs in $j$'s history, or $\bar{q}_{\text{cal}}$ if $j$ has no history.
-3. For each currently outsourced demander $i$ with residual current demand in the pre-period planning state, the broker computes the predicted pairing value $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$ and the slot-level margin relative to standard placement,
+3. For each currently outsourced demander $i$ with residual current demand in the pre-period planning state and no active current-period relationship with $j$, the broker computes the predicted pairing value $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$ and the position-level margin relative to standard placement,
 
 $$
 m_{ij}^t = \hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) - \bar{q}_j - \phi.
 $$
 
-4. The broker evaluates the **whole block** of $c_j^t$ slots by assigning those slots to the best current outsourced uses of $j$ in the pre-period planning state, allowing the same demander to contribute multiple slots up to its remaining current demand. Partial capture is not allowed: either all $c_j^t$ currently available slots are taken or none are.
-5. If the block is captured, the broker acquires all currently available slots from $j$ immediately. Those slots are removed from the open market for the rest of the period and become broker-owned same-period inventory. There is no cross-period inventory carry.
+4. The broker evaluates the **whole block** of $c_j^t$ positions by assigning those positions to the best distinct current outsourced demanders for $j$ in the pre-period planning state. A demander can justify at most one position in a candidate counterparty block, even if it has multiple residual requested positions, because a pair can hold only one current-period relationship. Partial capture is not allowed: either all $c_j^t$ currently available positions are taken or none are.
+5. If the block is captured, the broker acquires all currently available positions from $j$ immediately. Those positions are removed from the open market for the rest of the period and become broker-owned same-period inventory. There is no cross-period inventory carry.
 
 After acquisition, round-by-round execution proceeds using that owned inventory:
 
-1. **The broker acquires $j$'s position** at reservation $\bar{q}_j$. Agent $j$'s acquired slots are consumed for the current period as broker-owned inventory, so those slots are no longer available to self-searchers or to residual standard broker matching. Agent $j$'s history and satisfaction are otherwise unaffected (satisfaction is updated only for the demander role, §6a); $j$ does not observe who the end-use counterparty is.
-2. **During each matching round,** the broker may place at most one owned slot with each active outsourced demander, using the broker's own ranking over the currently owned inventory.
-3. **If an owned slot is placed with demander $i$,** the broker matches with demander $i$ as the counterparty, stepping into $j$'s role. Match output is realized as $q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}$, determined by the underlying pairing $(i, j)$ even though $i$ deals only with the broker.
-4. **Both the demander and the broker experience $q_{ij}$.** The capture surplus of the placed slot is $\Delta q_{ij} = q_{ij} - \bar{q}_j$. Negative realizations are the broker's inventory risk.
-5. **If an acquired slot is not placed by period end,** it expires with realized value 0. Its realized capture surplus is therefore $-\bar{q}_j$.
-6. **Neither party observes the other's type.** On a placed principal slot, the demander observes $q_{ij}$ but not $\mathbf{x}_j$; the counterparty does not observe $\mathbf{x}_i$ or $q_{ij}$. Neither party can update its prediction history.
+1. **The broker acquires $j$'s position** at reservation $\bar{q}_j$. Agent $j$'s acquired positions are consumed for the current period as broker-owned inventory, so those positions are no longer available to self-searchers or to residual standard broker matching. Agent $j$'s history and satisfaction are otherwise unaffected (satisfaction is updated only for the demander role, §6a); $j$ does not observe who the end-use counterparty is.
+2. **During each matching round,** the broker may place at most one owned position with each active outsourced demander, using the broker's own ranking over the currently owned inventory. A demander already matched with the acquired counterparty in the current period cannot receive another position from that same counterparty.
+3. **If an owned position is placed with demander $i$,** the broker matches with demander $i$ as the counterparty, stepping into $j$'s role. Match output is realized as $q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}$, determined by the underlying pairing $(i, j)$ even though $i$ deals only with the broker.
+4. **Both the demander and the broker experience $q_{ij}$.** The capture surplus of the placed position is $\Delta q_{ij} = q_{ij} - \bar{q}_j$. Negative realizations are the broker's inventory risk.
+5. **If an acquired position is not placed by period end,** it expires with realized value 0. Its realized capture surplus is therefore $-\bar{q}_j$.
+6. **Neither party observes the other's type.** On a placed principal position, the demander observes $q_{ij}$ but not $\mathbf{x}_j$; the counterparty does not observe $\mathbf{x}_i$ or $q_{ij}$. Neither party can update its prediction history.
 7. **No edge is added to $G$ between $i$ and $j$.** The structural hole between them remains open.
-8. **The broker adds $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$ only for placed principal slots.** The broker is the only agent that learns from principal-mode matches.
+8. **The broker adds $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$ only for placed principal positions.** The broker is the only agent that learns from principal-mode matches.
 
-Counterparty acceptance is automatic by construction: in principal mode the counterparty does not evaluate the end-use pairing, because it has sold the currently available slot to the broker at reservation $\bar{q}_j$. The broker absorbs capture risk by taking inventory exposure on the acquired block before round-by-round deployment is known.
+Counterparty acceptance is automatic by construction: in principal mode the counterparty does not evaluate the end-use pairing, because it has sold the currently available position to the broker at reservation $\bar{q}_j$. The broker absorbs capture risk by taking inventory exposure on the acquired block before round-by-round deployment is known.
 
 As the market evolves and counterparties accumulate better match histories, their reservations $\bar{q}_j$ rise, naturally compressing capture margins. The broker therefore sustains positive capture only for counterparties whose self-assessed value remains below the broker's best current cross-demander uses of that counterparty.
 
 #### 12c. Broker's decision: standard vs. principal
 
-For each candidate counterparty block $j$, the broker forms the ordered multiset of current slot margins $m_{ij}^t$ across currently outsourced demanders in the residual pre-period planning state, counting each demander up to its remaining current demand. Let
+For each candidate counterparty block $j$, the broker forms the ordered set of current position margins $m_{ij}^t$ across currently outsourced demanders in the residual pre-period planning state, counting each demander at most once for that candidate block. Let
 
 $$
 V_j^t = \sum_{h=1}^{c_j^t} m_{j,(h)}^t,
 $$
 
-where $m_{j,(1)}^t \ge m_{j,(2)}^t \ge \cdots$ are the current slot margins for counterparty $j$ sorted from best to worst, and $c_j^t$ is the counterparty's currently available block size in that planning state. Thus $V_j^t$ is the net expected advantage, relative to standard placement fees, of taking **the entire currently available block** from $j$ based on its best current outsourced uses.
+where $m_{j,(1)}^t \ge m_{j,(2)}^t \ge \cdots$ are the current position margins for counterparty $j$ sorted from best to worst across distinct demanders, and $c_j^t$ is the counterparty's currently available block size in that planning state. Thus $V_j^t$ is the net expected advantage, relative to standard placement fees, of taking **the entire currently available block** from $j$ based on its best current outsourced uses.
 
-Let $\delta_j^t$ be the number of **distinct demanders** represented among the selected top-$c_j^t$ uses with strictly positive slot margins. Model 1 requires current depth: the block is eligible for capture only if $\delta_j^t \ge 2$.
+Let $\delta_j^t$ be the number of **distinct demanders** represented among the selected top-$c_j^t$ uses with strictly positive position margins. Model 1 requires current depth: the block is eligible for capture only if $\delta_j^t \ge 2$.
 
 The broker captures block $j$ only if all of the following hold:
 
@@ -905,11 +905,11 @@ captures that entire block, updates residual current demand and residual current
 
 The objects in the rule are:
 
-- $m_{ij}^t = \hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) - \bar{q}_j - \phi$: the broker's slot-level expected gain from capture relative to standard placement.
+- $m_{ij}^t = \hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) - \bar{q}_j - \phi$: the broker's position-level expected gain from capture relative to standard placement.
 - $\bar{q}_j$: agent $j$'s acquisition reservation, equal to the mean of all outputs in $j$'s history, or $\bar{q}_{\text{cal}}$ if $j$ has no history.
 - $\phi$: the standard brokered-placement friction (§3c). Under standard placement the demander incurs $\phi$ and the broker has no output-level stake. Under principal mode no $\phi$ is charged to the demander; instead the broker bears capture risk and records realized capture surplus $\Delta q_{ij}$.
 - $c_j^t$: counterparty $j$'s currently available block size in the pre-period planning state.
-- $V_j^t$: the whole-block expected advantage of capturing $j$ now rather than leaving those slots for residual standard matching.
+- $V_j^t$: the whole-block expected advantage of capturing $j$ now rather than leaving those positions for residual standard matching.
 - $\delta_j^t$: the number of distinct current outsourced demanders among the selected positive-margin uses of $j$.
 - $\kappa_b^t$: the broker's current confidence MAE, an exponentially weighted moving average of realized broker-controlled exposure errors.
 
@@ -918,7 +918,7 @@ Principal mode is therefore unavailable in period 1 by construction and becomes 
 Formally, let $E_t$ be the set of all broker-controlled exposures in period $t$:
 
 - each realized **standard** brokered match contributes one exposure with realized value equal to the realized match output and forecast equal to the broker's ex ante match prediction;
-- each acquired **principal** slot contributes one exposure with forecast equal to the broker's acquisition-time slot forecast, and realized value equal to the realized match output if the slot is placed or 0 if it expires unplaced at period end.
+- each acquired **principal** position contributes one exposure with forecast equal to the broker's acquisition-time forecast, and realized value equal to the realized match output if the position is placed or 0 if it expires unplaced at period end.
 
 The current-period broker exposure MAE is then
 
@@ -943,7 +943,7 @@ $$
 
 If $\kappa_b^t$ is not yet available and $|E_t| = 0$, it remains unavailable and principal mode stays disabled. The broker uses $\kappa_b^t$ during period $t$ acquisition decisions and updates it only after period-$t$ outcomes are realized. This state variable depends only on information the broker plausibly observes about its own activity: its own ex-ante forecasts and realized outcomes on broker-controlled positions.
 
-**Design motivation.** The decision now occurs before rounds because the substantive object of resource capture is no longer a single pair, but a currently available **counterparty block** whose value depends on the broker's ability to rank uses of that block across multiple outsourced demanders. This keeps the information content genuinely cross-market: an individual agent sees only its own realized matches, whereas the broker values the same counterparty by comparing it across the current outsourced demand in the market. The all-or-nothing rule preserves simplicity and makes capture lumpy rather than diffuse. The current-depth condition excludes degenerate cases where one demander alone drives capture. Removing the extra readiness gate keeps the mechanism lean: once the broker has live confidence, capture depends only on whether a whole current block is worth taking. Because unplaced acquired slots now enter $\kappa_b^t$ as zero-realization exposures, mistaken literal acquisitions feed back directly into future caution without adding another state variable.
+**Design motivation.** The decision now occurs before rounds because the substantive object of resource capture is no longer a single pair, but a currently available **counterparty block** whose value depends on the broker's ability to rank uses of that block across multiple outsourced demanders. This keeps the information content genuinely cross-market: an individual agent sees only its own realized matches, whereas the broker values the same counterparty by comparing it across the current outsourced demand in the market. The all-or-nothing rule preserves simplicity and makes capture lumpy rather than diffuse. The current-depth condition excludes degenerate cases where one demander alone drives capture. Removing the extra readiness gate keeps the mechanism lean: once the broker has live confidence, capture depends only on whether a whole current block is worth taking. Because unplaced acquired positions now enter $\kappa_b^t$ as zero-realization exposures, mistaken literal acquisitions feed back directly into future caution without adding another state variable.
 
 Early in the simulation, principal mode is unavailable at first because live confidence does not yet exist. Once $\kappa_b^t$ has been initialized, principal capture can begin immediately if the broker sees a whole current block with enough depth and value to clear the rule above. As the broker's exposure errors fall and multiple current outsourced demanders value the same counterparties highly, more whole blocks clear the rule. Conversely, unsuccessful literal acquisition, including unplaced end-of-period inventory, raises $\kappa_b^t$ and makes further capture harder.
 
@@ -953,11 +953,11 @@ The capture dynamic relies on informational dependency and supply scarcity rathe
 
 In principal mode the broker acts as the counterparty; no placement friction $\phi$ is charged, since the broker is no longer intermediating.
 
-**Demander's perspective.** The demander experiences $q_{ij}$ with no friction deduction (no $\phi$ in principal mode). Its satisfaction input is therefore, all else equal, higher than on an otherwise identical standard brokered match (where $\phi$ is deducted), and higher than on self-search once self-search effort costs are accounted for. This makes principal-mode exposure attractive on the realized-payoff margin and reinforces the capture dynamic. The demander cannot update its prediction model from that principal-mode match, however: it observes $q_{ij}$ but lacks the counterparty type $\mathbf{x}_j$ needed for a history entry. Each principal-mode match therefore blocks learning on that observation. The demander can still learn from any standard or self-search matches realized on other slots or in later periods.
+**Demander's perspective.** The demander experiences $q_{ij}$ with no friction deduction (no $\phi$ in principal mode). Its satisfaction input is therefore, all else equal, higher than on an otherwise identical standard brokered match (where $\phi$ is deducted), and higher than on self-search once self-search effort costs are accounted for. This makes principal-mode exposure attractive on the realized-payoff margin and reinforces the capture dynamic. The demander cannot update its prediction model from that principal-mode match, however: it observes $q_{ij}$ but lacks the counterparty type $\mathbf{x}_j$ needed for a history entry. Each principal-mode match therefore blocks learning on that observation. The demander can still learn from any standard or self-search matches realized through other relationship positions or in later periods.
 
-**Broker's perspective.** The broker experiences $q_{ij}$ as the counterparty, against the counterparty's acquisition reservation $\bar{q}_j$. The **capture surplus** of a placed slot is $\Delta q_{ij} = q_{ij} - \bar{q}_j$. If an acquired slot expires unplaced at period end, its realized value is 0 and its realized surplus is therefore $-\bar{q}_j$. When the broker's predictions are accurate it selects high-output pairings with $q_{ij} \gg \bar{q}_j$ and captures positive surplus; when predictions are poor, or when inventory cannot be deployed, realized surplus may be negative. The broker adds $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$ only for placed principal slots and continues to learn from realized placements.
+**Broker's perspective.** The broker experiences $q_{ij}$ as the counterparty, against the counterparty's acquisition reservation $\bar{q}_j$. The **capture surplus** of a placed position is $\Delta q_{ij} = q_{ij} - \bar{q}_j$. If an acquired position expires unplaced at period end, its realized value is 0 and its realized surplus is therefore $-\bar{q}_j$. When the broker's predictions are accurate it selects high-output pairings with $q_{ij} \gg \bar{q}_j$ and captures positive surplus; when predictions are poor, or when inventory cannot be deployed, realized surplus may be negative. The broker adds $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$ only for placed principal positions and continues to learn from realized placements.
 
-**Counterparty's perspective.** The counterparty's acquired slot is consumed for the period as soon as it is sold to the broker. Because the counterparty does not observe the end-use match outcome or the demander's type (§12b.6), its history $\mathcal{H}_j$ is not updated by that principal-mode slot; because satisfaction is updated only for the demander role (§6a), its satisfaction tracking is unaffected. The counterparty can still accumulate information through any standard matches it realizes elsewhere. Its reservation $\bar{q}_j$ therefore rises over time as it accumulates outputs from observable standard matches, narrowing the pool of pairings where capture surplus is likely positive.
+**Counterparty's perspective.** The counterparty's acquired position is consumed for the period as soon as it is sold to the broker. Because the counterparty does not observe the end-use match outcome or the demander's type (§12b.6), its history $\mathcal{H}_j$ is not updated by that principal-mode position; because satisfaction is updated only for the demander role (§6a), its satisfaction tracking is unaffected. The counterparty can still accumulate information through any standard matches it realizes elsewhere. Its reservation $\bar{q}_j$ therefore rises over time as it accumulates outputs from observable standard matches, narrowing the pool of pairings where capture surplus is likely positive.
 
 #### 12e. Lock-in dynamics
 
@@ -967,7 +967,7 @@ Resource capture produces a **triple lock-in mechanism** at the level of princip
 
 **Structural lock-in.** No direct tie forms between $i$ and $j$ in $G$ on a principal-mode match. Standard and self-search matches still add ties, but principal-mode matches do not contribute to network densification. Structural holes therefore remain open along the captured pairings, and the broker's betweenness centrality does not decline from those matches.
 
-**Supply-side lock-in.** Agents whose positions are repeatedly acquired by the broker are effectively removed from the open market during those periods and on those slots. Self-searchers face a thinner candidate pool, degrading the quality of self-search outcomes and pushing more agents toward the broker. This supply scarcity reinforces the informational and structural effects above.
+**Supply-side lock-in.** Agents whose positions are repeatedly acquired by the broker are effectively removed from the open market during those periods and on those relationship positions. Self-searchers face a thinner candidate pool, degrading the quality of self-search outcomes and pushing more agents toward the broker. This supply scarcity reinforces the informational and structural effects above.
 
 **Positive feedback loop.** Principal-mode matching removes some agent learning opportunities, prevents tie formation on those pairings, and thins the open market → exposed agents learn more slowly and self-search candidate pools worsen → self-search satisfaction falls relative to broker-channel satisfaction → more agents outsource → the broker observes more broker-controlled exposures, and if those exposures are used well $\kappa_b^t$ falls, increasing the set of counterparties for which there are multiple strong current outsourced uses → more whole blocks clear the decision rule in §12c → principal exposure expands further. Because capture is block-level and all-or-nothing, the transition can be visibly lumpy rather than smooth. Literal acquisition also adds a countervailing discipline: failed deployment raises $\kappa_b^t$.
 
@@ -1031,16 +1031,16 @@ Steps not listed are identical to the base model pseudocode (§9).
 > 3.3.2. &emsp;Otherwise, compute the broker quality matrix $\hat{q}_b([\mathbf{x}_i; \mathbf{x}_j])$ over current outsourced demanders and the current access set $A^t$.
 > 3.3.3. &emsp;For each currently available accessible counterparty block $j$:
 > &emsp;&emsp;Compute acquisition reservation $\bar{q}_j$.
-> &emsp;&emsp;Compute slot margins $m_{ij}^t = \hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) - \bar{q}_j - \phi$ for all current outsourced demanders, counting each demander up to its residual pre-period demand.
-> &emsp;&emsp;Take the top $c_j^t$ current uses of $j$, compute block value $V_j^t$, and count distinct positive-margin demanders $\delta_j^t$.
+> &emsp;&emsp;Compute position margins $m_{ij}^t = \hat{q}_b([\mathbf{x}_i; \mathbf{x}_j]) - \bar{q}_j - \phi$ for all current outsourced demanders, counting each demander at most once for this candidate counterparty block.
+> &emsp;&emsp;Take the top $c_j^t$ distinct current uses of $j$, compute block value $V_j^t$, and count distinct positive-margin demanders $\delta_j^t$.
 > &emsp;&emsp;If the block cannot be fully justified on the residual pre-period state, or $\delta_j^t < 2$, or $V_j^t \le c_j^t \kappa_b^t$: mark the block as not acquirable.
 > 3.3.4. &emsp;If at least one block is acquirable, choose the one with the largest positive excess $\Xi_j^t = V_j^t - c_j^t \kappa_b^t$.
-> 3.3.5. &emsp;Acquire that entire block immediately, remove those slots from open-market availability for the period, update the residual pre-period state, and repeat 3.3.3-3.3.5 until no block is acquirable.
+> 3.3.5. &emsp;Acquire that entire block immediately, remove those positions from open-market availability for the period, update the residual pre-period state, and repeat 3.3.3-3.3.5 until no block is acquirable.
 >
 > &emsp;**3.4. Round execution of owned inventory**
 > 3.4.1. &emsp;At the start of each round, before residual standard matching, consider the broker-owned inventory still unplaced.
-> 3.4.2. &emsp;Among active outsourced demanders, assign at most one owned slot to each demander in the round, using the broker's ranking over the currently owned inventory.
-> 3.4.3. &emsp;Each placed owned slot becomes one realized principal-mode match; each unplaced owned slot remains broker inventory for later rounds in the same period only.
+> 3.4.2. &emsp;Among active outsourced demanders, assign at most one owned position to each demander in the round, using the broker's ranking over the currently owned inventory and excluding demander-counterparty pairs that already have a current-period relationship.
+> 3.4.3. &emsp;Each placed owned position becomes one realized principal-mode match; each unplaced owned position remains broker inventory for later rounds in the same period only.
 >
 > &emsp;**3.5. Residual broker rankings and deferred acceptance**
 > 3.5.1. &emsp;After the principal-inventory pass, rebuild the standard broker preference lists over the remaining broker demanders and the remaining currently available accessible counterparties.
@@ -1063,13 +1063,13 @@ Steps not listed are identical to the base model pseudocode (§9).
 > &emsp;&emsp;&emsp;Increment $n_{\text{principal-acquired},j}$.
 >
 > 4.2. &emsp;Update satisfaction indices exactly as in the implemented broker-channel payoff rule:
-> &emsp;&emsp;for each demander $i$ with broker channel, average $\sum_{\text{standard}} (q_{ij} - \phi) + \sum_{\text{principal}} q_{ij}$ over requested broker slots.
+> &emsp;&emsp;for each demander $i$ with broker channel, average $\sum_{\text{standard}} (q_{ij} - \phi) + \sum_{\text{principal}} q_{ij}$ over requested broker positions.
 >
 > 4.3. &emsp;Capture surplus recording:
-> &emsp;&emsp;for each acquired principal slot, record its realized value (equal to $q_{ij}$ if placed or 0 if unplaced), its acquisition reservation $\bar{q}_j$, and its acquisition-time forecast.
+> &emsp;&emsp;for each acquired principal position, record its realized value (equal to $q_{ij}$ if placed or 0 if unplaced), its acquisition reservation $\bar{q}_j$, and its acquisition-time forecast.
 >
 > 4.4. &emsp;Broker confidence update:
-> &emsp;&emsp;Collect all broker-controlled exposures in period $t$, including standard broker matches and acquired principal slots that end either placed or unplaced.
+> &emsp;&emsp;Collect all broker-controlled exposures in period $t$, including standard broker matches and acquired principal positions that end either placed or unplaced.
 > &emsp;&emsp;If at least one exists: compute $\tilde{\kappa}_b^t = \frac{1}{|E_t|}\sum_{e \in E_t}|y_e - \hat{y}_e|$.
 > &emsp;&emsp;Update $\kappa_b^{t+1}$ by the EWMA rule in §12c.
 
@@ -1086,10 +1086,10 @@ Steps not listed are identical to the base model pseudocode (§9).
 
 **Agent prediction quality by principal-mode exposure.** Average holdout $R^2$ stratified by agents' cumulative principal-mode match fraction. Agents with high exposure should show stagnating prediction quality (informational lock-in), while agents who primarily self-search or receive standard placements should continue improving.
 
-**Capture outcome.** Over acquired principal slots in period $t$, whether placed or unplaced:
+**Capture outcome.** Over acquired principal positions in period $t$, whether placed or unplaced:
 
-- **Mean capture surplus** $\overline{\Delta q}^t = \frac{1}{|C_t|} \sum_{e \in C_t} \Delta q_e$: the typical per-slot capture surplus, where $\Delta q_e = y_e - \bar{q}_e$ and $y_e = 0$ for unplaced acquired inventory.
-- **Capture loss rate** $= |\{e \in C_t : \Delta q_e < 0\}| / |C_t|$: the share of acquired principal slots whose realized value falls below the counterparty's acquisition reservation.
+- **Mean capture surplus** $\overline{\Delta q}^t = \frac{1}{|C_t|} \sum_{e \in C_t} \Delta q_e$: the typical per-position capture surplus, where $\Delta q_e = y_e - \bar{q}_e$ and $y_e = 0$ for unplaced acquired inventory.
+- **Capture loss rate** $= |\{e \in C_t : \Delta q_e < 0\}| / |C_t|$: the share of acquired principal positions whose realized value falls below the counterparty's acquisition reservation.
 - **Capture loss magnitude** $= \mathrm{mean}(|\Delta q_e| \mid \Delta q_e < 0)$: the typical size of losses when they occur.
 
 Early in the capture transition, when the broker's predictions are less accurate, losses should be more frequent and larger. As predictions improve, both loss rate and loss magnitude should decline. Persistent losses would indicate that the broker is going principal too early.
@@ -1180,17 +1180,17 @@ The current Model 1 already uses a before-round acquisition decision, but it is 
 
 **Fixed acquisition price at outside option.** The current model sets the counterparty's ask price at $\bar{q}_j$ (average realized match quality from its history). A simpler alternative: the counterparty always accepts at the fixed outside option $r$, regardless of its match history. This makes acceptance truly automatic and the acquisition cost constant across counterparties, producing a clean regime shift in the broker's principal-mode decision. The tradeoff is that the broker acquires all positions at the same low price, which may make capture too easy and remove the natural margin compression from rising counterparty experience.
 
-**Exclusivity under principal mode.** The base Model 1 uses per-slot capacity accounting: each acquired or placed principal slot consumes one slot, and any remaining slots can still be used elsewhere in the period. An alternative is full exclusivity ($\xi = 1$): an agent with any principal-mode exposure cannot self-search at all during that period, routing all demand through the broker. This produces total information freeze (the agent gains no new observations from any source) and stronger lock-in. With per-slot demand, an agent at $K = 5$ generates ~2.5 demands per period; under per-slot accounting, some of these could still go through self-search even if one slot is affected by principal mode. Full exclusivity would block all self-search, significantly strengthening the lock-in. Comparing dynamics under per-slot accounting and full exclusivity would test whether the full information freeze is necessary for the abrupt capture trajectory of Proposition 3a.
+**Exclusivity under principal mode.** The base Model 1 uses relationship-position capacity accounting: each acquired or placed principal position consumes one of an agent's $K$ distinct-counterparty positions, and any remaining positions can still be used elsewhere in the period. An alternative is full exclusivity ($\xi = 1$): an agent with any principal-mode exposure cannot self-search at all during that period, routing all demand through the broker. This produces total information freeze (the agent gains no new observations from any source) and stronger lock-in. With relationship-position demand, an agent at $K = 5$ generates about 2.5 requested positions per period; under current position accounting, some of these could still go through self-search even if one position is affected by principal mode. Full exclusivity would block all self-search, significantly strengthening the lock-in. Comparing dynamics under relationship-position accounting and full exclusivity would test whether the full information freeze is necessary for the abrupt capture trajectory of Proposition 3a.
 
-#### 13f. Interpreting $K$ as Counterparty Capacity
+#### 13f. Counterparty-Capacity Interpretation of $K$
 
-The current specification interprets $K$ as a per-period capacity in transactional slots: each accepted match consumes one slot for the demander and one slot for the counterparty for the remainder of the period, and repeated matches with the same partner in the same period are allowed if both parties retain capacity. A deferred alternative is to reinterpret $K$ as the maximum number of **concurrent counterparties** or active bilateral relationships an agent can maintain within a period.
+The current specification interprets $K$ as the maximum number of **concurrent counterparties** or active bilateral relationships an agent can maintain within a period. Each accepted match consumes one relationship position for the demander and one for the counterparty for the remainder of the period. Repeated matches with the same partner in the same period are not allowed.
 
-Under that alternative, an accepted match would no longer represent a single transaction-level placement, but the formation of a period-level commercial relationship. Repeated transactions between the same two parties within the period would be bundled into that relationship rather than modeled individually. This interpretation is closer to settings such as labor-market intermediation, where a match is naturally read as a filled bilateral position rather than a sequence of repeated trades.
+Under this interpretation, an accepted match no longer represents a single transaction-level placement, but the formation of a period-level commercial relationship. Repeated transactions between the same two parties within the period are bundled into that relationship rather than modeled individually. This interpretation is closer to settings such as labor-market intermediation, where a match is naturally read as a filled bilateral position rather than a sequence of repeated trades.
 
-This reinterpretation has several conceptual advantages. The network edge created by an accepted match aligns more naturally with the object being modeled, since one accepted match would correspond to one active relationship. The block-capture rule in principal mode would also become easier to read, because acquiring one of an agent's $K$ slots would more transparently mean taking one of a limited number of concurrent relationship positions. Likewise, supply scarcity under resource capture would become more relationship-based and easier to interpret.
+This reinterpretation has several conceptual advantages. The network edge created by an accepted match aligns more naturally with the object being modeled, since one accepted match corresponds to one active relationship. The block-capture rule in principal mode is also easier to read, because acquiring one of an agent's $K$ positions means taking one of a limited number of concurrent relationship positions. Likewise, supply scarcity under resource capture becomes more relationship-based and easier to interpret.
 
-The tradeoff is that the model would change meaning, not just notation. Match output $q_{ij}$, search costs, broker fees, satisfaction updates, and capture surplus would all need to be reinterpreted at the relationship level rather than the transaction level. Principal-mode acquisition would become a stronger form of exclusivity, because occupying one of an agent's $K$ counterparty positions would block an entire relationship for the period rather than a single transaction slot. Repeated within-period trade volume between the same pair would no longer be observed directly. This could be a useful extension for domains where relationship formation is the relevant matching object, but it is not part of the current base model.
+The tradeoff is that the model has changed meaning, not just notation. Match output $q_{ij}$, search costs, broker fees, satisfaction updates, and capture surplus are now interpreted at the relationship-position level rather than the transaction level. Principal-mode acquisition is a stronger form of scarcity than a transaction-slot acquisition, because occupying one of an agent's $K$ counterparty positions blocks an entire relationship for the period. Repeated within-period trade volume between the same pair is no longer observed directly.
 
 ## Figures
 

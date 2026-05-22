@@ -77,7 +77,7 @@ function plot_ensemble(mdfs::Vector{DataFrame}, suptitle::String, filename::Stri
     Label(fig[1, 0], "Market"; fontsize=ROW_LABEL_FS, font=:bold,
           rotation=π/2, tellheight=false)
 
-    ax = newax(fig[1, 1]; title="Outsourcing rate (slots)", ylabel="Rate",
+    ax = newax(fig[1, 1]; title="Outsourcing rate (positions)", ylabel="Rate",
               limits=(xlims, (-0.02, 1.02)), akw...)
     pm!(ax, mdf -> mdf.outsourcing_rate; color=COL_BROKER)
 
@@ -89,7 +89,7 @@ function plot_ensemble(mdfs::Vector{DataFrame}, suptitle::String, filename::Stri
 
     ax = newax(fig[1, 3]; title="Total demand & matches", ylabel="Count",
               limits=(xlims, (0, nothing)), akw...)
-    pm!(ax, mdf -> Float64.(mdf.total_demand); label="Demand (slots)", color=COL_DIAG)
+    pm!(ax, mdf -> Float64.(mdf.total_demand); label="Demand (positions)", color=COL_DIAG)
     pm!(ax, mdf -> Float64.(mdf.n_total_matches); label="Matches", color=COL_AGENT)
     axislegend(ax; position=:rt, LEG_KW...)
 
@@ -443,7 +443,7 @@ for (idx, c) in enumerate(configs)
     tail_dfs = [mdf[max(1, end-49):end, :] for mdf in mdfs]
     combined = vcat(tail_dfs...)
     println("  Summary (last 50 periods, pooled):")
-    println("    Outsourcing (slot share): $(round(mean(combined.outsourcing_rate), digits=3))")
+    println("    Outsourcing (position share): $(round(mean(combined.outsourcing_rate), digits=3))")
     println("    Broker R²: $(round(nanmean_or_nan(combined.broker_holdout_r2), digits=3))")
     println("    Agent R²: $(round(nanmean_or_nan(combined.agent_holdout_r2), digits=3))")
     println("    R² gap: $(round(nanmean_or_nan(combined.r2_gap), digits=3))")

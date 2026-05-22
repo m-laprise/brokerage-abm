@@ -74,7 +74,7 @@ function plot_capture_ensemble(m1_mdfs::Vector{DataFrame},
     Label(fig[1, 0], "Market"; fontsize=ROW_LABEL_FS, font=:bold,
           rotation=π/2, tellheight=false)
 
-    ax = newax(fig[1, 1]; title="Outsourcing rate (slots)", ylabel="Rate",
+    ax = newax(fig[1, 1]; title="Outsourcing rate (positions)", ylabel="Rate",
               limits=(xlims, (-0.02, 1.02)), akw...)
     pm!(ax, mdf -> mdf.outsourcing_rate; label="M1", color=COL_BROKER)
     base_ref!(ax, mdf -> mdf.outsourcing_rate)
@@ -89,7 +89,7 @@ function plot_capture_ensemble(m1_mdfs::Vector{DataFrame},
 
     ax = newax(fig[1, 3]; title="Total demand & matches", ylabel="Count",
               limits=(xlims, (0, nothing)), akw...)
-    pm!(ax, mdf -> Float64.(mdf.total_demand); label="Demand (slots)", color=COL_DIAG)
+    pm!(ax, mdf -> Float64.(mdf.total_demand); label="Demand (positions)", color=COL_DIAG)
     pm!(ax, mdf -> Float64.(mdf.n_total_matches); label="Matches", color=COL_AGENT)
     base_ref!(ax, mdf -> Float64.(mdf.n_total_matches))
     axislegend(ax; position=:rt, LEG_KW...)
@@ -463,7 +463,7 @@ for (idx, c) in enumerate(configs)
     combined = vcat(tails...)
     println("  Summary (last 50 periods):")
     println("    Principal share: $(round(mean(combined.principal_mode_share), digits=3))")
-    println("    Outsourcing (slot share): $(round(mean(combined.outsourcing_rate), digits=3))")
+    println("    Outsourcing (position share): $(round(mean(combined.outsourcing_rate), digits=3))")
     println("    R² gap: $(round(nanmean_or_nan(combined.r2_gap), digits=3))")
     println("    Mean capture surplus: $(round(nanmean_or_nan(combined.capture_surplus_mean), digits=3))")
     println("    Mean broker dependency: $(round(nanmean_or_nan(combined.broker_dependency_mean), digits=3))")

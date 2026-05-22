@@ -34,10 +34,16 @@ function verify_invariants(state::ModelState)
         @assert !has_edge(G, i, i) "Self-edge on agent $i"
     end
 
-    # ── Match capacity ──
+    # ── Match capacity and distinct counterparties ──
     for i in 1:N
-        n_matches = length(agents[i].active_matches)
+        matches = agents[i].active_matches
+        n_matches = length(matches)
         @assert n_matches <= K "Agent $i has $n_matches active matches (K=$K)"
+        seen = Set{Int}()
+        for am in matches
+            @assert !(am.partner_id in seen) "Agent $i has duplicate active match with $(am.partner_id)"
+            push!(seen, am.partner_id)
+        end
     end
 
     # ── Active match symmetry ──
@@ -80,9 +86,10 @@ function verify_invariants(state::ModelState)
         @assert has_edge(G, cid, broker.node_id) "Agent $cid is a current broker client but has no broker edge"
     end
     for i in 1:N
-        should_have_broker_edge = (i in broker.roster) ||
-                                  (i in broker.current_clients) ||
-                                  has_active_broker_match(agents[i])
+        should_have_broker_edge =
+            (i in broker.roster) ||
+            (i in broker.current_clients) ||
+            has_active_broker_match(agents[i])
         @assert has_edge(G, i, broker.node_id) == should_have_broker_edge "Broker edge mismatch at agent $i"
     end
 

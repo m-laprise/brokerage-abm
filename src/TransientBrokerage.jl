@@ -35,7 +35,7 @@ export ModelParams, MatchingEnv, CalibrationConstants, CurveGeometry
 export PredictionQuality, PeriodAccumulators, CachedNetworkMeasures, ModelState
 
 # Type utilities
-export effective_history_size, available_capacity, partner_mean
+export effective_history_size, available_capacity, has_current_match, partner_mean
 export record_agent_history!, update_partner_mean!, record_broker_history!
 export reset_accumulators!
 

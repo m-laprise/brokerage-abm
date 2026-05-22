@@ -14,23 +14,28 @@ using Graphs: has_edge, SimpleGraph
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    counterparty_offer_score(pm, agents, G, r) -> (admissible, score)
+    counterparty_offer_score(pm, agents, G, r; ws) -> (admissible, score)
 
 Return whether proposal `pm` clears the counterparty-side participation rule and
-the score used for within-round counterparty ranking. Standard proposals use the
+the score used for within-round counterparty ranking. Proposals to an already
+active current-period counterparty are inadmissible. Standard proposals use the
 counterparty's own evaluation. Principal-mode proposals are admissible without
 counterparty evaluation and are ranked by the broker's own predicted value.
 """
-function counterparty_offer_score(pm::ProposedMatch,
-                                  agents::Vector{Agent},
-                                  G::SimpleGraph,
-                                  r::Float64)
+function counterparty_offer_score(
+    pm::ProposedMatch,
+    agents::Vector{Agent},
+    G::SimpleGraph,
+    r::Float64;
+    ws::SimWorkspace,
+)
+    i = pm.demander_id
+    j = pm.counterparty_id
+    has_current_match(ws, i, j) && return false, -Inf
     if pm.is_principal
         return true, pm.evaluation
     end
 
-    i = pm.demander_id
-    j = pm.counterparty_id
     counterparty_eval = if has_edge(G, j, i) && agents[j].partner_count[i] > 0
         partner_mean(agents[j], i)
     else
@@ -41,23 +46,27 @@ function counterparty_offer_score(pm::ProposedMatch,
 end
 
 """
-    finalize_accepted_proposal!(accepted, pm, agents, broker, env, G, rng; Ax_buf, Bx_buf)
+    finalize_accepted_proposal!(accepted, pm, agents, broker, env, G, rng; Ax_buf, Bx_buf, ws)
 
 Realize one accepted proposal, update histories/network/state, and append the
 accepted-match record.
 """
-function finalize_accepted_proposal!(accepted::Vector{AcceptedMatch},
-                                     pm::ProposedMatch,
-                                     agents::Vector{Agent},
-                                     broker::Broker,
-                                     env::MatchingEnv,
-                                     G::SimpleGraph,
-                                     rng::AbstractRNG;
-                                     Ax_buf::Vector{Float64},
-                                     Bx_buf::Vector{Float64},
-                                     reserved_capacity::Union{Vector{Int}, Nothing} = nothing)
+function finalize_accepted_proposal!(
+    accepted::Vector{AcceptedMatch},
+    pm::ProposedMatch,
+    agents::Vector{Agent},
+    broker::Broker,
+    env::MatchingEnv,
+    G::SimpleGraph,
+    rng::AbstractRNG;
+    Ax_buf::Vector{Float64},
+    Bx_buf::Vector{Float64},
+    reserved_capacity::Union{Vector{Int},Nothing}=nothing,
+    ws::SimWorkspace,
+)
     i = pm.demander_id
     j = pm.counterparty_id
+    @assert !has_current_match(ws, i, j) "Duplicate current-period relationship ($i, $j)"
 
     q_realized = match_output!(Ax_buf, Bx_buf, agents[i].type, agents[j].type, env, rng)
 
@@ -81,14 +90,24 @@ function finalize_accepted_proposal!(accepted::Vector{AcceptedMatch},
         push!(agents[i].active_matches, ActiveMatch(j, false, pm.channel))
         push!(agents[j].active_matches, ActiveMatch(i, false, pm.channel))
     end
+    mark_current_match!(ws, i, j)
 
     agents[i].n_matches_any += 1
     agents[j].n_matches_any += 1
 
-    push!(accepted, (demander_id=i, counterparty_id=j, channel=pm.channel,
-                     is_principal=pm.is_principal, q_realized=q_realized,
-                     q_predicted=pm.evaluation, ask_j=pm.ask_j,
-                     capture_qhat=pm.capture_qhat))
+    push!(
+        accepted,
+        (
+            demander_id=i,
+            counterparty_id=j,
+            channel=pm.channel,
+            is_principal=pm.is_principal,
+            q_realized=q_realized,
+            q_predicted=pm.evaluation,
+            ask_j=pm.ask_j,
+            capture_qhat=pm.capture_qhat,
+        ),
+    )
     return nothing
 end
 
@@ -102,23 +121,25 @@ end
                            ws, accepted_matches=nothing)
 
 Run the approved within-period round protocol. Each round lets every still-live
-demander attempt to fill one slot through its chosen channel. Demanders can
+demander attempt to fill one relationship through its chosen channel. Demanders can
 fall back to next-best candidates within the round via deferred acceptance with
 capacity. A demander that exhausts its feasible list without being held exits
 for the rest of the period.
 """
-function round_match_formation!(demand_agent_ids::Vector{Int},
-                                demand_channels::Vector{Symbol},
-                                demand_counts::Vector{Int},
-                                agents::Vector{Agent},
-                                broker::Broker,
-                                env::MatchingEnv,
-                                G::SimpleGraph,
-                                params::ModelParams,
-                                cal::CalibrationConstants,
-                                rng::AbstractRNG;
-                                ws::SimWorkspace,
-                                accepted_matches::Union{Vector{AcceptedMatch}, Nothing} = nothing)
+function round_match_formation!(
+    demand_agent_ids::Vector{Int},
+    demand_channels::Vector{Symbol},
+    demand_counts::Vector{Int},
+    agents::Vector{Agent},
+    broker::Broker,
+    env::MatchingEnv,
+    G::SimpleGraph,
+    params::ModelParams,
+    cal::CalibrationConstants,
+    rng::AbstractRNG;
+    ws::SimWorkspace,
+    accepted_matches::Union{Vector{AcceptedMatch},Nothing}=nothing,
+)
     accepted = if isnothing(accepted_matches)
         AcceptedMatch[]
     else
@@ -132,18 +153,30 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
     d = params.d
     max_rounds = maximum(demand_counts)
     reserved_capacity = ws.principal_reserved_capacity
+    rebuild_current_match_index!(ws, agents)
 
-    remaining_demand = ws.demand_remaining; resize!(remaining_demand, n_demanders)
+    remaining_demand = ws.demand_remaining;
+    resize!(remaining_demand, n_demanders)
     remaining_demand .= demand_counts
-    demand_failed = ws.demand_failed; resize!(demand_failed, n_demanders); fill!(demand_failed, false)
-    active_positions = ws.round_active_positions; empty!(active_positions)
-    open_agents = ws.round_open_agents; empty!(open_agents)
-    broker_indices = ws.round_broker_indices; empty!(broker_indices)
-    broker_demanders = ws.round_broker_demanders; empty!(broker_demanders)
-    pref_offsets = ws.round_pref_offsets; empty!(pref_offsets)
-    next_pref = ws.round_next_pref; empty!(next_pref)
-    pref_owner = ws.round_pref_owner; empty!(pref_owner)
-    queue = ws.round_queue; empty!(queue)
+    demand_failed = ws.demand_failed;
+    resize!(demand_failed, n_demanders);
+    fill!(demand_failed, false)
+    active_positions = ws.round_active_positions;
+    empty!(active_positions)
+    open_agents = ws.round_open_agents;
+    empty!(open_agents)
+    broker_indices = ws.round_broker_indices;
+    empty!(broker_indices)
+    broker_demanders = ws.round_broker_demanders;
+    empty!(broker_demanders)
+    pref_offsets = ws.round_pref_offsets;
+    empty!(pref_offsets)
+    next_pref = ws.round_next_pref;
+    empty!(next_pref)
+    pref_owner = ws.round_pref_owner;
+    empty!(pref_owner)
+    queue = ws.round_queue;
+    empty!(queue)
     if length(ws.round_agent_to_active) < N
         old = length(ws.round_agent_to_active)
         resize!(ws.round_agent_to_active, N)
@@ -152,8 +185,10 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
         end
     end
     agent_to_active = ws.round_agent_to_active
-    agent_to_active_touched = ws.round_agent_touched; empty!(agent_to_active_touched)
-    outgoing_prop_idx = ws.round_outgoing_prop_idx; empty!(outgoing_prop_idx)
+    agent_to_active_touched = ws.round_agent_touched;
+    empty!(agent_to_active_touched)
+    outgoing_prop_idx = ws.round_outgoing_prop_idx;
+    empty!(outgoing_prop_idx)
     hold_counts = ws.round_hold_counts
     resize!(hold_counts, N)
     if size(ws.round_held_prop_idx, 1) != N || size(ws.round_held_prop_idx, 2) != K
@@ -162,14 +197,20 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
     end
     held_prop_idx = ws.round_held_prop_idx
     held_scores = ws.round_held_scores
-    broker_slot_caps = ws.demander_remaining; empty!(broker_slot_caps)
-    broker_pref_matches = ws.round_broker_pref_matches; empty!(broker_pref_matches)
-    broker_pref_counts = ws.round_broker_pref_counts; empty!(broker_pref_counts)
-    pref_matches = ws.all_proposals; empty!(pref_matches)
+    broker_slot_caps = ws.demander_remaining;
+    empty!(broker_slot_caps)
+    broker_pref_matches = ws.round_broker_pref_matches;
+    empty!(broker_pref_matches)
+    broker_pref_counts = ws.round_broker_pref_counts;
+    empty!(broker_pref_counts)
+    pref_matches = ws.all_proposals;
+    empty!(pref_matches)
     round_capacity = ws.remaining_cap
     resize!(round_capacity, N)
-    wc_i = ws.was_connected_i; empty!(wc_i)
-    wc_j = ws.was_connected_j; empty!(wc_j)
+    wc_i = ws.was_connected_i;
+    empty!(wc_i)
+    wc_j = ws.was_connected_j;
+    empty!(wc_j)
     if length(ws.Ax_buf) != d
         ws.Ax_buf = Vector{Float64}(undef, d)
         ws.Bx_buf = Vector{Float64}(undef, d)
@@ -177,9 +218,15 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
     Ax_buf = ws.Ax_buf
     Bx_buf = ws.Bx_buf
 
-    prepare_period_broker_round_cache!(broker, demand_agent_ids, demand_channels,
-                                       agents, params;
-                                       ws=ws, reserved_capacity=reserved_capacity)
+    prepare_period_broker_round_cache!(
+        broker,
+        demand_agent_ids,
+        demand_channels,
+        agents,
+        params;
+        ws=ws,
+        reserved_capacity=reserved_capacity,
+    )
 
     @inline function requeue_or_fail!(pos::Int)
         idx = active_positions[pos]
@@ -240,23 +287,53 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
         if !isempty(broker_demanders)
             if params.enable_principal
                 principal_round_accepts = execute_inventory_round!(
-                    accepted, remaining_demand, broker_indices, broker_demanders,
-                    agents, broker, env, G, params, cal, rng, wc_i, wc_j;
-                    ws=ws, Ax_buf=Ax_buf, Bx_buf=Bx_buf
+                    accepted,
+                    remaining_demand,
+                    broker_indices,
+                    broker_demanders,
+                    agents,
+                    broker,
+                    env,
+                    G,
+                    params,
+                    cal,
+                    rng,
+                    wc_i,
+                    wc_j;
+                    ws=ws,
+                    Ax_buf=Ax_buf,
+                    Bx_buf=Bx_buf,
+                    current_match_index_ready=true,
                 )
+                if principal_round_accepts > 0
+                    empty!(open_agents)
+                    @inbounds for i in 1:N
+                        cap_i = current_open_capacity(agents, i, K, reserved_capacity)
+                        round_capacity[i] = cap_i
+                        cap_i > 0 && push!(open_agents, i)
+                    end
+                end
             end
             resize!(broker_slot_caps, length(broker_demanders))
             @inbounds for di in eachindex(broker_demanders)
                 did = broker_demanders[di]
                 demand_idx = broker_indices[di]
-                broker_slot_caps[di] = min(remaining_demand[demand_idx], round_capacity[did])
+                broker_slot_caps[di] = min(
+                    remaining_demand[demand_idx], round_capacity[did]
+                )
             end
             append_broker_round_preferences_from_cache!(
-                broker_pref_matches, broker_pref_counts, broker_demanders,
-                agents, params, cal.r;
-                ws=ws, demander_slots=broker_slot_caps,
+                broker_pref_matches,
+                broker_pref_counts,
+                broker_demanders,
+                agents,
+                params,
+                cal.r;
+                ws=ws,
+                demander_slots=broker_slot_caps,
                 reserved_capacity=reserved_capacity,
                 round_capacity=round_capacity,
+                current_match_index_ready=true,
             )
         else
             empty!(broker_pref_matches)
@@ -272,10 +349,20 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
                 continue
             end
             if demand_channels[idx] == :self
-                n_added = append_self_round_preferences!(pref_matches, agents[agent_id], agents, G,
-                                                         broker.node_id, params, rng, cal.r;
-                                                         ws=ws, reserved_capacity=reserved_capacity,
-                                                         open_agents=open_agents)
+                n_added = append_self_round_preferences!(
+                    pref_matches,
+                    agents[agent_id],
+                    agents,
+                    G,
+                    broker.node_id,
+                    params,
+                    rng,
+                    cal.r;
+                    ws=ws,
+                    reserved_capacity=reserved_capacity,
+                    open_agents=open_agents,
+                    current_match_index_ready=true,
+                )
                 for _ in 1:n_added
                     push!(pref_owner, pos)
                 end
@@ -306,7 +393,8 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
             next_pref[pos] = pref_offsets[pos]
             agent_id = demand_agent_ids[active_positions[pos]]
             if remaining_demand[active_positions[pos]] <= 0 || round_capacity[agent_id] <= 0
-                remaining_demand[active_positions[pos]] > 0 && (demand_failed[active_positions[pos]] = true)
+                remaining_demand[active_positions[pos]] > 0 &&
+                    (demand_failed[active_positions[pos]] = true)
                 continue
             end
             push!(queue, pos)
@@ -330,13 +418,23 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
             prop_idx = prop_start
             next_pref[pos] = prop_start + 1
             pm = pref_matches[prop_idx]
-            admissible, hold_score = counterparty_offer_score(pm, agents, G, cal.r)
+            admissible, hold_score = counterparty_offer_score(pm, agents, G, cal.r; ws=ws)
             admissible || (requeue_or_fail!(pos); continue)
 
+            i = pm.demander_id
             j = pm.counterparty_id
             active_j_pos = agent_to_active[j]
-            effective_cap = round_capacity[j] -
-                            ((active_j_pos > 0 && outgoing_prop_idx[active_j_pos] != 0) ? 1 : 0)
+            if active_j_pos > 0
+                reverse_prop_idx = outgoing_prop_idx[active_j_pos]
+                if reverse_prop_idx != 0 &&
+                    pref_matches[reverse_prop_idx].counterparty_id == i
+                    requeue_or_fail!(pos)
+                    continue
+                end
+            end
+            effective_cap =
+                round_capacity[j] -
+                ((active_j_pos > 0 && outgoing_prop_idx[active_j_pos] != 0) ? 1 : 0)
             if effective_cap <= 0
                 requeue_or_fail!(pos)
                 continue
@@ -372,7 +470,6 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
             end
 
             outgoing_prop_idx[pos] = prop_idx
-            i = pm.demander_id
             while hold_counts[i] + 1 > round_capacity[i]
                 worst_slot = 1
                 worst_score = held_scores[i, 1]
@@ -390,8 +487,22 @@ function round_match_formation!(demand_agent_ids::Vector{Int},
         @inbounds for pos in eachindex(active_positions)
             prop_idx = outgoing_prop_idx[pos]
             prop_idx == 0 && continue
-            finalize_accepted_proposal!(accepted, pref_matches[prop_idx], agents, broker, env, G, rng;
-                                        Ax_buf=Ax_buf, Bx_buf=Bx_buf)
+            pm = pref_matches[prop_idx]
+            if has_current_match(ws, pm.demander_id, pm.counterparty_id)
+                continue
+            end
+            finalize_accepted_proposal!(
+                accepted,
+                pm,
+                agents,
+                broker,
+                env,
+                G,
+                rng;
+                Ax_buf=Ax_buf,
+                Bx_buf=Bx_buf,
+                ws=ws,
+            )
             remaining_demand[active_positions[pos]] -= 1
             round_accepts += 1
         end
@@ -416,22 +527,25 @@ end
                          broker_standard_count=nothing)
 
 Update satisfaction indices for all agents that had demand this period.
-Requested slots are the averaging unit: realized outcomes are summed over
-accepted matches, unfilled slots contribute zero output, and the total is
-divided by requested demand d_i. Self-search pays c_s per requested slot,
-regardless of whether that slot is filled; standard broker fees are charged
+Requested relationship positions are the averaging unit: realized outcomes are
+summed over accepted matches, unfilled positions contribute zero output, and the
+total is divided by requested demand d_i. Self-search pays c_s per requested
+position, regardless of whether that position is filled; standard broker fees
+are charged
 only on successful standard brokered matches; principal-mode matches carry no
 demander fee.
 """
-function update_satisfaction!(agents::Vector{Agent},
-                              accepted_matches::Vector{<:NamedTuple},
-                              demand_agent_ids::Vector{Int},
-                              demand_channels::Vector{Symbol},
-                              demand_counts::Vector{Int},
-                              cal::CalibrationConstants,
-                              params::ModelParams;
-                              demander_sum::Union{Vector{Float64}, Nothing} = nothing,
-                              broker_standard_count::Union{Vector{Int}, Nothing} = nothing)
+function update_satisfaction!(
+    agents::Vector{Agent},
+    accepted_matches::Vector{<:NamedTuple},
+    demand_agent_ids::Vector{Int},
+    demand_channels::Vector{Symbol},
+    demand_counts::Vector{Int},
+    cal::CalibrationConstants,
+    params::ModelParams;
+    demander_sum::Union{Vector{Float64},Nothing}=nothing,
+    broker_standard_count::Union{Vector{Int},Nothing}=nothing,
+)
     omega = params.omega
     n_agents = length(agents)
 
@@ -472,11 +586,13 @@ function update_satisfaction!(agents::Vector{Agent},
         total_q = demander_sum[agent_id]
         if channel == :self
             tilde_q = total_q / d_i - cal.c_s
-            agent.satisfaction_self = (1.0 - omega) * agent.satisfaction_self + omega * tilde_q
+            agent.satisfaction_self =
+                (1.0 - omega) * agent.satisfaction_self + omega * tilde_q
         else
             broker_fee = cal.phi * broker_standard_count[agent_id]
             tilde_q = (total_q - broker_fee) / d_i
-            agent.satisfaction_broker = (1.0 - omega) * agent.satisfaction_broker + omega * tilde_q
+            agent.satisfaction_broker =
+                (1.0 - omega) * agent.satisfaction_broker + omega * tilde_q
             agent.tried_broker = true
         end
     end
@@ -500,9 +616,7 @@ Agent chooses :self or :broker. Compares two reduced-form channel scores:
 The agent outsources only if the broker beats the self-search channel's current
 reduced-form value.
 """
-function outsourcing_decision(agent::Agent,
-                              broker_rep::Float64,
-                              rng::AbstractRNG)::Symbol
+function outsourcing_decision(agent::Agent, broker_rep::Float64, rng::AbstractRNG)::Symbol
     score_self = agent.satisfaction_self
     score_broker = agent.tried_broker ? agent.satisfaction_broker : broker_rep
 
@@ -535,8 +649,9 @@ end
 Update broker reputation to mean broker satisfaction of current clients.
 If no clients this period, hold previous value.
 """
-function update_broker_reputation!(broker::Broker, agents::Vector{Agent},
-                                   client_ids::AbstractVector{Int})
+function update_broker_reputation!(
+    broker::Broker, agents::Vector{Agent}, client_ids::AbstractVector{Int}
+)
     isempty(client_ids) && return nothing
     total = 0.0
     @inbounds for cid in client_ids

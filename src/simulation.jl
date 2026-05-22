@@ -74,7 +74,7 @@ function collect_period_metrics(state::ModelState)
         mean(abs.(a.broker_predicted .- a.broker_realized))
 
     # ── Capture outcome and decision quality (§12i) ──
-    # Δq_ij = realized slot value minus q̄_j for all acquired slots, placed or unplaced.
+    # Δq_ij = realized position value minus q̄_j for all acquired positions, placed or unplaced.
     n_principal = length(a.q_broker_principal)
     n_capture = length(a.capture_realized)
     capture_delta = n_capture == 0 ? Float64[] :
@@ -86,7 +86,7 @@ function collect_period_metrics(state::ModelState)
         mean(abs(d) for d in capture_delta if d < 0.0)
 
     # Capture decision quality: Spearman ρ and RMSE on the principal-mode subset.
-    # NaN when fewer than 5 acquired slots to keep the metric comparable to selected_r2.
+    # NaN when fewer than 5 acquired positions to keep the metric comparable to selected_r2.
     if n_capture >= 5
         expected_delta = a.capture_qhat .- a.capture_ask
         capture_decision_rank = corspearman(expected_delta, capture_delta)

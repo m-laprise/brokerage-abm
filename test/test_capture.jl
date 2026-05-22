@@ -2,7 +2,6 @@ using Test
 using TransientBrokerage
 
 @testset "Resource Capture (Principal Mode)" begin
-
     @testset "counterparty_ask uses history mean" begin
         p = default_params(N=20, T=5, T_burn=1, seed=42)
         state = initialize_model(p)
@@ -44,14 +43,15 @@ using TransientBrokerage
         @test isempty(state.workspace.principal_inventory_ids)
     end
 
-    @testset "score_capture_block uses whole current block and current depth" begin
+    @testset "score_capture_block uses whole current block and distinct current depth" begin
         p = default_params(N=10, K=3, seed=42, enable_principal=true)
         state = initialize_model(p)
         state.agents[4].history_count = 1
         state.agents[4].history_q[1] = 1.0
+        TransientBrokerage.rebuild_current_match_index!(state.workspace, state.agents)
 
         score = TransientBrokerage.score_capture_block!(
-            Tuple{Float64, Int}[],
+            Tuple{Float64,Int}[],
             reshape([4.5, 2.7, 0.8], 3, 1),
             [4],
             1,
@@ -59,7 +59,8 @@ using TransientBrokerage
             [2, 1, 1],
             state.agents,
             state.cal,
-            p.K,
+            p.K;
+            ws=state.workspace,
         )
 
         @test score.counterparty_id == 4
@@ -67,8 +68,37 @@ using TransientBrokerage
         @test score.filled
         @test score.profitable_depth == 2
         expected_margin =
-            2 * (4.5 - 1.0 - state.cal.phi) +
-            1 * (2.7 - 1.0 - state.cal.phi)
+            (4.5 - 1.0 - state.cal.phi) +
+            (2.7 - 1.0 - state.cal.phi) +
+            (0.8 - 1.0 - state.cal.phi)
+        @test score.block_margin ≈ expected_margin
+    end
+
+    @testset "score_capture_block excludes already active relationships" begin
+        p = default_params(N=10, K=3, seed=43, enable_principal=true)
+        state = initialize_model(p)
+        state.agents[4].history_count = 1
+        state.agents[4].history_q[1] = 1.0
+        push!(state.agents[1].active_matches, ActiveMatch(4, false, :self))
+        push!(state.agents[4].active_matches, ActiveMatch(1, false, :self))
+        TransientBrokerage.rebuild_current_match_index!(state.workspace, state.agents)
+
+        score = TransientBrokerage.score_capture_block!(
+            Tuple{Float64,Int}[],
+            reshape([9.0, 4.0, 3.0], 3, 1),
+            [4],
+            1,
+            [1, 2, 3],
+            [1, 1, 1],
+            state.agents,
+            state.cal,
+            p.K;
+            ws=state.workspace,
+        )
+
+        @test score.cap_j == 2
+        @test score.filled
+        expected_margin = (4.0 - 1.0 - state.cal.phi) + (3.0 - 1.0 - state.cal.phi)
         @test score.block_margin ≈ expected_margin
     end
 
@@ -78,22 +108,24 @@ using TransientBrokerage
         state.broker.capture_confidence_mae = 0.1
         state.agents[4].history_count = 1
         state.agents[4].history_q[1] = 1.0
+        TransientBrokerage.rebuild_current_match_index!(state.workspace, state.agents)
 
         one_demander = TransientBrokerage.best_capture_block!(
-            Tuple{Float64, Int}[],
-            reshape([4.5, 1.4], 2, 1),
+            Tuple{Float64,Int}[],
+            reshape([6.0, 1.0, 1.0], 3, 1),
             [4],
-            [1, 2],
-            [3, 1],
+            [1, 2, 3],
+            [1, 1, 1],
             state.agents,
             state.broker,
             state.cal,
-            p.K,
+            p.K;
+            ws=state.workspace,
         )
         @test isnothing(one_demander)
 
         unfilled = TransientBrokerage.best_capture_block!(
-            Tuple{Float64, Int}[],
+            Tuple{Float64,Int}[],
             reshape([4.5, 4.2], 2, 1),
             [4],
             [1, 2],
@@ -101,12 +133,13 @@ using TransientBrokerage
             state.agents,
             state.broker,
             state.cal,
-            p.K,
+            p.K;
+            ws=state.workspace,
         )
         @test isnothing(unfilled)
     end
 
-    @testset "literal acquisition plans whole block before rounds and executes one slot per demander per round" begin
+    @testset "literal acquisition plans whole block with distinct demanders" begin
         p = default_params(N=10, K=3, T=5, T_burn=1, seed=42, enable_principal=true)
         state = initialize_model(p)
         state.broker.capture_confidence_ready = true
@@ -121,9 +154,9 @@ using TransientBrokerage
         state.agents[4].history_q[1] = 1.0
 
         n_blocks = TransientBrokerage.plan_period_capture!(
-            [1, 2],
-            [:broker, :broker],
-            [2, 1],
+            [1, 2, 3],
+            [:broker, :broker, :broker],
+            [2, 1, 1],
             state.agents,
             state.broker,
             p,
@@ -135,12 +168,14 @@ using TransientBrokerage
         @test state.workspace.principal_inventory_ids == [4]
         @test state.workspace.principal_inventory_asks == [1.0]
         @test state.workspace.principal_reserved_capacity[4] == 3
-        @test available_capacity(state.agents[4], p.K, state.workspace.principal_reserved_capacity[4]) == 0
+        @test available_capacity(
+            state.agents[4], p.K, state.workspace.principal_reserved_capacity[4]
+        ) == 0
 
         accepted = TransientBrokerage.AcceptedMatch[]
-        remaining_demand = [2, 1]
-        broker_indices = [1, 2]
-        broker_demanders = [1, 2]
+        remaining_demand = [2, 1, 1]
+        broker_indices = [1, 2, 3]
+        broker_demanders = [1, 2, 3]
         wc_i = Int[]
         wc_j = Int[]
 
@@ -163,15 +198,17 @@ using TransientBrokerage
             Bx_buf=Vector{Float64}(undef, p.d),
         )
 
-        @test n_captured == 2
-        @test remaining_demand == [1, 0]
-        @test length(accepted) == 2
+        @test n_captured == 3
+        @test remaining_demand == [1, 0, 0]
+        @test length(accepted) == 3
         @test all(m -> m.is_principal, accepted)
         @test count(==(1), getfield.(accepted, :demander_id)) == 1
         @test count(==(2), getfield.(accepted, :demander_id)) == 1
+        @test count(==(3), getfield.(accepted, :demander_id)) == 1
         @test all(==(4), getfield.(accepted, :counterparty_id))
-        @test state.workspace.principal_reserved_capacity[4] == 1
-        @test length(state.agents[4].active_matches) == 2
+        @test state.workspace.principal_reserved_capacity[4] == 0
+        @test length(state.agents[4].active_matches) == 3
+        @test length(unique(getfield.(state.agents[4].active_matches, :partner_id))) == 3
 
         wc_i2 = Int[]
         wc_j2 = Int[]
@@ -194,8 +231,8 @@ using TransientBrokerage
             Bx_buf=Vector{Float64}(undef, p.d),
         )
 
-        @test n_captured2 == 1
-        @test remaining_demand == [0, 0]
+        @test n_captured2 == 0
+        @test remaining_demand == [1, 0, 0]
         @test length(accepted) == 3
         @test state.workspace.principal_reserved_capacity[4] == 0
     end

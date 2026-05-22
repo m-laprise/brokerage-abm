@@ -12,7 +12,7 @@ const R_BASE_FRAC = 0.60
 
 # Shared search-cost rate, expressed as a share of the calibration surplus
 # scale (q_cal - r). Both channels use the same level, but the self-search cost
-# remains per demanded slot while the broker fee remains contingent on realized
+# remains per demanded relationship position while the broker fee remains contingent on realized
 # standard placements.
 const SEARCH_COST_RATE_BASE = 0.15
 
@@ -32,7 +32,7 @@ roster_target_size(N::Int) = min(N, ceil(Int, ROSTER_TARGET_FRAC * N))
 
 Construct a `ModelParams` with baseline defaults, overriding any field via keyword arguments.
 """
-function default_params(; seed::Int = 42, kwargs...)::ModelParams
+function default_params(; seed::Int=42, kwargs...)::ModelParams
     defaults = Dict{Symbol,Any}(
         # Population and types
         :N => 1000,

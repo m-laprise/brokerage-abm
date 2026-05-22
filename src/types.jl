@@ -67,8 +67,7 @@ end
 # Current-period match tracking
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""A single current-period match in an agent's match list. The same partner may
-appear multiple times (concurrent matches with the same counterparty are allowed)."""
+"""A single current-period relationship in an agent's match list."""
 struct ActiveMatch
     partner_id::Int
     is_principal::Bool   # false = standard brokered or self-search; true = principal mode (Model 1)
@@ -84,7 +83,7 @@ Base.@kwdef mutable struct Agent
     id::Int
     type::Vector{Float64}                    # x_i on the unit sphere, length d
 
-    # Current-period matches (list, allows duplicates; length <= K)
+    # Current-period relationships (distinct counterparties; length <= K)
     active_matches::Vector{ActiveMatch} = ActiveMatch[]
 
     # Experience history: d x capacity matrix (column-major, doubling growth)
@@ -124,15 +123,26 @@ end
 """Number of valid history entries for an agent."""
 effective_history_size(agent::Agent) = agent.history_count
 
-"""Available capacity: K minus active matches."""
+"""Available relationship capacity: K minus active counterparties."""
 available_capacity(agent::Agent, K::Int) = K - length(agent.active_matches)
 
-"""Available capacity after subtracting period-local reserved principal inventory."""
-available_capacity(agent::Agent, K::Int, blocked_slots::Int) =
+"""Available capacity after subtracting period-local reserved principal positions."""
+function available_capacity(agent::Agent, K::Int, blocked_slots::Int)
     max(K - length(agent.active_matches) - blocked_slots, 0)
+end
+
+"""True if the agent currently has a relationship with `partner_id`."""
+@inline function has_current_match(agent::Agent, partner_id::Int)::Bool
+    @inbounds for am in agent.active_matches
+        am.partner_id == partner_id && return true
+    end
+    return false
+end
 
 """True if the agent currently participates in at least one broker-channel match."""
-has_active_broker_match(agent::Agent) = any(am -> am.channel == :broker, agent.active_matches)
+function has_active_broker_match(agent::Agent)
+    any(am -> am.channel == :broker, agent.active_matches)
+end
 
 """Mean realized output with partner j, or NaN if no prior match."""
 function partner_mean(agent::Agent, j::Int)
@@ -141,7 +151,9 @@ function partner_mean(agent::Agent, j::Int)
 end
 
 """Record a new observation to agent's history, growing the buffer if needed."""
-function record_agent_history!(agent::Agent, partner_type::AbstractVector{Float64}, q::Float64)
+function record_agent_history!(
+    agent::Agent, partner_type::AbstractVector{Float64}, q::Float64
+)
     agent.history_count += 1
     agent.n_new_obs += 1
     n = agent.history_count
@@ -177,7 +189,7 @@ end
 
 `ask_j` caches the counterparty's acquisition reservation q̄_j at the time the
 broker commits to principal capture. `capture_qhat` caches the broker's
-acquisition-time slot forecast for principal inventory exposure. Both are NaN
+acquisition-time position forecast for principal inventory exposure. Both are NaN
 for non-principal proposals. Caching keeps the recorded capture decision aligned
 with the broker's ex-ante acquisition rule even if execution occurs later in
 the period."""
@@ -193,9 +205,17 @@ end
 
 """Accepted match record emitted by sequential formation and consumed later in the same step."""
 const AcceptedMatch = NamedTuple{
-    (:demander_id, :counterparty_id, :channel, :is_principal, :q_realized,
-     :q_predicted, :ask_j, :capture_qhat),
-    Tuple{Int, Int, Symbol, Bool, Float64, Float64, Float64, Float64},
+    (
+        :demander_id,
+        :counterparty_id,
+        :channel,
+        :is_principal,
+        :q_realized,
+        :q_predicted,
+        :ask_j,
+        :capture_qhat,
+    ),
+    Tuple{Int,Int,Symbol,Bool,Float64,Float64,Float64,Float64},
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -239,8 +259,9 @@ end
 effective_history_size(broker::Broker) = broker.history_count
 
 """Record a brokered observation to the broker's history, growing buffers if needed."""
-function record_broker_history!(broker::Broker, xi::AbstractVector{Float64},
-                                xj::AbstractVector{Float64}, q::Float64)
+function record_broker_history!(
+    broker::Broker, xi::AbstractVector{Float64}, xj::AbstractVector{Float64}, q::Float64
+)
     broker.history_count += 1
     broker.n_new_obs += 1
     n = broker.history_count
@@ -293,7 +314,7 @@ struct CalibrationConstants
     q_cal::Float64     # calibration reference E[q] (scales r, phi, c_s; not used for initialization)
     r::Float64         # outside option (0.60 * q_cal)
     phi::Float64       # successful standard-placement fee
-    c_s::Float64       # self-search cost per demanded slot
+    c_s::Float64       # self-search cost per demanded relationship position
 end
 
 """Prediction quality metrics: R-squared, bias, and rank correlation."""
@@ -332,10 +353,10 @@ Base.@kwdef mutable struct PeriodAccumulators
     q_broker_standard::Vector{Float64} = Float64[]
     q_broker_principal::Vector{Float64} = Float64[]
 
-    # Slot-level acquisition exposures in Model 1.
-    # - capture_realized: realized value of the acquired slot, 0 if unplaced
-    # - capture_ask: acquisition reservation q̄_j paid for the slot
-    # - capture_qhat: acquisition-time forecast used to justify the slot
+    # Position-level acquisition exposures in Model 1.
+    # - capture_realized: realized value of the acquired position, 0 if unplaced
+    # - capture_ask: acquisition reservation q̄_j paid for the position
+    # - capture_qhat: acquisition-time forecast used to justify the position
     # These feed both κ_b^t and the capture diagnostics (§12i).
     capture_realized::Vector{Float64} = Float64[]
     capture_ask::Vector{Float64} = Float64[]
@@ -351,8 +372,8 @@ Base.@kwdef mutable struct PeriodAccumulators
     # Outsourcing rate and demand
     n_demanders::Int = 0
     n_outsourced::Int = 0           # demanders who chose the broker channel
-    outsourced_slots::Int = 0       # demand slots routed through the broker channel
-    total_demand::Int = 0           # total demand slots across all demanders
+    outsourced_slots::Int = 0       # requested positions routed through the broker channel
+    total_demand::Int = 0           # total requested positions across all demanders
 
     # Prediction/outcome pairs from actual matches (subject to selection bias)
     agent_predicted::Vector{Float64} = Float64[]
@@ -448,8 +469,8 @@ struct ModelParams
     sigma_eps::Float64           # match output noise SD (default 0.10)
 
     # Match accounting
-    K::Int                       # match capacity (default 5)
-    p_demand::Float64            # per-slot demand probability (default 0.50)
+    K::Int                       # distinct-counterparty capacity (default 5)
+    p_demand::Float64            # per-position demand probability (default 0.50)
 
     # Network
     k::Int                       # Watts-Strogatz ring lattice degree (default 6)
@@ -502,6 +523,9 @@ Base.@kwdef mutable struct SimWorkspace
     nbr_mask::Vector{Bool} = Bool[]
     # Tracks which indices we set in nbr_mask this call, so we can clear only those.
     nbr_marked::Vector{Int} = Int[]
+    # Current-pair index: exact symmetric cache of active_matches for hot duplicate checks.
+    current_match_mask::Matrix{Bool} = Matrix{Bool}(undef, 0, 0)
+    current_match_touched::Vector{Int} = Int[]
 
     roster_members::Vector{Int} = Int[]
     roster_capacity::Vector{Int} = Int[]
@@ -518,15 +542,15 @@ Base.@kwdef mutable struct SimWorkspace
     unique_demanders::Vector{Int} = Int[]
     demander_idx::Vector{Int} = Int[]
     demander_touched::Vector{Int} = Int[]  # which entries of demander_idx we set
-    demander_remaining::Vector{Int} = Int[]  # slots remaining per unique demander
+    demander_remaining::Vector{Int} = Int[]  # positions remaining per unique demander
     # Sorted greedy: pre-allocated (negated_val, flat_index) pairs, sorted in-place.
-    sort_pairs::Vector{Tuple{Float64, Int}} = Tuple{Float64, Int}[]
+    sort_pairs::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
 
     # step_period! per-period scratch (avoids Dict/Set allocation each period)
     demand_agent_ids::Vector{Int} = Int[]     # agents with demand
     demand_channels::Vector{Symbol} = Symbol[]  # channel per demander
     demand_counts::Vector{Int} = Int[]        # d_i per demander
-    demand_remaining::Vector{Int} = Int[]     # remaining slots by demander index during round matching
+    demand_remaining::Vector{Int} = Int[]     # remaining positions by demander index during round matching
     demand_failed::Vector{Bool} = Bool[]      # demander exhausted feasible set this period
     broker_clients_ws::Vector{Int} = Int[]
     was_connected_i::Vector{Int} = Int[]  # pre-formation edge snapshot
@@ -597,4 +621,53 @@ Base.@kwdef mutable struct ModelState
     accum::PeriodAccumulators = PeriodAccumulators()
     cached_network::CachedNetworkMeasures = CachedNetworkMeasures()
     workspace::SimWorkspace = SimWorkspace()
+end
+
+"""Clear the current-period match index using sparse touched coordinates."""
+function reset_current_match_index!(ws::SimWorkspace, N::Int)
+    mask = ws.current_match_mask
+    touched = ws.current_match_touched
+    if size(mask, 1) != N || size(mask, 2) != N
+        ws.current_match_mask = falses(N, N)
+        empty!(touched)
+        return ws.current_match_mask
+    end
+    @inbounds for idx in touched
+        mask[idx] = false
+    end
+    empty!(touched)
+    return mask
+end
+
+"""Mark agents `i` and `j` as current-period counterparties in the workspace index."""
+@inline function mark_current_match!(ws::SimWorkspace, i::Int, j::Int)
+    mask = ws.current_match_mask
+    touched = ws.current_match_touched
+    @inbounds if !mask[i, j]
+        mask[i, j] = true
+        mask[j, i] = true
+        n = size(mask, 1)
+        push!(touched, i + (j - 1) * n)
+        push!(touched, j + (i - 1) * n)
+    end
+    return nothing
+end
+
+"""Rebuild the workspace current-period match index from agents' active matches."""
+function rebuild_current_match_index!(ws::SimWorkspace, agents::Vector{Agent})
+    N = length(agents)
+    reset_current_match_index!(ws, N)
+    @inbounds for i in 1:N
+        for am in agents[i].active_matches
+            j = am.partner_id
+            1 <= j <= N || continue
+            mark_current_match!(ws, i, j)
+        end
+    end
+    return nothing
+end
+
+"""True if the workspace current-pair index marks agents `i` and `j` as matched."""
+@inline function has_current_match(ws::SimWorkspace, i::Int, j::Int)::Bool
+    return @inbounds ws.current_match_mask[i, j]
 end

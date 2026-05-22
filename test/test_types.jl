@@ -4,7 +4,6 @@ using StableRNGs: StableRNG
 using LinearAlgebra: norm
 
 @testset "Types and Parameters" begin
-
     @testset "default_params construction" begin
         p = default_params()
         @test p isa ModelParams
@@ -116,11 +115,15 @@ using LinearAlgebra: norm
         p = default_params(N=20)
         nn = init_neural_net(p.d, p.h_a, rng)
         agent = Agent(
-            id=1, type=randn(rng, p.d),
+            id=1,
+            type=randn(rng, p.d),
             history_X=Matrix{Float64}(undef, p.d, 4),  # small initial capacity
             history_q=Vector{Float64}(undef, 4),
-            nn=nn, nn_grad=NNGradBuffers(nn), predict_buf=zeros(p.h_a),
-            partner_sum=zeros(20), partner_count=zeros(Int, 20),
+            nn=nn,
+            nn_grad=NNGradBuffers(nn),
+            predict_buf=zeros(p.h_a),
+            partner_sum=zeros(20),
+            partner_count=zeros(Int, 20),
         )
 
         # Record 4 observations (fills initial capacity)
@@ -160,9 +163,12 @@ using LinearAlgebra: norm
         broker.history_count = 0
         broker.n_new_obs = 0
 
-        xi1 = randn(rng, d); xj1 = randn(rng, d)
-        xi2 = randn(rng, d); xj2 = randn(rng, d)
-        xi3 = randn(rng, d); xj3 = randn(rng, d)
+        xi1 = randn(rng, d);
+        xj1 = randn(rng, d)
+        xi2 = randn(rng, d);
+        xj2 = randn(rng, d)
+        xi3 = randn(rng, d);
+        xj3 = randn(rng, d)
         record_broker_history!(broker, xi1, xj1, 1.0)
         record_broker_history!(broker, xi2, xj2, 2.0)
         record_broker_history!(broker, xi3, xj3, 3.0)  # triggers growth
@@ -180,11 +186,15 @@ using LinearAlgebra: norm
         p = default_params(N=10)
         nn = init_neural_net(p.d, p.h_a, rng)
         agent = Agent(
-            id=1, type=randn(rng, p.d),
+            id=1,
+            type=randn(rng, p.d),
             history_X=Matrix{Float64}(undef, p.d, 16),
             history_q=Vector{Float64}(undef, 16),
-            nn=nn, nn_grad=NNGradBuffers(nn), predict_buf=zeros(p.h_a),
-            partner_sum=zeros(10), partner_count=zeros(Int, 10),
+            nn=nn,
+            nn_grad=NNGradBuffers(nn),
+            predict_buf=zeros(p.h_a),
+            partner_sum=zeros(10),
+            partner_count=zeros(Int, 10),
         )
 
         # No history with partner 3
@@ -202,23 +212,50 @@ using LinearAlgebra: norm
         p = default_params(N=10, K=3)
         nn = init_neural_net(p.d, p.h_a, rng)
         agent = Agent(
-            id=1, type=randn(rng, p.d),
+            id=1,
+            type=randn(rng, p.d),
             history_X=Matrix{Float64}(undef, p.d, 16),
             history_q=Vector{Float64}(undef, 16),
-            nn=nn, nn_grad=NNGradBuffers(nn), predict_buf=zeros(p.h_a),
-            partner_sum=zeros(10), partner_count=zeros(Int, 10),
+            nn=nn,
+            nn_grad=NNGradBuffers(nn),
+            predict_buf=zeros(p.h_a),
+            partner_sum=zeros(10),
+            partner_count=zeros(Int, 10),
         )
 
         @test available_capacity(agent, 3) == 3
+        @test !has_current_match(agent, 2)
         push!(agent.active_matches, ActiveMatch(2, false, :self))
         @test available_capacity(agent, 3) == 2
+        @test has_current_match(agent, 2)
+        @test !has_current_match(agent, 3)
         push!(agent.active_matches, ActiveMatch(3, false, :broker))
-        push!(agent.active_matches, ActiveMatch(3, false, :broker))  # duplicate partner allowed
+        push!(agent.active_matches, ActiveMatch(4, false, :broker))
         @test available_capacity(agent, 3) == 0
     end
 
+    @testset "Current-match workspace index" begin
+        state = initialize_model(default_params(N=10, K=3, seed=101))
+        ws = TransientBrokerage.SimWorkspace()
+        agents = state.agents
+
+        push!(agents[1].active_matches, ActiveMatch(2, false, :self))
+        TransientBrokerage.rebuild_current_match_index!(ws, agents)
+        @test has_current_match(ws, 1, 2)
+        @test has_current_match(ws, 2, 1)
+        @test !has_current_match(ws, 1, 3)
+
+        TransientBrokerage.mark_current_match!(ws, 2, 3)
+        @test has_current_match(ws, 2, 3)
+        @test has_current_match(ws, 3, 2)
+
+        TransientBrokerage.reset_current_match_index!(ws, length(agents))
+        @test !has_current_match(ws, 1, 2)
+        @test !has_current_match(ws, 2, 3)
+    end
+
     @testset "CurveGeometry" begin
-        geo = CurveGeometry(8, 6, [1,2,3,4,5,1], rand(6))
+        geo = CurveGeometry(8, 6, [1, 2, 3, 4, 5, 1], rand(6))
         @test geo.d == 8
         @test geo.s == 6
         @test length(geo.freqs) == 6
