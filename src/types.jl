@@ -506,12 +506,14 @@ end
 # Model state
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""
-Pre-allocated per-step scratch buffers reused across agents and calls.
-Lives on ModelState; reset between uses via `empty!` on the vector fields.
-"""
-Base.@kwdef mutable struct SimWorkspace
-    # Search scratch
+"""Exact symmetric index of current-period agent-agent relationships."""
+Base.@kwdef mutable struct CurrentMatchWorkspace
+    mask::Matrix{Bool} = Matrix{Bool}(undef, 0, 0)
+    touched::Vector{Int} = Int[]
+end
+
+"""Reusable buffers for self-search candidate construction and ranking."""
+Base.@kwdef mutable struct SearchWorkspace
     neighbor_ids::Vector{Int} = Int[]
     neighbor_evals::Vector{Float64} = Float64[]
     # Neighbor bitset: nbr_mask[j] = true iff j is a neighbor of the current agent.
@@ -519,41 +521,51 @@ Base.@kwdef mutable struct SimWorkspace
     nbr_mask::Vector{Bool} = Bool[]
     # Tracks which indices we set in nbr_mask this call, so we can clear only those.
     nbr_marked::Vector{Int} = Int[]
-    # Current-pair index: exact symmetric cache of active_matches for hot duplicate checks.
-    current_match_mask::Matrix{Bool} = Matrix{Bool}(undef, 0, 0)
-    current_match_touched::Vector{Int} = Int[]
+    period_strangers::Vector{Int} = Int[]
+    # Sorted greedy: pre-allocated (negated_val, flat_index) pairs, sorted in-place.
+    sort_pairs::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
+end
 
+"""Reusable buffers for broker access deduplication, pair scoring, and batch prediction."""
+Base.@kwdef mutable struct BrokerPairWorkspace
     access_seen::Vector{Bool} = Bool[]
     access_touched::Vector{Int} = Int[]  # sparse-clear markers for broker access deduplication
     # Batched prediction scratch
     Z_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # 2d x n_pairs input
     H_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # h x n_pairs hidden
     Y_batch::Vector{Float64} = Float64[]                      # n_pairs output
-    # Sorted greedy: pre-allocated (negated_val, flat_index) pairs, sorted in-place.
-    sort_pairs::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
-
-    # step_period! per-period scratch (avoids Dict/Set allocation each period)
-    demand_agent_ids::Vector{Int} = Int[]     # agents with demand
-    demand_channels::Vector{Symbol} = Symbol[]  # channel per demander
-    demand_counts::Vector{Int} = Int[]        # d_i per demander
-    broker_clients_ws::Vector{Int} = Int[]
-    demander_q_sum::Vector{Float64} = Float64[]   # realized output by demander id
-    broker_standard_count::Vector{Int} = Int[]    # successful standard broker matches by demander id
-    principal_payment::Vector{Float64} = Float64[] # capture payments by origin id
-    accepted_matches::Vector{AcceptedMatch} = AcceptedMatch[]
     period_broker_demanders::Vector{Int} = Int[]
     period_broker_access_ids::Vector{Int} = Int[]
-    period_strangers::Vector{Int} = Int[]
-    offers::Vector{DirectedOffer} = DirectedOffer[]
-    offer_index::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    offer_index_touched::Vector{Int} = Int[]
-    offer_pairs::Vector{Tuple{Int,Int}} = Tuple{Int,Int}[]
-    offer_remaining::Vector{Int} = Int[]
     broker_pair_scores::Vector{Tuple{Float64,Int,Int}} = Tuple{Float64,Int,Int}[]
     broker_demander_mask::Vector{Bool} = Bool[]
     broker_demander_touched::Vector{Int} = Int[]
     broker_access_mask::Vector{Bool} = Bool[]
     broker_access_touched::Vector{Int} = Int[]
+end
+
+"""Directed-offer book keyed by ordered pairs and iterated by unordered pairs."""
+Base.@kwdef mutable struct OfferBook
+    offers::Vector{DirectedOffer} = DirectedOffer[]
+    offer_index::Matrix{Int} = Matrix{Int}(undef, 0, 0)
+    offer_index_touched::Vector{Int} = Int[]
+    offer_pairs::Vector{Tuple{Int,Int}} = Tuple{Int,Int}[]
+end
+
+"""Reusable period ledger for demand, satisfaction, payment, and match buffers."""
+Base.@kwdef mutable struct PeriodLedger
+    demand_agent_ids::Vector{Int} = Int[]       # agents with demand
+    demand_channels::Vector{Symbol} = Symbol[]  # channel per demander
+    demand_counts::Vector{Int} = Int[]          # d_i per demander
+    broker_clients_ws::Vector{Int} = Int[]
+    demander_q_sum::Vector{Float64} = Float64[]   # realized output by demander id
+    broker_standard_count::Vector{Int} = Int[]    # successful standard broker matches by demander id
+    principal_payment::Vector{Float64} = Float64[] # capture payments by origin id
+    accepted_matches::Vector{AcceptedMatch} = AcceptedMatch[]
+    offer_remaining::Vector{Int} = Int[]
+end
+
+"""Reusable buffers for client-origin resource-capture planning."""
+Base.@kwdef mutable struct CaptureWorkspace
     captured_origin_mask::Vector{Bool} = Bool[]
     captured_origin_touched::Vector{Int} = Int[]
     capture_candidate_lots::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
@@ -562,20 +574,41 @@ Base.@kwdef mutable struct SimWorkspace
     capture_asks::Vector{Float64} = Float64[]
     capture_plan_recipients::Vector{Int} = Int[]
     capture_plan_qhats::Vector{Float64} = Float64[]
+end
 
-    # Holdout evaluation scratch (reused each period in step.jl)
+"""Reusable deterministic holdout-diagnostics buffers."""
+Base.@kwdef mutable struct HoldoutWorkspace
+    z_buf::Vector{Float64} = Float64[]
+    agent_preds::Vector{Float64} = Float64[]
+    agent_trues::Vector{Float64} = Float64[]
+    broker_preds::Vector{Float64} = Float64[]
+    agent_ids::Vector{Int} = Int[]
+    partner_ids::Vector{Int} = Int[]
+    pred_order::Vector{Int} = Int[]
+    true_order::Vector{Int} = Int[]
+    pred_ranks::Vector{Float64} = Float64[]
+    true_ranks::Vector{Float64} = Float64[]
+end
+
+"""Reusable buffers for deterministic and stochastic match-output calculations."""
+Base.@kwdef mutable struct MatchOutputWorkspace
     Ax_buf::Vector{Float64} = Float64[]
     Bx_buf::Vector{Float64} = Float64[]
-    holdout_z_buf::Vector{Float64} = Float64[]
-    holdout_agent_preds::Vector{Float64} = Float64[]
-    holdout_agent_trues::Vector{Float64} = Float64[]
-    holdout_broker_preds::Vector{Float64} = Float64[]
-    holdout_agent_ids::Vector{Int} = Int[]
-    holdout_partner_ids::Vector{Int} = Int[]
-    holdout_pred_order::Vector{Int} = Int[]
-    holdout_true_order::Vector{Int} = Int[]
-    holdout_pred_ranks::Vector{Float64} = Float64[]
-    holdout_true_ranks::Vector{Float64} = Float64[]
+end
+
+"""
+Pre-allocated per-step scratch buffers reused across agents and calls.
+Sub-workspaces keep mutable scratch ownership local to the subsystem that uses it.
+"""
+Base.@kwdef mutable struct SimWorkspace
+    current_matches::CurrentMatchWorkspace = CurrentMatchWorkspace()
+    search::SearchWorkspace = SearchWorkspace()
+    broker_pairs::BrokerPairWorkspace = BrokerPairWorkspace()
+    offer_book::OfferBook = OfferBook()
+    ledger::PeriodLedger = PeriodLedger()
+    capture::CaptureWorkspace = CaptureWorkspace()
+    holdout::HoldoutWorkspace = HoldoutWorkspace()
+    match_output::MatchOutputWorkspace = MatchOutputWorkspace()
 end
 
 """Complete simulation state: all agents, broker, network, environment, and accumulators."""
@@ -596,12 +629,13 @@ end
 
 """Clear the current-period match index using sparse touched coordinates."""
 function reset_current_match_index!(ws::SimWorkspace, N::Int)
-    mask = ws.current_match_mask
-    touched = ws.current_match_touched
+    current = ws.current_matches
+    mask = current.mask
+    touched = current.touched
     if size(mask, 1) != N || size(mask, 2) != N
-        ws.current_match_mask = falses(N, N)
+        current.mask = falses(N, N)
         empty!(touched)
-        return ws.current_match_mask
+        return current.mask
     end
     @inbounds for idx in touched
         mask[idx] = false
@@ -612,8 +646,9 @@ end
 
 """Mark agents `i` and `j` as current-period counterparties in the workspace index."""
 @inline function mark_current_match!(ws::SimWorkspace, i::Int, j::Int)
-    mask = ws.current_match_mask
-    touched = ws.current_match_touched
+    current = ws.current_matches
+    mask = current.mask
+    touched = current.touched
     @inbounds if !mask[i, j]
         mask[i, j] = true
         mask[j, i] = true
@@ -640,5 +675,5 @@ end
 
 """True if the workspace current-pair index marks agents `i` and `j` as matched."""
 @inline function has_current_match(ws::SimWorkspace, i::Int, j::Int)::Bool
-    return @inbounds ws.current_match_mask[i, j]
+    return @inbounds ws.current_matches.mask[i, j]
 end

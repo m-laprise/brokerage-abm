@@ -9,25 +9,27 @@ using Random: AbstractRNG
 using StatsBase: sample
 
 @inline function ensure_nbr_mask!(ws::SimWorkspace, N::Int)::Vector{Bool}
-    if length(ws.nbr_mask) < N + 1
-        old_len = length(ws.nbr_mask)
-        resize!(ws.nbr_mask, N + 1)
+    search = ws.search
+    if length(search.nbr_mask) < N + 1
+        old_len = length(search.nbr_mask)
+        resize!(search.nbr_mask, N + 1)
         @inbounds for i in (old_len + 1):(N + 1)
-            ws.nbr_mask[i] = false
+            search.nbr_mask[i] = false
         end
     end
-    return ws.nbr_mask
+    return search.nbr_mask
 end
 
 @inline function ensure_access_seen!(ws::SimWorkspace, N::Int)::Vector{Bool}
-    if length(ws.access_seen) < N
-        old_len = length(ws.access_seen)
-        resize!(ws.access_seen, N)
+    broker_pairs = ws.broker_pairs
+    if length(broker_pairs.access_seen) < N
+        old_len = length(broker_pairs.access_seen)
+        resize!(broker_pairs.access_seen, N)
         @inbounds for i in (old_len + 1):N
-            ws.access_seen[i] = false
+            broker_pairs.access_seen[i] = false
         end
     end
-    return ws.access_seen
+    return broker_pairs.access_seen
 end
 
 @inline function ensure_mask!(
@@ -47,40 +49,59 @@ end
     return mask
 end
 
-function reset_offer_book!(ws::SimWorkspace, N::Int)
-    if size(ws.offer_index, 1) != N || size(ws.offer_index, 2) != N
-        ws.offer_index = zeros(Int, N, N)
-        empty!(ws.offer_index_touched)
+function reset_offer_book!(offer_book::OfferBook, N::Int)
+    if size(offer_book.offer_index, 1) != N || size(offer_book.offer_index, 2) != N
+        offer_book.offer_index = zeros(Int, N, N)
+        empty!(offer_book.offer_index_touched)
     else
-        @inbounds for idx in ws.offer_index_touched
-            ws.offer_index[idx] = 0
+        @inbounds for idx in offer_book.offer_index_touched
+            offer_book.offer_index[idx] = 0
         end
-        empty!(ws.offer_index_touched)
+        empty!(offer_book.offer_index_touched)
     end
-    empty!(ws.offers)
-    empty!(ws.offer_pairs)
+    empty!(offer_book.offers)
+    empty!(offer_book.offer_pairs)
     return nothing
+end
+
+reset_offer_book!(ws::SimWorkspace, N::Int) = reset_offer_book!(ws.offer_book, N)
+
+@inline function add_offer!(
+    offer_book::OfferBook,
+    from_id::Int,
+    to_id::Int,
+    channel::Symbol,
+    predicted_value::Float64,
+)::Bool
+    @assert from_id != to_id "Self-offer attempted for agent $from_id"
+    offer_index = offer_book.offer_index
+    @inbounds offer_index[from_id, to_id] != 0 && return false
+
+    push!(offer_book.offers, DirectedOffer(from_id, to_id, channel, predicted_value))
+    offer_id = length(offer_book.offers)
+    @inbounds offer_index[from_id, to_id] = offer_id
+    push!(offer_book.offer_index_touched, from_id + (to_id - 1) * size(offer_index, 1))
+
+    @inbounds if offer_index[to_id, from_id] == 0
+        lo = min(from_id, to_id)
+        hi = max(from_id, to_id)
+        push!(offer_book.offer_pairs, (lo, hi))
+    end
+    return true
 end
 
 @inline function add_offer!(
     ws::SimWorkspace, from_id::Int, to_id::Int, channel::Symbol, predicted_value::Float64
 )::Bool
-    @assert from_id != to_id "Self-offer attempted for agent $from_id"
-    offer_index = ws.offer_index
-    @inbounds offer_index[from_id, to_id] != 0 && return false
-
-    push!(ws.offers, DirectedOffer(from_id, to_id, channel, predicted_value))
-    offer_id = length(ws.offers)
-    @inbounds offer_index[from_id, to_id] = offer_id
-    push!(ws.offer_index_touched, from_id + (to_id - 1) * size(offer_index, 1))
-
-    @inbounds if offer_index[to_id, from_id] == 0
-        lo = min(from_id, to_id)
-        hi = max(from_id, to_id)
-        push!(ws.offer_pairs, (lo, hi))
-    end
-    return true
+    return add_offer!(ws.offer_book, from_id, to_id, channel, predicted_value)
 end
+
+@inline function offer_ids(offer_book::OfferBook, i::Int, j::Int)::Tuple{Int,Int}
+    return @inbounds (offer_book.offer_index[i, j], offer_book.offer_index[j, i])
+end
+
+@inline offer_at(offer_book::OfferBook, idx::Int)::DirectedOffer =
+    @inbounds offer_book.offers[idx]
 
 function sample_period_strangers!(
     out::Vector{Int}, N::Int, n_strangers::Int, rng::AbstractRNG
@@ -113,12 +134,13 @@ function append_self_search_offers!(
     N = length(agents)
     current_match_index_ready || rebuild_current_match_index!(ws, agents)
 
-    candidate_ids = ws.neighbor_ids
-    candidate_vals = ws.neighbor_evals
+    search = ws.search
+    candidate_ids = search.neighbor_ids
+    candidate_vals = search.neighbor_evals
     empty!(candidate_ids)
     empty!(candidate_vals)
     nbr_mask = ensure_nbr_mask!(ws, N)
-    nbr_marked = ws.nbr_marked
+    nbr_marked = search.nbr_marked
     empty!(nbr_marked)
 
     @inbounds for nbr in neighbors(G, agent_id)
@@ -152,7 +174,7 @@ function append_self_search_offers!(
 
     n_candidates = length(candidate_ids)
     n_candidates == 0 && return 0
-    sort_pairs = ws.sort_pairs
+    sort_pairs = search.sort_pairs
     length(sort_pairs) < n_candidates && resize!(sort_pairs, n_candidates)
     @inbounds for idx in 1:n_candidates
         sort_pairs[idx] = (-candidate_vals[idx], idx)
@@ -160,11 +182,12 @@ function append_self_search_offers!(
     sort!(view(sort_pairs, 1:n_candidates); alg=QuickSort)
 
     sent = 0
+    offer_book = ws.offer_book
     @inbounds for rank_idx in 1:n_candidates
         sent == demand_count && break
         candidate_idx = sort_pairs[rank_idx][2]
         j = candidate_ids[candidate_idx]
-        if add_offer!(ws, agent_id, j, :self, candidate_vals[candidate_idx])
+        if add_offer!(offer_book, agent_id, j, :self, candidate_vals[candidate_idx])
             sent += 1
         end
     end
@@ -181,7 +204,7 @@ function collect_broker_access_ids!(
     empty!(out)
     N = length(agents)
     access_seen = ensure_access_seen!(ws, N)
-    access_touched = ws.access_touched
+    access_touched = ws.broker_pairs.access_touched
     empty!(access_touched)
 
     for ids in (broker.roster, broker.current_clients)
@@ -209,22 +232,27 @@ function prepare_broker_pair_scores!(
     agents::Vector{Agent},
     params::ModelParams,
 )
-    pair_scores = ws.broker_pair_scores
+    broker_pairs = ws.broker_pairs
+    pair_scores = broker_pairs.broker_pair_scores
     empty!(pair_scores)
     isempty(broker_demanders) && return pair_scores
     isempty(broker_access) && return pair_scores
 
     N = length(agents)
-    demander_mask = ensure_mask!(ws.broker_demander_mask, ws.broker_demander_touched, N)
-    access_mask = ensure_mask!(ws.broker_access_mask, ws.broker_access_touched, N)
+    demander_mask = ensure_mask!(
+        broker_pairs.broker_demander_mask, broker_pairs.broker_demander_touched, N
+    )
+    access_mask = ensure_mask!(
+        broker_pairs.broker_access_mask, broker_pairs.broker_access_touched, N
+    )
 
     @inbounds for did in broker_demanders
         demander_mask[did] = true
-        push!(ws.broker_demander_touched, did)
+        push!(broker_pairs.broker_demander_touched, did)
     end
     @inbounds for rid in broker_access
         access_mask[rid] = true
-        push!(ws.broker_access_touched, rid)
+        push!(broker_pairs.broker_access_touched, rid)
     end
 
     @inbounds for did in broker_demanders
@@ -245,15 +273,15 @@ function prepare_broker_pair_scores!(
     d = params.d
     d2 = 2 * d
     n_pred = 2 * n_pairs
-    if size(ws.Z_batch, 1) != d2 || size(ws.Z_batch, 2) < n_pred
-        cap = max(n_pred, 2 * size(ws.Z_batch, 2), 256)
-        ws.Z_batch = Matrix{Float64}(undef, d2, cap)
-        ws.H_batch = Matrix{Float64}(undef, params.h_b, cap)
-        resize!(ws.Y_batch, cap)
+    if size(broker_pairs.Z_batch, 1) != d2 || size(broker_pairs.Z_batch, 2) < n_pred
+        cap = max(n_pred, 2 * size(broker_pairs.Z_batch, 2), 256)
+        broker_pairs.Z_batch = Matrix{Float64}(undef, d2, cap)
+        broker_pairs.H_batch = Matrix{Float64}(undef, params.h_b, cap)
+        resize!(broker_pairs.Y_batch, cap)
     end
-    Z_batch = ws.Z_batch
-    H_batch = ws.H_batch
-    Y_batch = ws.Y_batch
+    Z_batch = broker_pairs.Z_batch
+    H_batch = broker_pairs.H_batch
+    Y_batch = broker_pairs.Y_batch
 
     @inbounds for pair_idx in 1:n_pairs
         _, i, j = pair_scores[pair_idx]
@@ -292,9 +320,10 @@ function append_broker_offers!(
     remaining_demand::Union{Vector{Int},Nothing}=nothing,
     captured_origin_mask::Union{Vector{Bool},Nothing}=nothing,
 )::Int
-    broker_demanders = ws.period_broker_demanders
+    broker_pairs = ws.broker_pairs
+    broker_demanders = broker_pairs.period_broker_demanders
     empty!(broker_demanders)
-    remaining = isnothing(remaining_demand) ? ws.offer_remaining : remaining_demand
+    remaining = isnothing(remaining_demand) ? ws.ledger.offer_remaining : remaining_demand
     N = length(agents)
     if length(remaining) < N
         resize!(remaining, N)
@@ -311,7 +340,7 @@ function append_broker_offers!(
     end
     isempty(broker_demanders) && return 0
 
-    broker_access = ws.period_broker_access_ids
+    broker_access = broker_pairs.period_broker_access_ids
     collect_broker_access_ids!(
         broker_access, broker, agents, ws; captured_origin_mask=captured_origin_mask
     )
@@ -322,8 +351,9 @@ function append_broker_offers!(
     )
     isempty(pair_scores) && return 0
 
-    demander_mask = ws.broker_demander_mask
-    access_mask = ws.broker_access_mask
+    demander_mask = broker_pairs.broker_demander_mask
+    access_mask = broker_pairs.broker_access_mask
+    offer_book = ws.offer_book
     sent = 0
     @inbounds for item in pair_scores
         neg_score, i, j = item
@@ -331,13 +361,13 @@ function append_broker_offers!(
         score <= r && break
 
         if demander_mask[i] && access_mask[j] && remaining[i] > 0
-            if add_offer!(ws, i, j, :broker, score)
+            if add_offer!(offer_book, i, j, :broker, score)
                 remaining[i] -= 1
                 sent += 1
             end
         end
         if demander_mask[j] && access_mask[i] && remaining[j] > 0
-            if add_offer!(ws, j, i, :broker, score)
+            if add_offer!(offer_book, j, i, :broker, score)
                 remaining[j] -= 1
                 sent += 1
             end

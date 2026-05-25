@@ -1,5 +1,7 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: ActiveMatch, Q_OFFSET, add_match_edge!, enter_agent!
+using TransientBrokerage: exit_agent!, process_entry_exit!, remove_agent_edges!
 
 @testset "Entry/Exit" begin
     using Graphs: degree, has_edge, neighbors, nv

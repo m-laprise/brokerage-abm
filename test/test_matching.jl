@@ -1,5 +1,9 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: AcceptedMatch, OfferCredit, add_match_edge!
+using TransientBrokerage: has_current_match, outsourcing_decision, remove_agent_edges!
+using TransientBrokerage: update_broker_reputation!, update_partner_mean!
+using TransientBrokerage: update_satisfaction!
 using Graphs: has_edge
 using StableRNGs: StableRNG
 
@@ -74,9 +78,10 @@ using StableRNGs: StableRNG
         agents[2].partner_count[1] = 1
 
         accepted = TransientBrokerage.AcceptedMatch[]
-        if length(ws.Ax_buf) != state.params.d
-            ws.Ax_buf = Vector{Float64}(undef, state.params.d)
-            ws.Bx_buf = Vector{Float64}(undef, state.params.d)
+        match_output = ws.match_output
+        if length(match_output.Ax_buf) != state.params.d
+            match_output.Ax_buf = Vector{Float64}(undef, state.params.d)
+            match_output.Bx_buf = Vector{Float64}(undef, state.params.d)
         end
         TransientBrokerage.accept_offer_pair!(
             accepted,
@@ -88,8 +93,8 @@ using StableRNGs: StableRNG
             state.G,
             state.cal,
             StableRNG(19);
-            Ax_buf=ws.Ax_buf,
-            Bx_buf=ws.Bx_buf,
+            Ax_buf=match_output.Ax_buf,
+            Bx_buf=match_output.Bx_buf,
             ws=ws,
         )
 

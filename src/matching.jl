@@ -115,13 +115,14 @@ function accept_offer_pair!(
     ws::SimWorkspace,
 )
     has_current_match(ws, pair_i, pair_j) && return nothing
-    idx_ij = @inbounds ws.offer_index[pair_i, pair_j]
-    idx_ji = @inbounds ws.offer_index[pair_j, pair_i]
+    offer_book = ws.offer_book
+    idx_ij = @inbounds offer_book.offer_index[pair_i, pair_j]
+    idx_ji = @inbounds offer_book.offer_index[pair_j, pair_i]
     idx_ij == 0 && idx_ji == 0 && return nothing
 
     if idx_ij != 0 && idx_ji != 0
-        offer1 = @inbounds ws.offers[idx_ij]
-        offer2 = @inbounds ws.offers[idx_ji]
+        offer1 = @inbounds offer_book.offers[idx_ij]
+        offer2 = @inbounds offer_book.offers[idx_ji]
         return push_accepted_relationship!(
             accepted,
             offer1,
@@ -137,7 +138,7 @@ function accept_offer_pair!(
         )
     end
 
-    offer = @inbounds ws.offers[idx_ij != 0 ? idx_ij : idx_ji]
+    offer = @inbounds offer_book.offers[idx_ij != 0 ? idx_ij : idx_ji]
     receiver_offer_value(offer.to_id, offer.from_id, agents, G) > cal.r || return nothing
     return push_accepted_relationship!(
         accepted,
@@ -180,19 +181,23 @@ function run_offer_market!(
 
     N = length(agents)
     d = params.d
-    if length(ws.Ax_buf) != d
-        ws.Ax_buf = Vector{Float64}(undef, d)
-        ws.Bx_buf = Vector{Float64}(undef, d)
+    match_output = ws.match_output
+    if length(match_output.Ax_buf) != d
+        match_output.Ax_buf = Vector{Float64}(undef, d)
+        match_output.Bx_buf = Vector{Float64}(undef, d)
     end
-    Ax_buf = ws.Ax_buf
-    Bx_buf = ws.Bx_buf
+    Ax_buf = match_output.Ax_buf
+    Bx_buf = match_output.Bx_buf
 
     rebuild_current_match_index!(ws, agents)
-    reset_offer_book!(ws, N)
+    offer_book = ws.offer_book
+    reset_offer_book!(offer_book, N)
     reset_principal_payments!(ws, N)
-    sample_period_strangers!(ws.period_strangers, N, params.n_strangers, rng)
+    search = ws.search
+    sample_period_strangers!(search.period_strangers, N, params.n_strangers, rng)
 
-    remaining = ws.offer_remaining
+    ledger = ws.ledger
+    remaining = ledger.offer_remaining
     if length(remaining) < N
         resize!(remaining, N)
     end
@@ -206,7 +211,8 @@ function run_offer_market!(
         isnothing(accum) && error("accum is required when enable_principal=true")
         reset_capture_buffers!(ws, N)
 
-        broker_demanders = ws.period_broker_demanders
+        broker_pairs = ws.broker_pairs
+        broker_demanders = broker_pairs.period_broker_demanders
         empty!(broker_demanders)
         @inbounds for idx in eachindex(demand_agent_ids)
             demand_channels[idx] == :broker || continue
@@ -215,7 +221,7 @@ function run_offer_market!(
             push!(broker_demanders, did)
         end
 
-        broker_access = ws.period_broker_access_ids
+        broker_access = broker_pairs.period_broker_access_ids
         collect_broker_access_ids!(broker_access, broker, agents, ws)
         execute_client_origin_capture!(
             accepted,
@@ -234,7 +240,7 @@ function run_offer_market!(
             Ax_buf=Ax_buf,
             Bx_buf=Bx_buf,
         )
-        captured_origin_mask = ws.captured_origin_mask
+        captured_origin_mask = ws.capture.captured_origin_mask
     elseif !isnothing(accum)
         accum.capture_ready = false
         accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
@@ -251,7 +257,7 @@ function run_offer_market!(
             agents,
             G,
             broker.node_id,
-            ws.period_strangers,
+            search.period_strangers,
             cal.r;
             current_match_index_ready=true,
             captured_origin_mask=captured_origin_mask,
@@ -271,7 +277,7 @@ function run_offer_market!(
         captured_origin_mask=captured_origin_mask,
     )
 
-    @inbounds for (i, j) in ws.offer_pairs
+    @inbounds for (i, j) in offer_book.offer_pairs
         accept_offer_pair!(
             accepted,
             i,

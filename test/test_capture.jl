@@ -1,5 +1,8 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: NeuralNet, add_match_edge!, capture_surplus, counterparty_ask
+using TransientBrokerage: has_current_match, remove_agent_edges!, update_partner_mean!
+using TransientBrokerage: update_satisfaction!
 using Graphs: has_edge
 
 function constant_prediction!(nn::NeuralNet, value::Float64)
@@ -121,7 +124,7 @@ end
         @test state.accum.principal_rejected == 1
         @test state.accum.capture_realized == [0.0]
         @test state.accum.capture_ask == [ask]
-        @test state.workspace.principal_payment[1] == ask
+        @test state.workspace.ledger.principal_payment[1] == ask
         @test state.accum.broker_error_count == 1
     end
 
@@ -149,7 +152,7 @@ end
         state = capture_fixture(receiver_value=0.0)
         accepted = run_capture_round!(state)
         sat0 = state.agents[1].satisfaction_broker
-        ask = state.workspace.principal_payment[1]
+        ask = state.workspace.ledger.principal_payment[1]
 
         update_satisfaction!(
             state.agents,
@@ -159,7 +162,7 @@ end
             [1],
             state.cal,
             state.params;
-            principal_payment=state.workspace.principal_payment,
+            principal_payment=state.workspace.ledger.principal_payment,
         )
 
         expected = (1 - state.params.omega) * sat0 + state.params.omega * ask
@@ -191,10 +194,10 @@ end
             accum=state.accum,
         )
 
-        self_offers = [o for o in state.workspace.offers if o.from_id == 3]
+        self_offers = [o for o in state.workspace.offer_book.offers if o.from_id == 3]
         @test length(self_offers) == 1
         @test self_offers[1].to_id == 2
-        @test all(o -> o.to_id != 1, state.workspace.offers)
+        @test all(o -> o.to_id != 1, state.workspace.offer_book.offers)
     end
 
     @testset "captured origins are excluded from standard broker offers" begin
@@ -221,9 +224,9 @@ end
             accum=state.accum,
         )
 
-        broker_offers = [o for o in state.workspace.offers if o.from_id == 3]
+        broker_offers = [o for o in state.workspace.offer_book.offers if o.from_id == 3]
         @test length(broker_offers) == 1
         @test broker_offers[1].to_id == 2
-        @test all(o -> o.to_id != 1, state.workspace.offers)
+        @test all(o -> o.to_id != 1, state.workspace.offer_book.offers)
     end
 end

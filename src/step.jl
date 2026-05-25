@@ -122,24 +122,28 @@ function update_holdout_metrics!(state::ModelState)
     end
 
     diag_rng = diagnostics_rng(p.seed, state.period)
-    if length(ws.Ax_buf) != d || length(ws.Bx_buf) != d || length(ws.holdout_z_buf) != 2 * d
-        ws.Ax_buf = Vector{Float64}(undef, d)
-        ws.Bx_buf = Vector{Float64}(undef, d)
-        ws.holdout_z_buf = Vector{Float64}(undef, 2 * d)
+    match_output = ws.match_output
+    holdout = ws.holdout
+    if length(match_output.Ax_buf) != d ||
+        length(match_output.Bx_buf) != d ||
+        length(holdout.z_buf) != 2 * d
+        match_output.Ax_buf = Vector{Float64}(undef, d)
+        match_output.Bx_buf = Vector{Float64}(undef, d)
+        holdout.z_buf = Vector{Float64}(undef, 2 * d)
     end
     for v in (
-        ws.holdout_agent_preds,
-        ws.holdout_agent_trues,
-        ws.holdout_broker_preds,
-        ws.holdout_pred_order,
-        ws.holdout_true_order,
-        ws.holdout_pred_ranks,
-        ws.holdout_true_ranks,
+        holdout.agent_preds,
+        holdout.agent_trues,
+        holdout.broker_preds,
+        holdout.pred_order,
+        holdout.true_order,
+        holdout.pred_ranks,
+        holdout.true_ranks,
     )
         ensure_length!(v, n_partners)
     end
 
-    eligible_agents = ws.holdout_agent_ids
+    eligible_agents = holdout.agent_ids
     empty!(eligible_agents)
     @inbounds for i in 1:N
         agents[i].history_count > 0 && push!(eligible_agents, i)
@@ -149,19 +153,19 @@ function update_holdout_metrics!(state::ModelState)
     shuffle!(diag_rng, eligible_agents)
     n_sample_agents = min(n_sample_agents, length(eligible_agents))
 
-    partner_ids = ws.holdout_partner_ids
+    partner_ids = holdout.partner_ids
     ensure_length!(partner_ids, N - 1)
 
-    Ax_buf = ws.Ax_buf
-    Bx_buf = ws.Bx_buf
-    z_buf = ws.holdout_z_buf
-    agent_preds = ws.holdout_agent_preds
-    agent_trues = ws.holdout_agent_trues
-    broker_preds = ws.holdout_broker_preds
-    pred_order = ws.holdout_pred_order
-    true_order = ws.holdout_true_order
-    pred_ranks = ws.holdout_pred_ranks
-    true_ranks = ws.holdout_true_ranks
+    Ax_buf = match_output.Ax_buf
+    Bx_buf = match_output.Bx_buf
+    z_buf = holdout.z_buf
+    agent_preds = holdout.agent_preds
+    agent_trues = holdout.agent_trues
+    broker_preds = holdout.broker_preds
+    pred_order = holdout.pred_order
+    true_order = holdout.true_order
+    pred_ranks = holdout.pred_ranks
+    true_ranks = holdout.true_ranks
 
     agent_r2_sum = 0.0
     agent_bias_sum = 0.0
@@ -261,11 +265,12 @@ function step_period!(state::ModelState)
     env = state.env
     cal = state.cal
     ws = state.workspace
+    accum = state.accum
 
-    reset_accumulators!(state.accum)
-    state.accum.broker_confidence_mae =
+    reset_accumulators!(accum)
+    accum.broker_confidence_mae =
         broker.capture_confidence_ready ? broker.capture_confidence_mae : NaN
-    state.accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
+    accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 0: Current-period match reset
@@ -283,14 +288,14 @@ function step_period!(state::ModelState)
     # ══════════════════════════════════════════════════════════════════════
     # Step 1: Demand generation and outsourcing decisions
     # ══════════════════════════════════════════════════════════════════════
-    # Reuse workspace vectors (avoid Dict/Set allocation every period)
-    demand_agent_ids = ws.demand_agent_ids
+    ledger = ws.ledger
+    demand_agent_ids = ledger.demand_agent_ids
     empty!(demand_agent_ids)
-    demand_channels = ws.demand_channels
+    demand_channels = ledger.demand_channels
     empty!(demand_channels)
-    demand_counts = ws.demand_counts
+    demand_counts = ledger.demand_counts
     empty!(demand_counts)
-    broker_clients = ws.broker_clients_ws
+    broker_clients = ledger.broker_clients_ws
     empty!(broker_clients)
 
     broker_rep = broker_reputation(broker)
@@ -305,14 +310,14 @@ function step_period!(state::ModelState)
         push!(demand_agent_ids, i)
         push!(demand_channels, channel)
         push!(demand_counts, d_i)
-        state.accum.n_demanders += 1
-        state.accum.total_demand += d_i
+        accum.n_demanders += 1
+        accum.total_demand += d_i
 
         if channel == :broker
             push!(broker_clients, i)
             push!(broker.current_clients, i)
-            state.accum.n_outsourced += 1
-            state.accum.outsourced_slots += d_i
+            accum.n_outsourced += 1
+            accum.outsourced_slots += d_i
         end
     end
     sync_broker_edges!(G, agents, broker)
@@ -353,8 +358,8 @@ function step_period!(state::ModelState)
         cal,
         rng;
         ws=ws,
-        accepted_matches=ws.accepted_matches,
-        accum=state.accum,
+        accepted_matches=ledger.accepted_matches,
+        accum=accum,
     )
     sync_broker_edges!(G, agents, broker)
 
@@ -373,9 +378,9 @@ function step_period!(state::ModelState)
         demand_counts,
         cal,
         p;
-        demander_sum=ws.demander_q_sum,
-        broker_standard_count=ws.broker_standard_count,
-        principal_payment=ws.principal_payment,
+        demander_sum=ledger.demander_q_sum,
+        broker_standard_count=ledger.broker_standard_count,
+        principal_payment=ledger.principal_payment,
     )
 
     # 4.3: Broker reputation
@@ -388,57 +393,55 @@ function step_period!(state::ModelState)
         for offer in (m.offer1, m.offer2)
             isnothing(offer) && continue
             if offer.channel == :self
-                push!(state.accum.agent_predicted, offer.predicted_value)
-                push!(state.accum.agent_realized, m.q_realized)
+                push!(accum.agent_predicted, offer.predicted_value)
+                push!(accum.agent_realized, m.q_realized)
             elseif offer.channel == :broker
-                push!(state.accum.broker_predicted, offer.predicted_value)
-                push!(state.accum.broker_realized, m.q_realized)
-                state.accum.broker_error_abs_sum += abs(
-                    m.q_realized - offer.predicted_value
-                )
-                state.accum.broker_error_count += 1
+                push!(accum.broker_predicted, offer.predicted_value)
+                push!(accum.broker_realized, m.q_realized)
+                accum.broker_error_abs_sum += abs(m.q_realized - offer.predicted_value)
+                accum.broker_error_count += 1
                 if offer.was_connected
-                    state.accum.assessment_count += 1
+                    accum.assessment_count += 1
                 else
-                    state.accum.access_count += 1
+                    accum.access_count += 1
                 end
             end
         end
 
         if m.channel == :self
-            state.accum.n_self_matches += 1
-            push!(state.accum.q_self, m.q_realized)
+            accum.n_self_matches += 1
+            push!(accum.q_self, m.q_realized)
         elseif m.is_principal
-            state.accum.n_broker_principal += 1
-            push!(state.accum.q_broker_principal, m.q_realized)
+            accum.n_broker_principal += 1
+            push!(accum.q_broker_principal, m.q_realized)
         else
-            state.accum.n_broker_standard += 1
-            push!(state.accum.q_broker_standard, m.q_realized)
+            accum.n_broker_standard += 1
+            push!(accum.q_broker_standard, m.q_realized)
         end
     end
 
-    counterparty_counts = ws.holdout_pred_order
+    counterparty_counts = ws.holdout.pred_order
     length(counterparty_counts) == N || resize!(counterparty_counts, N)
     @inbounds for i in 1:N
         counterparty_counts[i] = length(agents[i].active_matches)
     end
     sort!(counterparty_counts)
     mid = N ÷ 2
-    state.accum.median_counterparties = if isodd(N)
+    accum.median_counterparties = if isodd(N)
         Float64(counterparty_counts[mid + 1])
     else
         (counterparty_counts[mid] + counterparty_counts[mid + 1]) / 2
     end
-    state.accum.max_counterparties = counterparty_counts[end]
+    accum.max_counterparties = counterparty_counts[end]
 
     update_capture_confidence_mae!(
-        broker, state.accum.broker_error_abs_sum, state.accum.broker_error_count, p.omega
+        broker, accum.broker_error_abs_sum, accum.broker_error_count, p.omega
     )
 
     update_holdout_metrics!(state)
 
-    state.accum.roster_size = length(broker.roster)
-    state.accum.broker_access_size = broker_access_size(broker)
+    accum.roster_size = length(broker.roster)
+    accum.broker_access_size = broker_access_size(broker)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 5: Entry/exit

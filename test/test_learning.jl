@@ -1,5 +1,9 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: Agent, NNGradBuffers, NeuralNet, compute_adaptive_steps
+using TransientBrokerage: init_neural_net, nn_loss, predict_nn!, predict_nn_batch!
+using TransientBrokerage: record_broker_history!
+using TransientBrokerage: train_agent_nn!, train_broker_nn!, train_nn!, train_step!
 using Enzyme
 using StableRNGs: StableRNG
 using LinearAlgebra: normalize

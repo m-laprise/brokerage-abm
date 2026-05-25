@@ -308,7 +308,7 @@ With sufficient data, the network can in principle learn the piecewise linear st
 
 **Input and capacity.** The broker's network takes both parties' types as input: $\mathbf{z} = [\mathbf{x}_i; \mathbf{x}_j]$ ($2d = 16$ inputs). The hidden layer has $h_b = 32$ units. Total parameters: $h_b \cdot (2d + 1) + (h_b + 1) = 577$. No hand-crafted features (such as outer products) are provided.
 
-**Fitting.** The network must discover the bilinear interaction structure $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ and the regime boundary $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$ from the raw concatenated inputs. With 32 hidden ReLU units, the network has sufficient capacity to approximate these bilinear forms. Each unit computes a piecewise linear function of $[\mathbf{x}_i; \mathbf{x}_j]$ that can represent products of input components through interactions between units. 
+**Fitting.** The broker's network must learn a predictive approximation to the bilinear interaction structure $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ and the regime boundary $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$ from the raw concatenated inputs. The architecture does not encode bilinear products directly: no outer-product or hand-crafted pairwise interaction features are supplied. Instead, the one-hidden-layer ReLU network approximates the resulting pair-quality surface as a piecewise linear function of $[\mathbf{x}_i; \mathbf{x}_j]$. With 32 hidden units, the broker model has enough capacity in the calibrated simulations to approximate the relevant ranking structure, but this is an empirical modeling assumption about finite-sample approximation and training, not a mathematical guarantee that the architecture exactly represents the bilinear forms.
 
 To exploit the symmetry of $f$, the broker augments its training data by including both orderings of each observation: for each $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ in $\mathcal{H}_b$, the broker trains on both $[\mathbf{x}_i; \mathbf{x}_j]$ and $[\mathbf{x}_j; \mathbf{x}_i]$ with the same target $q_{ij}$. This doubles the effective training set and ensures the network learns that the two input slots are interchangeable.
 
@@ -415,7 +415,7 @@ Agents already on the standing roster remain on it whether or not they outsource
 
 For every unordered pair $\{i,j\}$ such that one side is a broker-client demander and the other side is in $A^t$, the broker computes predicted match quality and ranks the pairs globally. Traversing this one ranked list, the broker emits a directed broker offer $i \to j$ whenever $i$ is a broker-client demander, $j \in A^t$, $i$ still has unfilled active broker demand, and the predicted value exceeds $r$. If both sides are broker-client demanders and both have remaining active demand, the same unordered pair can therefore generate reciprocal broker offers.
 
-**Implementation note.** The code may realize these rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: the stranger pool is sampled once per period, broker-side offers follow the single global pair ranking, current-period duplicate-pair exclusion may be implemented with an exact period-local index, and neural-network training still uses the same data windows and gradient steps.
+**Implementation note.** The code may realize these rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: the stranger pool is sampled once per period, broker-side offers follow the single global pair ranking, current-period duplicate-pair exclusion may be implemented with an exact period-local index, and neural-network training still uses the same data windows and gradient steps. The implementation organizes scratch state into subsystem workspaces, including a directed-offer book for offer construction and acceptance, and a period ledger for demand, satisfaction, payment, and accepted-match buffers.
 
 #### 5c. Shared offer acceptance
 
@@ -566,7 +566,7 @@ Each period proceeds through six steps (plus recording).
 >
 > &emsp;**2.2. Market initialization and resource capture:**
 > 2.2.1. &emsp;Sample the period stranger pool $S^t$ uniformly without replacement from the population, with size $\min(n_s, N)$.
-> 2.2.2. &emsp;Initialize an empty directed-offer book keyed by unordered agent pair.
+> 2.2.2. &emsp;Initialize an empty directed-offer book whose directed offers are grouped and traversed by unordered agent pair.
 > 2.2.3. &emsp;If resource capture is enabled and the broker satisfies the capture confidence gate (§12): evaluate current broker clients for client-origin whole-lot capture. Captured origin clients are removed from the remaining standard offer market for the period, and their remaining standard broker demand is set to zero.
 >
 > **3. SHARED ACTIVE-DEMAND OFFER MARKET**

@@ -1,5 +1,6 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: ActiveMatch, add_match_edge!, remove_agent_edges!
 using StableRNGs: StableRNG
 
 @testset "Search" begin
@@ -33,7 +34,8 @@ using StableRNGs: StableRNG
         )
 
         @test sent == 2
-        @test [(o.to_id, o.predicted_value) for o in ws.offers] == [(2, 9.0), (3, 7.0)]
+        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] ==
+            [(2, 9.0), (3, 7.0)]
     end
 
     @testset "Self-search no longer filters candidates by K capacity" begin
@@ -64,13 +66,13 @@ using StableRNGs: StableRNG
         )
 
         @test sent == 1
-        @test ws.offers[1].to_id == 2
+        @test ws.offer_book.offers[1].to_id == 2
     end
 
     @testset "Period stranger pool has fixed default size" begin
         p = default_params(N=80, T=5, T_burn=1, seed=13)
         state = initialize_model(p)
-        strangers = state.workspace.period_strangers
+        strangers = state.workspace.search.period_strangers
 
         TransientBrokerage.sample_period_strangers!(
             strangers, p.N, p.n_strangers, StableRNG(701)
@@ -84,13 +86,16 @@ using StableRNGs: StableRNG
 
     @testset "Offer book stores one unordered pair for reciprocal offers" begin
         ws = TransientBrokerage.SimWorkspace()
-        TransientBrokerage.reset_offer_book!(ws, 5)
+        offer_book = ws.offer_book
+        TransientBrokerage.reset_offer_book!(offer_book, 5)
 
-        @test TransientBrokerage.add_offer!(ws, 1, 2, :self, 3.0)
-        @test TransientBrokerage.add_offer!(ws, 2, 1, :broker, 4.0)
-        @test !TransientBrokerage.add_offer!(ws, 1, 2, :self, 5.0)
-        @test length(ws.offers) == 2
-        @test ws.offer_pairs == [(1, 2)]
+        @test TransientBrokerage.add_offer!(offer_book, 1, 2, :self, 3.0)
+        @test TransientBrokerage.add_offer!(offer_book, 2, 1, :broker, 4.0)
+        @test !TransientBrokerage.add_offer!(offer_book, 1, 2, :self, 5.0)
+        @test TransientBrokerage.offer_ids(offer_book, 1, 2) == (1, 2)
+        @test TransientBrokerage.offer_at(offer_book, 1).predicted_value == 3.0
+        @test length(offer_book.offers) == 2
+        @test offer_book.offer_pairs == [(1, 2)]
     end
 
     @testset "Broker offers use one shared unordered-pair ranking" begin
@@ -109,9 +114,9 @@ using StableRNGs: StableRNG
         )
 
         @test sent == 2
-        @test Set((o.from_id, o.to_id, o.channel) for o in ws.offers) ==
+        @test Set((o.from_id, o.to_id, o.channel) for o in ws.offer_book.offers) ==
             Set([(1, 2, :broker), (2, 1, :broker)])
-        @test ws.offer_pairs == [(1, 2)]
+        @test ws.offer_book.offer_pairs == [(1, 2)]
     end
 
     @testset "Broker offers do not use period strangers as access" begin
@@ -123,8 +128,8 @@ using StableRNGs: StableRNG
         empty!(broker.roster)
         empty!(broker.current_clients)
         push!(broker.current_clients, 1)
-        empty!(ws.period_strangers)
-        push!(ws.period_strangers, 4)
+        empty!(ws.search.period_strangers)
+        push!(ws.search.period_strangers, 4)
         TransientBrokerage.reset_offer_book!(ws, p.N)
 
         sent = TransientBrokerage.append_broker_offers!(
@@ -132,6 +137,6 @@ using StableRNGs: StableRNG
         )
 
         @test sent == 0
-        @test isempty(ws.offers)
+        @test isempty(ws.offer_book.offers)
     end
 end

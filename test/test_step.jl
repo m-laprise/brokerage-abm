@@ -1,5 +1,6 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: ActiveMatch
 using StableRNGs: StableRNG
 using Graphs: degree, has_edge
 

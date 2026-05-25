@@ -1,5 +1,8 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: Q_OFFSET, R_BASE_FRAC, calibrate, generate_matching_env
+using TransientBrokerage: match_output, match_output!, match_signal, match_signal!
+using TransientBrokerage: regime_gain, regime_gain!
 using StableRNGs: StableRNG
 using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
 

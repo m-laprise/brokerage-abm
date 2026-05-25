@@ -63,34 +63,37 @@ function update_capture_confidence_mae!(
 end
 
 function reset_principal_payments!(ws::SimWorkspace, N::Int)
-    if length(ws.principal_payment) < N
-        resize!(ws.principal_payment, N)
+    principal_payment = ws.ledger.principal_payment
+    if length(principal_payment) < N
+        resize!(principal_payment, N)
     end
-    fill!(ws.principal_payment, 0.0)
+    fill!(principal_payment, 0.0)
     return nothing
 end
 
 function reset_capture_buffers!(ws::SimWorkspace, N::Int)
-    if length(ws.captured_origin_mask) < N
-        old = length(ws.captured_origin_mask)
-        resize!(ws.captured_origin_mask, N)
+    capture = ws.capture
+    if length(capture.captured_origin_mask) < N
+        old = length(capture.captured_origin_mask)
+        resize!(capture.captured_origin_mask, N)
         @inbounds for i in (old + 1):N
-            ws.captured_origin_mask[i] = false
+            capture.captured_origin_mask[i] = false
         end
     end
-    @inbounds for i in ws.captured_origin_touched
-        ws.captured_origin_mask[i] = false
+    @inbounds for i in capture.captured_origin_touched
+        capture.captured_origin_mask[i] = false
     end
-    empty!(ws.captured_origin_touched)
+    empty!(capture.captured_origin_touched)
 
     return nothing
 end
 
 function ensure_capture_score_buffers!(ws::SimWorkspace, N::Int)
-    if length(ws.capture_candidate_counts) < N
-        resize!(ws.capture_candidate_counts, N)
-        resize!(ws.capture_candidate_sums, N)
-        resize!(ws.capture_asks, N)
+    capture = ws.capture
+    if length(capture.capture_candidate_counts) < N
+        resize!(capture.capture_candidate_counts, N)
+        resize!(capture.capture_candidate_sums, N)
+        resize!(capture.capture_asks, N)
     end
     return nothing
 end
@@ -105,20 +108,22 @@ function initialize_capture_lot_candidates!(
 )::Vector{Tuple{Float64,Int}}
     N = length(agents)
     ensure_capture_score_buffers!(ws, N)
-    lots = ws.capture_candidate_lots
+    capture = ws.capture
+    lots = capture.capture_candidate_lots
     empty!(lots)
 
-    counts = ws.capture_candidate_counts
-    sums = ws.capture_candidate_sums
-    asks = ws.capture_asks
+    counts = capture.capture_candidate_counts
+    sums = capture.capture_candidate_sums
+    asks = capture.capture_asks
     @inbounds for did in broker_demanders
         counts[did] = 0
         sums[did] = 0.0
         asks[did] = counterparty_ask(agents[did], cal.q_cal)
     end
 
-    demander_mask = ws.broker_demander_mask
-    access_mask = ws.broker_access_mask
+    broker_pairs = ws.broker_pairs
+    demander_mask = broker_pairs.broker_demander_mask
+    access_mask = broker_pairs.broker_access_mask
     @inbounds for (neg_score, i, j) in pair_scores
         score = -neg_score
         score <= cal.r && break
@@ -159,8 +164,8 @@ function replan_capture_lot!(
 )::Bool
     empty!(recipients)
     empty!(qhats)
-    access_mask = ws.broker_access_mask
-    captured_mask = ws.captured_origin_mask
+    access_mask = ws.broker_pairs.broker_access_mask
+    captured_mask = ws.capture.captured_origin_mask
 
     @inbounds for (neg_score, i, j) in pair_scores
         score = -neg_score
@@ -259,24 +264,25 @@ function execute_client_origin_capture!(
     )
     isempty(lots) && return 0
 
-    recipients = ws.capture_plan_recipients
-    qhats = ws.capture_plan_qhats
+    capture = ws.capture
+    recipients = capture.capture_plan_recipients
+    qhats = capture.capture_plan_qhats
     captured = 0
-    captured_mask = ws.captured_origin_mask
+    captured_mask = capture.captured_origin_mask
 
     @inbounds for (_, origin_id) in lots
         captured_mask[origin_id] && continue
         d_i = remaining[origin_id]
         d_i > 0 || continue
-        ask_i = ws.capture_asks[origin_id]
+        ask_i = capture.capture_asks[origin_id]
         ask_i >= cal.r || continue
         replan_capture_lot!(recipients, qhats, pair_scores, origin_id, d_i, ws, cal) ||
             continue
 
         captured_mask[origin_id] = true
-        push!(ws.captured_origin_touched, origin_id)
+        push!(capture.captured_origin_touched, origin_id)
         remaining[origin_id] = 0
-        ws.principal_payment[origin_id] += d_i * ask_i
+        ws.ledger.principal_payment[origin_id] += d_i * ask_i
         accum.captured_origin_count += 1
         captured += 1
 

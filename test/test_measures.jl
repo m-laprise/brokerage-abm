@@ -1,5 +1,6 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: update_cached_network_measures!
 
 @testset "Measures" begin
     using Graphs: SimpleGraph, add_edge!, nv, path_graph, star_graph, cycle_graph

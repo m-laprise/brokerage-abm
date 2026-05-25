@@ -1,5 +1,6 @@
 using Test
 using TransientBrokerage
+using TransientBrokerage: ActiveMatch
 using DataFrames: nrow
 
 @testset "Invariants" begin
