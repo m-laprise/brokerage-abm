@@ -146,6 +146,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         has_had_clients = false,
         capture_confidence_mae = 0.0,
         capture_confidence_ready = false,
+        capture_error_count = 0,
     )
 
     # Seed roster with random agents

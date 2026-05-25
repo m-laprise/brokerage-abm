@@ -26,8 +26,8 @@ mutable struct NNGradBuffers
     dw2::Vector{Float64}  # h         (gradient of w2)
     db2::Base.RefValue{Float64}       # scalar gradient of b2
 
-    # Forward/backward activation scratch. Grow on demand to at most
-    # TRAIN_WINDOW columns in the hot path.
+    # Forward/backward activation scratch, grown on demand and reused across
+    # training calls.
     Z1::Matrix{Float64}   # h x n  pre-activations
     A::Matrix{Float64}    # h x n  post-ReLU activations
     dZ1::Matrix{Float64}  # h x n  gradient wrt pre-activations
@@ -83,7 +83,7 @@ Base.@kwdef mutable struct Agent
     id::Int
     type::Vector{Float64}                    # x_i on the unit sphere, length d
 
-    # Current-period relationships (distinct counterparties; length <= K)
+    # Current-period relationships (distinct counterparties; no K-based capacity limit)
     active_matches::Vector{ActiveMatch} = ActiveMatch[]
 
     # Experience history: d x capacity matrix (column-major, doubling growth)
@@ -112,24 +112,14 @@ Base.@kwdef mutable struct Agent
     # Tenure
     periods_alive::Int = 0
 
-    # Cumulative match counters for broker-dependency D_j (§12i).
-    # n_matches_any: every accepted match the agent has participated in, any role, any channel.
-    # n_principal_acquired: subset where the agent was the counterparty acquired in principal mode.
+    # Cumulative match counter: every accepted match the agent has participated
+    # in, any role, any channel.
     # Reset to zero on entry; not decremented on match expiration.
     n_matches_any::Int = 0
-    n_principal_acquired::Int = 0
 end
 
 """Number of valid history entries for an agent."""
 effective_history_size(agent::Agent) = agent.history_count
-
-"""Available relationship capacity: K minus active counterparties."""
-available_capacity(agent::Agent, K::Int) = K - length(agent.active_matches)
-
-"""Available capacity after subtracting period-local reserved principal positions."""
-function available_capacity(agent::Agent, K::Int, blocked_slots::Int)
-    max(K - length(agent.active_matches) - blocked_slots, 0)
-end
 
 """True if the agent currently has a relationship with `partner_id`."""
 @inline function has_current_match(agent::Agent, partner_id::Int)::Bool
@@ -182,41 +172,39 @@ function update_partner_mean!(agent::Agent, partner_id::Int, q::Float64)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Proposed match (for conflict resolution)
+# Directed offers and accepted relationships
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""A proposed match before acceptance/rejection in the sequential formation step.
-
-`ask_j` caches the counterparty's acquisition reservation q̄_j at the time the
-broker commits to principal capture. `capture_qhat` caches the broker's
-acquisition-time position forecast for principal inventory exposure. Both are NaN
-for non-principal proposals. Caching keeps the recorded capture decision aligned
-with the broker's ex-ante acquisition rule even if execution occurs later in
-the period."""
-struct ProposedMatch
-    demander_id::Int
-    counterparty_id::Int
-    channel::Symbol         # :self or :broker
-    evaluation::Float64     # q_hat (stranger) or q_bar (known neighbor) used for demander selection
-    is_principal::Bool      # Model 1: broker takes one side
-    ask_j::Float64          # acquisition reservation cached at mode selection; NaN if unused
-    capture_qhat::Float64   # acquisition-time q̂ used for principal exposure; NaN if unused
+"""A directed active-search offer in the shared market."""
+struct DirectedOffer
+    from_id::Int
+    to_id::Int
+    channel::Symbol
+    predicted_value::Float64
 end
 
-"""Accepted match record emitted by sequential formation and consumed later in the same step."""
-const AcceptedMatch = NamedTuple{
-    (
-        :demander_id,
-        :counterparty_id,
-        :channel,
-        :is_principal,
-        :q_realized,
-        :q_predicted,
-        :ask_j,
-        :capture_qhat,
-    ),
-    Tuple{Int,Int,Symbol,Bool,Float64,Float64,Float64,Float64},
-}
+"""Accepted directed-offer credit attached to a realized relationship."""
+struct OfferCredit
+    from_id::Int
+    to_id::Int
+    channel::Symbol
+    predicted_value::Float64
+    was_connected::Bool
+end
+
+"""Accepted relationship record emitted by the shared offer market."""
+struct AcceptedMatch
+    demander_id::Int
+    counterparty_id::Int
+    channel::Symbol
+    is_principal::Bool
+    q_realized::Float64
+    q_predicted::Float64
+    ask::Float64
+    capture_qhat::Float64
+    offer1::Union{OfferCredit,Nothing}
+    offer2::Union{OfferCredit,Nothing}
+end
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Broker
@@ -251,8 +239,10 @@ Base.@kwdef mutable struct Broker
     # Capture confidence:
     # - capture_confidence_mae: EWMA of recent broker-controlled exposure errors
     # - capture_confidence_ready: whether live broker activity has initialized κ
+    # - capture_error_count: cumulative broker-controlled exposure errors
     capture_confidence_mae::Float64 = 0.0
     capture_confidence_ready::Bool = false
+    capture_error_count::Int = 0
 end
 
 """Number of valid history entries for the broker."""
@@ -354,16 +344,15 @@ Base.@kwdef mutable struct PeriodAccumulators
     q_broker_principal::Vector{Float64} = Float64[]
 
     # Position-level acquisition exposures in Model 1.
-    # - capture_realized: realized value of the acquired position, 0 if unplaced
-    # - capture_ask: acquisition reservation q̄_j paid for the position
-    # - capture_qhat: acquisition-time forecast used to justify the position
-    # These feed both κ_b^t and the capture diagnostics (§12i).
+    # Rejected principal positions record realized value 0.
     capture_realized::Vector{Float64} = Float64[]
     capture_ask::Vector{Float64} = Float64[]
     capture_qhat::Vector{Float64} = Float64[]
-
-    # Distinct counterparties acquired in principal mode this period (for supply scarcity)
-    principal_acquired_ids::Set{Int} = Set{Int}()
+    captured_origin_count::Int = 0
+    captured_position_count::Int = 0
+    principal_rejected::Int = 0
+    capture_ready::Bool = false
+    capture_scaled_mae::Float64 = NaN
 
     # Access vs assessment decomposition
     access_count::Int = 0       # counterparty was NOT a neighbor of demander
@@ -398,6 +387,10 @@ Base.@kwdef mutable struct PeriodAccumulators
     # Roster
     roster_size::Int = 0
     broker_access_size::Int = 0
+
+    # Current-period counterparty concentration
+    median_counterparties::Float64 = NaN
+    max_counterparties::Int = 0
 end
 
 """Zero all per-period fields while preserving vector capacity for reuse."""
@@ -411,7 +404,11 @@ function reset_accumulators!(a::PeriodAccumulators)
     empty!(a.capture_realized)
     empty!(a.capture_ask)
     empty!(a.capture_qhat)
-    empty!(a.principal_acquired_ids)
+    a.captured_origin_count = 0
+    a.captured_position_count = 0
+    a.principal_rejected = 0
+    a.capture_ready = false
+    a.capture_scaled_mae = NaN
     a.access_count = 0
     a.assessment_count = 0
     a.n_demanders = 0
@@ -435,6 +432,8 @@ function reset_accumulators!(a::PeriodAccumulators)
     a.broker_holdout_rmse = NaN
     a.roster_size = 0
     a.broker_access_size = 0
+    a.median_counterparties = NaN
+    a.max_counterparties = 0
     return nothing
 end
 
@@ -469,7 +468,7 @@ struct ModelParams
     sigma_eps::Float64           # match output noise SD (default 0.10)
 
     # Match accounting
-    K::Int                       # distinct-counterparty capacity (default 5)
+    K::Int                       # maximum active demands per period (default 5)
     p_demand::Float64            # per-position demand probability (default 0.50)
 
     # Network
@@ -487,12 +486,14 @@ struct ModelParams
     h_b::Int                     # broker hidden layer width (default 32)
 
     # Search
-    n_strangers::Int             # max strangers in self-search (default 5)
+    n_strangers::Int             # period-level stranger pool size (default 10)
     eta::Float64                 # agent entry/exit rate (default 0.02)
     roster_churn::Float64        # standing-roster exogenous churn probability (default 0.02)
 
-    # Model 1 toggle
+    # Model 1
     enable_principal::Bool       # resource capture mode (default false)
+    capture_min_error_obs::Int   # minimum broker-controlled errors before capture
+    capture_error_threshold::Float64  # max MAE / (q_cal - r) for capture
 
     # Simulation
     network_measure_interval::Int # M (default 20)
@@ -510,16 +511,11 @@ Pre-allocated per-step scratch buffers reused across agents and calls.
 Lives on ModelState; reset between uses via `empty!` on the vector fields.
 """
 Base.@kwdef mutable struct SimWorkspace
-    # Round-search scratch
+    # Search scratch
     neighbor_ids::Vector{Int} = Int[]
     neighbor_evals::Vector{Float64} = Float64[]
-    neighbor_caps::Vector{Int} = Int[]
-    stranger_ids::Vector{Int} = Int[]
-    stranger_evals::Vector{Float64} = Float64[]
-    stranger_caps::Vector{Int} = Int[]
-    eligible::Vector{Int} = Int[]
     # Neighbor bitset: nbr_mask[j] = true iff j is a neighbor of the current agent.
-    # Length N+1 (extra slot for the broker node). Reset after each round-search call.
+    # Length N+1 (extra slot for the broker node). Reset after each self-search call.
     nbr_mask::Vector{Bool} = Bool[]
     # Tracks which indices we set in nbr_mask this call, so we can clear only those.
     nbr_marked::Vector{Int} = Int[]
@@ -527,22 +523,12 @@ Base.@kwdef mutable struct SimWorkspace
     current_match_mask::Matrix{Bool} = Matrix{Bool}(undef, 0, 0)
     current_match_touched::Vector{Int} = Int[]
 
-    roster_members::Vector{Int} = Int[]
-    roster_capacity::Vector{Int} = Int[]
     access_seen::Vector{Bool} = Bool[]
     access_touched::Vector{Int} = Int[]  # sparse-clear markers for broker access deduplication
-    # Quality matrix Q[demander_idx, access_idx] (unique demanders x broker access set)
-    Q::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)
     # Batched prediction scratch
     Z_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # 2d x n_pairs input
     H_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # h x n_pairs hidden
     Y_batch::Vector{Float64} = Float64[]                      # n_pairs output
-    # Deduplication: demander_idx[agent_id] = position in unique_demanders (0 = unseen).
-    # Length N, sparse-cleared after each call (like nbr_mask pattern).
-    unique_demanders::Vector{Int} = Int[]
-    demander_idx::Vector{Int} = Int[]
-    demander_touched::Vector{Int} = Int[]  # which entries of demander_idx we set
-    demander_remaining::Vector{Int} = Int[]  # positions remaining per unique demander
     # Sorted greedy: pre-allocated (negated_val, flat_index) pairs, sorted in-place.
     sort_pairs::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
 
@@ -550,49 +536,32 @@ Base.@kwdef mutable struct SimWorkspace
     demand_agent_ids::Vector{Int} = Int[]     # agents with demand
     demand_channels::Vector{Symbol} = Symbol[]  # channel per demander
     demand_counts::Vector{Int} = Int[]        # d_i per demander
-    demand_remaining::Vector{Int} = Int[]     # remaining positions by demander index during round matching
-    demand_failed::Vector{Bool} = Bool[]      # demander exhausted feasible set this period
     broker_clients_ws::Vector{Int} = Int[]
-    was_connected_i::Vector{Int} = Int[]  # pre-formation edge snapshot
-    was_connected_j::Vector{Int} = Int[]
-    remaining_cap::Vector{Int} = Int[]    # capacity tracker for match formation
-    principal_reserved_capacity::Vector{Int} = Int[]
-    principal_reserved_touched::Vector{Int} = Int[]
-    principal_inventory_ids::Vector{Int} = Int[]
-    principal_inventory_asks::Vector{Float64} = Float64[]
-    principal_inventory_slot_qhats::Vector{Vector{Float64}} = Vector{Vector{Float64}}()
-    principal_inventory_next_slot::Vector{Int} = Int[]
-    principal_inventory_round_ids::Vector{Int} = Int[]
-    principal_inventory_round_blocks::Vector{Int} = Int[]
-    principal_inventory_round_remaining::Vector{Int} = Int[]
-    principal_round_taken::Vector{Bool} = Bool[]
-    capture_plan_remaining::Vector{Int} = Int[]
     demander_q_sum::Vector{Float64} = Float64[]   # realized output by demander id
     broker_standard_count::Vector{Int} = Int[]    # successful standard broker matches by demander id
-    all_proposals::Vector{ProposedMatch} = ProposedMatch[]
+    principal_payment::Vector{Float64} = Float64[] # capture payments by origin id
     accepted_matches::Vector{AcceptedMatch} = AcceptedMatch[]
-    round_active_positions::Vector{Int} = Int[]
-    round_open_agents::Vector{Int} = Int[]
-    round_broker_indices::Vector{Int} = Int[]
-    round_broker_demanders::Vector{Int} = Int[]
-    round_pref_offsets::Vector{Int} = Int[]
-    round_next_pref::Vector{Int} = Int[]
-    round_pref_owner::Vector{Int} = Int[]
-    round_queue::Vector{Int} = Int[]
-    round_agent_to_active::Vector{Int} = Int[]
-    round_agent_touched::Vector{Int} = Int[]
-    round_outgoing_prop_idx::Vector{Int} = Int[]
-    round_hold_counts::Vector{Int} = Int[]
-    round_held_prop_idx::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    round_held_scores::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)
-    round_broker_pref_matches::Vector{ProposedMatch} = ProposedMatch[]
-    round_broker_pref_counts::Vector{Int} = Int[]
     period_broker_demanders::Vector{Int} = Int[]
     period_broker_access_ids::Vector{Int} = Int[]
-    period_broker_open_cols::Vector{Int} = Int[]
-    period_broker_ranked_cols::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    period_broker_open_mask::Vector{Bool} = Bool[]
-    period_broker_open_touched::Vector{Int} = Int[]
+    period_strangers::Vector{Int} = Int[]
+    offers::Vector{DirectedOffer} = DirectedOffer[]
+    offer_index::Matrix{Int} = Matrix{Int}(undef, 0, 0)
+    offer_index_touched::Vector{Int} = Int[]
+    offer_pairs::Vector{Tuple{Int,Int}} = Tuple{Int,Int}[]
+    offer_remaining::Vector{Int} = Int[]
+    broker_pair_scores::Vector{Tuple{Float64,Int,Int}} = Tuple{Float64,Int,Int}[]
+    broker_demander_mask::Vector{Bool} = Bool[]
+    broker_demander_touched::Vector{Int} = Int[]
+    broker_access_mask::Vector{Bool} = Bool[]
+    broker_access_touched::Vector{Int} = Int[]
+    captured_origin_mask::Vector{Bool} = Bool[]
+    captured_origin_touched::Vector{Int} = Int[]
+    capture_candidate_lots::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
+    capture_candidate_counts::Vector{Int} = Int[]
+    capture_candidate_sums::Vector{Float64} = Float64[]
+    capture_asks::Vector{Float64} = Float64[]
+    capture_plan_recipients::Vector{Int} = Int[]
+    capture_plan_qhats::Vector{Float64} = Float64[]
 
     # Holdout evaluation scratch (reused each period in step.jl)
     Ax_buf::Vector{Float64} = Float64[]
@@ -601,6 +570,8 @@ Base.@kwdef mutable struct SimWorkspace
     holdout_agent_preds::Vector{Float64} = Float64[]
     holdout_agent_trues::Vector{Float64} = Float64[]
     holdout_broker_preds::Vector{Float64} = Float64[]
+    holdout_agent_ids::Vector{Int} = Int[]
+    holdout_partner_ids::Vector{Int} = Int[]
     holdout_pred_order::Vector{Int} = Int[]
     holdout_true_order::Vector{Int} = Int[]
     holdout_pred_ranks::Vector{Float64} = Float64[]

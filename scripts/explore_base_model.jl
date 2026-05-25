@@ -93,9 +93,8 @@ function plot_ensemble(mdfs::Vector{DataFrame}, suptitle::String, filename::Stri
     pm!(ax, mdf -> Float64.(mdf.n_total_matches); label="Matches", color=COL_AGENT)
     axislegend(ax; position=:rt, LEG_KW...)
 
-    ax = newax(fig[1, 4]; title="Available agents & broker access", ylabel="Count",
+    ax = newax(fig[1, 4]; title="Broker access and roster", ylabel="Count",
               limits=(xlims, (0, nothing)), akw...)
-    pm!(ax, mdf -> Float64.(mdf.n_available); label="Available", color=COL_DIAG)
     pm!(ax, mdf -> Float64.(mdf.broker_access_size); label="Broker access set", color=COL_BROKER)
     pm!(ax, mdf -> Float64.(mdf.roster_size); label="Standing roster", color=COL_BASE_REF,
         linestyle=:dash)

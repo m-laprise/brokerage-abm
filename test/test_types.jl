@@ -13,10 +13,12 @@ using LinearAlgebra: norm
         @test p.p_demand == 0.50
         @test p.omega == 0.20
         @test p.search_cost_rate == 0.15
-        @test p.n_strangers == 5
+        @test p.n_strangers == 10
         @test p.roster_churn == 0.02
         @test p.network_measure_interval == 20
         @test p.enable_principal == false
+        @test p.capture_min_error_obs == 100
+        @test p.capture_error_threshold == 0.65
     end
 
     @testset "default_params with overrides" begin
@@ -43,6 +45,8 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(eta=-0.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
+        @test_throws AssertionError default_params(capture_min_error_obs=-1)
+        @test_throws AssertionError default_params(capture_error_threshold=-0.1)
         @test_throws AssertionError default_params(T=10, T_burn=15)
     end
 
@@ -93,6 +97,11 @@ using LinearAlgebra: norm
         accum.broker_error_abs_sum = 4.0
         accum.broker_error_count = 3
         accum.broker_confidence_mae = 1.5
+        accum.captured_origin_count = 2
+        accum.captured_position_count = 4
+        accum.principal_rejected = 1
+        accum.capture_ready = true
+        accum.capture_scaled_mae = 0.2
 
         reset_accumulators!(accum)
 
@@ -108,6 +117,11 @@ using LinearAlgebra: norm
         @test accum.broker_error_abs_sum == 0.0
         @test accum.broker_error_count == 0
         @test isnan(accum.broker_confidence_mae)
+        @test accum.captured_origin_count == 0
+        @test accum.captured_position_count == 0
+        @test accum.principal_rejected == 0
+        @test !accum.capture_ready
+        @test isnan(accum.capture_scaled_mae)
     end
 
     @testset "Agent history recording and growth" begin
@@ -207,7 +221,7 @@ using LinearAlgebra: norm
         @test agent.partner_count[3] == 2
     end
 
-    @testset "Available capacity" begin
+    @testset "Current matches are tracked independently of K" begin
         rng = StableRNG(42)
         p = default_params(N=10, K=3)
         nn = init_neural_net(p.d, p.h_a, rng)
@@ -223,15 +237,13 @@ using LinearAlgebra: norm
             partner_count=zeros(Int, 10),
         )
 
-        @test available_capacity(agent, 3) == 3
         @test !has_current_match(agent, 2)
         push!(agent.active_matches, ActiveMatch(2, false, :self))
-        @test available_capacity(agent, 3) == 2
         @test has_current_match(agent, 2)
         @test !has_current_match(agent, 3)
         push!(agent.active_matches, ActiveMatch(3, false, :broker))
         push!(agent.active_matches, ActiveMatch(4, false, :broker))
-        @test available_capacity(agent, 3) == 0
+        @test length(agent.active_matches) == 3
     end
 
     @testset "Current-match workspace index" begin

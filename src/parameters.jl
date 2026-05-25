@@ -4,16 +4,16 @@
 Default parameter construction and validation for the Transient Brokerage ABM (v0.2).
 """
 
-# Constant offset shifting q positive for downstream economics
+"""Constant offset added to match output so calibrated quality is positive."""
 const Q_OFFSET = 1.0
 
-# Calibration fraction: r = R_BASE_FRAC * q_cal
+"""Reservation-output fraction used to set `r = R_BASE_FRAC * q_cal`."""
 const R_BASE_FRAC = 0.60
 
 # Shared search-cost rate, expressed as a share of the calibration surplus
 # scale (q_cal - r). Both channels use the same level, but the self-search cost
-# remains per demanded relationship position while the broker fee remains contingent on realized
-# standard placements.
+# remains per demanded relationship position while the broker fee is contingent
+# on realized standard placements.
 const SEARCH_COST_RATE_BASE = 0.15
 
 # Fixed roster target share: broker maintains this fraction of the population
@@ -58,11 +58,13 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :h_a => 16,
         :h_b => 32,
         # Search
-        :n_strangers => 5,
+        :n_strangers => 10,
         :eta => 0.02,
         :roster_churn => 0.02,
         # Model 1
         :enable_principal => false,
+        :capture_min_error_obs => 100,
+        :capture_error_threshold => 0.65,
         # Simulation
         :network_measure_interval => 20,
         :T => 200,
@@ -95,6 +97,8 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:eta],
         defaults[:roster_churn],
         defaults[:enable_principal],
+        defaults[:capture_min_error_obs],
+        defaults[:capture_error_threshold],
         defaults[:network_measure_interval],
         defaults[:T],
         defaults[:T_burn],
@@ -145,6 +149,10 @@ function validate_params(p::ModelParams)
     @assert p.n_strangers >= 0 "n_strangers must be >= 0, got $(p.n_strangers)"
     @assert 0.0 <= p.eta < 1.0 "eta must be in [0, 1), got $(p.eta)"
     @assert 0.0 <= p.roster_churn <= 1.0 "roster_churn must be in [0, 1], got $(p.roster_churn)"
+
+    # Model 1
+    @assert p.capture_min_error_obs >= 0 "capture_min_error_obs must be >= 0"
+    @assert p.capture_error_threshold >= 0.0 "capture_error_threshold must be >= 0"
 
     # Simulation
     @assert p.network_measure_interval >= 1 "network_measure_interval must be >= 1"

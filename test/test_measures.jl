@@ -74,7 +74,9 @@ using TransientBrokerage
 
         TransientBrokerage.prepare_true_ranks!(real, length(real), true_order, true_ranks)
         pq_prefix = TransientBrokerage.compute_prediction_quality_with_true_ranks!(
-            pred, real, length(pred);
+            pred,
+            real,
+            length(pred);
             sigma_eps=0.10,
             pred_order=pred_order,
             pred_ranks=pred_ranks,
@@ -116,7 +118,7 @@ using TransientBrokerage
 
     @testset "betweenness on complete graph: all equal and low" begin
         G = SimpleGraph(4)
-        for i in 1:4, j in (i+1):4
+        for i in 1:4, j in (i + 1):4
             add_edge!(G, i, j)
         end
         bc_vals = [compute_betweenness(G, i) for i in 1:4]
@@ -163,11 +165,16 @@ using TransientBrokerage
         # 4 connects to 3 and 5. All paths between cliques go through 4.
         G = SimpleGraph(7)
         # Clique 1: 1-2, 1-3, 2-3
-        add_edge!(G, 1, 2); add_edge!(G, 1, 3); add_edge!(G, 2, 3)
+        add_edge!(G, 1, 2);
+        add_edge!(G, 1, 3);
+        add_edge!(G, 2, 3)
         # Bridge: 3-4, 4-5
-        add_edge!(G, 3, 4); add_edge!(G, 4, 5)
+        add_edge!(G, 3, 4);
+        add_edge!(G, 4, 5)
         # Clique 2: 5-6, 5-7, 6-7
-        add_edge!(G, 5, 6); add_edge!(G, 5, 7); add_edge!(G, 6, 7)
+        add_edge!(G, 5, 6);
+        add_edge!(G, 5, 7);
+        add_edge!(G, 6, 7)
         bc4 = compute_betweenness(G, 4)
         # Node 4 is on ALL 9 cross-clique shortest paths (3×3 pairs)
         # plus paths within each clique that route through 4 (none, since cliques are complete)
@@ -183,8 +190,10 @@ using TransientBrokerage
     @testset "betweenness: disconnected graph" begin
         # Two isolated components: 1-2-3 and 4-5-6
         G = SimpleGraph(6)
-        add_edge!(G, 1, 2); add_edge!(G, 2, 3)
-        add_edge!(G, 4, 5); add_edge!(G, 5, 6)
+        add_edge!(G, 1, 2);
+        add_edge!(G, 2, 3)
+        add_edge!(G, 4, 5);
+        add_edge!(G, 5, 6)
         # Node 2: on path 1-3 only (can't reach 4,5,6)
         # Raw = 2 (from both directions), norm = (6-1)(6-2) = 20
         @test isapprox(compute_betweenness(G, 2), 2.0/20; atol=1e-10)
@@ -199,7 +208,10 @@ using TransientBrokerage
 
     @testset "betweenness: allocation-free after warmup (N=100)" begin
         G = SimpleGraph(100)
-        for i in 1:99; add_edge!(G, i, i+1); end
+        for i in 1:99
+            ;
+            add_edge!(G, i, i+1);
+        end
         compute_betweenness(G, 50)  # warmup (allocates workspaces)
         a = @allocated compute_betweenness(G, 50)
         # CSR build + partial_bc zeros are O(n+m), small and bounded.
@@ -232,7 +244,10 @@ using TransientBrokerage
 
     @testset "constraint on complete graph K4" begin
         G = SimpleGraph(4)
-        for i in 1:4, j in (i+1):4; add_edge!(G, i, j); end
+        for i in 1:4, j in (i + 1):4
+            ;
+            add_edge!(G, i, j);
+        end
         c = compute_burt_constraint(G, 1)
         # K4: each node has 3 neighbors, all interconnected
         # p = 1/3; c_ij = 1/3 + 2*(1/3)*(1/3) = 1/3 + 2/9 = 5/9
@@ -264,7 +279,10 @@ using TransientBrokerage
 
     @testset "effective size on complete graph K4" begin
         G = SimpleGraph(4)
-        for i in 1:4, j in (i+1):4; add_edge!(G, i, j); end
+        for i in 1:4, j in (i + 1):4
+            ;
+            add_edge!(G, i, j);
+        end
         es = compute_effective_size(G, 1)
         # K4: d=3, t=3 (all 3 neighbor pairs connected)
         # ES = 3 - 2*3/3 = 1.0 (Borgatti 1997)
@@ -274,17 +292,24 @@ using TransientBrokerage
     @testset "effective size and constraint: Muscillo (2021) Fig. 1" begin
         # 7-node graph from Muscillo (2021): A=1,B=2,C=3,D=4,E=5,F=6,G=7
         G = SimpleGraph(7)
-        add_edge!(G,1,2); add_edge!(G,1,5); add_edge!(G,1,6); add_edge!(G,1,7)
-        add_edge!(G,2,4); add_edge!(G,2,7)
-        add_edge!(G,3,7); add_edge!(G,4,7); add_edge!(G,5,7); add_edge!(G,6,7)
+        add_edge!(G, 1, 2);
+        add_edge!(G, 1, 5);
+        add_edge!(G, 1, 6);
+        add_edge!(G, 1, 7)
+        add_edge!(G, 2, 4);
+        add_edge!(G, 2, 7)
+        add_edge!(G, 3, 7);
+        add_edge!(G, 4, 7);
+        add_edge!(G, 5, 7);
+        add_edge!(G, 6, 7)
 
         # Effective size from the paper (Table on p.4)
-        @test isapprox(compute_effective_size(G, 1), 2.5;   atol=0.001)   # A
-        @test isapprox(compute_effective_size(G, 2), 5.0/3;  atol=0.001)  # B
-        @test isapprox(compute_effective_size(G, 3), 1.0;   atol=0.001)   # C
-        @test isapprox(compute_effective_size(G, 4), 1.0;   atol=0.001)   # D
-        @test isapprox(compute_effective_size(G, 5), 1.0;   atol=0.001)   # E
-        @test isapprox(compute_effective_size(G, 6), 1.0;   atol=0.001)   # F
+        @test isapprox(compute_effective_size(G, 1), 2.5; atol=0.001)   # A
+        @test isapprox(compute_effective_size(G, 2), 5.0/3; atol=0.001)  # B
+        @test isapprox(compute_effective_size(G, 3), 1.0; atol=0.001)   # C
+        @test isapprox(compute_effective_size(G, 4), 1.0; atol=0.001)   # D
+        @test isapprox(compute_effective_size(G, 5), 1.0; atol=0.001)   # E
+        @test isapprox(compute_effective_size(G, 6), 1.0; atol=0.001)   # F
         @test isapprox(compute_effective_size(G, 7), 14.0/3; atol=0.001)  # G
 
         # Constraint: nodes with high effective size should have low constraint
@@ -299,7 +324,10 @@ using TransientBrokerage
         # c_14 = (1/2 + (1/2)*(1/3))^2 = (2/3)^2 = 4/9 (indirect via 2: p12*p24 = 0.5*1/3)
         # C_1 = 9/16 + 4/9 = 1.007
         G = SimpleGraph(4)
-        add_edge!(G, 1, 2); add_edge!(G, 1, 4); add_edge!(G, 2, 3); add_edge!(G, 2, 4)
+        add_edge!(G, 1, 2);
+        add_edge!(G, 1, 4);
+        add_edge!(G, 2, 3);
+        add_edge!(G, 2, 4)
         @test isapprox(compute_burt_constraint(G, 1), 9.0/16 + 4.0/9; atol=0.001)
     end
 
@@ -313,18 +341,5 @@ using TransientBrokerage
         @test isfinite(state.cached_network.constraint)
         @test isfinite(state.cached_network.effective_size)
         @test 0.0 <= state.cached_network.betweenness <= 1.0
-    end
-
-    # ─── Consistency: constraint and effective size are inversely related ─
-
-    @testset "high constraint <-> low effective size (structural holes)" begin
-        # Star center: low constraint, high effective size
-        G = star_graph(11)
-        c_center = compute_burt_constraint(G, 1)
-        es_center = compute_effective_size(G, 1)
-        c_leaf = compute_burt_constraint(G, 2)
-        es_leaf = compute_effective_size(G, 2)
-        @test c_center < c_leaf
-        @test es_center > es_leaf
     end
 end

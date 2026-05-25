@@ -9,7 +9,8 @@ using StableRNGs: StableRNG
 
     p = default_params(N=100, seed=42)
     state = initialize_model(p)
-    N = p.N; d = p.d
+    N = p.N;
+    d = p.d
 
     @testset "initialize_model returns valid ModelState" begin
         @test state isa ModelState
@@ -95,15 +96,14 @@ using StableRNGs: StableRNG
     end
 
     @testset "neural networks initialized and trained" begin
-        for a in state.agents
-            @test size(a.nn.W1) == (p.h_a, d)
-            @test length(a.nn.b1) == p.h_a
-            @test length(a.nn.w2) == p.h_a
-            @test isfinite(a.nn.b2)
-            @test all(isfinite, a.nn.W1)
-            @test size(a.train_X, 1) == d
-            @test length(a.train_q) == size(a.train_X, 2)
-        end
+        @test all(size(a.nn.W1) == (p.h_a, d) for a in state.agents)
+        @test all(length(a.nn.b1) == p.h_a for a in state.agents)
+        @test all(length(a.nn.w2) == p.h_a for a in state.agents)
+        @test all(isfinite(a.nn.b2) && all(isfinite, a.nn.W1) for a in state.agents)
+        @test all(
+            size(a.train_X, 1) == d && length(a.train_q) == size(a.train_X, 2) for
+            a in state.agents
+        )
         @test size(state.broker.nn.W1) == (p.h_b, 2 * d)
         @test isfinite(state.broker.nn.b2)
     end
@@ -113,7 +113,9 @@ using StableRNGs: StableRNG
         @test all(a.satisfaction_self != 0.0 for a in state.agents if a.history_count > 0)
         @test all(isfinite(a.satisfaction_self) for a in state.agents)
         # Broker satisfaction set to broker reputation (market prior)
-        @test all(a.satisfaction_broker == state.broker.last_reputation for a in state.agents)
+        @test all(
+            a.satisfaction_broker == state.broker.last_reputation for a in state.agents
+        )
         @test all(!a.tried_broker for a in state.agents)
         @test all(a.periods_alive == 0 for a in state.agents)
         # Broker reputation set from seed data
@@ -123,11 +125,11 @@ using StableRNGs: StableRNG
 
     @testset "curve_point returns unit vectors" begin
         geo = state.curve_geo
-        for t in [0.0, 0.25, 0.5, 0.75, 1.0]
-            cp = TransientBrokerage.curve_point(t, geo)
-            @test length(cp) == d
-            @test isapprox(norm(cp), 1.0; atol=1e-10)
-        end
+        points = [
+            TransientBrokerage.curve_point(t, geo) for t in (0.0, 0.25, 0.5, 0.75, 1.0)
+        ]
+        @test all(length(cp) == d for cp in points)
+        @test all(isapprox(norm(cp), 1.0; atol=1e-10) for cp in points)
     end
 
     @testset "generate_agent_types produces N unit vectors" begin
@@ -148,7 +150,9 @@ using StableRNGs: StableRNG
 
         rng2 = StableRNG(7)
         geo2 = TransientBrokerage.generate_curve_geometry(d, p.s, rng2)
-        types_sorted, inv = TransientBrokerage.generate_agent_types(N, geo2, p.sigma_x, rng2; sort_by_pc1=true)
+        types_sorted, inv = TransientBrokerage.generate_agent_types(
+            N, geo2, p.sigma_x, rng2; sort_by_pc1=true
+        )
 
         @test length(types_sorted) == N
         # The sorted and unsorted should contain the same types (in different order)

@@ -1,354 +1,250 @@
 using Test
 using TransientBrokerage
-using Graphs: has_edge, neighbors
+using Graphs: has_edge
 using StableRNGs: StableRNG
 
 @testset "Match Formation and Outsourcing" begin
     p = default_params(N=30, T=5, T_burn=1, K=3, seed=42)
-    state = initialize_model(p)
-    @testset "Round matching falls back within round after rejection" begin
-        p_round = default_params(N=12, T=5, T_burn=1, K=1, n_strangers=0, seed=123)
-        state_round = initialize_model(p_round)
-        agents_r = state_round.agents
-        G_r = state_round.G
 
-        for agent_id in 1:4
-            remove_agent_edges!(G_r, agent_id)
-        end
-        add_match_edge!(G_r, 1, 3)
-        add_match_edge!(G_r, 1, 4)
-        add_match_edge!(G_r, 2, 3)
-        add_match_edge!(G_r, 2, 4)
-
-        agents_r[1].partner_sum[3] = 10.0;
-        agents_r[1].partner_count[3] = 1
-        agents_r[1].partner_sum[4] = 5.0;
-        agents_r[1].partner_count[4] = 1
-        agents_r[2].partner_sum[3] = 9.0;
-        agents_r[2].partner_count[3] = 1
-        agents_r[2].partner_sum[4] = 4.0;
-        agents_r[2].partner_count[4] = 1
-
-        agents_r[3].partner_sum[1] = 8.0;
-        agents_r[3].partner_count[1] = 1
-        agents_r[3].partner_sum[2] = 6.0;
-        agents_r[3].partner_count[2] = 1
-        agents_r[4].partner_sum[1] = 3.0;
-        agents_r[4].partner_count[1] = 1
-        agents_r[4].partner_sum[2] = 7.0;
-        agents_r[4].partner_count[2] = 1
-        TransientBrokerage.reset_principal_inventory!(state_round.workspace, p_round.N)
-
-        accepted = TransientBrokerage.round_match_formation!(
-            [1, 2],
-            [:self, :self],
-            [1, 1],
-            agents_r,
-            state_round.broker,
-            state_round.env,
-            G_r,
-            p_round,
-            state_round.cal,
-            StableRNG(17);
-            ws=state_round.workspace,
+    @testset "One-sided offers require receiver acceptance" begin
+        state = initialize_model(
+            default_params(N=12, T=5, T_burn=1, n_strangers=0, seed=123)
         )
+        agents = state.agents
+        G = state.G
 
-        accepted_pairs = Set((m.demander_id, m.counterparty_id) for m in accepted)
-        @test length(accepted) == 2
-        @test accepted_pairs == Set([(1, 3), (2, 4)])
-    end
+        remove_agent_edges!(G, 1)
+        remove_agent_edges!(G, 2)
+        add_match_edge!(G, 1, 2)
+        agents[1].partner_sum[2] = 10.0
+        agents[1].partner_count[2] = 1
+        agents[2].partner_sum[1] = 0.0
+        agents[2].partner_count[1] = 1
 
-    @testset "Round matching fills one relationship position per round" begin
-        p_round2 = default_params(N=12, T=5, T_burn=1, K=2, n_strangers=0, seed=321)
-        state_round2 = initialize_model(p_round2)
-        agents_r2 = state_round2.agents
-        G_r2 = state_round2.G
-
-        for agent_id in 1:3
-            remove_agent_edges!(G_r2, agent_id)
-        end
-        add_match_edge!(G_r2, 1, 2)
-        add_match_edge!(G_r2, 1, 3)
-
-        agents_r2[1].partner_sum[2] = 9.0;
-        agents_r2[1].partner_count[2] = 1
-        agents_r2[1].partner_sum[3] = 8.0;
-        agents_r2[1].partner_count[3] = 1
-        agents_r2[2].partner_sum[1] = 7.0;
-        agents_r2[2].partner_count[1] = 1
-        agents_r2[3].partner_sum[1] = 6.0;
-        agents_r2[3].partner_count[1] = 1
-        TransientBrokerage.reset_principal_inventory!(state_round2.workspace, p_round2.N)
-
-        accepted = TransientBrokerage.round_match_formation!(
+        accepted = TransientBrokerage.run_offer_market!(
             [1],
             [:self],
-            [2],
-            agents_r2,
-            state_round2.broker,
-            state_round2.env,
-            G_r2,
-            p_round2,
-            state_round2.cal,
-            StableRNG(23);
-            ws=state_round2.workspace,
+            [1],
+            agents,
+            state.broker,
+            state.env,
+            G,
+            state.params,
+            state.cal,
+            StableRNG(17);
+            ws=state.workspace,
         )
 
-        @test length(accepted) == 2
-        @test Set(m.counterparty_id for m in accepted) == Set([2, 3])
-        @test length(state_round2.agents[1].active_matches) == 2
-    end
+        @test isempty(accepted)
 
-    @testset "Round matching does not duplicate reciprocal current relationships" begin
-        p_recip = default_params(N=12, T=5, T_burn=1, K=2, n_strangers=0, seed=322)
-        state_recip = initialize_model(p_recip)
-        agents_recip = state_recip.agents
-        G_recip = state_recip.G
-
-        for agent_id in 1:2
-            remove_agent_edges!(G_recip, agent_id)
-        end
-        add_match_edge!(G_recip, 1, 2)
-        agents_recip[1].partner_sum[2] = 9.0
-        agents_recip[1].partner_count[2] = 1
-        agents_recip[2].partner_sum[1] = 9.0
-        agents_recip[2].partner_count[1] = 1
-        TransientBrokerage.reset_principal_inventory!(state_recip.workspace, p_recip.N)
-
-        accepted = TransientBrokerage.round_match_formation!(
-            [1, 2],
-            [:self, :self],
-            [1, 1],
-            agents_recip,
-            state_recip.broker,
-            state_recip.env,
-            G_recip,
-            p_recip,
-            state_recip.cal,
-            StableRNG(24);
-            ws=state_recip.workspace,
+        agents[2].partner_sum[1] = 10.0
+        accepted = TransientBrokerage.run_offer_market!(
+            [1],
+            [:self],
+            [1],
+            agents,
+            state.broker,
+            state.env,
+            G,
+            state.params,
+            state.cal,
+            StableRNG(18);
+            ws=state.workspace,
         )
 
         @test length(accepted) == 1
-        @test Set([accepted[1].demander_id, accepted[1].counterparty_id]) == Set([1, 2])
-        @test length(agents_recip[1].active_matches) == 1
-        @test length(agents_recip[2].active_matches) == 1
-        @test has_current_match(agents_recip[1], 2)
-        @test has_current_match(agents_recip[2], 1)
+        @test accepted[1].offer1.from_id == 1
+        @test accepted[1].offer1.to_id == 2
+        @test accepted[1].offer2 === nothing
     end
 
-    @testset "Round matching creates edges and updates histories for standard matches" begin
-        state3 = initialize_model(p)
-        a1, a2 = state3.agents[1], state3.agents[2]
+    @testset "Reciprocal offers accept without receiver evaluation" begin
+        state = initialize_model(default_params(N=12, T=5, T_burn=1, seed=124))
+        ws = state.workspace
+        agents = state.agents
+
+        TransientBrokerage.rebuild_current_match_index!(ws, agents)
+        TransientBrokerage.reset_offer_book!(ws, state.params.N)
+        @test TransientBrokerage.add_offer!(ws, 1, 2, :self, 10.0)
+        @test TransientBrokerage.add_offer!(ws, 2, 1, :broker, 10.0)
+
+        agents[1].partner_sum[2] = -10.0
+        agents[1].partner_count[2] = 1
+        agents[2].partner_sum[1] = -10.0
+        agents[2].partner_count[1] = 1
+
+        accepted = TransientBrokerage.AcceptedMatch[]
+        if length(ws.Ax_buf) != state.params.d
+            ws.Ax_buf = Vector{Float64}(undef, state.params.d)
+            ws.Bx_buf = Vector{Float64}(undef, state.params.d)
+        end
+        TransientBrokerage.accept_offer_pair!(
+            accepted,
+            1,
+            2,
+            agents,
+            state.broker,
+            state.env,
+            state.G,
+            state.cal,
+            StableRNG(19);
+            Ax_buf=ws.Ax_buf,
+            Bx_buf=ws.Bx_buf,
+            ws=ws,
+        )
+
+        @test length(accepted) == 1
+        @test accepted[1].offer1.channel == :self
+        @test accepted[1].offer2.channel == :broker
+        @test has_current_match(agents[1], 2)
+        @test has_current_match(agents[2], 1)
+    end
+
+    @testset "No receiver-side K cap rejects acceptable offers" begin
+        p_low_k = default_params(N=12, T=5, T_burn=1, K=1, n_strangers=0, seed=125)
+        state = initialize_model(p_low_k)
+        agents = state.agents
+        G = state.G
+
+        for agent_id in 1:3
+            remove_agent_edges!(G, agent_id)
+        end
+        add_match_edge!(G, 1, 3)
+        add_match_edge!(G, 2, 3)
+        for i in 1:2
+            agents[i].partner_sum[3] = 10.0
+            agents[i].partner_count[3] = 1
+            agents[3].partner_sum[i] = 10.0
+            agents[3].partner_count[i] = 1
+        end
+
+        accepted = TransientBrokerage.run_offer_market!(
+            [1, 2],
+            [:self, :self],
+            [1, 1],
+            agents,
+            state.broker,
+            state.env,
+            G,
+            p_low_k,
+            state.cal,
+            StableRNG(20);
+            ws=state.workspace,
+        )
+
+        @test length(accepted) == 2
+        @test length(agents[3].active_matches) == 2
+        @test Set(m.counterparty_id for m in accepted) == Set([3])
+    end
+
+    @testset "Accepted standard matches create edges and update histories once" begin
+        state = initialize_model(p)
+        a1, a2 = state.agents[1], state.agents[2]
         h1_before = a1.history_count
         h2_before = a2.history_count
 
-        remove_agent_edges!(state3.G, 1)
-        add_match_edge!(state3.G, 1, 2)
+        remove_agent_edges!(state.G, 1)
+        remove_agent_edges!(state.G, 2)
+        add_match_edge!(state.G, 1, 2)
         update_partner_mean!(a1, 2, 6.0)
         update_partner_mean!(a2, 1, 5.0)
-        TransientBrokerage.reset_principal_inventory!(state3.workspace, p.N)
 
-        accepted = TransientBrokerage.round_match_formation!(
+        accepted = TransientBrokerage.run_offer_market!(
             [1],
             [:self],
             [1],
-            state3.agents,
-            state3.broker,
-            state3.env,
-            state3.G,
+            state.agents,
+            state.broker,
+            state.env,
+            state.G,
             p,
-            state3.cal,
+            state.cal,
             StableRNG(55);
-            ws=state3.workspace,
+            ws=state.workspace,
         )
 
         @test length(accepted) == 1
         @test a1.history_count == h1_before + 1
         @test a2.history_count == h2_before + 1
-        @test has_edge(state3.G, 1, 2)
+        @test has_edge(state.G, 1, 2)
     end
 
-    @testset "Satisfaction EWMA update" begin
-        state5 = initialize_model(p)
+    @testset "Satisfaction credits directed offer channels" begin
+        state = initialize_model(p)
         omega = p.omega
-        phi = state5.cal.phi
-        c_s = state5.cal.c_s
+        c_s = state.cal.c_s
+        phi = state.cal.phi
+        state.agents[1].satisfaction_self = 1.0
+        state.agents[2].satisfaction_broker = 2.0
+        sat1_before = state.agents[1].satisfaction_self
+        sat2_before = state.agents[2].satisfaction_broker
 
-        # Agent 1 self-searches for two positions, gets one match. Self-search cost
-        # is charged per demanded position, regardless of fill.
-        d_ids = [1];
-        d_chs = [:self];
-        d_cnts = [2]
-        accepted = [(
-            demander_id=1,
-            counterparty_id=5,
-            channel=:self,
-            is_principal=false,
-            q_realized=2.0,
-            q_predicted=1.5,
-            ask_j=NaN,
-            capture_qhat=NaN,
-        )]
-        sat_before = state5.agents[1].satisfaction_self
-        update_satisfaction!(state5.agents, accepted, d_ids, d_chs, d_cnts, state5.cal, p)
-        expected = (1 - omega) * sat_before + omega * (2.0 / 2 - c_s)
-        @test state5.agents[1].satisfaction_self ≈ expected
-    end
-
-    @testset "Broker no-match decays satisfaction" begin
-        state6 = initialize_model(p)
-        omega = p.omega
-        sat_before = state6.agents[1].satisfaction_broker
-        d_ids = [1];
-        d_chs = [:broker];
-        d_cnts = [2]
-        accepted = NamedTuple{
-            (
-                :demander_id,
-                :counterparty_id,
-                :channel,
-                :is_principal,
-                :q_realized,
-                :q_predicted,
-                :ask_j,
-                :capture_qhat,
+        accepted = [
+            AcceptedMatch(
+                1,
+                2,
+                :broker,
+                false,
+                4.0,
+                4.0,
+                NaN,
+                NaN,
+                OfferCredit(1, 2, :self, 4.0, false),
+                OfferCredit(2, 1, :broker, 4.0, false),
             ),
-            Tuple{Int,Int,Symbol,Bool,Float64,Float64,Float64,Float64},
-        }[]
-        update_satisfaction!(state6.agents, accepted, d_ids, d_chs, d_cnts, state6.cal, p)
-        @test state6.agents[1].satisfaction_broker ≈ (1 - omega) * sat_before
-    end
+        ]
 
-    @testset "Self-search failure pays per-position search cost" begin
-        state6b = initialize_model(p)
-        omega = p.omega
-        sat_before = state6b.agents[1].satisfaction_self
-        d_ids = [1];
-        d_chs = [:self];
-        d_cnts = [2]
-        accepted = NamedTuple{
-            (
-                :demander_id,
-                :counterparty_id,
-                :channel,
-                :is_principal,
-                :q_realized,
-                :q_predicted,
-                :ask_j,
-                :capture_qhat,
-            ),
-            Tuple{Int,Int,Symbol,Bool,Float64,Float64,Float64,Float64},
-        }[]
-        update_satisfaction!(state6b.agents, accepted, d_ids, d_chs, d_cnts, state6b.cal, p)
-        expected = (1 - omega) * sat_before - omega * state6b.cal.c_s
-        @test state6b.agents[1].satisfaction_self ≈ expected
-    end
-
-    @testset "Standard broker fee is charged only on successful placements" begin
-        state6c = initialize_model(p)
-        omega = p.omega
-        sat_before = state6c.agents[1].satisfaction_broker
-        d_ids = [1];
-        d_chs = [:broker];
-        d_cnts = [2]
-        accepted = [(
-            demander_id=1,
-            counterparty_id=5,
-            channel=:broker,
-            is_principal=false,
-            q_realized=3.0,
-            q_predicted=2.5,
-            ask_j=NaN,
-            capture_qhat=NaN,
-        )]
-        update_satisfaction!(state6c.agents, accepted, d_ids, d_chs, d_cnts, state6c.cal, p)
-        expected = (1 - omega) * sat_before + omega * ((3.0 - state6c.cal.phi) / 2)
-        @test state6c.agents[1].satisfaction_broker ≈ expected
-    end
-
-    @testset "Principal-mode satisfaction: no fee deducted" begin
-        state7 = initialize_model(
-            default_params(N=30, T=5, T_burn=1, K=3, seed=77, enable_principal=true)
-        )
-        omega = p.omega
-        sat_before = state7.agents[1].satisfaction_broker
-        d_ids = [1];
-        d_chs = [:broker];
-        d_cnts = [2]
-        accepted = [(
-            demander_id=1,
-            counterparty_id=5,
-            channel=:broker,
-            is_principal=true,
-            q_realized=3.0,
-            q_predicted=2.5,
-            ask_j=1.0,
-            capture_qhat=2.5,
-        )]
         update_satisfaction!(
-            state7.agents, accepted, d_ids, d_chs, d_cnts, state7.cal, state7.params
+            state.agents, accepted, [1, 2], [:self, :broker], [1, 1], state.cal, p
         )
-        # No fee for principal mode: cost = 0
-        expected = (1 - omega) * sat_before + omega * (3.0 / 2)
-        @test state7.agents[1].satisfaction_broker ≈ expected
+
+        @test state.agents[1].satisfaction_self ≈
+            (1 - omega) * sat1_before + omega * (4.0 - c_s)
+        @test state.agents[2].satisfaction_broker ≈
+            (1 - omega) * sat2_before + omega * (4.0 - phi)
     end
 
-    @testset "Outsourcing decision follows satisfaction" begin
-        state8 = initialize_model(p)
-        agent = state8.agents[1]
-        # High self-satisfaction, low broker satisfaction
+    @testset "No-match satisfaction updates only active channel" begin
+        state = initialize_model(p)
+        omega = p.omega
+        sat_self_before = state.agents[1].satisfaction_self
+        sat_broker_before = state.agents[1].satisfaction_broker
+        accepted = AcceptedMatch[]
+
+        update_satisfaction!(state.agents, accepted, [1], [:self], [2], state.cal, p)
+
+        @test state.agents[1].satisfaction_self ≈
+            (1 - omega) * sat_self_before - omega * state.cal.c_s
+        @test state.agents[1].satisfaction_broker == sat_broker_before
+    end
+
+    @testset "Outsourcing decision follows satisfaction and reputation" begin
+        state = initialize_model(p)
+        agent = state.agents[1]
         agent.satisfaction_self = 5.0
         agent.satisfaction_broker = 1.0
         agent.tried_broker = true
         @test outsourcing_decision(agent, 0.0, StableRNG(1)) == :self
 
-        # Reverse: broker satisfaction much higher than self
         agent.satisfaction_self = 1.0
         agent.satisfaction_broker = 50.0
         @test outsourcing_decision(agent, 0.0, StableRNG(1)) == :broker
-    end
 
-    @testset "Outsourcing ignores known-partner means as a separate hurdle" begin
-        state8b = initialize_model(p)
-        G8b = state8b.G
-        bn8b = state8b.broker.node_id
-        agent = state8b.agents[1]
-        nbr = first(filter(n -> n != bn8b, neighbors(G8b, agent.id)))
-
-        agent.satisfaction_self = 1.0
-        agent.satisfaction_broker = 10.0
-        agent.tried_broker = true
-        agent.partner_sum[nbr] = 100.0
-        agent.partner_count[nbr] = 1
-
-        @test outsourcing_decision(agent, 0.0, StableRNG(1)) == :broker
-    end
-
-    @testset "Untried broker uses reputation" begin
-        state9 = initialize_model(p)
-        agent = state9.agents[1]
         agent.tried_broker = false
         agent.satisfaction_self = 0.0
-        # High broker reputation should make agent outsource
         @test outsourcing_decision(agent, 10.0, StableRNG(1)) == :broker
     end
 
     @testset "Broker reputation update" begin
-        state10 = initialize_model(p)
-        state10.agents[1].satisfaction_broker = 3.0
-        state10.agents[2].satisfaction_broker = 5.0
-        client_ids = [1, 2]
-        update_broker_reputation!(state10.broker, state10.agents, client_ids)
-        @test state10.broker.last_reputation ≈ 4.0
-        @test state10.broker.has_had_clients == true
-    end
+        state = initialize_model(p)
+        state.agents[1].satisfaction_broker = 3.0
+        state.agents[2].satisfaction_broker = 5.0
+        update_broker_reputation!(state.broker, state.agents, [1, 2])
+        @test state.broker.last_reputation ≈ 4.0
+        @test state.broker.has_had_clients
 
-    @testset "Broker reputation is sticky with no clients" begin
-        state11 = initialize_model(p)
-        state11.broker.last_reputation = 3.5
-        state11.broker.has_had_clients = true
-        update_broker_reputation!(state11.broker, state11.agents, Int[])
-        @test state11.broker.last_reputation == 3.5  # unchanged
+        state.broker.last_reputation = 3.5
+        update_broker_reputation!(state.broker, state.agents, Int[])
+        @test state.broker.last_reputation == 3.5
     end
 end

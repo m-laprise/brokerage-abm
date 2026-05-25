@@ -10,6 +10,8 @@ using TransientBrokerage
         "period",
         "N",
         "n_active_matches",
+        "median_counterparties",
+        "max_counterparties",
         "mean_agent_history",
         "max_agent_history",
         "broker_history_size",
@@ -17,6 +19,12 @@ using TransientBrokerage
         "broker_access_size",
         "broker_reputation",
         "broker_has_had_clients",
+        "capture_ready",
+        "capture_scaled_mae",
+        "captured_origin_count",
+        "captured_position_count",
+        "principal_accepted",
+        "principal_rejected",
         "mean_satisfaction_self",
         "mean_satisfaction_broker",
         "mean_periods_alive",
@@ -33,11 +41,22 @@ using TransientBrokerage
     @test summary["period"] == state.period
     @test summary["N"] == state.params.N
     @test summary["broker_roster_size"] == length(state.broker.roster)
-    @test summary["broker_access_size"] == TransientBrokerage.broker_access_size(state.broker)
+    @test summary["broker_access_size"] ==
+        TransientBrokerage.broker_access_size(state.broker)
     @test summary["n_on_roster"] == length(state.broker.roster)
-    @test summary["period"] isa Int
-    @test summary["broker_has_had_clients"] isa Bool
-    @test summary["mean_satisfaction_self"] isa Float64
-    @test summary["mean_satisfaction_broker"] isa Float64
-    @test summary["betweenness"] isa Float64
+    expected_types = Dict(
+        "period" => Int,
+        "broker_has_had_clients" => Bool,
+        "capture_ready" => Bool,
+        "captured_origin_count" => Int,
+        "captured_position_count" => Int,
+        "principal_accepted" => Int,
+        "principal_rejected" => Int,
+        "median_counterparties" => Float64,
+        "max_counterparties" => Int,
+        "mean_satisfaction_self" => Float64,
+        "mean_satisfaction_broker" => Float64,
+        "betweenness" => Float64,
+    )
+    @test all(isa(summary[key], value_type) for (key, value_type) in expected_types)
 end

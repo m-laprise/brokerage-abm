@@ -24,6 +24,7 @@ using JLD2
 
 const OUTDIR = joinpath(@__DIR__, "..", "data", "figures", "phase_diagram")
 const DATADIR = joinpath(@__DIR__, "..", "data", "sims", "phase_diagram")
+const PHASE_DIAGRAM_SCHEMA_VERSION = 2
 mkpath(OUTDIR)
 mkpath(DATADIR)
 
@@ -38,7 +39,7 @@ sweep_type = :rho_s  # default
 for a in ARGS
     a in ("--rerun", "--m1") && continue
     if a in ("rho_s", "rho_eta", "rho_delta", "rho_snr")
-        sweep_type = Symbol(a)
+        global sweep_type = Symbol(a)
     else
         @warn "Unknown argument: $a"
     end
@@ -94,6 +95,25 @@ println("Phase diagram: $sweep_type ($n_total cells, $N_SEEDS seeds, N=$N_run, T
 RUN_M1 && println("  Including Model 1 (principal mode)")
 RERUN && println("  --rerun: forcing re-simulation")
 
+const STEADY_STATE_FIELDS = (
+    :r2_gap,
+    :broker_r2,
+    :agent_r2,
+    :outsourcing,
+    :betweenness,
+    :broker_rank,
+    :agent_rank,
+    :q_self,
+    :q_broker,
+    :principal_share,
+    :capture_ready,
+    :captured_positions,
+    :principal_acceptance,
+    :capture_surplus,
+    :capture_loss_rate,
+    :capture_scaled_mae,
+)
+
 function nanmean_or_nan(v)
     total = 0.0
     n = 0
@@ -134,15 +154,36 @@ function steady_state_metrics(dfs::Vector, T_burn)
         q_self      = nanmean_or_nan(combined.q_self_mean),
         q_broker    = nanmean_or_nan(combined.q_broker_standard_mean),
         principal_share = mean(combined.principal_mode_share),
+        capture_ready = mean(Float64.(combined.capture_ready)),
+        captured_positions = mean(combined.captured_position_count),
+        principal_acceptance = nanmean_or_nan(combined.principal_acceptance_rate),
+        capture_surplus = nanmean_or_nan(combined.capture_surplus_mean),
+        capture_loss_rate = nanmean_or_nan(combined.capture_loss_rate),
+        capture_scaled_mae = nanmean_or_nan(combined.capture_scaled_mae),
     )
 end
 
-if !RERUN && isfile(datafile)
-    println("Loading cached data: $datafile")
-    saved = JLD2.load(datafile)
-    base_results = saved["base_results"]
-    m1_results = get(saved, "m1_results", nothing)
-else
+function metric_results_have_fields(results, fields)::Bool
+    results isa AbstractMatrix || return false
+    size(results) == (n_rho, n_y) || return false
+    for r in results
+        r === nothing && return false
+        all(field -> field in propertynames(r), fields) || return false
+    end
+    return true
+end
+
+function phase_cache_current(saved, base_results, m1_results)::Bool
+    get(saved, "phase_diagram_schema_version", 0) == PHASE_DIAGRAM_SCHEMA_VERSION ||
+        return false
+    get(saved, "sweep_type", "") == string(sweep_type) || return false
+    metric_results_have_fields(base_results, STEADY_STATE_FIELDS) || return false
+    RUN_M1 || return true
+    get(saved, "run_m1", false) || return false
+    return metric_results_have_fields(m1_results, STEADY_STATE_FIELDS)
+end
+
+function run_phase_sweep()
     base_results = Matrix{Any}(nothing, n_rho, n_y)
     m1_results = RUN_M1 ? Matrix{Any}(nothing, n_rho, n_y) : nothing
 
@@ -153,7 +194,6 @@ else
 
         kw = Dict{Symbol, Any}(:N => N_run, :T => T_run, :rho => rho, y_key => yv)
 
-        # Base model
         dfs = [begin
             p = default_params(; seed=s, kw...)
             _, df = run_simulation(p)
@@ -161,7 +201,6 @@ else
         end for s in 1:N_SEEDS]
         base_results[i, j] = steady_state_metrics(dfs, T_burn)
 
-        # Model 1
         if RUN_M1
             dfs_m1 = [begin
                 p = default_params(; seed=s, enable_principal=true, kw...)
@@ -175,11 +214,34 @@ else
         println("gap=$(round(r.r2_gap, digits=3)), out=$(round(r.outsourcing, digits=3))")
     end
 
-    jldsave(datafile; base_results=base_results,
-            m1_results=m1_results,
-            rho_vals=rho_vals, y_vals=y_vals,
-            sweep_type=string(sweep_type), y_key=string(y_key))
+    jldsave(
+        datafile;
+        base_results=base_results,
+        m1_results=m1_results,
+        rho_vals=rho_vals,
+        y_vals=y_vals,
+        sweep_type=string(sweep_type),
+        y_key=string(y_key),
+        run_m1=RUN_M1,
+        phase_diagram_schema_version=PHASE_DIAGRAM_SCHEMA_VERSION,
+    )
     println("Saved data: $datafile")
+    return base_results, m1_results
+end
+
+if !RERUN && isfile(datafile)
+    println("Loading cached data: $datafile")
+    saved = JLD2.load(datafile)
+    base_results = get(saved, "base_results", nothing)
+    m1_results = get(saved, "m1_results", nothing)
+    if phase_cache_current(saved, base_results, m1_results)
+        RUN_M1 || (m1_results = nothing)
+    else
+        println("Cached data are stale for requested outputs, re-simulating")
+        base_results, m1_results = run_phase_sweep()
+    end
+else
+    base_results, m1_results = run_phase_sweep()
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -190,7 +252,11 @@ function extract_metric(results, field::Symbol)
     M = Matrix{Float64}(undef, size(results)...)
     for j in axes(results, 2), i in axes(results, 1)
         r = results[i, j]
-        M[i, j] = r === nothing ? NaN : getfield(r, field)
+        M[i, j] = if r === nothing || !(field in propertynames(r))
+            NaN
+        else
+            getfield(r, field)
+        end
     end
     return M
 end
@@ -229,7 +295,13 @@ end
 if m1_results !== nothing
     for (field, title_str, cmap, cr, label) in [
         (:r2_gap, "M1: R2 Gap", :RdBu, nothing, "R2 gap"),
-        (:principal_share, "M1: Principal-Mode Share", :YlOrRd, (0, 1), "Share"),
+        (:principal_share, "M1: Captured Broker-Demand Share", :YlOrRd, (0, 1), "Share"),
+        (:captured_positions, "M1: Captured Positions", :viridis, nothing, "Positions"),
+        (:principal_acceptance, "M1: Principal Acceptance Rate", :YlOrRd, (0, 1), "Rate"),
+        (:capture_surplus, "M1: Principal Surplus", :RdBu, nothing, "Surplus"),
+        (:capture_loss_rate, "M1: Principal Loss Rate", :YlOrRd, (0, 1), "Rate"),
+        (:capture_ready, "M1: Capture Readiness", :YlOrRd, (0, 1), "Share"),
+        (:capture_scaled_mae, "M1: Scaled Broker MAE", :viridis, nothing, "MAE / scale"),
         (:outsourcing, "M1: Outsourcing Rate", :YlOrRd, (0, 1), "Rate"),
         (:betweenness, "M1: Broker Betweenness", :viridis, nothing, "C_B"),
     ]

@@ -29,8 +29,8 @@ println("Running quick diagnostic (T=200, default params)...")
 @time state, df = run_simulation(default_params())
 
 periods = df.period
-total_brokered = df.n_broker_standard .+ df.n_broker_principal
-access_frac = [t > 0 ? df.access_count[i] / t : NaN for (i, t) in enumerate(total_brokered)]
+brokered_with_origin = df.access_count .+ df.assessment_count
+access_frac = [t > 0 ? df.access_count[i] / t : NaN for (i, t) in enumerate(brokered_with_origin)]
 
 fig = Figure(size=(1400, 1600))
 

@@ -12,8 +12,8 @@ using Graphs: neighbors
 """
     exit_agent!(state, agent_id)
 
-Remove agent from the simulation: clear all edges in G, terminate active matches
-(counterparties regain capacity), remove from the broker's standing roster and
+Remove agent from the simulation: clear all edges in G, terminate active matches,
+remove from the broker's standing roster and
 current client overlay, and clear any references to the exiting slot held
 elsewhere in state (other agents' per-partner tracking). The agent's node index
 is reused for the entrant.
@@ -95,19 +95,17 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     agent.tried_broker = false
     agent.periods_alive = 0
 
-    # Reset cumulative match counters so D_j for this slot reflects only the
-    # new entrant's own activity, not the prior occupant's (§12i).
+    # Reset cumulative match counters for the new entrant.
     agent.n_matches_any = 0
-    agent.n_principal_acquired = 0
 
     # Add edges to type-similar neighbors
     n_edges = p.k ÷ 2
-    add_entrant_edges!(state.G, agent_id, new_type, state.agents, rng;
-                       n_edges=n_edges)
+    add_entrant_edges!(state.G, agent_id, new_type, state.agents, rng; n_edges=n_edges)
 
     # Self-satisfaction: mean of new neighbors' self-satisfaction (word-of-mouth)
     nbrs = neighbors(state.G, agent_id)
-    n_nbrs = 0; sat_sum = 0.0
+    n_nbrs = 0
+    sat_sum = 0.0
     for nbr in nbrs
         nbr == state.broker.node_id && continue
         (nbr < 1 || nbr > p.N) && continue

@@ -27,8 +27,9 @@ rather than zero. This avoids a large negative-bias artifact for fresh entrants
 whose NN has not yet been trained, without changing the behavior of mature NNs
 (the first training step on any data shifts `b2` to its fitted value).
 """
-function init_neural_net(d_in::Int, h::Int, rng::AbstractRNG;
-                         b2_init::Float64 = Q_OFFSET)::NeuralNet
+function init_neural_net(
+    d_in::Int, h::Int, rng::AbstractRNG; b2_init::Float64=Q_OFFSET
+)::NeuralNet
     # He initialization: scale = sqrt(2 / fan_in)
     scale_1 = sqrt(2.0 / d_in)
     W1 = scale_1 .* randn(rng, h, d_in)
@@ -50,7 +51,9 @@ end
 Zero-allocation forward pass: y = w2' * relu(W1 * z + b1) + b2.
 `hidden_buf` is a pre-allocated vector of length h.
 """
-function predict_nn!(nn::NeuralNet, hidden_buf::Vector{Float64}, z::AbstractVector{Float64})::Float64
+function predict_nn!(
+    nn::NeuralNet, hidden_buf::Vector{Float64}, z::AbstractVector{Float64}
+)::Float64
     mul!(hidden_buf, nn.W1, z)
     hidden_buf .+= nn.b1
     # ReLU in place
@@ -66,16 +69,22 @@ end
 Batched forward pass for `n` input columns using BLAS gemm/gemv.
 Buffers must be pre-allocated: Z_buf (d_in x cap), H_buf (h x cap), Y_out (cap).
 """
-function predict_nn_batch!(nn::NeuralNet, H_buf::Matrix{Float64},
-                           Y_out::Vector{Float64}, Z_buf::Matrix{Float64}, n::Int)
+function predict_nn_batch!(
+    nn::NeuralNet,
+    H_buf::Matrix{Float64},
+    Y_out::Vector{Float64},
+    Z_buf::Matrix{Float64},
+    n::Int,
+)
     h = size(nn.W1, 1)
-    b1 = nn.b1; w2 = nn.w2; b2 = nn.b2
+    b1 = nn.b1;
+    w2 = nn.w2;
+    b2 = nn.b2
 
     # H[:,1:n] = W1 * Z[:,1:n]  — use gemm on contiguous column block
     # BLAS gemm: C = alpha*A*B + beta*C.  A is h x d_in, B is d_in x n.
     # We call gemm! directly to avoid SubArray overhead from views.
-    BLAS.gemm!('N', 'N', 1.0, nn.W1, view(Z_buf, :, 1:n),
-                              0.0, view(H_buf, :, 1:n))
+    BLAS.gemm!('N', 'N', 1.0, nn.W1, view(Z_buf, :, 1:n), 0.0, view(H_buf, :, 1:n))
 
     # H += b1 (broadcast), then ReLU in place
     @inbounds for j in 1:n, i in 1:h
@@ -106,9 +115,14 @@ numerical-gradient testing; not on the hot training path.
 X is d_in x n (column-major batch), q is length-n target vector.
 b2_ref wraps the scalar output bias.
 """
-function nn_loss(W1::Matrix{Float64}, b1::Vector{Float64},
-                 w2::Vector{Float64}, b2_ref::Base.RefValue{Float64},
-                 X::AbstractMatrix{Float64}, q::AbstractVector{Float64})::Float64
+function nn_loss(
+    W1::Matrix{Float64},
+    b1::Vector{Float64},
+    w2::Vector{Float64},
+    b2_ref::Base.RefValue{Float64},
+    X::AbstractMatrix{Float64},
+    q::AbstractVector{Float64},
+)::Float64
     b2 = b2_ref[]
     n = length(q)
     d_in, _ = size(X)
@@ -154,9 +168,9 @@ Backward (MSE on full batch, no regularization):
     dW1 = dZ1 * X'                          shape h x d_in
     db1 = sum(dZ1; dims=2)                  shape h
 """
-function train_step!(nn::NeuralNet, grad::NNGradBuffers,
-                     X::Matrix{Float64}, q::Vector{Float64},
-                     lr::Float64)
+function train_step!(
+    nn::NeuralNet, grad::NNGradBuffers, X::Matrix{Float64}, q::Vector{Float64}, lr::Float64
+)
     train_step_prefix!(nn, grad, X, q, length(q), lr)
     return nothing
 end
@@ -168,21 +182,31 @@ One vanilla-GD step on the first `n` columns/elements of contiguous training
 buffers `X` and `q`. This supports broker training directly on the active prefix
 of the preallocated symmetry-augmented buffer without recopying it.
 """
-function train_step_prefix!(nn::NeuralNet, grad::NNGradBuffers,
-                            X::Matrix{Float64}, q::Vector{Float64},
-                            n::Int, lr::Float64)
+function train_step_prefix!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n::Int,
+    lr::Float64,
+)
     h = size(nn.W1, 1)
     ensure_nn_buffers!(grad, h, n)
 
-    Z1 = grad.Z1; A = grad.A; dZ1 = grad.dZ1; Y = grad.Y
-    b1 = nn.b1; w2 = nn.w2; b2 = nn.b2
+    Z1 = grad.Z1;
+    A = grad.A;
+    dZ1 = grad.dZ1;
+    Y = grad.Y
+    b1 = nn.b1;
+    w2 = nn.w2;
+    b2 = nn.b2
 
-    Xv   = view(X, :, 1:n)
-    qv   = view(q, 1:n)
-    Z1v  = view(Z1,  :, 1:n)
-    Av   = view(A,   :, 1:n)
+    Xv = view(X, :, 1:n)
+    qv = view(q, 1:n)
+    Z1v = view(Z1, :, 1:n)
+    Av = view(A, :, 1:n)
     dZ1v = view(dZ1, :, 1:n)
-    Yv   = view(Y, 1:n)
+    Yv = view(Y, 1:n)
 
     BLAS.gemm!('N', 'N', 1.0, nn.W1, Xv, 0.0, Z1v)
 
@@ -265,18 +289,28 @@ end
 
 Train the network for n_steps of vanilla GD on the full batch (X, q).
 """
-function train_nn!(nn::NeuralNet, grad::NNGradBuffers,
-                   X::Matrix{Float64}, q::Vector{Float64},
-                   n_steps::Int, lr::Float64)
+function train_nn!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n_steps::Int,
+    lr::Float64,
+)
     for _ in 1:n_steps
         train_step!(nn, grad, X, q, lr)
     end
     return nothing
 end
 
-function train_nn!(nn::NeuralNet, grad::NNGradBuffers,
-                   X::AbstractMatrix{Float64}, q::AbstractVector{Float64},
-                   n_steps::Int, lr::Float64)
+function train_nn!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::AbstractMatrix{Float64},
+    q::AbstractVector{Float64},
+    n_steps::Int,
+    lr::Float64,
+)
     # BLAS mul! on SubArray hits a slow dispatch path (~5 MB allocs/call).
     # Materialize the training window into contiguous Matrix/Vector once,
     # then run the tight train_step! loop on those (zero-alloc per step).
@@ -289,13 +323,18 @@ end
 """
     train_nn_prefix!(nn, grad, X, q, n_active, n_steps, lr)
 
-Train on the first `n_active` columns/elements of contiguous training buffers.
-Used by the broker to avoid recopying the active prefix of the symmetry-augmented
-training buffer on every retraining call.
+Train on the first `n_active` observations in contiguous training buffers.
+Used after agent and broker histories have been copied into reusable scratch space.
 """
-function train_nn_prefix!(nn::NeuralNet, grad::NNGradBuffers,
-                          X::Matrix{Float64}, q::Vector{Float64},
-                          n_active::Int, n_steps::Int, lr::Float64)
+function train_nn_prefix!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n_active::Int,
+    n_steps::Int,
+    lr::Float64,
+)
     @assert 1 <= n_active <= size(X, 2) "train_nn_prefix! requires 1 <= n_active <= size(X, 2)"
     @assert n_active <= length(q) "train_nn_prefix! requires n_active <= length(q)"
 
@@ -309,16 +348,6 @@ end
 # Agent training
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Ensure the agent's contiguous training scratch can hold `n` observations."""
-function ensure_agent_train_buffers!(agent::Agent, d::Int, n::Int)
-    if size(agent.train_X, 1) != d || size(agent.train_X, 2) < n
-        new_cap = max(n, 2 * size(agent.train_X, 2), 16)
-        agent.train_X = Matrix{Float64}(undef, d, new_cap)
-        resize!(agent.train_q, new_cap)
-    end
-    return nothing
-end
-
 """Maximum training window: train on at most this many recent observations.
 The warm start preserves what was learned from older data."""
 const TRAIN_WINDOW = 500
@@ -326,21 +355,32 @@ const TRAIN_WINDOW = 500
 """Minimum GD steps per training period."""
 const ADAPTIVE_FLOOR = 50
 
+"""Minimum capacity jump for agent training scratch after initialization."""
+const AGENT_TRAIN_BUFFER_FLOOR = 128
+
 """Small windows are cheaper to materialize directly than to route through the
 agent-owned training scratch. This preserves the hot-path win on larger windows
 without penalizing tiny seeded histories during initialization."""
 const AGENT_TRAIN_DIRECT_COPY_THRESHOLD = 8
 
 """
-    train_agent_nn!(agent, params)
+    ensure_agent_train_buffers!(agent, d, n)
 
-Train the agent's neural network on recent history with adaptive step count.
-Uses a sliding window of the most recent TRAIN_WINDOW observations to avoid
-diluting new data in a large full-batch gradient.
+Ensure the agent's contiguous training scratch can hold `n` observations.
+Growth jumps past tiny capacities to avoid repeated hot-path reallocations as
+histories lengthen, while still capping the scratch at the training window.
 """
-function train_agent_nn_impl!(agent::Agent,
-                              params::ModelParams,
-                              direct_copy_small::Bool)
+function ensure_agent_train_buffers!(agent::Agent, d::Int, n::Int)
+    if size(agent.train_X, 1) != d || size(agent.train_X, 2) < n
+        current_cap = size(agent.train_X, 2)
+        new_cap = min(TRAIN_WINDOW, max(n, 2 * current_cap, AGENT_TRAIN_BUFFER_FLOOR))
+        agent.train_X = Matrix{Float64}(undef, d, new_cap)
+        resize!(agent.train_q, new_cap)
+    end
+    return nothing
+end
+
+function train_agent_nn_impl!(agent::Agent, params::ModelParams, direct_copy_small::Bool)
     n = agent.history_count
     n <= 0 && return nothing
 
@@ -365,12 +405,25 @@ function train_agent_nn_impl!(agent::Agent,
             train_X[row, col] = history_X[row, start_idx + col - 1]
         end
         copyto!(agent.train_q, 1, agent.history_q, start_idx, n_use)
-        train_nn_prefix!(agent.nn, agent.nn_grad, agent.train_X, agent.train_q,
-                         n_use, n_steps, params.eta_lr)
+        train_nn_prefix!(
+            agent.nn,
+            agent.nn_grad,
+            agent.train_X,
+            agent.train_q,
+            n_use,
+            n_steps,
+            params.eta_lr,
+        )
     end
     return nothing
 end
 
+"""
+    train_agent_nn!(agent, params)
+
+Train the agent's neural network on recent history with adaptive step count.
+Uses a sliding window of at most `TRAIN_WINDOW` observations.
+"""
 function train_agent_nn!(agent::Agent, params::ModelParams)
     train_agent_nn_impl!(agent, params, false)
     return nothing
@@ -424,7 +477,14 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
     n_steps = compute_adaptive_steps(params.E_init, broker.n_new_obs, n)
     broker.n_new_obs = 0
 
-    train_nn_prefix!(broker.nn, broker.nn_grad, broker.train_X, broker.train_q,
-                     n_aug, n_steps, params.eta_lr)
+    train_nn_prefix!(
+        broker.nn,
+        broker.nn_grad,
+        broker.train_X,
+        broker.train_q,
+        n_aug,
+        n_steps,
+        params.eta_lr,
+    )
     return nothing
 end

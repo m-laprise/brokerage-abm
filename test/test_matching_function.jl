@@ -11,12 +11,18 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         [normalize(randn(rng, d)) for _ in 1:n]
     end
 
-    function test_env(types; rho::Float64=rho, delta::Float64=0.5,
-                      sigma_eps::Float64=0.25, env_seed::Int=42,
-                      geo_seed::Int=11)
+    function test_env(
+        types;
+        rho::Float64=rho,
+        delta::Float64=0.5,
+        sigma_eps::Float64=0.25,
+        env_seed::Int=42,
+        geo_seed::Int=11,
+    )
         geo = TransientBrokerage.generate_curve_geometry(d, d, StableRNG(geo_seed))
-        return generate_matching_env(d, rho, delta, sigma_eps, types, StableRNG(env_seed);
-                                     curve_geo=geo)
+        return generate_matching_env(
+            d, rho, delta, sigma_eps, types, StableRNG(env_seed); curve_geo=geo
+        )
     end
 
     @testset "MatchingEnv construction" begin
@@ -37,8 +43,12 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         types_1, _ = TransientBrokerage.generate_agent_types(50, geo, 0.5, rng_types)
         types_2 = test_agent_types(d, 50, StableRNG(14))
 
-        env_1 = generate_matching_env(d, rho, 0.5, 0.25, types_1, StableRNG(99); curve_geo=geo)
-        env_2 = generate_matching_env(d, rho, 0.5, 0.25, types_2, StableRNG(99); curve_geo=geo)
+        env_1 = generate_matching_env(
+            d, rho, 0.5, 0.25, types_1, StableRNG(99); curve_geo=geo
+        )
+        env_2 = generate_matching_env(
+            d, rho, 0.5, 0.25, types_2, StableRNG(99); curve_geo=geo
+        )
 
         @test env_1.c == env_2.c
         @test env_1.A == env_2.A
@@ -72,7 +82,9 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         types = test_agent_types(d, 20, StableRNG(10))
         env = test_env(types)
         rng = StableRNG(77)
-        gains = [regime_gain(types[rand(rng, 1:20)], types[rand(rng, 1:20)], env) for _ in 1:100]
+        gains = [
+            regime_gain(types[rand(rng, 1:20)], types[rand(rng, 1:20)], env) for _ in 1:100
+        ]
         # All gains should be 1+delta or 1-delta
         @test all(g -> g ≈ 0.5 || g ≈ 1.5, gains)
     end
@@ -132,7 +144,7 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         @test all(1:20) do _
             i, j = rand(rng, 1:20), rand(rng, 1:20)
             match_signal(types[i], types[j], env) ≈
-                match_signal!(Ax, Bx, types[i], types[j], env)
+            match_signal!(Ax, Bx, types[i], types[j], env)
         end
     end
 
@@ -179,22 +191,26 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         types = test_agent_types(d, 100, StableRNG(10))
         env = test_env(types)
 
-        cal_zero = calibrate(env, types, default_params(search_cost_rate=0.0), StableRNG(55))
+        cal_zero = calibrate(
+            env, types, default_params(search_cost_rate=0.0), StableRNG(55)
+        )
         @test cal_zero.phi ≈ 0.0 atol=1e-12
         @test cal_zero.c_s ≈ 0.0 atol=1e-12
 
-        cal_high = calibrate(env, types, default_params(search_cost_rate=0.30), StableRNG(55))
+        cal_high = calibrate(
+            env, types, default_params(search_cost_rate=0.30), StableRNG(55)
+        )
         @test cal_high.phi ≈ cal_high.c_s
         @test cal_high.phi > cal_zero.phi
     end
 
-    @testset "Two regimes produce different match qualities" begin
+    @testset "Both regime-gain classes are populated" begin
         types = test_agent_types(d, 50, StableRNG(10))
         env = test_env(types; rho=0.0, sigma_eps=0.0)  # pure interaction, no noise
         # Find pairs in each regime
         high_gain = Float64[]
         low_gain = Float64[]
-        for i in 1:50, j in (i+1):50
+        for i in 1:50, j in (i + 1):50
             g = regime_gain(types[i], types[j], env)
             q = match_signal(types[i], types[j], env)
             if g > 1.0

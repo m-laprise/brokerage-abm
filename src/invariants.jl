@@ -4,7 +4,7 @@
 Debug-time state consistency checks. Called via `run_simulation(...; verify=true)`.
 """
 
-using Graphs: nv, has_edge, degree
+using Graphs: nv, has_edge
 
 """
     verify_invariants(state)
@@ -12,14 +12,13 @@ using Graphs: nv, has_edge, degree
 Assert that the simulation state is internally consistent. Intended for test
 and debug runs; disable in production for performance.
 
-Checks: population count, graph structure, match capacity, match symmetry,
+Checks: population count, graph structure, match distinctness, match symmetry,
 match-edge consistency, history buffer validity, broker roster consistency,
 finite satisfaction/NN weights, and partner tracking.
 """
 function verify_invariants(state::ModelState)
     p = state.params
     N = p.N
-    K = p.K
     agents = state.agents
     broker = state.broker
     G = state.G
@@ -34,11 +33,9 @@ function verify_invariants(state::ModelState)
         @assert !has_edge(G, i, i) "Self-edge on agent $i"
     end
 
-    # ── Match capacity and distinct counterparties ──
+    # ── Distinct current-period counterparties ──
     for i in 1:N
         matches = agents[i].active_matches
-        n_matches = length(matches)
-        @assert n_matches <= K "Agent $i has $n_matches active matches (K=$K)"
         seen = Set{Int}()
         for am in matches
             @assert !(am.partner_id in seen) "Agent $i has duplicate active match with $(am.partner_id)"

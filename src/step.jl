@@ -5,27 +5,23 @@ Main simulation loop: one period of the model (§9, Steps 0-6).
 
 Step 0: Current-period match reset
 Step 1: Demand generation and outsourcing decisions
-Step 2: Candidate evaluation (train NNs and pre-period capture planning)
-Step 3: Within-period round-based match formation
+Step 2: Candidate evaluation (train NNs)
+Step 3: Shared active-demand offer market
 Step 4: Learning updates (histories already recorded in Step 3; satisfaction, reputation)
 Step 5: Entry/exit
 Step 6: Recording and measurement
 """
 
-using Random: AbstractRNG, shuffle!
+using Random: shuffle!
 using Distributions: Binomial
-using Graphs: neighbors, has_edge, rem_edge!
+using Graphs: neighbors, has_edge
 using LinearAlgebra: BLAS
 using Base.Threads: @threads
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""
-    step_period!(state) -> Nothing
-
-Execute one complete period of the simulation.
-"""
-agent_retrains_this_period(agent_id::Int, period::Int)::Bool = isodd(agent_id) == isodd(period)
+agent_retrains_this_period(agent_id::Int, period::Int)::Bool =
+    isodd(agent_id) == isodd(period)
 
 function refresh_broker_roster!(state::ModelState)
     p = state.params
@@ -58,9 +54,9 @@ function refresh_broker_roster!(state::ModelState)
     return nothing
 end
 
-function prefix_rmse(predicted::AbstractVector{<:Real},
-                     realized::AbstractVector{<:Real},
-                     n::Int)::Float64
+function prefix_rmse(
+    predicted::AbstractVector{<:Real}, realized::AbstractVector{<:Real}, n::Int
+)::Float64
     sq_err_sum = 0.0
     @inbounds for idx in 1:n
         err = predicted[idx] - realized[idx]
@@ -69,13 +65,196 @@ function prefix_rmse(predicted::AbstractVector{<:Real},
     return sqrt(sq_err_sum / n)
 end
 
-function step_period!(state::ModelState)
-    state.period += 1
+@inline ensure_length!(v::Vector, n::Int) = (length(v) == n || resize!(v, n); v)
+
+function diagnostics_rng(seed::Int, period::Int)::StableRNG
+    seed_bits = UInt64(reinterpret(UInt, seed))
+    mixed = seed_bits ⊻ (UInt64(period) * 0x9e3779b97f4a7c15) ⊻ 0xbf58476d1ce4e5b9
+    diag_seed = Int(mod(mixed, UInt64(typemax(Int32))) + 1)
+    return StableRNG(diag_seed)
+end
+
+function holdout_quality_components!(
+    predicted::Vector{Float64},
+    realized::Vector{Float64},
+    n::Int,
+    sigma_eps::Float64,
+    pred_order::Vector{Int},
+    pred_ranks::Vector{Float64},
+    true_ranks::Vector{Float64},
+)::Tuple{Bool,Float64,Float64,Float64,Float64}
+    pq = compute_prediction_quality_with_true_ranks!(
+        predicted,
+        realized,
+        n;
+        sigma_eps=sigma_eps,
+        pred_order=pred_order,
+        pred_ranks=pred_ranks,
+        true_ranks=true_ranks,
+    )
+    isnan(pq.r_squared) && return (false, 0.0, 0.0, 0.0, 0.0)
+    return (true, pq.r_squared, pq.bias, pq.rank_corr, prefix_rmse(predicted, realized, n))
+end
+
+@inline mean_or_nan(total::Float64, count::Int)::Float64 = count > 0 ? total / count : NaN
+
+function update_holdout_metrics!(state::ModelState)
     p = state.params
+    N = p.N
+    d = p.d
+    agents = state.agents
+    broker = state.broker
+    env = state.env
+    ws = state.workspace
+
+    n_sample_agents = min(100, N)
+    n_partners = min(40, N - 1)
+    if n_partners < 5
+        state.accum.agent_holdout_r2 = NaN
+        state.accum.agent_holdout_bias = NaN
+        state.accum.agent_holdout_rank = NaN
+        state.accum.agent_holdout_rmse = NaN
+        state.accum.broker_holdout_r2 = NaN
+        state.accum.broker_holdout_bias = NaN
+        state.accum.broker_holdout_rank = NaN
+        state.accum.broker_holdout_rmse = NaN
+        return nothing
+    end
+
+    diag_rng = diagnostics_rng(p.seed, state.period)
+    if length(ws.Ax_buf) != d || length(ws.Bx_buf) != d || length(ws.holdout_z_buf) != 2 * d
+        ws.Ax_buf = Vector{Float64}(undef, d)
+        ws.Bx_buf = Vector{Float64}(undef, d)
+        ws.holdout_z_buf = Vector{Float64}(undef, 2 * d)
+    end
+    for v in (
+        ws.holdout_agent_preds,
+        ws.holdout_agent_trues,
+        ws.holdout_broker_preds,
+        ws.holdout_pred_order,
+        ws.holdout_true_order,
+        ws.holdout_pred_ranks,
+        ws.holdout_true_ranks,
+    )
+        ensure_length!(v, n_partners)
+    end
+
+    eligible_agents = ws.holdout_agent_ids
+    empty!(eligible_agents)
+    @inbounds for i in 1:N
+        agents[i].history_count > 0 && push!(eligible_agents, i)
+    end
+    isempty(eligible_agents) && return nothing
+
+    shuffle!(diag_rng, eligible_agents)
+    n_sample_agents = min(n_sample_agents, length(eligible_agents))
+
+    partner_ids = ws.holdout_partner_ids
+    ensure_length!(partner_ids, N - 1)
+
+    Ax_buf = ws.Ax_buf
+    Bx_buf = ws.Bx_buf
+    z_buf = ws.holdout_z_buf
+    agent_preds = ws.holdout_agent_preds
+    agent_trues = ws.holdout_agent_trues
+    broker_preds = ws.holdout_broker_preds
+    pred_order = ws.holdout_pred_order
+    true_order = ws.holdout_true_order
+    pred_ranks = ws.holdout_pred_ranks
+    true_ranks = ws.holdout_true_ranks
+
+    agent_r2_sum = 0.0
+    agent_bias_sum = 0.0
+    agent_rank_sum = 0.0
+    agent_rmse_sum = 0.0
+    broker_r2_sum = 0.0
+    broker_bias_sum = 0.0
+    broker_rank_sum = 0.0
+    broker_rmse_sum = 0.0
+    n_agents_evaluated = 0
+    n_broker_evaluated = 0
+    se = env.sigma_eps
+
+    @inbounds for sample_idx in 1:n_sample_agents
+        i = eligible_agents[sample_idx]
+        pos = 1
+        for j in 1:N
+            j == i && continue
+            partner_ids[pos] = j
+            pos += 1
+        end
+        shuffle!(diag_rng, partner_ids)
+
+        for partner_idx in 1:n_partners
+            j = partner_ids[partner_idx]
+            q_true =
+                Q_OFFSET +
+                match_signal!(Ax_buf, Bx_buf, agents[i].type, agents[j].type, env)
+            agent_preds[partner_idx] = predict_nn!(
+                agents[i].nn, agents[i].predict_buf, agents[j].type
+            )
+            agent_trues[partner_idx] = q_true
+            for k in 1:d
+                z_buf[k] = agents[i].type[k]
+                z_buf[d + k] = agents[j].type[k]
+            end
+            pred_ij = predict_nn!(broker.nn, broker.predict_buf, z_buf)
+            for k in 1:d
+                z_buf[k] = agents[j].type[k]
+                z_buf[d + k] = agents[i].type[k]
+            end
+            pred_ji = predict_nn!(broker.nn, broker.predict_buf, z_buf)
+            broker_preds[partner_idx] = 0.5 * (pred_ij + pred_ji)
+        end
+
+        prepare_true_ranks!(agent_trues, n_partners, true_order, true_ranks)
+
+        valid, r2, bias, rank, rmse = holdout_quality_components!(
+            agent_preds, agent_trues, n_partners, se, pred_order, pred_ranks, true_ranks
+        )
+        if valid
+            agent_r2_sum += r2
+            agent_bias_sum += bias
+            agent_rank_sum += rank
+            agent_rmse_sum += rmse
+            n_agents_evaluated += 1
+        end
+
+        valid, r2, bias, rank, rmse = holdout_quality_components!(
+            broker_preds, agent_trues, n_partners, se, pred_order, pred_ranks, true_ranks
+        )
+        if valid
+            broker_r2_sum += r2
+            broker_bias_sum += bias
+            broker_rank_sum += rank
+            broker_rmse_sum += rmse
+            n_broker_evaluated += 1
+        end
+    end
+
+    state.accum.agent_holdout_r2 = mean_or_nan(agent_r2_sum, n_agents_evaluated)
+    state.accum.agent_holdout_bias = mean_or_nan(agent_bias_sum, n_agents_evaluated)
+    state.accum.agent_holdout_rank = mean_or_nan(agent_rank_sum, n_agents_evaluated)
+    state.accum.agent_holdout_rmse = mean_or_nan(agent_rmse_sum, n_agents_evaluated)
+    state.accum.broker_holdout_r2 = mean_or_nan(broker_r2_sum, n_broker_evaluated)
+    state.accum.broker_holdout_bias = mean_or_nan(broker_bias_sum, n_broker_evaluated)
+    state.accum.broker_holdout_rank = mean_or_nan(broker_rank_sum, n_broker_evaluated)
+    state.accum.broker_holdout_rmse = mean_or_nan(broker_rmse_sum, n_broker_evaluated)
+
+    return nothing
+end
+
+"""
+    step_period!(state) -> Nothing
+
+Execute one complete period of the simulation.
+"""
+function step_period!(state::ModelState)
+    p = state.params
+
+    state.period += 1
     rng = state.rng
     N = p.N
-    K = p.K
-    d = p.d
     agents = state.agents
     broker = state.broker
     G = state.G
@@ -86,6 +265,7 @@ function step_period!(state::ModelState)
     reset_accumulators!(state.accum)
     state.accum.broker_confidence_mae =
         broker.capture_confidence_ready ? broker.capture_confidence_mae : NaN
+    state.accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 0: Current-period match reset
@@ -93,7 +273,6 @@ function step_period!(state::ModelState)
     for agent in agents
         empty!(agent.active_matches)
     end
-    reset_principal_inventory!(ws, N)
 
     # Clear the current-client overlay from the prior period, then refresh the
     # standing roster after prior-period turnover and before current-period
@@ -105,19 +284,20 @@ function step_period!(state::ModelState)
     # Step 1: Demand generation and outsourcing decisions
     # ══════════════════════════════════════════════════════════════════════
     # Reuse workspace vectors (avoid Dict/Set allocation every period)
-    demand_agent_ids = ws.demand_agent_ids; empty!(demand_agent_ids)
-    demand_channels = ws.demand_channels; empty!(demand_channels)
-    demand_counts = ws.demand_counts; empty!(demand_counts)
-    broker_clients = ws.broker_clients_ws; empty!(broker_clients)
+    demand_agent_ids = ws.demand_agent_ids
+    empty!(demand_agent_ids)
+    demand_channels = ws.demand_channels
+    empty!(demand_channels)
+    demand_counts = ws.demand_counts
+    empty!(demand_counts)
+    broker_clients = ws.broker_clients_ws
+    empty!(broker_clients)
 
     broker_rep = broker_reputation(broker)
 
     for i in 1:N
         agents[i].periods_alive += 1
-        avail_cap = available_capacity(agents[i], K)
-        avail_cap <= 0 && continue
-
-        d_i = rand(rng, Binomial(avail_cap, p.p_demand))
+        d_i = rand(rng, Binomial(p.K, p.p_demand))
         d_i <= 0 && continue
 
         channel = outsourcing_decision(agents[i], broker_rep, rng)
@@ -144,56 +324,85 @@ function step_period!(state::ModelState)
     # 2.1: Train neural networks (adaptive steps).
     # Agents retrain on an alternating parity schedule so each agent updates
     # every other period while still accumulating all new observations.
-    # train_nn! materializes contiguous Matrix/Vector copies so train_step! sees
-    # concrete types (no SubArray BLAS overhead).
+    # Agent training copies the active window into contiguous scratch before
+    # gradient steps, avoiding SubArray BLAS overhead.
     prev_blas = BLAS.get_num_threads()
     BLAS.set_num_threads(1)
     @threads for i in 1:N
         a = agents[i]
-        a.history_count > 0 && a.n_new_obs > 0 &&
-            agent_retrains_this_period(i, state.period) && train_agent_nn!(a, p)
+        a.history_count > 0 &&
+            a.n_new_obs > 0 &&
+            agent_retrains_this_period(i, state.period) &&
+            train_agent_nn!(a, p)
     end
     BLAS.set_num_threads(prev_blas)
     if broker.history_count > 0 && broker.n_new_obs > 0
         train_broker_nn!(broker, p)
     end
 
-    # 2.2: Literal same-period acquisition planning (Model 1)
-    plan_period_capture!(demand_agent_ids, demand_channels, demand_counts,
-                         agents, broker, p, cal; ws=ws)
-
-    # 2.3: Within-period round-based principal execution and residual match formation
-    accepted = round_match_formation!(demand_agent_ids, demand_channels, demand_counts,
-                                      agents, broker, env, G, p, cal, rng;
-                                      ws=ws, accepted_matches=ws.accepted_matches)
+    # 2.2: Shared active-demand offer market
+    accepted = run_offer_market!(
+        demand_agent_ids,
+        demand_channels,
+        demand_counts,
+        agents,
+        broker,
+        env,
+        G,
+        p,
+        cal,
+        rng;
+        ws=ws,
+        accepted_matches=ws.accepted_matches,
+        accum=state.accum,
+    )
     sync_broker_edges!(G, agents, broker)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 4: Learning and state updates
     # ══════════════════════════════════════════════════════════════════════
 
-    # 4.1: Histories already recorded during round_match_formation!
+    # 4.1: Histories already recorded during run_offer_market!
 
     # 4.2: Satisfaction update
-    update_satisfaction!(agents, accepted, demand_agent_ids, demand_channels, demand_counts, cal, p;
-                         demander_sum=ws.demander_q_sum,
-                         broker_standard_count=ws.broker_standard_count)
+    update_satisfaction!(
+        agents,
+        accepted,
+        demand_agent_ids,
+        demand_channels,
+        demand_counts,
+        cal,
+        p;
+        demander_sum=ws.demander_q_sum,
+        broker_standard_count=ws.broker_standard_count,
+        principal_payment=ws.principal_payment,
+    )
 
     # 4.3: Broker reputation
     update_broker_reputation!(broker, agents, broker_clients)
 
     # Record accumulators
     for m in accepted
-        # Selected-sample prediction quality (by channel)
-        if m.channel == :self
-            push!(state.accum.agent_predicted, m.q_predicted)
-            push!(state.accum.agent_realized, m.q_realized)
-        elseif m.channel == :broker
-            push!(state.accum.broker_predicted, m.q_predicted)
-            push!(state.accum.broker_realized, m.q_realized)
-            exposure_qhat = m.is_principal ? m.capture_qhat : m.q_predicted
-            state.accum.broker_error_abs_sum += abs(m.q_realized - exposure_qhat)
-            state.accum.broker_error_count += 1
+        # Selected-sample prediction quality is keyed to successful directed
+        # offers; relationship counts remain bilateral.
+        for offer in (m.offer1, m.offer2)
+            isnothing(offer) && continue
+            if offer.channel == :self
+                push!(state.accum.agent_predicted, offer.predicted_value)
+                push!(state.accum.agent_realized, m.q_realized)
+            elseif offer.channel == :broker
+                push!(state.accum.broker_predicted, offer.predicted_value)
+                push!(state.accum.broker_realized, m.q_realized)
+                state.accum.broker_error_abs_sum += abs(
+                    m.q_realized - offer.predicted_value
+                )
+                state.accum.broker_error_count += 1
+                if offer.was_connected
+                    state.accum.assessment_count += 1
+                else
+                    state.accum.access_count += 1
+                end
+            end
         end
 
         if m.channel == :self
@@ -202,151 +411,31 @@ function step_period!(state::ModelState)
         elseif m.is_principal
             state.accum.n_broker_principal += 1
             push!(state.accum.q_broker_principal, m.q_realized)
-            push!(state.accum.capture_realized, m.q_realized)
-            push!(state.accum.capture_ask, m.ask_j)
-            push!(state.accum.capture_qhat, m.capture_qhat)
         else
             state.accum.n_broker_standard += 1
             push!(state.accum.q_broker_standard, m.q_realized)
         end
-
-        # Access vs assessment (uses per-round pre-finalization edge snapshots)
-        wc_i = ws.was_connected_i
-        wc_j = ws.was_connected_j
-        if m.channel == :broker
-            connected = false
-            @inbounds for k in eachindex(wc_i)
-                if wc_i[k] == m.demander_id && wc_j[k] == m.counterparty_id
-                    connected = true; break
-                end
-            end
-            if connected
-                state.accum.assessment_count += 1
-            else
-                state.accum.access_count += 1
-            end
-        end
     end
 
-    for counterparty_id in ws.principal_inventory_ids
-        push!(state.accum.principal_acquired_ids, counterparty_id)
+    counterparty_counts = ws.holdout_pred_order
+    length(counterparty_counts) == N || resize!(counterparty_counts, N)
+    @inbounds for i in 1:N
+        counterparty_counts[i] = length(agents[i].active_matches)
     end
-    @inbounds for block_idx in eachindex(ws.principal_inventory_ids)
-        ask_j = ws.principal_inventory_asks[block_idx]
-        qhats = ws.principal_inventory_slot_qhats[block_idx]
-        next_slot = ws.principal_inventory_next_slot[block_idx]
-        for slot_idx in next_slot:length(qhats)
-            qhat = qhats[slot_idx]
-            push!(state.accum.capture_realized, 0.0)
-            push!(state.accum.capture_ask, ask_j)
-            push!(state.accum.capture_qhat, qhat)
-            state.accum.broker_error_abs_sum += abs(qhat)
-            state.accum.broker_error_count += 1
-        end
+    sort!(counterparty_counts)
+    mid = N ÷ 2
+    state.accum.median_counterparties = if isodd(N)
+        Float64(counterparty_counts[mid + 1])
+    else
+        (counterparty_counts[mid] + counterparty_counts[mid + 1]) / 2
     end
+    state.accum.max_counterparties = counterparty_counts[end]
 
-    update_capture_confidence_mae!(broker,
-                                   state.accum.broker_error_abs_sum,
-                                   state.accum.broker_error_count,
-                                   p.omega)
+    update_capture_confidence_mae!(
+        broker, state.accum.broker_error_abs_sum, state.accum.broker_error_count, p.omega
+    )
 
-    # Holdout evaluation: per-agent R² averaged over sampled agents.
-    # For each sampled agent i, evaluate both agent i's NN and the broker's NN
-    # on the same n_partners random partners. Compute per-agent R² for each,
-    # then average across agents. This makes the two metrics directly comparable.
-    n_sample_agents = min(100, N)
-    n_partners = 40
-
-    if length(ws.Ax_buf) != d || length(ws.Bx_buf) != d || length(ws.holdout_z_buf) != 2 * d
-        ws.Ax_buf = Vector{Float64}(undef, d)
-        ws.Bx_buf = Vector{Float64}(undef, d)
-        ws.holdout_z_buf = Vector{Float64}(undef, 2 * d)
-    end
-    length(ws.holdout_agent_preds) == n_partners || resize!(ws.holdout_agent_preds, n_partners)
-    length(ws.holdout_agent_trues) == n_partners || resize!(ws.holdout_agent_trues, n_partners)
-    length(ws.holdout_broker_preds) == n_partners || resize!(ws.holdout_broker_preds, n_partners)
-    length(ws.holdout_pred_order) == n_partners || resize!(ws.holdout_pred_order, n_partners)
-    length(ws.holdout_true_order) == n_partners || resize!(ws.holdout_true_order, n_partners)
-    length(ws.holdout_pred_ranks) == n_partners || resize!(ws.holdout_pred_ranks, n_partners)
-    length(ws.holdout_true_ranks) == n_partners || resize!(ws.holdout_true_ranks, n_partners)
-    Ax_buf = ws.Ax_buf; Bx_buf = ws.Bx_buf; z_buf = ws.holdout_z_buf
-    agent_preds = ws.holdout_agent_preds
-    agent_trues = ws.holdout_agent_trues
-    broker_preds = ws.holdout_broker_preds
-    pred_order = ws.holdout_pred_order
-    true_order = ws.holdout_true_order
-    pred_ranks = ws.holdout_pred_ranks
-    true_ranks = ws.holdout_true_ranks
-
-    agent_r2_sum = 0.0; agent_bias_sum = 0.0; agent_rank_sum = 0.0; agent_rmse_sum = 0.0
-    broker_r2_sum = 0.0; broker_bias_sum = 0.0; broker_rank_sum = 0.0; broker_rmse_sum = 0.0
-    n_agents_evaluated = 0; n_broker_evaluated = 0
-
-    for _ in 1:n_sample_agents
-        i = rand(rng, 1:N)
-        agents[i].history_count == 0 && continue  # exclude uninformed entrants
-        n_valid = 0
-
-        for _ in 1:n_partners
-            j = rand(rng, 1:N)
-            j == i && continue
-            n_valid += 1
-
-            q_true = Q_OFFSET + match_signal!(Ax_buf, Bx_buf, agents[i].type, agents[j].type, env)
-            agent_preds[n_valid] = predict_nn!(agents[i].nn, agents[i].predict_buf, agents[j].type)
-            agent_trues[n_valid] = q_true
-
-            @inbounds for k in 1:d
-                z_buf[k] = agents[i].type[k]
-                z_buf[d + k] = agents[j].type[k]
-            end
-            broker_preds[n_valid] = predict_nn!(broker.nn, broker.predict_buf, z_buf)
-        end
-
-        if n_valid >= 5
-            se = env.sigma_eps
-            prepare_true_ranks!(agent_trues, n_valid, true_order, true_ranks)
-
-            pq_agent = compute_prediction_quality_with_true_ranks!(
-                agent_preds, agent_trues, n_valid;
-                sigma_eps=se,
-                pred_order=pred_order,
-                pred_ranks=pred_ranks,
-                true_ranks=true_ranks,
-            )
-            if !isnan(pq_agent.r_squared)
-                agent_r2_sum += pq_agent.r_squared
-                agent_bias_sum += pq_agent.bias
-                agent_rank_sum += pq_agent.rank_corr
-                agent_rmse_sum += prefix_rmse(agent_preds, agent_trues, n_valid)
-                n_agents_evaluated += 1
-            end
-
-            pq_broker = compute_prediction_quality_with_true_ranks!(
-                broker_preds, agent_trues, n_valid;
-                sigma_eps=se,
-                pred_order=pred_order,
-                pred_ranks=pred_ranks,
-                true_ranks=true_ranks,
-            )
-            if !isnan(pq_broker.r_squared)
-                broker_r2_sum += pq_broker.r_squared
-                broker_bias_sum += pq_broker.bias
-                broker_rank_sum += pq_broker.rank_corr
-                broker_rmse_sum += prefix_rmse(broker_preds, agent_trues, n_valid)
-                n_broker_evaluated += 1
-            end
-        end
-    end
-
-    state.accum.agent_holdout_r2 = n_agents_evaluated > 0 ? agent_r2_sum / n_agents_evaluated : NaN
-    state.accum.agent_holdout_bias = n_agents_evaluated > 0 ? agent_bias_sum / n_agents_evaluated : NaN
-    state.accum.agent_holdout_rank = n_agents_evaluated > 0 ? agent_rank_sum / n_agents_evaluated : NaN
-    state.accum.agent_holdout_rmse = n_agents_evaluated > 0 ? agent_rmse_sum / n_agents_evaluated : NaN
-    state.accum.broker_holdout_r2 = n_broker_evaluated > 0 ? broker_r2_sum / n_broker_evaluated : NaN
-    state.accum.broker_holdout_bias = n_broker_evaluated > 0 ? broker_bias_sum / n_broker_evaluated : NaN
-    state.accum.broker_holdout_rank = n_broker_evaluated > 0 ? broker_rank_sum / n_broker_evaluated : NaN
-    state.accum.broker_holdout_rmse = n_broker_evaluated > 0 ? broker_rmse_sum / n_broker_evaluated : NaN
+    update_holdout_metrics!(state)
 
     state.accum.roster_size = length(broker.roster)
     state.accum.broker_access_size = broker_access_size(broker)
