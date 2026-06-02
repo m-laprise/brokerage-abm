@@ -8,6 +8,7 @@ using Test
     include("test_search.jl")
     include("test_matching.jl")
     include("test_capture.jl")
+    include("test_pseudocode_conformance.jl")
     include("test_entry_exit.jl")
     include("test_initialization.jl")
     include("test_measures.jl")
