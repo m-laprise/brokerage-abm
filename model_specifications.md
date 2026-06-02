@@ -118,25 +118,25 @@ Each agent $i$ is characterized by:
 - **Experience history** $\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}$: the set of (other party's type, realized match output) pairs from all matches $i$ has participated in, regardless of whether $i$ was the demander or the counterparty (§2a). Because the matching function is symmetric (§1a), both roles produce the same prediction target.
 - **Satisfaction indices** $s_{i,c}^t$: one scalar per search channel $c \in \{\text{self}, \text{broker}\}$, tracking realized match value via an EWMA (§6a). Drives the outsourcing decision (§6).
 
-Agents exit independently each period with probability $\eta$ (default 0.02) and are replaced by new entrants with fresh types, empty histories, self-satisfaction initialized from neighbors' opinions, and broker-satisfaction set to the current broker reputation (§6a).
+Agents exit independently each period with probability $\eta_{\mathrm{exit}}$ (default 0.02) and are replaced by new entrants with fresh types, empty histories, self-satisfaction initialized from neighbors' opinions, and broker-satisfaction set to the current broker reputation (§6a).
 
 #### Agent types
 
 Agents are described by type vectors in $\mathbb{R}^d$ ($d = 8$). These types are the observable characteristics that determine productive compatibility through the matching function (§1).
 
-Agent types lie near a smooth one-dimensional curve on the surface of the unit sphere in $\mathbb{R}^d$. The curve is parameterized by a position $t \in [0, 1]$:
+Agent types lie near a smooth one-dimensional curve on the surface of the unit sphere in $\mathbb{R}^d$. The curve is parameterized by a position $u \in [0, 1]$:
 
-$$\mathbf{x}(t) = \frac{\tilde{\mathbf{x}}(t)}{\|\tilde{\mathbf{x}}(t)\|}, \qquad \tilde{x}_k(t) = \begin{cases} \sin(2\pi f_k t + \theta_k) & k = 1, \ldots, s \\ 0 & k = s+1, \ldots, d \end{cases}$$
+$$\mathbf{x}(u) = \frac{\tilde{\mathbf{x}}(u)}{\|\tilde{\mathbf{x}}(u)\|}, \qquad \tilde{x}_\ell(u) = \begin{cases} \sin(2\pi \nu_\ell u + \psi_\ell) & \ell = 1, \ldots, d_\gamma \\ 0 & \ell = d_\gamma+1, \ldots, d \end{cases}$$
 
-where $f_k \sim U\{1, 2, 3, 4, 5\}$ are random integer frequencies and $\theta_k \sim U[0, 2\pi)$ are random phases, both drawn once per simulation, and $s \leq d$ is the number of **active dimensions** (the dimensions along which the curve has nonzero variation). The remaining $d - s$ dimensions receive only noise (see below).
+where $\nu_\ell \sim \mathrm{Unif}\{1, 2, 3, 4, 5\}$ are random integer frequencies and $\psi_\ell \sim \mathrm{Unif}[0, 2\pi)$ are random phases, both drawn once per simulation, and $d_\gamma \leq d$ is the number of **active dimensions** (the dimensions along which the curve has nonzero variation). The remaining $d - d_\gamma$ dimensions receive only noise (see below).
 
-Each agent is drawn at a random position $t_i \sim U[0,1]$ on the curve, then perturbed:
+Each agent is drawn at a random position $u_i \sim \mathrm{Unif}[0,1]$ on the curve, then perturbed:
 
-$$\mathbf{x}_i = \frac{\mathbf{x}(t_i) + \boldsymbol{\epsilon}_i}{\|\mathbf{x}(t_i) + \boldsymbol{\epsilon}_i\|}, \qquad \boldsymbol{\epsilon}_i \sim N\!\left(\mathbf{0}, \frac{\sigma_x^2}{d} \mathbf{I}_d\right)$$
+$$\mathbf{x}_i = \frac{\mathbf{x}(u_i) + \boldsymbol{\epsilon}_i}{\|\mathbf{x}(u_i) + \boldsymbol{\epsilon}_i\|}, \qquad \boldsymbol{\epsilon}_i \sim \mathcal{N}\!\left(\mathbf{0}, \frac{\sigma_x^2}{d} \mathbf{I}_d\right)$$
 
-The noise $\boldsymbol{\epsilon}_i$ is applied in all $d$ dimensions (including inactive ones), so that type vectors are not exactly confined to the $s$-dimensional subspace of the curve. The per-dimension noise scale $\sigma_x / \sqrt{d}$ is chosen so that the expected Euclidean distance from an agent to its curve position is approximately $\sigma_x$ regardless of $d$. The result is then re-projected to the unit sphere.
+The noise $\boldsymbol{\epsilon}_i$ is applied in all $d$ dimensions (including inactive ones), so that type vectors are not exactly confined to the $d_\gamma$-dimensional subspace of the curve. The per-dimension noise scale $\sigma_x / \sqrt{d}$ is chosen so that the expected Euclidean distance from an agent to its curve position is approximately $\sigma_x$ regardless of $d$. The result is then re-projected to the unit sphere.
 
-The parameter $s$ controls the complexity of the matching problem. When $s = d$, the curve spans all $d$ dimensions: agents nearby on the curve have similar types, while agents far apart point in genuinely different directions across all of $\mathbb{R}^d$. When $s < d$, the curve is confined to a lower-dimensional subspace.
+The parameter $d_\gamma$ controls the complexity of the matching problem. When $d_\gamma = d$, the curve spans all $d$ dimensions: agents nearby on the curve have similar types, while agents far apart point in genuinely different directions across all of $\mathbb{R}^d$. When $d_\gamma < d$, the curve is confined to a lower-dimensional subspace.
 
 #### Broker
 
@@ -165,7 +165,7 @@ The broker, which mediates matches across many agents, observes the same agent t
 Let $q_{ij}$ represent the **per-period value of the match between agents $i$ and $j$**. It is a function of both agents' types, it is measured in monetary units, and it represents the economic value the match generates:
 
 $$q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
-\varepsilon_{ij} \sim N(0, \sigma_\varepsilon^2)$$
+\varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2)$$
 
 where $Q = 1.0$ is a constant offset that shifts $q$ positive for downstream economic computations (surplus, fees, satisfaction), and $\sigma_\varepsilon = 0.10$. The noise term $\varepsilon_{ij}$ represents idiosyncratic match-specific variation (unobserved characteristics, timing, context) that is irreducible even with perfect knowledge of $f$.
 
@@ -191,7 +191,7 @@ A match between two high-quality agents produces a high quality component; a mat
 
 The match-specific interaction combines a base interaction with a regime-dependent gain: $g(\mathbf{x}_i, \mathbf{x}_j) \cdot \mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$.
 
-**Base interaction.** The bilinear form $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ measures the complementarity of the pairing. The interaction matrix $\mathbf{A} \in \mathbb{R}^{d \times d}$ is symmetric positive definite (SPD), constructed as $\mathbf{A} = \mathbf{M}_A^\top \mathbf{M}_A \cdot (d / \text{tr}(\mathbf{M}_A^\top \mathbf{M}_A))$ where $\mathbf{M}_A$ has iid $N(0,1)$ entries. The trace normalization ensures $\text{tr}(\mathbf{A}) = d$, so for a random unit vector $\mathbf{x}$ drawn isotropically on the sphere, $E[\mathbf{x}^\top \mathbf{A} \mathbf{x}] = \text{tr}(\mathbf{A})/d = 1$. This fixes the average quadratic scale of the interaction operator. $\mathbf{A}$ is fixed for the duration of the simulation.
+**Base interaction.** The bilinear form $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ measures the complementarity of the pairing. The interaction matrix $\mathbf{A} \in \mathbb{R}^{d \times d}$ is symmetric positive definite (SPD), constructed as $\mathbf{A} = \mathbf{M}_A^\top \mathbf{M}_A \cdot (d / \text{tr}(\mathbf{M}_A^\top \mathbf{M}_A))$ where $\mathbf{M}_A$ has iid $\mathcal{N}(0,1)$ entries. The trace normalization ensures $\text{tr}(\mathbf{A}) = d$, so for a random unit vector $\mathbf{x}$ drawn isotropically on the sphere, $E[\mathbf{x}^\top \mathbf{A} \mathbf{x}] = \text{tr}(\mathbf{A})/d = 1$. This fixes the average quadratic scale of the interaction operator. $\mathbf{A}$ is fixed for the duration of the simulation.
 
 Because $\mathbf{A}$ is symmetric, $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j = \mathbf{x}_j^\top \mathbf{A} \mathbf{x}_i$, so the base interaction is symmetric without explicit symmetrization. Because $\mathbf{A}$ is positive definite, all of its eigenvalues are strictly positive, hence $\mathbf{A}$ is full rank and defines a nondegenerate quadratic form on $\mathbb{R}^d$. The trace normalization fixes only the average eigenvalue at 1, it does not impose any particular condition number. Writing the bilinear form in coordinates,
 
@@ -205,33 +205,33 @@ shows that a symmetric $\mathbf{A}$ contributes $d(d+1)/2$ free coefficients.
 
 $$g(\mathbf{x}_i, \mathbf{x}_j) = 1 + \delta \cdot \text{sign}(\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j)$$
 
-where $\delta \in (0, 1)$ (default 0.5) controls the gain strength. Because $\mathbf{B}$ is symmetric, $g(\mathbf{x}_i, \mathbf{x}_j) = g(\mathbf{x}_j, \mathbf{x}_i)$. Pairings divide into two regimes: when $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j > 0$, the gain is $(1 + \delta)$ (high-gain regime); when $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j < 0$, the gain is $(1 - \delta)$ (low-gain regime). At $\delta = 0.5$, the high-gain interaction is three times the low-gain interaction.
+where $\delta \in [0, 1]$ (default 0.5) controls the gain strength. Because $\mathbf{B}$ is symmetric, $g(\mathbf{x}_i, \mathbf{x}_j) = g(\mathbf{x}_j, \mathbf{x}_i)$. Pairings divide into two regimes: when $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j > 0$, the gain is $(1 + \delta)$ (high-gain regime); when $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j < 0$, the gain is $(1 - \delta)$ (low-gain regime). At $\delta = 0.5$, the high-gain interaction is three times the low-gain interaction.
 
 The implementation uses the approved `cov_full` construction. Let
 
-$$\mathbf{S}_x = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top$$
+$$\boldsymbol{\Sigma}_x = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top$$
 
-be the empirical second-moment matrix of realized agent types. First draw a symmetric Gaussian matrix $\mathbf{H}$ and recenter it to zero trace, then remove its weighted projection onto $\mathbf{A}$ under the inner product
+be the empirical second-moment matrix of realized agent types. First draw a symmetric Gaussian matrix $\mathbf{B}_0$ and recenter it to zero trace, then remove its weighted projection onto $\mathbf{A}$ under the inner product
 
-$$\langle \mathbf{M}, \mathbf{N} \rangle_{\mathbf{S}_x} = \operatorname{tr}(\mathbf{S}_x \mathbf{M} \mathbf{S}_x \mathbf{N}).$$
+$$\langle \mathbf{M}, \mathbf{N} \rangle_{\boldsymbol{\Sigma}_x} = \operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{M} \boldsymbol{\Sigma}_x \mathbf{N}).$$
 
 Specifically,
 
-$$\mathbf{B}_{\text{raw}} = \mathbf{H} - \frac{\operatorname{tr}(\mathbf{S}_x \mathbf{H} \mathbf{S}_x \mathbf{A})}{\operatorname{tr}(\mathbf{S}_x \mathbf{A} \mathbf{S}_x \mathbf{A})} \mathbf{A}, \qquad \mathbf{B} = \frac{\mathbf{B}_{\text{raw}}}{\lVert \mathbf{B}_{\text{raw}} \rVert_F}.$$
+$$\mathbf{B}_{\text{raw}} = \mathbf{B}_0 - \frac{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{B}_0 \boldsymbol{\Sigma}_x \mathbf{A})}{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{A} \boldsymbol{\Sigma}_x \mathbf{A})} \mathbf{A}, \qquad \mathbf{B} = \frac{\mathbf{B}_{\text{raw}}}{\lVert \mathbf{B}_{\text{raw}} \rVert_F}.$$
 
-This construction makes $\mathbf{B}$ weighted-orthogonal to $\mathbf{A}$ under the bilinear form defined above, $\operatorname{tr}(\mathbf{S}_x \mathbf{B} \mathbf{S}_x \mathbf{A}) = 0$, while preserving symmetry. $\mathbf{B}$ is generally indefinite, not SPD. This is intentional: only the sign of $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$ matters for regime assignment, so the orientation of the separating operator matters, not positive definiteness.
+This construction makes $\mathbf{B}$ weighted-orthogonal to $\mathbf{A}$ under the bilinear form defined above, $\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{B} \boldsymbol{\Sigma}_x \mathbf{A}) = 0$, while preserving symmetry. $\mathbf{B}$ is generally indefinite, not SPD. This is intentional: only the sign of $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$ matters for regime assignment, so the orientation of the separating operator matters, not positive definiteness.
 
 The gain modulates the *strength* of the base interaction without changing its sign. Among pairings with similar base interactions $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$, those in the high-gain regime are worth substantially more than those in the low-gain regime. This difference is the source of the broker's informational advantage (§1e).
 
 #### 1d. What controls the nature of the matching problem
 
-- **$s$ (active dimensions).** When $s = d$, the type curve spans all $d$ dimensions, creating maximum diversity in the type space and the interaction effects that depend on it. When $s < d$, the curve is confined to a lower-dimensional subspace.
+- **$d_\gamma$ (active dimensions).** When $d_\gamma = d$, the type curve spans all $d$ dimensions, creating maximum diversity in the type space and the interaction effects that depend on it. When $d_\gamma < d$, the curve is confined to a lower-dimensional subspace.
 
 - **$\rho$ (mixing weight).** At high $\rho$, general quality dominates. At low $\rho$, the gain-modulated interaction dominates.
 
 - **$\delta$ (gain strength).** Controls the magnitude of the regime effect. At $\delta = 0$, the gain is 1 for all pairings and the DGP reduces to a simple interaction without regimes. At $\delta > 0$, the true interaction results from a mixture of two regimes. Larger $\delta$ produces a larger gap between high-gain and low-gain pairings, making the regime more consequential for match rankings.
 
-- **$\mathbf{A}$ and $\mathbf{B}$ (interaction and regime operators).** $\mathbf{A}$ determines the base interaction structure; $\mathbf{B}$ determines the regime boundary. $\mathbf{A}$ is SPD. $\mathbf{B}$ is symmetric and constructed to be weighted-orthogonal to $\mathbf{A}$ under the realized type second moment $\mathbf{S}_x$. For a fixed agent $i$, the base interaction $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j = \mathbf{a}_i^\top \mathbf{x}_j$ (where $\mathbf{a}_i = \mathbf{A} \mathbf{x}_i$) is linear in $\mathbf{x}_j$. The regime boundary ($\mathbf{b}_i^\top \mathbf{x}_j = 0$, where $\mathbf{b}_i = \mathbf{B} \mathbf{x}_i$) is therefore orthogonalized away from the payoff operator in the weighted geometry induced by realized types, reducing systematic alignment between payoff ranking and regime assignment.
+- **$\mathbf{A}$ and $\mathbf{B}$ (interaction and regime operators).** $\mathbf{A}$ determines the base interaction structure; $\mathbf{B}$ determines the regime boundary. $\mathbf{A}$ is SPD. $\mathbf{B}$ is symmetric and constructed to be weighted-orthogonal to $\mathbf{A}$ under the realized type second moment $\boldsymbol{\Sigma}_x$. For a fixed agent $i$, the base interaction $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j = \mathbf{a}_i^\top \mathbf{x}_j$ (where $\mathbf{a}_i = \mathbf{A} \mathbf{x}_i$) is linear in $\mathbf{x}_j$. The regime boundary ($\mathbf{b}_i^\top \mathbf{x}_j = 0$, where $\mathbf{b}_i = \mathbf{B} \mathbf{x}_i$) is therefore orthogonalized away from the payoff operator in the weighted geometry induced by realized types, reducing systematic alignment between payoff ranking and regime assignment.
 
 - **$\sigma_\varepsilon$ (noise scale).** The match-level noise $\sigma_\varepsilon = 0.10$ should be interpreted relative to the actual variance of $f$, which depends on the parameter configuration. The typical magnitude of dot products on the unit sphere in $\mathbb{R}^d$ is $O(1/\sqrt{d})$. The effective signal-to-noise ratio should be measured empirically at initialization.
 
@@ -243,12 +243,12 @@ The regime-dependent gain (§1c) creates an informational gap between single-age
 
 2. The gap is fundamental, not merely statistical.
 
-    - A purely statistical advantage depends asymptotically on data volume only and erodes as agents accumulate data. A fundamental gap involve an identification problem that single-agent data cannot solve regardless of sample size.
+    - A purely statistical advantage depends asymptotically on data volume only and erodes as agents accumulate data. A fundamental gap involves an identification problem that single-agent data cannot solve regardless of sample size.
 
 3. The gap affects match selection.
 
-    - Agents use predictions to select a best counterparty ($\arg\max$).
-    - The gap causes single- and cross-agent data to produce *different rankings* among top candidates, not just more accurate point estimates or better predictions for candidates that would never selected.
+    - Agents use predictions to rank and select counterparties.
+    - The gap causes single- and cross-agent data to produce *different rankings* among top candidates, not just more accurate point estimates or better predictions for candidates that would never be selected.
 
 These characteristics correspond to assumptions being made through model design.
 
@@ -268,7 +268,7 @@ A linear model $\boldsymbol{\beta}^\top \mathbf{x}_j$ fitted on this mixture lea
 
 ### 2. Learning
 
-Before market formation, agents and the broker update prediction models on their accumulated histories, then use those models to rank candidates and make decisions. The broker retrains at most once per period when it has new observations. Agents retrain on a deterministic alternating-parity schedule, accumulating all new observations until their next retraining period (§9, Step 2.1).
+After demand and channel choices are realized, but before offer formation, agents and the broker update prediction models on their accumulated histories. Those updated models are then used to rank candidates and evaluate offers in the shared market. The broker retrains at most once per period when it has new observations. Agents retrain on a deterministic alternating-parity schedule, accumulating all new observations until their next retraining period (see `simulation_pseudocode.tex`, `PeriodUpdate`).
 
 #### 2a. Architecture and fitting
 
@@ -278,7 +278,7 @@ $$\hat{q}(\mathbf{z}) = \mathbf{w}_2^\top \text{ReLU}(\mathbf{W}_1 \mathbf{z} + 
 
 where $\mathbf{z}$ is the input feature vector, $\mathbf{W}_1$ is the hidden-layer weight matrix, $\mathbf{b}_1$ is the hidden bias vector, $\mathbf{w}_2$ is the output-layer weight vector, and $b_2$ is the output bias. Neither agents nor the broker use hand-crafted features; both receive raw type vectors as input and learn the relevant structure from data.
 
-**Fitting.** Each period, the network weights are updated by minimizing MSE using vanilla gradient descent on the full batch with a fixed learning rate $\eta_{lr}$ (default 0.03). No explicit regularization is applied: at the data scales the broker and agents accumulate, adding weight decay has no measurable effect on held-out fit, so it is omitted for simplicity.
+**Fitting.** Each period, the network weights are updated by minimizing MSE using vanilla gradient descent on the full batch with a fixed learning rate $\eta_{\mathrm{lr}}$ (default 0.03). No explicit regularization is applied: at the data scales the broker and agents accumulate, adding weight decay has no measurable effect on held-out fit, so it is omitted for simplicity.
 
 **Initialization.** At $t = 0$ each network is trained from random weights for $E_{\text{init}}$ gradient steps (default 200) on its seed history. The output bias $b_2$ is initialized to $Q$ (the DGP offset, §1a) rather than zero so that an untrained network predicts the population-mean match quality. This avoids a large negative-bias artifact for fresh entrants whose network has not yet been trained, and is irrelevant for mature networks (the first training steps on any real data move $b_2$ to its fitted value). All other weights follow He initialization.
 
@@ -290,7 +290,7 @@ where $n_{\text{new}}$ is the number of observations added this period and $n_{\
 
 **Training window.** To avoid diluting new observations in a large full-batch gradient, each training period uses at most the $W = 500$ most recent observations from the agent's or broker's history. The warm start preserves what was learned from older data. This sliding window ensures that the gradient reflects recent experience while being large enough, after symmetry augmentation for the broker, to contain a representative cross-section of match types.
 
-**Prediction.** Given a fitted network, the prediction for a candidate match is a single forward pass. An agent evaluates $\hat{q}_i(\mathbf{x}_j)$ for each candidate partner $\mathbf{x}_j$ and selects the candidate with the highest predicted quality ($\arg\max$). Because $f$ is symmetric, the same model serves both roles: evaluating potential counterparties (as demander) and evaluating incoming proposals (as counterparty). The broker evaluates pair-level predictions over the broker-accessible unordered pair set and emits directed offers for broker demanders from that shared ranking (§5b).
+**Prediction.** Given a fitted network, the prediction for a candidate match is a single forward pass. An agent evaluates $\hat{q}_i(\mathbf{x}_j)$ for candidate partners $\mathbf{x}_j$, ranks feasible candidates by predicted or known-partner quality, and emits up to its current demand count in directed offers (§5a). Because $f$ is symmetric, the same model serves both roles: evaluating potential counterparties (as demander) and evaluating incoming proposals (as counterparty). The broker evaluates pair-level predictions over the broker-accessible unordered pair set and emits directed offers for broker demanders from that shared ranking (§5b).
 
 #### 2b. Agent $i$'s model
 
@@ -369,7 +369,7 @@ Agents interact through a single undirected network $G$ that determines each age
 
 #### 4a. Network initialization
 
-$G$ is initialized as a small-world graph (Watts & Strogatz, 1998). Agents are arranged on a ring in random order, each connected to its $k = 6$ nearest neighbors on the ring, and each edge is rewired with probability $p_{\text{rewire}} = 0.1$. This produces the high clustering and short path lengths characteristic of small-world graphs. Agents are placed on the ring in random order (rather than, e.g., sorted by type) so that the initial network is not type-assortative: neighbors at $t = 0$ are representative of the broader population, which avoids inflating baseline match quality through an artificially favorable neighborhood structure. An optional PC1-sorted variant is retained for robustness checks.
+$G$ is initialized as a small-world graph (Watts & Strogatz, 1998). Agents are arranged on a ring in random order, each connected to its $k_G = 6$ nearest neighbors on the ring, and each edge is rewired with probability $p_{\text{rewire}} = 0.1$. This produces the high clustering and short path lengths characteristic of small-world graphs. Agents are placed on the ring in random order (rather than, e.g., sorted by type) so that the initial network is not type-assortative: neighbors at period 0 are representative of the broader population, which avoids inflating baseline match quality through an artificially favorable neighborhood structure. An optional PC1-sorted variant is retained for robustness checks.
 
 The broker is a permanent node in $G$, connected to all standing roster members, all current-period broker clients, and agents currently engaged in broker-channel matches (§7). The broker node has no type vector and is excluded from matching candidate pools, but is included in network measure computations (§10).
 
@@ -379,11 +379,11 @@ Each realized match (whether through self-search or brokered) adds an undirected
 
 #### 4c. Agent turnover
 
-Agents exit independently each period with probability $\eta$ (default 0.02), yielding an expected agent lifetime of 50 quarters (12.5 years).
+Agents exit independently each period with probability $\eta_{\mathrm{exit}}$ (default 0.02), yielding an expected agent lifetime of 50 quarters (12.5 years).
 
-Exiting agents are replaced by entrants with fresh types sampled from the curve at a random position $t \sim U[0,1]$ plus noise (same procedure as initialization), empty experience histories, self-satisfaction initialized from new neighbors' self-satisfaction (word-of-mouth), and broker-satisfaction set to the current broker reputation. The exiting agent's node in $G$ is removed (along with all its edges). 
+Exiting agents are replaced by entrants with fresh types sampled from the curve at a random position $u \sim \mathrm{Unif}[0,1]$ plus noise (same procedure as initialization), empty experience histories, self-satisfaction initialized from new neighbors' self-satisfaction (word-of-mouth), and broker-satisfaction set to the current broker reputation. The exiting agent's node in $G$ is removed (along with all its edges). 
 
-The entrant is added to $G$ with $\lfloor k/2 \rfloor$ edges to agents sampled from the type neighborhood (probability $\propto \exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)$). Entrants join with fewer connections than the initial network degree $k$ to reflect the disadvantage of being new to a market: established agents have accumulated connections through prior matches, while entrants start with only a few type-similar contacts. New entrants with sparse networks are more likely to need the broker's matching service.
+The entrant is added to $G$ with $\lfloor k_G/2 \rfloor$ edges to agents sampled from the type neighborhood (probability $\propto \exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)$). Entrants join with fewer connections than the initial network degree $k_G$ to reflect the disadvantage of being new to a market: established agents have accumulated connections through prior matches, while entrants start with only a few type-similar contacts. New entrants with sparse networks are more likely to need the broker's matching service.
 
 ### 5. Search
 
@@ -399,7 +399,7 @@ Agent $i$'s self-search candidate pool has two components:
 
 **Known neighbors.** Direct network neighbors in $G$ with no active current-period relationship with $i$ and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Not every graph neighbor is known in this sense: the initial network contains edges created by the network initialization, but each agent's seed history records only a subset of neighbor pairings (§11c). Neighbors with no stored partner mean are omitted from the known-neighbor component rather than being reclassified as strangers.
 
-**Strangers.** A fixed period-level pool $S^t$ of $\min(n_s, N)$ agents is sampled uniformly without replacement from the population, where $n_s = 10$ (default). Each self-searching demander can evaluate members of this pool that are not current neighbors and are not already current-period counterparties. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
+**Strangers.** A fixed period-level pool $U^t$ of $\min(n_{\mathrm{strangers}}, N)$ agents is sampled uniformly without replacement from the population, where $n_{\mathrm{strangers}} = 10$ (default). Each self-searching demander can evaluate members of this pool that are not current neighbors and are not already current-period counterparties. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
 
 Agent $i$ orders feasible self-search candidates by this demander-side evaluation and emits up to $d_i$ directed offers to candidates whose evaluation exceeds $r$.
 
@@ -409,11 +409,11 @@ When agent $i$ outsources to the broker, the broker includes agent $i$ in its cl
 
 At the end of Step 1 (after all outsourcing decisions), the broker observes its full client list $D^t$ (the set of demanders who outsourced this period) and forms its accessible counterparty set
 
-$$A^t = \text{Roster}^t \cup D^t.$$
+$$\mathcal{A}_b^t = \text{Roster}^t \cup D^t.$$
 
 Agents already on the standing roster remain on it whether or not they outsource in the current period; current clients expand access only for the current period and do not become lagged standing members for that reason.
 
-For every unordered pair $\{i,j\}$ such that one side is a broker-client demander and the other side is in $A^t$, the broker computes predicted match quality and ranks the pairs globally. Traversing this one ranked list, the broker emits a directed broker offer $i \to j$ whenever $i$ is a broker-client demander, $j \in A^t$, $i$ still has unfilled active broker demand, and the predicted value exceeds $r$. If both sides are broker-client demanders and both have remaining active demand, the same unordered pair can therefore generate reciprocal broker offers.
+For every unordered pair $\{i,j\}$ such that one side is a broker-client demander and the other side is in $\mathcal{A}_b^t$, the broker computes predicted match quality and ranks the pairs globally. Traversing this one ranked list, the broker emits a directed broker offer $i \to j$ whenever $i$ is a broker-client demander, $j \in \mathcal{A}_b^t$, $i$ still has unfilled active broker demand, and the predicted value exceeds $r$. If both sides are broker-client demanders and both have remaining active demand, the same unordered pair can therefore generate reciprocal broker offers.
 
 **Implementation note.** The code may realize these rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: the stranger pool is sampled once per period, broker-side offers follow the single global pair ranking, current-period duplicate-pair exclusion may be implemented with an exact period-local index, and neural-network training still uses the same data windows and gradient steps. The implementation organizes scratch state into subsystem workspaces, including a directed-offer book for offer construction and acceptance, and a period ledger for demand, satisfaction, payment, and accepted-match buffers.
 
@@ -451,7 +451,7 @@ This implies an intentional asymmetry in total-failure episodes. If a brokered b
 
 Under the approved simplification, $s_{i,\text{self}}^t$ is interpreted as the reduced-form value of the entire internal-search channel. It summarizes realized self-search outcomes, including cases where the agent reused known partners directly, rather than separating out a distinct contemporaneous "known partners" score at decision time.
 
-**Initialization from seed data.** At initialization, each agent's self-satisfaction is set to the mean of its seed match outcomes (§11c, step I.10), not to an arbitrary constant. Each agent's broker-satisfaction is set to the broker's seed-data reputation (§6c). This grounds the initial outsourcing decision in actual data: agents with good neighbors start with high self-satisfaction and are harder for the broker to recruit, while agents with poor neighbors are more open to outsourcing.
+**Initialization from seed data.** At initialization, each agent's self-satisfaction is set to the mean of its seed match outcomes (see `simulation_pseudocode.tex`, `Initialize`), not to an arbitrary constant. Each agent's broker-satisfaction is set to the broker's seed-data reputation (§6c). This grounds the initial outsourcing decision in actual data: agents with good neighbors start with high self-satisfaction and are harder for the broker to recruit, while agents with poor neighbors are more open to outsourcing.
 
 **Fresh entrants.** New agents entering via turnover (§4) initialize self-satisfaction as the mean of their new neighbors' self-satisfaction (word-of-mouth: the entrant inherits the local opinion about self-search quality). Broker-satisfaction is set to the current broker reputation (the market's current opinion). The `tried_broker` flag is false, so the entrant uses broker reputation for its first outsourcing decision.
 
@@ -464,7 +464,7 @@ Each period, an agent with $d_i$ requested relationship positions compares two s
 - **$\text{score}_{\text{self}}$** $= s_{i,\text{self}}^t$: the EWMA satisfaction from past self-search outcomes. This is a reduced-form internal-search score and is interpreted as already incorporating the value of exploiting known partners under the self-search channel.
 - **$\text{score}_{\text{broker}}$** $= s_{i,\text{broker}}^t$ if the agent has tried the broker, otherwise the broker's reputation $\text{rep}_b^t$.
 
-The agent outsources if $\text{score}_{\text{broker}} > \text{score}_{\text{self}}$; it self-searches if $\text{score}_{\text{broker}} < \text{score}_{\text{self}}$. At the boundary $\text{score}_{\text{broker}} = \text{score}_{\text{self}}$, the channel is chosen by a uniform coin flip between self-search and broker.
+The agent outsources if $\text{score}_{\text{broker}} > \text{score}_{\text{self}}$; it self-searches if $\text{score}_{\text{broker}} < \text{score}_{\text{self}}$. Only at the exact boundary $\text{score}_{\text{broker}} = \text{score}_{\text{self}}$ is the channel chosen by a uniform coin flip between self-search and broker.
 
 This simplification treats the self-search channel as a single reduced-form outside option. Agents do not separately compute a contemporaneous "best known partners" score at decision time; instead, the value of having discovered good partners is assumed to be reflected over time in realized self-search outcomes and therefore in $s_{i,\text{self}}^t$.
 
@@ -474,9 +474,9 @@ The search-risk-transfer asymmetry sharpens this comparison. Self-search exposes
 
 #### 6c. Broker reputation
 
-$$\text{rep}_b^{t+1} = \begin{cases} \frac{1}{|D_b^t|} \sum_{i \in D_b^t} s_{i,b}^{t+1} & \text{if } D_b^t \neq \emptyset \\[4pt] \text{rep}_b^{t} & \text{otherwise} \end{cases}$$
+$$\text{rep}_b^{t+1} = \begin{cases} \frac{1}{|D^t|} \sum_{i \in D^t} s_{i,\text{broker}}^{t+1} & \text{if } D^t \neq \emptyset \\[4pt] \text{rep}_b^{t} & \text{otherwise} \end{cases}$$
 
-where $D_b^t$ is the set of agents who outsourced to the broker this period. When the broker has current clients, reputation is updated to the mean of their (post-update) broker satisfaction. When it has no clients, the value is held from the previous period. Reputation is initialized from the mean of the broker's seed match outcomes (§11c, step I.9).
+where $D^t$ is the set of agents who outsourced to the broker this period. When the broker has current clients, reputation is updated to the mean of their (post-update) broker satisfaction. When it has no clients, the value is held from the previous period. Reputation is initialized from the mean of the broker's seed match outcomes (see `simulation_pseudocode.tex`, `Initialize`).
 
 ### 7. Broker Roster
 
@@ -486,15 +486,15 @@ The broker maintains a **roster** of agents it knows and can propose as counterp
 
 $$R^* = \lceil \alpha_R N \rceil, \qquad \alpha_R = 0.20,$$
 
-by drawing $R^*$ agents uniformly at random from the population (default 200 at $N = 1000$). This ensures the broker can serve early outsourcers without frequent no-match failures that would drive broker satisfaction down before the broker has a chance to demonstrate value. The broker's history is seeded with observations from random roster member pairs in $G$ (§11c).
+by drawing $R^*$ agents uniformly at random from the population (default 200 at $N = 1000$). This ensures the broker can serve early outsourcers without frequent no-match failures that would drive broker satisfaction down before the broker has a chance to demonstrate value. The broker's history is seeded with observations from random roster member pairs, and those seed placements create the corresponding agent-agent ties in $G$ (§11c).
 
-**Standing roster with replenishment.** The broker maintains this roster as a standing access base. At the start of each period, after prior-period active matches are cleared and before current-period demand is realized (§9, Step 0.2), each current roster member independently exits the roster with exogenous probability $p_{\text{roster}}$ (default $0.02$). The broker then replenishes uniformly at random from agents not currently on the roster until the target size $R^*$ is restored. Formally, if $\widetilde{\text{Roster}}^t$ is the post-churn roster,
+**Standing roster with replenishment.** The broker maintains this roster as a standing access base. At the start of each period, after prior-period active matches are cleared and before current-period demand is realized, each current roster member independently exits the roster with exogenous probability $p_{\text{roster}}$ (default $0.02$). The broker then replenishes uniformly at random from agents not currently on the roster until the target size $R^*$ is restored. Formally, if $\widetilde{\text{Roster}}^t$ is the post-churn roster,
 
-$$\widetilde{\text{Roster}}^t = \{i \in \text{Roster}^{t-1} : u_i^t > p_{\text{roster}}\}, \qquad u_i^t \overset{iid}{\sim} U[0,1],$$
+$$\widetilde{\text{Roster}}^t = \{i \in \text{Roster}^{t-1} : u_i^t > p_{\text{roster}}\}, \qquad u_i^t \overset{iid}{\sim} \mathrm{Unif}[0,1],$$
 
 then the broker samples without replacement from $\{1,\ldots,N\}\setminus \widetilde{\text{Roster}}^t$ until $|\text{Roster}^t| = R^*$, or until the population is exhausted. Standing-roster membership is therefore independent of current outsourcing decisions: outsourcing does not place an agent onto the standing roster, and being matched through the broker does not remove the agent from it.
 
-**Current-client overlay.** In each period, the broker also maintains the one-period client set $D^t$ of agents who outsourced in that period. The broker's effective counterparty access set for period $t$ is therefore $A^t = \text{Roster}^t \cup D^t$. This restores an endogenous access channel, because current outsourcing expands the set of agents the broker can use as counterparties in that period without requiring a lagged client-memory mechanism. The period stranger pool is a self-search opportunity set, not a broker-access set.
+**Current-client overlay.** In each period, the broker also maintains the one-period client set $D^t$ of agents who outsourced in that period. The broker's effective counterparty access set for period $t$ is therefore $\mathcal{A}_b^t = \text{Roster}^t \cup D^t$. This restores an endogenous access channel, because current outsourcing expands the set of agents the broker can use as counterparties in that period without requiring a lagged client-memory mechanism. The period stranger pool is a self-search opportunity set, not a broker-access set.
 
 **Broker edges in $G$.** Broker-node edges are synchronized to the standing roster, the current client set, and agents currently engaged in broker-channel matches. This means the broker is always adjacent in $G$ to its maintained access base and its current broker clients, while current broker-mediated relationships are also represented in the period graph even when the matched agents were not already on the standing roster. Because turnover removes exiting agents immediately but replenishment occurs at the next period start, the internal standing roster can temporarily fall below $R^*$ between the exit step and the next refresh.
 
@@ -512,126 +512,9 @@ These updates take effect after the shared market has accepted all current-perio
 
 **Before the next period begins:** clear the current-period match lists $M_i^t$ and $M_j^t$. The next period begins with no active current-period relationships.
 
-### 9. Base Model Pseudocode
+### 9. Simulation Pseudocode
 
-At the start of the simulation, the state of the world must be initialized.
-
-> **INITIALIZE**
->
-> *Agent types and matching function.*
-> I.1. &emsp;Generate random frequencies $f_k$ and phases $\theta_k$ for the sinusoidal curve (§0).
-> I.2. &emsp;Draw $N$ agent types: each at a random position $t_i \sim U[0,1]$ on the curve, perturbed by noise, and projected to the unit sphere.
-> I.3. &emsp;Draw ideal type $\mathbf{c}$ (perturbation of a random curve position).
-> I.4. &emsp;Draw SPD interaction matrix $\mathbf{A} = \mathbf{M}_A^\top \mathbf{M}_A \cdot (d / \text{tr}(\mathbf{M}_A^\top \mathbf{M}_A))$, where $\mathbf{M}_A \in \mathbb{R}^{d \times d}$ has iid $N(0,1)$ entries. Compute the empirical type second moment $\mathbf{S}_x = N^{-1} \sum_i \mathbf{x}_i \mathbf{x}_i^\top$. Then draw a symmetric Gaussian matrix $\mathbf{H}$, recenter it to zero trace, remove its weighted projection onto $\mathbf{A}$ under $\langle \mathbf{M}, \mathbf{N} \rangle_{\mathbf{S}_x} = \operatorname{tr}(\mathbf{S}_x \mathbf{M} \mathbf{S}_x \mathbf{N})$, and normalize the result to unit Frobenius norm: $\mathbf{B}_{\text{raw}} = \mathbf{H} - \frac{\operatorname{tr}(\mathbf{S}_x \mathbf{H} \mathbf{S}_x \mathbf{A})}{\operatorname{tr}(\mathbf{S}_x \mathbf{A} \mathbf{S}_x \mathbf{A})} \mathbf{A}$, $\mathbf{B} = \mathbf{B}_{\text{raw}} / \lVert \mathbf{B}_{\text{raw}} \rVert_F$. This makes the regime operator symmetric and weighted-orthogonal to $\mathbf{A}$ under the realized type distribution.
->
-> *Calibration.*
-> I.5. &emsp;Compute $\bar{q}_{\text{cal}} = E[q]$ from 10,000 random agent pairs $(i, j)$ with $i, j$ drawn independently and uniformly from $\{1, \ldots, N\}$ (self-pairs $i = j$ are not filtered; at $N = 1000$ the resulting bias is $O(1/N)$ and negligible). Set $r \leftarrow 0.60 \cdot \bar{q}_{\text{cal}}$.
-> I.6. &emsp;Set channel costs from the shared search-cost rate $\lambda_c$: $\phi \leftarrow \lambda_c \cdot (\bar{q}_{\text{cal}} - r)$ and $c_s \leftarrow \lambda_c \cdot (\bar{q}_{\text{cal}} - r)$ (§11b).
->
-> *Network.*
-> I.7. &emsp;Build $G$: Watts–Strogatz with $N$ nodes, degree $k$, rewiring $p_{\text{rewire}}$. Node order is random (non-assortative initial network).
->
-> *Broker.*
-> I.8. &emsp;Seed broker roster with $R^* = \lceil 0.20 \cdot N \rceil$ randomly chosen agents (§7). Add broker-agent edges to $G$ for each roster member.
-> I.9. &emsp;Seed broker history $\mathcal{H}_b$ with 100 observations drawn from random pairs of distinct roster members (sampling from the roster directly, not from pre-existing edges in $G$). For each sampled pair $(i, j)$, realize $q_{ij}$, append $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$, and add the edge $(i, j)$ to $G$ (the broker's seed placement creates the tie, mirroring the regular match flow in §4b).
->
-> *State variables.*
-> I.10. &emsp;For each agent $i$: seed $\mathcal{H}_{i}$ with 5 pairings sampled from $i$'s neighbors in $G$. For each sampled neighbor $j$, realize $q_{ij}$ and record $(\mathbf{x}_j, q_{ij})$ in $\mathcal{H}_i$ along with the corresponding `partner_mean` update for $j$. Seed observations are recorded only in the sampling agent's history (so the counterparty $j$ is not credited with this draw in $\mathcal{H}_j$); agents independently seed their own histories from their own neighborhoods. $M_i^0 \leftarrow \emptyset$.
-> I.11. &emsp;Broker reputation from seed data: $\text{rep}^0 \leftarrow \text{mean}(\mathcal{H}_b)$. Agent satisfaction from seed data: $s_{i,\text{self}}^0 \leftarrow \text{mean}(\mathcal{H}_i)$; $s_{i,\text{broker}}^0 \leftarrow \text{rep}^0$.
->
-> *Initial model training.*
-> I.12. &emsp;For each agent $i$: train neural network on $\mathcal{H}_i$ for $E_{\text{init}}$ GD steps from random weights (§2a).
-> I.13. &emsp;Train broker's neural network on $\mathcal{H}_b$ (symmetry-augmented) for $E_{\text{init}}$ GD steps from random weights (§2c). In the implementation, the symmetry-augmented examples are written into a preallocated broker-side buffer and training uses the active prefix of that buffer directly.
-
-Each period proceeds through six steps (plus recording).
-
-> **PERIOD $t$:**
->
-> **0. CURRENT-PERIOD MATCH RESET**
-> 0.1. &emsp;For each agent $i$: set $M_i^t \leftarrow \emptyset$.
-> 0.2. &emsp;Clear the prior period's client overlay $D^{t-1}$. Refresh standing broker roster (§7): each current roster member exits independently with probability $p_{\text{roster}}$; then replenish uniformly without replacement from non-roster agents until the target size $R^* = \lceil 0.20 \cdot N \rceil$ is restored. Synchronize broker-agent edges in $G$ to the refreshed standing roster.
->
-> **1. DEMAND GENERATION AND OUTSOURCING DECISIONS**
-> 1.1. &emsp;For each agent $i$: draw demand count $d_i \sim \text{Binomial}(K,\; p_{\text{demand}})$.
-> 1.2. &emsp;For each agent $i$ with $d_i > 0$:
-> &emsp;&emsp;Compute $\text{score}_{\text{self}}, \text{score}_{\text{broker}}$ as in §6b.
-> &emsp;&emsp;$\text{decision}_i \leftarrow \text{broker}$ if $\text{score}_{\text{broker}} > \text{score}_{\text{self}}$; else $\text{self}$. Ties broken uniformly at random. (Channel choice applies to all $d_i$ requested positions.)
-> 1.3. &emsp;Form the current broker client set $D^t = \{i : \text{decision}_i = \text{broker}\}$. Synchronize broker-agent edges in $G$ so the broker is connected to the standing roster and all current clients. Output: for each demander, channel choice and demand count $d_i$. Broker client list $D^t$ with per-agent demand counts. Current standing roster $\text{Roster}^t$.
->
-> **2. CANDIDATE EVALUATION**
->
-> &emsp;**2.1. Fit prediction models:**
-> 2.1.1. &emsp;For each agent $i$ with non-empty history, new observations, and parity matching the current period ($i \bmod 2 = t \bmod 2$): update neural network on $\mathcal{H}_{i}^t$ (§2b). Warm start; $E_t = \max(50, \lceil E_{\text{init}} \cdot n_{\text{new}} / n_i \rceil)$ GD steps on the sliding window of the most recent $W = 500$ observations. No regularization. Agents not selected in period $t$ keep accumulating $n_{\text{new}}$ observations and retrain the next period.
-> 2.1.2. &emsp;If the broker has new observations, update the broker's neural network on $\mathcal{H}_b^t$ with symmetry-augmented data (§2c). Same adaptive schedule and window. No regularization. In the implementation, the broker reuses a preallocated symmetry-augmented training buffer and trains on its active prefix directly.
->
-> &emsp;**2.2. Market initialization and resource capture:**
-> 2.2.1. &emsp;Sample the period stranger pool $S^t$ uniformly without replacement from the population, with size $\min(n_s, N)$.
-> 2.2.2. &emsp;Initialize an empty directed-offer book whose directed offers are grouped and traversed by unordered agent pair.
-> 2.2.3. &emsp;If resource capture is enabled and the broker satisfies the capture confidence gate (§12): evaluate current broker clients for client-origin whole-lot capture. Captured origin clients are removed from the remaining standard offer market for the period, and their remaining standard broker demand is set to zero.
->
-> **3. SHARED ACTIVE-DEMAND OFFER MARKET**
->
-> 3.1. &emsp;Form $D_{\text{self}}^t = \{i : d_i > 0, \text{decision}_i = \text{self}\}$ and $D_{\text{broker}}^t = \{i : d_i > 0, \text{decision}_i = \text{broker}\}$.
->
-> &emsp;**3.2. Emit self-search offers**
->
-> 3.2.1. &emsp;For each $i \in D_{\text{self}}^t$, build the self-search candidate list from known neighbors and the period stranger pool $S^t$ (§5a), excluding any captured origin clients.
-> 3.2.2. &emsp;Rank candidates by $i$'s own evaluation. Traverse the ranking and add up to the remaining demand count for $i$ directed self-search offers $i \to j$ with value above $r$ to the shared offer book.
->
-> &emsp;**3.3. Emit broker offers**
->
-> 3.3.1. &emsp;Set broker access $A^t \leftarrow \text{Roster}^t \cup D^t$, excluding any captured origin clients from the standard broker-offer candidate pool.
-> 3.3.2. &emsp;Construct the unordered broker pair set $\{\{i,j\}: i \neq j,\; (i \in D_{\text{broker}}^t \land j \in A^t) \lor (j \in D_{\text{broker}}^t \land i \in A^t)\}$.
-> 3.3.3. &emsp;Rank this pair set by the broker's predicted value, descending.
-> 3.3.4. &emsp;Traverse the ranked pair list. For each pair $\{i,j\}$ with value above $r$, add a directed broker offer from any broker demander side that still has remaining active broker demand after resource capture and can access the other side through $A^t$.
->
-> &emsp;**3.4. Accept offers**
->
-> 3.4.1. &emsp;For each unordered pair in the offer book:
-> &emsp;&emsp;If both directed offers are present, accept the relationship.
-> &emsp;&emsp;If one directed offer $i \to j$ is present, accept iff receiver $j$ evaluates $i$ above $r$.
->
-> &emsp;**3.5. Finalize accepted relationships**
->
-> 3.5.1. &emsp;For each accepted unordered pair $(i, j)$:
-> &emsp;&emsp;Realize output: $q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}$.
-> &emsp;&emsp;Update histories: add $(\mathbf{x}_j, q_{ij})$ to $\mathcal{H}_{i}$; add $(\mathbf{x}_i, q_{ij})$ to $\mathcal{H}_{j}$; if any offer side used the broker, add $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$ once.
-> &emsp;&emsp;Add match to current-period match lists: append $j$ to $M_i^t$; append $i$ to $M_j^t$.
-> &emsp;&emsp;Add edge $(i, j)$ to $G$ if not already present.
-> &emsp;&emsp;Record realized output, predictions used by each accepted directed offer, and whether each broker-directed offer crossed an existing direct tie.
-> 3.5.2. &emsp;Synchronize broker-agent edges in $G$ so the broker remains connected to the standing roster, the current client set, and any agents currently engaged in broker-channel matches (§7).
->
-> **4. LEARNING AND STATE UPDATES**
-> 4.1. &emsp;Histories have already been updated during market finalization (Step 3.5), so no additional learning pass is needed here.
->
-> 4.2. &emsp;Update satisfaction indices (§6a):
-> &emsp;&emsp;For each agent $i$ with $d_i > 0$, let $c$ be $i$'s chosen channel:
-> &emsp;&emsp;&emsp;Sum realized outputs over accepted directed offers made by $i$ through $c$; unfilled requested positions contribute zero through the denominator $d_i$.
-> &emsp;&emsp;&emsp;If $c = \text{self}$: compute $\tilde{q} = (\sum q_{ij} - c_s \cdot d_i) / d_i = \sum q_{ij}/d_i - c_s$.
-> &emsp;&emsp;&emsp;If $c = \text{broker}$: compute $\tilde{q} = (\sum q_{ij}^{\text{std}} + \sum p_i^{\text{capture}} - \phi \cdot n_{i,\text{broker std success}}) / d_i$, where capture payments are counted for captured positions and rejected standard broker offers contribute zero through the denominator.
-> &emsp;&emsp;&emsp;Update: $s_{i,c}^{t+1} = (1 - \omega)\, s_{i,c}^t + \omega \cdot \tilde{q}$.
->
-> 4.3. &emsp;Update broker reputation (§6c):
-> &emsp;&emsp;If $|D^t| > 0$: $\text{rep}^{t+1} \leftarrow \text{mean of } s_{i,\text{broker}}^{t+1} \text{ over } i \in D^t$.
-> &emsp;&emsp;Else: $\text{rep}^{t+1} \leftarrow \text{rep}^{t}$ (hold previous value).
->
-> 4.4. &emsp;Record market-period diagnostics before entry/exit: accepted-offer prediction pairs, match counts and quality by channel, current-period counterparty concentration, capture confidence inputs, holdout prediction quality, standing roster size, and broker access size. These quantities describe the just-completed market before any agent replacement occurs.
->
-> **5. ENTRY AND EXIT**
-> 5.1. &emsp;For each agent $i$:
-> &emsp;&emsp;With probability $\eta$: agent exits.
-> &emsp;&emsp;&emsp;Remove $i$ from $G$ (node and all edges).
-> &emsp;&emsp;&emsp;Terminate all active matches involving $i$.
-> &emsp;&emsp;&emsp;Remove $i$ from the broker's standing roster and from the current client set (if present). Broker-agent edges are then synchronized so the broker remains connected to the surviving standing roster, surviving current clients, and any surviving active broker-channel participants; replenishment of vacated standing-roster spots occurs at the next period start.
-> &emsp;&emsp;&emsp;Replace with entrant $i'$: fresh type from curve + noise; empty histories; added to $G$ with $\lfloor k/2 \rfloor$ edges to type-similar agents ($\propto \exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)$). Self-satisfaction $\leftarrow$ mean of new neighbors' self-satisfaction; broker-satisfaction $\leftarrow$ current broker reputation (§6a).
->
-> **6. RECORDING AND MEASUREMENT**
-> 6.1. &emsp;Assemble the period output row from the pre-turnover market diagnostics in Step 4.4 and the post-turnover state variables. Mean self- and broker-satisfaction, broker reputation, broker history size, and whole-network agent-degree summaries are read from the state after entry/exit.
-> 6.2. &emsp;Every $M$ periods (default $M = 20$): compute network measures on the post-turnover graph $G$ (§10): betweenness centrality $C_B(b)$; Burt's constraint (broker's ego network); effective size (broker's ego network). The $M$-period cadence reflects the cost of Brandes BFS on the full graph, not a conceptual alignment with holdout measurement.
-
-#### Parallelism summary
-
-Steps 0 and 1 are embarrassingly parallel across agents. Step 2.1 (model fitting) remains the dominant parallel workload. Within Step 3, self-search offer construction is parallelizable across active demanders and broker pair predictions are batch-computed. Offer acceptance is a simple sequential pass over unordered pairs because it writes shared relationship state. Step 4 is lightweight because histories were already updated during market finalization; Step 5 still involves shared-state writes but on non-overlapping agent records. Network measures remain the most expensive standalone diagnostic computation; they read the full state but write nothing and can be offloaded to a separate thread or deferred to a coarser schedule.
+The implementation-level pseudocode is consolidated in `simulation_pseudocode.tex`. That document defines the notation and dimensions used by the algorithms and gives compact pseudocode for initialization, the period update, the shared active-demand offer market, optional client-origin resource capture, satisfaction updates, and period metrics.
 
 ### 10. Performance Measures
 
@@ -641,24 +524,24 @@ Computed on $G$ (which includes the broker as a permanent node; §4a) each measu
 
 **Betweenness centrality.** Standard Freeman betweenness (Freeman, 1977) computed on $G$ using the Brandes (2001) algorithm adapted for single-node computation on undirected unweighted graphs. Neighbor iteration uses a compressed sparse row (CSR) adjacency structure built once per measurement call, with pre-allocated per-thread BFS workspaces for allocation-free parallel execution. The broker's betweenness is the fraction of all shortest paths that pass through the broker node, with the standard undirected normalization:
 
-$$C_B(b) = \frac{1}{(n-1)(n-2)} \sum_{s \neq b} \sum_{t \neq s} \frac{\sigma_{st}(b)}{\sigma_{st}}$$
+$$\mathrm{BC}_b = \frac{1}{(n-1)(n-2)} \sum_{u \neq b} \sum_{v \neq u} \frac{\sigma_{uv}(b)}{\sigma_{uv}}$$
 
-where $n = N+1$, $\sigma_{st}$ is the number of shortest paths from $s$ to $t$, and $\sigma_{st}(b)$ is the number passing through $b$. The double sum counts each undirected pair from both directions; dividing by $(n-1)(n-2)$ rather than $\binom{n}{2}$ corrects for this double-counting (Brandes, 2001, p. 9). As matches create direct ties, shortest paths increasingly bypass the broker, reducing betweenness: the structural erosion that the theory predicts.
+where $n = N+1$, $\sigma_{uv}$ is the number of shortest paths from $u$ to $v$, and $\sigma_{uv}(b)$ is the number passing through $b$. The double sum counts each undirected pair from both directions; dividing by $(n-1)(n-2)$ rather than $\binom{n}{2}$ corrects for this double-counting (Brandes, 2001, p. 9). As matches create direct ties, shortest paths increasingly bypass the broker, reducing betweenness: the structural erosion that the theory predicts.
 
 **Burt's constraint.** Computed on the broker's ego network (Burt, 1992):
 
-$$C_b = \sum_j \left(p_{bj} + \sum_{h \neq b,j}
+$$\mathrm{Constraint}_b = \sum_j \left(p_{bj} + \sum_{h \neq b,j}
 p_{bh}\, p_{hj}\right)^2$$
 
-where $p_{bj} = 1/d_b$ is the proportion of the broker's ties invested in node $j$ (for the unweighted network), and $p_{kj} = 1/d_k$ is the proportion of intermediary $k$'s ties invested in $j$ (Everett & Borgatti, 2020). Note that the indirect term uses the intermediary's degree, not the ego's. Low constraint = broker spans structural holes. High constraint = broker's contacts are interconnected.
+where $p_{bj} = 1/d_b$ is the proportion of the broker's ties invested in node $j$ (for the unweighted network), and $p_{hj} = 1/d_h$ is the proportion of intermediary $h$'s ties invested in $j$ (Everett & Borgatti, 2020). Note that the indirect term uses the intermediary's degree, not the ego's. Low constraint = broker spans structural holes. High constraint = broker's contacts are interconnected.
 
 **Effective size.** The number of non-redundant contacts in the broker's ego network. Using the Borgatti (1997) simplification for binary undirected networks: $\text{ES}_b = d_b - 2t_b / d_b$, where $d_b$ is the broker's degree and $t_b$ is the number of ties among the broker's neighbors (not counting ties to the broker). Equivalently: $\text{ES}_b = |N(b)| - \sum_j p_{bj} \sum_{h \neq b, h \in N(b)} m_{jh}$ where $p_{bj} = 1/d_b$ and $m_{jh} = 1$ if $j$ and $h$ are connected.
 
 #### Prediction quality
 
-**Winner's curse / selection bias.** Both agents and the broker select the counterparty with the highest *predicted* match quality from their candidate set ($\arg\max_j \hat{q}_{ij}$). When predictions are noisy, the selected counterparty's prediction $\hat{q}_{ij^*}$ is systematically inflated relative to the true match quality $f(\mathbf{x}_i, \mathbf{x}_{j^*})$, because the selection picks up positive noise realizations. This is the classic winner's curse.
+**Winner's curse / selection bias.** Both agents and the broker rank feasible counterparties by *predicted* match quality and emit offers to the top candidates. When predictions are noisy, selected candidates' predictions are systematically inflated relative to the noiseless true output $Q + f(\mathbf{x}_i, \mathbf{x}_j)$, because selection picks up positive prediction errors. This is the classic winner's curse.
 
-**Holdout model quality.** Each period, up to 100 agents with non-empty histories are sampled without replacement. For each sampled agent $i$, $\min(40, N-1)$ non-self partners $j$ are sampled without replacement, and both agent $i$'s neural network and the broker's neural network predict the noiseless true match quality $f(\mathbf{x}_i, \mathbf{x}_j)$ for each partner. Per-agent $R^2$, RMSE, bias, and rank correlation are computed for each model, then averaged across the sampled agents. The implementation uses the standard $R^2 = 1 - \text{SSE}/\text{SST}$ definition, equivalently $1 - \text{MSE}/\operatorname{Var}_{\text{pop}}(q)$ with the population variance denominator. Because both models are evaluated on the same agent-partner sets, the resulting metrics are directly comparable: any gap reflects the models' relative quality, not differences in evaluation samples. Holdout sampling uses a deterministic diagnostics RNG derived from the simulation seed and period; it does not consume the main simulation RNG.
+**Holdout model quality.** Each period, up to 100 agents with non-empty histories are sampled without replacement. For each sampled agent $i$, $\min(40, N-1)$ non-self partners $j$ are sampled without replacement, and both agent $i$'s neural network and the broker's neural network predict the noiseless true output $Q + f(\mathbf{x}_i, \mathbf{x}_j)$ for each partner. Per-agent $R^2$, RMSE, bias, and rank correlation are computed for each model, then averaged across the sampled agents. The implementation uses the standard $R^2 = 1 - \text{SSE}/\text{SST}$ definition, equivalently $1 - \text{MSE}/\operatorname{Var}_{\text{pop}}(q)$ with the population variance denominator. Because both models are evaluated on the same agent-partner sets, the resulting metrics are directly comparable: any gap reflects the models' relative quality, not differences in evaluation samples. Holdout sampling uses a deterministic diagnostics RNG derived from the simulation seed and period; it does not consume the main simulation RNG.
 
 **Selected-sample metrics.** Four metrics are computed each period over accepted directed offers by channel (self-search or brokered) that period. The directed-offer basis is intentional: an accepted reciprocal relationship can represent two active search decisions, possibly through different channels.
 
@@ -670,13 +553,13 @@ where $p_{bj} = 1/d_b$ is the proportion of the broker's ties invested in node $
 
 - *Selected rank correlation* (Spearman's $\rho_S$). Measures whether the agent ranks matched counterparties correctly by realized output. The rank correlation is less affected by the winner's curse than $R^2$ because it is invariant to monotone transformations.
 
-**Minimum variance threshold.** When $\text{Var}(q) < \sigma_\varepsilon^2 / 6 \approx 0.01$, the realized output variance in the sample is too small relative to the noise floor for $R^2$ to be informative. Below this threshold, $R^2$, bias, and rank correlation return NaN so that the row is treated uniformly as "insufficient signal" in downstream aggregation.
+**Minimum variance threshold.** When $\text{Var}(q) < \sigma_\varepsilon^2 / 6 \approx 0.0017$ at the default $\sigma_\varepsilon=0.10$, the realized output variance in the sample is too small relative to the noise floor for $R^2$ to be informative. Below this threshold, $R^2$, bias, and rank correlation return NaN so that the row is treated uniformly as "insufficient signal" in downstream aggregation.
 
 **Summary of prediction quality metrics:**
 
 | Metric | What it measures | Selection bias? | Primary use |
 |--------|-----------------|-----------------|-------------|
-| Holdout $R^2$ and RMSE | Model quality (approximation of $f$) | None (random sample, noiseless truth) | Informational advantage |
+| Holdout $R^2$ and RMSE | Model quality (approximation of $Q + f$) | None (random sample, noiseless truth) | Informational advantage |
 | Selected rank correlation | Matching decision quality (correct ordering) | Mild (order is more robust than level) | Allocation effectiveness |
 | Selected $R^2$ and RMSE | Prediction accuracy on accepted directed offers | Strong (winner's curse) | Economic outcomes |
 
@@ -694,7 +577,7 @@ The broker-agent gap in holdout $R^2$ is the purest measure of the informational
 
 **Standing roster size.** Number of agents currently on the broker's standing roster (§7). In the recorded period outputs, this is measured after the start-of-period refresh and before Step 5 entry/exit, so it typically equals the target $R^*$. Internally, the roster can dip below target immediately after exits and is replenished at the next period start.
 
-**Broker access size.** Number of distinct agents in the broker's within-period access set, $|A^t| = |\text{Roster}^t \cup D^t|$, where $D^t$ is the set of current-period broker clients. In the recorded period outputs, this is measured after current outsourcing decisions have formed $D^t$ and before Step 5 entry/exit. This is the meaningful quantity for how many agents the broker can search over in period $t$. Because current clients can already be on the standing roster, broker access size is generally smaller than standing roster size plus the number of current broker clients.
+**Broker access size.** Number of distinct agents in the broker's within-period access set, $|\mathcal{A}_b^t| = |\text{Roster}^t \cup D^t|$, where $D^t$ is the set of current-period broker clients. In the recorded period outputs, this is measured after current outsourcing decisions have formed $D^t$ and before Step 5 entry/exit. This is the meaningful quantity for how many agents the broker can search over in period $t$. Because current clients can already be on the standing roster, broker access size is generally smaller than standing roster size plus the number of current broker clients.
 
 **Counterparty concentration.** The median and maximum number of current-period counterparties per agent are recorded each period. These are diagnostics, not constraints: the model no longer caps incoming accepted offers.
 
@@ -715,11 +598,11 @@ Parameters are organized into four categories reflecting their role in the analy
 | Symbol | Meaning | Value | Notes |
 |--------|---------|-------|-------|
 | $d$ | Type dimensionality | 8 | Fixed |
-| $k$ | Network mean degree | 6 | Watts-Strogatz ring lattice degree |
+| $k_G$ | Network mean degree | 6 | Watts-Strogatz ring lattice degree |
 | $p_{\text{rewire}}$ | Network rewiring probability | 0.1 | Watts-Strogatz rewiring |
 | $\omega$ | Satisfaction recency weight (§6a) | 0.2 | EWMA weight |
 | $p_{\text{demand}}$ | Active-demand probability | 0.50 | $d_i \sim \text{Binomial}(K, p_{\text{demand}})$ |
-| $n_s$ | Period stranger-pool size | 10 | Sampled uniformly once per period |
+| $n_{\mathrm{strangers}}$ | Period stranger-pool size | 10 | Sampled uniformly once per period |
 | $\sigma_x$ | Type noise scale | 0.5 | Expected distance from agent to curve position |
 | $\alpha_R$ | Target roster share (§7) | 0.20 | Standing roster target size is $R^* = \lceil \alpha_R N \rceil$ |
 
@@ -728,7 +611,7 @@ Parameters are organized into four categories reflecting their role in the analy
 | Symbol | Meaning | Default | Notes |
 |--------|---------|---------|-------|
 | $r$ | Outside option | $0.60 \cdot \bar{q}_{\text{cal}}$ | Constant for all agents; calibrated at initialization |
-| $\eta_{lr}$ | Learning rate | 0.03 | Vanilla gradient descent, full-batch, no weight decay |
+| $\eta_{\mathrm{lr}}$ | Learning rate | 0.03 | Vanilla gradient descent, full-batch, no weight decay |
 | $E_{\text{init}}$ | Initial training steps | 200 | Full convergence at initialization; in production periods each agent retrains every other period on a deterministic parity schedule, with steps $\max(50, \lceil E_{\text{init}} \cdot n_{\text{new}} / n_{\text{total}} \rceil)$ |
 | $W$ | Training window | 500 | Train on at most $W$ most recent observations (sliding window) |
 | $h_a$ | Agent hidden width | 16 | One hidden layer, ReLU activations |
@@ -743,7 +626,7 @@ Parameters are organized into four categories reflecting their role in the analy
 
 | Symbol | Meaning | Default | Sweep |
 |--------|---------|---------|-------|
-| $s$ | Active dimensions | 8 | {2, 4, 6, 8} |
+| $d_\gamma$ | Active dimensions | 8 | {2, 4, 6, 8} |
 | $\rho$ | Quality-interaction mixing weight | 0.50 | {0, 0.10, 0.30, 0.50, 0.70, 0.90, 1.0} |
 
 **Model 1 parameters.** Apply only under resource capture (§12).
@@ -760,7 +643,7 @@ Parameters are organized into four categories reflecting their role in the analy
 |--------|---------|---------|-------|-------|
 | $K$ | Maximum active demands | 5 | {1, 2, 5, 10, 20, 50} | Upper bound for $d_i$; not a counterparty-capacity limit |
 | $p_{\text{demand}}$ | Per-position demand probability | 0.50 | {0.10, 0.25, 0.50, 0.75, 0.90} | Higher values produce a thicker, faster-moving market |
-| $\eta$ | Agent entry/exit rate | 0.02 | {0.01, 0.02, 0.05, 0.10} | |
+| $\eta_{\mathrm{exit}}$ | Agent entry/exit rate | 0.02 | {0.01, 0.02, 0.05, 0.10} | |
 | $\delta$ | Regime gain strength | 0.5 | {0, 0.25, 0.50, 0.75} | $\delta = 0$: no regime effect (pure statistical advantage) |
 
 The activity parameters $p_{\text{demand}}$ and $K$ jointly determine the market regime. Because $K$ bounds active demand, the expected outgoing demand volume scales with $K \cdot p_{\text{demand}}$: agents in high-demand environments initiate more offers per period, reflecting a thicker, faster-moving market. Different combinations map to the illustrative domains:
@@ -793,7 +676,7 @@ In the default $\lambda_c = 0.15$, both channels use the same friction level. Th
 
 #### 11c. Initial conditions
 
-The initialization procedure is specified in the pseudocode (§9, steps I.1–I.13). The key design choices are:
+The initialization procedure is specified in `simulation_pseudocode.tex` (`Initialize`). The key design choices are:
 
 - Agent types are drawn at random positions on the sinusoidal curve with noise, then projected to the unit sphere (§0).
 - The matching function parameters ($\mathbf{c}$, $\mathbf{A}$, $\mathbf{B}$) are drawn once and held fixed (§1).
@@ -819,15 +702,15 @@ The broker tracks a live mean absolute error scale $\kappa_b^t$ from broker-cont
 Resource capture can operate in period $t$ only if:
 
 $$
-n_{\text{broker error}}^t \geq n_{\text{capture min}}, \qquad
-\frac{\kappa_b^t}{\bar{q}_{\text{cal}} - r} \leq \kappa_{\text{capture}} .
+n_{\text{broker error}}^t \geq n_{\min}, \qquad
+\frac{\kappa_b^t}{\bar{q}_{\text{cal}} - r} \leq \kappa_{\max} .
 $$
 
-Defaults are $n_{\text{capture min}} = 100$ and $\kappa_{\text{capture}} = 0.65$. The first condition prevents capture before the broker has enough live error observations; the second requires prediction error to be small relative to the calibrated surplus scale.
+Defaults are $n_{\min} = 100$ and $\kappa_{\max} = 0.65$. The first condition prevents capture before the broker has enough live error observations; the second requires prediction error to be small relative to the calibrated surplus scale.
 
 #### 12b. Whole-lot acquisition
 
-Let $D_{\text{broker}}^t$ be current broker clients with active demand and let $A^t = \text{Roster}^t \cup D_{\text{broker}}^t$ be broker access. For each client $i \in D_{\text{broker}}^t$, the broker considers acquiring the entire current broker-channel lot of size $d_i$. Partial capture is not allowed.
+Let $D_+^t$ be current broker clients with positive residual offer quota and let $\mathcal{A}_b^t = \text{Roster}^t \cup D^t$ be broker access. For each client $i \in D_+^t$, the broker considers acquiring the entire current broker-channel lot of size $d_i$. Partial capture is not allowed.
 
 The acquisition price per captured position is
 
@@ -838,13 +721,13 @@ p_i = \begin{cases}
 \end{cases}
 $$
 
-If $p_i < r$, the lot is ineligible. The broker ranks recipients $j \in A^t \setminus \{i\}$ by the symmetric broker prediction $\hat{q}_b(\{i,j\})$. A lot is feasible if the broker can plan $d_i$ distinct recipients with $\hat{q}_b(\{i,j\}) > r$. A feasible lot is captured only if expected principal surplus exceeds the standard brokerage fees the broker would forgo:
+If $p_i < r$, the lot is ineligible. The broker ranks recipients $j \in \mathcal{A}_b^t \setminus \{i\}$ by the symmetric broker prediction $\hat{q}_b(\{i,j\})$. A lot is feasible if the broker can plan $d_i$ distinct recipients with $\hat{q}_b(\{i,j\}) > r$. A feasible lot is captured only if expected principal surplus exceeds the standard brokerage fees the broker would forgo:
 
 $$
-\sum_{j \in P_i^t} \hat{q}_b(\{i,j\}) - d_i p_i > d_i \phi,
+\sum_{j \in \mathcal{J}_i^t} \hat{q}_b(\{i,j\}) - d_i p_i > d_i \phi,
 $$
 
-where $P_i^t$ is the planned recipient set. Candidate lots are processed in descending expected net gain. Before executing a lot, the broker replans against already used pairs and already captured origins so that the whole-lot feasibility condition still holds. Once a client has been captured as an origin, it is unavailable both as a standard-market candidate and as a later same-period principal recipient.
+where $\mathcal{J}_i^t$ is the planned recipient set. Candidate lots are processed in descending expected net gain. Before executing a lot, the broker replans against already used pairs and already captured origins so that the whole-lot feasibility condition still holds. Once a client has been captured as an origin, it is unavailable both as a standard-market candidate and as a later same-period principal recipient.
 
 #### 12c. Principal offers and inventory risk
 
@@ -881,7 +764,7 @@ The following design choices are deferred for future work. They are described at
 
 Under data capture (Proposition 3b), the broker sells access to its prediction model as a per-period subscription service. Subscribing agents use the broker's model when evaluating strangers during self-search (§5a), while continuing to match directly, learn from outcomes, and form ties. For known neighbors, subscribers still use their own historical averages. The broker earns per-period subscription revenue $\mu$ rather than per-match fees.
 
-Data capture produces the gradual trajectory of Proposition 3b: agents keep learning and forming ties, structural erosion continues, and the broker's advantage narrows as subscribers improve their own predictions. The channel comparison table in §12g summarizes the contrast with resource capture.
+Data capture produces the gradual trajectory of Proposition 3b: agents keep learning and forming ties, structural erosion continues, and the broker's advantage narrows as subscribers improve their own predictions.
 
 **Open design questions:**
 
@@ -899,7 +782,7 @@ The baseline resource-capture mechanism is client-origin, whole-lot, and same-pe
 
 The current model does not track per-prediction posterior uncertainty. All match predictions are point estimates. Model 1 uses the reduced-form broker confidence state $\kappa_b^t$ as an entry condition for principal mode (§12a), not as a pair-specific posterior uncertainty measure.
 
-**Bayesian last layer.** A natural extension of the current neural network architecture (§2a): the hidden layer remains a deterministic feature extractor trained by gradient descent, but the output layer is replaced with Bayesian linear regression. Given hidden features $\mathbf{h} = \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1)$ from the training data, the posterior over output weights $\mathbf{w}_2$ is available in closed form (conjugate Gaussian). For a new input $\mathbf{z}^*$, the predictive distribution is $N(\boldsymbol{\mu}_{\text{post}}^\top \mathbf{h}^*, \; \sigma_\varepsilon^2 + \mathbf{h}^{*\top} \boldsymbol{\Sigma}_{\text{post}} \mathbf{h}^*)$, where the second variance term $\mathbf{h}^{*\top} \boldsymbol{\Sigma}_{\text{post}} \mathbf{h}^*$ is the *epistemic* uncertainty (large when the input is far from training data in feature space, small when it is well-covered). Implementation cost is minimal: one $h \times h$ matrix inversion per agent per period (at $h = 16$, this is trivial).
+**Bayesian last layer.** A natural extension of the current neural network architecture (§2a): the hidden layer remains a deterministic feature extractor trained by gradient descent, but the output layer is replaced with Bayesian linear regression. Given hidden features $\mathbf{h} = \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1)$ from the training data, the posterior over output weights $\mathbf{w}_2$ is available in closed form (conjugate Gaussian). For a new input $\mathbf{z}^*$, the predictive distribution is $\mathcal{N}(\boldsymbol{\mu}_{\text{post}}^\top \mathbf{h}^*, \; \sigma_\varepsilon^2 + \mathbf{h}^{*\top} \boldsymbol{\Sigma}_{\text{post}} \mathbf{h}^*)$, where the second variance term $\mathbf{h}^{*\top} \boldsymbol{\Sigma}_{\text{post}} \mathbf{h}^*$ is the *epistemic* uncertainty (large when the input is far from training data in feature space, small when it is well-covered). Implementation cost is minimal: one $h \times h$ matrix inversion per agent per period (at $h = 16$, this is trivial).
 
 **Uses of per-prediction uncertainty:**
 - *Match selection.* An upper confidence bound (UCB) rule (select the partner with the highest $\hat{q} + \kappa \cdot \hat{\sigma}$) would balance exploitation (high predicted quality) with exploration (high uncertainty), generating more informative data and accelerating learning.
@@ -927,8 +810,8 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 
 **Fig. 1.** The informational mechanism.
 - *Purpose:* Establishes the core mechanism: the broker learns faster than individual agents, the gap widens with matching complexity, and this drives increasing outsourcing (Propositions 1.1, 1.2, 1.3).
-- *Content:* All panels at default parameters ($s = 8$, $\rho = 0.50$), using the base active-demand offer market.
-  - Panel A: time on the horizontal axis, prediction quality (holdout $R^2$) on the vertical axis. One line for the broker, one for the average agent. The broker-agent gap reflects the informational advantage and its dynamics over time. An inset shows the effect of varying $s$.
+- *Content:* All panels at default parameters ($d_\gamma = 8$, $\rho = 0.50$), using the base active-demand offer market.
+  - Panel A: time on the horizontal axis, prediction quality (holdout $R^2$) on the vertical axis. One line for the broker, one for the average agent. The broker-agent gap reflects the informational advantage and its dynamics over time. An inset shows the effect of varying $d_\gamma$.
   - Panel B: time on the horizontal axis, outsourcing rate on the vertical axis.
   - Panel C: time on the horizontal axis, average realized match output by channel (self-search, brokered).
 
@@ -957,7 +840,7 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 - *Content:* $\rho$ on horizontal axis; broker-agent gap in holdout $R^2$; outsourcing rate at steady state.
 
 **Fig. S3.** OAT parameter sweeps.
-- *Content:* Grid of panels varying $\eta$, $\delta$, $p_{\text{demand}}$, $K$ while holding others at defaults.
+- *Content:* Grid of panels varying $\eta_{\mathrm{exit}}$, $\delta$, $p_{\text{demand}}$, $K$ while holding others at defaults.
 
 **Fig. S4.** Network visualization snapshots.
 - *Content:* The network $G$ at early, middle, and late periods. Broker node positioned centrally. Under Model 1, captured positions suppress direct client-recipient ties.

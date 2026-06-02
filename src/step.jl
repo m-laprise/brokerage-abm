@@ -1,15 +1,12 @@
 """
     step.jl
 
-Main simulation loop: one period of the model (§9, Steps 0-6).
+Main simulation loop: one period of the model, matching
+`simulation_pseudocode.tex` (`PeriodUpdate`).
 
-Step 0: Current-period match reset
-Step 1: Demand generation and outsourcing decisions
-Step 2: Candidate evaluation (train NNs)
-Step 3: Shared active-demand offer market
-Step 4: Learning updates (histories already recorded in Step 3; satisfaction, reputation)
-Step 5: Entry/exit
-Step 6: Recording and measurement
+Flow: reset current matches and roster overlay; draw demand and channel choices;
+train predictors; run the shared offer market; update satisfaction, reputation,
+and diagnostics; process entry/exit; refresh cached network measures when due.
 """
 
 using Random: shuffle!

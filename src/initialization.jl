@@ -87,13 +87,13 @@ end
 """
     initialize_model(params) -> ModelState
 
-Complete model initialization following the pseudocode (§9, Steps I.1-I.13):
+Complete model initialization following `simulation_pseudocode.tex` (`Initialize`):
 1. Agent types on sinusoidal curve
 2. Matching function (c, A, B)
 3. Calibration (q_cal, r, phi, c_s)
 4. Network (Watts-Strogatz + broker node)
-5. Agent history seeding (5 neighbor pairings)
-6. Broker roster seeding and broker history seeding (up to 100 random roster-member observations)
+5. Broker roster seeding and broker history seeding (up to 100 random roster-member observations)
+6. Agent history seeding (5 neighbor pairings)
 7. State variables (satisfaction, reputation)
 8. Neural network initial training (E_init steps)
 """
@@ -103,24 +103,24 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     d = p.d
     N = p.N
 
-    # ── I.1-I.2: Agent types ──
+    # ── Agent types ──
     geo = generate_curve_geometry(d, p.s, rng)
     sorted_types, _ = generate_agent_types(N, geo, p.sigma_x, rng; sort_by_pc1=sort_by_pc1)
 
-    # ── I.3: Ideal type c ──
+    # ── Ideal type c ──
     # (perturbation of a random curve position)
 
-    # ── I.4: Matching environment (A, B, c) ──
+    # ── Matching environment (A, B, c) ──
     env = generate_matching_env(d, p.rho, p.delta, p.sigma_eps, sorted_types, rng;
                                  sigma_x=p.sigma_x, curve_geo=geo)
 
-    # ── I.5-I.6: Calibration ──
+    # ── Calibration ──
     cal = calibrate(env, sorted_types, p, rng)
 
-    # ── I.7: Network ──
+    # ── Network ──
     G = build_network(N, p.k, p.p_rewire, rng)
 
-    # ── I.8: Broker setup ──
+    # ── Broker setup ──
     broker_node = N + 1
     n_roster_seed = roster_target_size(N)
 
@@ -142,7 +142,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         n_new_obs = 0,
         train_X = Matrix{Float64}(undef, 2 * d, 128),
         train_q = Vector{Float64}(undef, 128),
-        last_reputation = 0.0,     # set from seed data in step I.11 below
+        last_reputation = 0.0,     # set from seed data below
         has_had_clients = false,
         capture_confidence_mae = 0.0,
         capture_confidence_ready = false,
@@ -179,14 +179,14 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
             train_q = Vector{Float64}(undef, initial_train_cap),
             partner_sum = zeros(N),
             partner_count = zeros(Int, N),
-            satisfaction_self = 0.0,   # set from seed data in step I.11 below
+            satisfaction_self = 0.0,   # set from seed data below
             satisfaction_broker = 0.0, # no broker experience at init
             tried_broker = false,
             periods_alive = 0,
         )
     end
 
-    # ── I.9: Broker history seeding (100 observations from random roster member pairs) ──
+    # ── Broker history seeding (100 observations from random roster member pairs) ──
     roster_list = collect(broker.roster)
     n_broker_seed = min(100, length(roster_list) * (length(roster_list) - 1) ÷ 2)
     broker_seed_count = 0
@@ -205,7 +205,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         broker_seed_count += 1
     end
 
-    # ── I.10: Agent history seeding (5 pairings from neighbors) ──
+    # ── Agent history seeding (5 pairings from neighbors) ──
     for i in 1:N
         nbrs = collect(neighbors(G, i))
         filter!(n -> n != broker_node && n >= 1 && n <= N, nbrs)
@@ -220,7 +220,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         end
     end
 
-    # ── I.11: State variables (from seed data, not q_cal) ──
+    # ── State variables (from seed data, not q_cal) ──
     # Broker reputation: mean of seed broker match outcomes
     if broker.history_count > 0
         broker.last_reputation = sum(broker.history_q[k] for k in 1:broker.history_count) / broker.history_count
@@ -251,7 +251,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         cached_network = CachedNetworkMeasures(),
     )
 
-    # ── I.12-I.13: Initial neural network training ──
+    # ── Initial neural network training ──
     for agent in agents
         if agent.history_count > 0
             agent.n_new_obs = agent.history_count  # treat all seed data as new
