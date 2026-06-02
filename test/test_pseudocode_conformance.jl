@@ -15,13 +15,45 @@ using Statistics: mean
 
 # Pseudocode conformance tests.
 #
-# These tests use small deterministic fixtures to check that the implementation
-# follows the algorithms in simulation_pseudocode.tex. They cover initialization
-# postconditions, training and channel choice, self-search offer construction,
-# broker offer construction, standard acceptance/finalization, client-origin
-# resource capture, satisfaction/reputation/confidence updates, and period
-# metrics. The fixtures overwrite random initialization where exact expected
-# values are needed, while leaving model logic unchanged.
+# This file checks that important implementation paths follow the algorithms in
+# simulation_pseudocode.tex using small deterministic fixtures. These tests are
+# not a replacement for regression baselines or distributional validation. They
+# are mechanism-level checks designed to make each pseudocode step auditable in a
+# hand-checkable setting.
+#
+# Coverage overview:
+# - Initialization: graph and broker-node shape, roster size and broker edges,
+#   seeded broker reputation, seed-history self satisfaction, broker-satisfaction
+#   priors, unit types, and stable agent IDs.
+# - Training and channel choice: self vs broker utility comparison, untried
+#   broker-reputation fallback, deterministic tie handling, parity-based agent
+#   retraining, and broker/agent new-observation reset behavior.
+# - Self-search offers: known-neighbor partner means, stranger NN predictions,
+#   reservation thresholding, exclusion of self/current matches/broker/captured
+#   origins, descending offer ranking, demand quotas, and reciprocal offer-book
+#   deduplication.
+# - Broker offers: hybrid access set Roster union current_clients, exclusion of
+#   period strangers and captured origins, unordered feasible pair construction,
+#   sorted broker predictions, two-direction offers for broker demanders, and
+#   quota decrement only when an offer is actually added.
+# - Standard acceptance/finalization: reciprocal acceptance, one-sided receiver
+#   thresholding, rejected-offer no-op behavior, bilateral history and partner
+#   mean updates, graph-edge creation, active-match symmetry, single broker
+#   history recording, and duplicate current-period match blocking.
+# - Client-origin capture: readiness gates, ask fallback and reservation checks,
+#   whole-lot feasibility, expected-gain positivity, captured-origin masking,
+#   principal payments, broker-only learning for principal positions, rejected
+#   exposure accounting, and principal active-match symmetry.
+# - Satisfaction, reputation, and confidence: channel-specific EWMA formulas,
+#   broker standard fees, principal-payment credit, demand-only updates,
+#   tried-broker state, reputation update/hold behavior, and capture-confidence
+#   MAE initialization, EWMA, and no-op periods.
+# - Period update and metrics: start-of-period clearing, current-client rebuild,
+#   no-entry behavior when eta=0, invariant verification, coherent match totals,
+#   outsourcing rates, access/roster sizes, capture counters, and network metrics.
+#
+# The fixtures overwrite random initialization where exact expected values are
+# needed, while leaving model logic unchanged.
 
 function pseudocode_constant_prediction!(nn::NeuralNet, value::Float64)
     fill!(nn.W1, 0.0)
