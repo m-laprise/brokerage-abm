@@ -11,10 +11,24 @@ using Statistics: mean
 """Safe mean that returns NaN on empty vectors."""
 safe_mean(v) = isempty(v) ? NaN : mean(v)
 
-"""Agent-node degree summary statistics for the current graph `G`, excluding the broker."""
-function degree_summary(state::ModelState)
-    degrees = degree(state.G)[1:state.params.N]
+"""Sorted agent-node degrees for the current graph `G`, excluding the broker node."""
+function agent_node_degrees(state::ModelState)
+    degrees = Vector{Int}(undef, state.params.N)
+    @inbounds for agent in state.agents
+        degrees[agent.id] = degree(state.G, agent.id)
+    end
     sort!(degrees)
+    return degrees
+end
+
+"""
+    degree_summary(state) -> NamedTuple
+
+Agent-node degree summary statistics for the current graph `G`, excluding the
+broker node from the distribution used for the median and other summaries.
+"""
+function degree_summary(state::ModelState)
+    degrees = agent_node_degrees(state)
     n = length(degrees)
     mid = n ÷ 2
     median_degree =

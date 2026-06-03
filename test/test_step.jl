@@ -2,7 +2,7 @@ using Test
 using TransientBrokerage
 using TransientBrokerage: ActiveMatch
 using StableRNGs: StableRNG
-using Graphs: degree, has_edge
+using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
 @testset "Step and Simulation" begin
     @testset "step_period! advances period counter" begin
@@ -105,6 +105,29 @@ using Graphs: degree, has_edge
         @test metrics.median_degree ≈ expected_median
         @test metrics.min_degree == first(degrees)
         @test metrics.max_degree == last(degrees)
+    end
+
+    @testset "degree quantile diagnostics exclude the broker node" begin
+        p = default_params(N=10, T=2, T_burn=1, seed=42)
+        state = initialize_model(p)
+        G = SimpleGraph(p.N + 1)
+        broker_node = state.broker.node_id
+        for i in 1:p.N
+            add_edge!(G, i, broker_node)
+        end
+        add_edge!(G, 6, 7)
+        add_edge!(G, 8, 9)
+        add_edge!(G, 9, 10)
+        state.G = G
+
+        metrics = collect_period_metrics(state)
+        expected_degrees = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3]
+
+        @test metrics.mean_degree ≈ sum(expected_degrees) / length(expected_degrees)
+        @test metrics.median_degree == 1.5
+        @test metrics.min_degree == 1.0
+        @test metrics.max_degree == 3.0
+        @test degree(state.G, broker_node) == 10
     end
 
     @testset "Holdout metrics are populated after stepping" begin

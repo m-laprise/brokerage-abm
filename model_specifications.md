@@ -581,7 +581,7 @@ The broker-agent gap in holdout $R^2$ is the purest measure of the informational
 
 **Counterparty concentration.** The median and maximum number of current-period counterparties per agent are recorded each period. These are diagnostics, not constraints: the model no longer caps incoming accepted offers.
 
-**Whole-network degree summaries.** Mean, median, minimum, and maximum agent-node degree are recorded each period. These summarize network densification among market participants and exclude the broker node from the degree distribution.
+**Whole-network degree summaries.** Mean, median (the 0.5 quantile), minimum, and maximum agent-node degree are recorded each period. These summarize network densification among market participants and exclude the broker node from the degree distribution.
 
 **Resource-capture diagnostics.** Under Model 1, the recorded period outputs include: whether the broker satisfied the capture readiness gate; the broker's raw live error $\kappa_b^t$ and scaled live error $\kappa_b^t/(\bar{q}_{\text{cal}} - r)$; the number of captured origin clients; the number of captured positions; the number of accepted and rejected principal positions; principal acceptance rate; principal-mode share, defined as captured positions divided by outsourced requested positions; mean principal surplus and loss rate over all captured positions, with rejected positions counted as realized zero; and principal exposure RMSE over accepted and rejected principal positions.
 
