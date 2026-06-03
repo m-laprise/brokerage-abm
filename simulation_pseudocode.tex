@@ -6,18 +6,23 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{longtable}
+\usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage[hidelinks]{hyperref}
 
 \setlength{\emergencystretch}{3em}
+\definecolor{diagblue}{RGB}{0,0,180}
+\definecolor{capturered}{RGB}{120,0,0}
+\newcommand{\diag}[1]{\textcolor{diagblue}{#1}}
+\newcommand{\caponly}[1]{\textcolor{capturered}{#1}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\relu}{\operatorname{ReLU}}
 \newcommand{\argsort}{\operatorname{argsort}}
-\newcommand{\one}{\mathbf{1}}
 \newcommand{\Ab}{\mathcal A_b}
 \newcommand{\EG}{\mathcal E_G}
 \newcommand{\procInitialize}{Initialize}
+\newcommand{\procInitializeAgent}{InitializeAgent}
 \newcommand{\procPeriodUpdate}{PeriodUpdate}
 \newcommand{\procTrainNN}{TrainNN}
 \newcommand{\procTrainPredictors}{TrainPredictors}
@@ -25,31 +30,56 @@
 \newcommand{\procAddOffer}{AddOffer}
 \newcommand{\procOfferMarket}{OfferMarket}
 \newcommand{\procFinalizeStandard}{FinalizeStandard}
-\newcommand{\procClientOriginCapture}{ClientOriginCapture}
+\newcommand{\procAcquireClientDemand}{AcquireClientDemand}
 \newcommand{\procUpdateSatisfaction}{UpdateSatisfaction}
 \newcommand{\procUpdateBrokerConfidence}{UpdateBrokerConfidence}
-\newcommand{\procCollectMetrics}{CollectMetrics}
+\newcommand{\procCollectMeasures}{CollectMeasures}
 
 \newenvironment{localvartable}[1]{%
-\begin{center}
 \begingroup
 \small
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.23\linewidth}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.23\linewidth}
                 >{\raggedright\arraybackslash}p{0.18\linewidth}
                 >{\raggedright\arraybackslash}p{0.51\linewidth}}
 \toprule
 \multicolumn{3}{@{}l}{\textit{Local variables for #1}}\\
 \midrule
-Symbol & Dimension/type & Definition \\
+Symbol & Dimension/domain & Definition \\
 \midrule
+\endfirsthead
+\toprule
+\multicolumn{3}{@{}l}{\textit{Local variables for #1 (continued)}}\\
+\midrule
+Symbol & Dimension/domain & Definition \\
+\midrule
+\endhead
 }{%
 \bottomrule
-\end{tabular}
+\end{longtable}
 \endgroup
+}
+
+\makeatletter
+\newenvironment{breakablealgorithm}{%
+\begin{center}
+\refstepcounter{algorithm}
+\hrule height .8pt depth 0pt \kern 2pt
+\renewcommand{\caption}[2][\relax]{%
+  {\raggedright\textbf{\fname@algorithm~\thealgorithm}\ ##2\par}%
+  \ifx\relax##1\relax
+    \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+  \else
+    \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+  \fi
+  \kern 2pt\hrule\kern 2pt
+}%
+}{%
+\kern 2pt\hrule
 \end{center}
 }
+\makeatother
 
 \title{Pseudo-code for Transient Brokerage Simulation}
 \author{}
@@ -58,107 +88,83 @@ Symbol & Dimension/type & Definition \\
 \begin{document}
 \maketitle
 
-\section{State, Notation, and Scores}
+\section{State, Notation, and Matching Function}
 
-Let $[N]=\{1,\ldots,N\}$ and let the broker node be $b=N+1$.
-The mutable simulation state at the end of period $t$ is
-\[
-S^t=\Bigl(
-X^t,G^t,
-\{ \mathcal H_i^t,\Theta_i^t,\bar q_{i\cdot}^t,C_{i\cdot}^t,
-s_i^t,\chi_i^t,\tau_i^t,M_i^t\}_{i=1}^N,
-\mathcal H_b^t,\Theta_b^t,\mathrm{Roster}^t,D^t,
-\mathrm{rep}_b^t,\kappa_b^t,n_{\kappa,b}^t
-\Bigr).
-\]
-Here $M_i^t$ is the set of current-period counterparties, $\chi_i^t$ indicates
-whether agent $i$ has ever used the broker, and $\tau_i^t$ is agent tenure.
-Current-period demands are discarded at the end of each period.
+\diag{Blue notation, equations, and algorithm lines are diagnostics-only
+measures. They are recorded for $\mathcal M$ or downstream figures,
+exploration scripts, and analyses; they do not enter transition, choice,
+learning, matching, or client-demand acquisition rules.}
+\caponly{Dark-red notation and algorithm lines are specific to the optional
+client-demand acquisition model.}
+
+For any matrix $Z$, $Z_{\cdot\ell}$ denotes column $\ell$ and
+$Z_{\cdot L}$ denotes the submatrix with ordered column-index set $L$.
+For a vector $z$, $z_L$ denotes the corresponding subvector.
 
 \begingroup
 \small
 \begin{longtable}{>{\raggedright\arraybackslash}p{0.20\linewidth}
                 >{\raggedright\arraybackslash}p{0.22\linewidth}
                 >{\raggedright\arraybackslash}p{0.48\linewidth}}
-\caption{Main symbols and dimensions.}
+\caption{Cross-routine symbols and dimensions.}
 \label{tab:notation}\\
 \toprule
-Symbol & Dimension/type & Definition \\
+Symbol & Dimension/domain & Definition \\
 \midrule
 \endfirsthead
 \toprule
-Symbol & Dimension/type & Definition \\
+Symbol & Dimension/domain & Definition \\
 \midrule
 \endhead
-\multicolumn{3}{@{}l}{\textit{Core and conventions}}\\
+\multicolumn{3}{@{}l}{\textit{Core}}\\
 $N$ & scalar & Number of agents, with agent set $[N]=\{1,\ldots,N\}$. \\
-$T$ & scalar & Number of simulation periods. \\
-$b$ & node & Broker node, $b=N+1$. \\
 $\vartheta$ & parameter vector & Simulation parameter vector. \\
 $\mathrm{seed}$ & integer & Random seed. \\
-$S^t$ & state tuple & Mutable simulation state at end of period $t$; $S$ is current state when $t$ is clear. \\
-omitted $t$ & convention & Unadorned state variables inside a period refer to current-period values. \\
-$\mathrm{Unif},\mathcal N,\mathrm{Binomial}$ & distributions & Uniform, normal, and binomial distributions. \\
-$\relu,\argsort,\one\{\cdot\}$ & functions & ReLU activation, sorting operator, and indicator function. \\
-$I_d,\|\cdot\|_2,\|\cdot\|_F,\operatorname{tr}$ & operators & Identity matrix, Euclidean norm, Frobenius norm, and trace. \\
+$S^t$ & state tuple & Mutable simulation state at end of period $t$. \\
+$T$ & integer & Number of simulation periods. \\
+\diag{$\mathcal M=[m^1;\ldots;m^T]$} & \diag{$\R^{T\times m}$} & \diag{Measure table; row $m^t=\mathcal M_{t\cdot}\in\R^m$.} \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Parameters}}\\
-$d$ & scalar & Type dimension. \\
-$d_\gamma$ & scalar & Number of active curve dimensions. \\
-$\sigma_x$ & scalar & Type-noise scale. \\
-$K$ & scalar & Active-demand bound. \\
-$p_{\mathrm{demand}}$ & scalar & Per-position demand probability. \\
+$d$ & scalar & Agent type dimension. \\
 $k_G$ & scalar & Watts-Strogatz graph degree. \\
-$p_{\mathrm{rewire}}$ & scalar & Watts-Strogatz rewiring probability. \\
-$Q$ & scalar & Output offset. \\
-$\rho$ & scalar & Quality-interaction weight. \\
-$\delta$ & scalar & Regime gain. \\
-$\sigma_\varepsilon$ & scalar & Output-noise standard deviation. \\
-$\lambda_c$ & scalar & Cost rate. \\
 $\omega$ & scalar & Satisfaction/confidence EWMA weight. \\
-$h_a,h_b$ & scalars & Agent and broker hidden widths. \\
 $E_{\mathrm{init}}$ & scalar & Initial training steps. \\
 $\eta_{\mathrm{lr}}$ & scalar & MLP learning rate. \\
-$n_{\mathrm{strangers}}$ & scalar & Period stranger-pool size. \\
-$\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
-$p_{\mathrm{roster}}$ & scalar & Roster-churn probability. \\
-$\Delta_{\mathrm{net}}$ & scalar & Network-measure interval. \\
-$n_{\min},\kappa_{\max}$ & scalars & Principal-mode confidence gate. \\
 \addlinespace[0.25em]
-\multicolumn{3}{@{}l}{\textit{Types, networks, and output}}\\
-$G^t=(V,\EG^t)$ & graph & Undirected graph, $V=[N]\cup\{b\}$. \\
-$x_i^t$ & $\R^d$ & Agent $i$ type. \\
-$X^t$ & $\R^{d\times N}$ & Type matrix $[x_1^t,\ldots,x_N^t]$. \\
-$c$ & $\R^d$ & Ideal type. \\
+\multicolumn{3}{@{}l}{\textit{Agent types, networks, and output}}\\
+$G^t=(V,\EG^t)$ & graph & Undirected graph, $V=[N]\cup\{N+1\}$; node $N+1$ is the broker. \\
+$X^t=[x_1^t,\ldots,x_N^t]$ & $\R^{d\times N}$ & Agent type matrix; $x_i^t=X^t_{\cdot i}\in\R^d$. \\
+$\gamma$ & $[0,1]\to\R^d$ & Agent type curve for initial and entrant draws. \\
+$q_{ij}^t$ & scalar & Realized output for match $(i,j)$. \\
+\addlinespace[0.25em]
+\multicolumn{3}{@{}l}{\textit{True matching function}}\\
+$Q$ & scalar & Output offset. \\
+$\rho$ & scalar & Quality-interaction weight. \\
+$\delta$ & scalar & Regime-gain amplitude. \\
+$\sigma_\varepsilon$ & scalar & Output-noise standard deviation. \\
+$c$ & $\R^d$ & Ideal agent type. \\
 $A$ & $\R^{d\times d}$ & Symmetric positive definite interaction matrix. \\
 $B$ & $\R^{d\times d}$ & Symmetric regime operator. \\
-$f(x_i,x_j)$ & scalar & Deterministic match signal. \\
-$g(x_i,x_j)$ & scalar & Regime gain. \\
-$q_{ij}^t$ & scalar & Realized output, $Q+f(x_i,x_j)+\varepsilon$, $\varepsilon\sim \mathcal N(0,\sigma_\varepsilon^2)$. \\
+\addlinespace[0.25em]
+\multicolumn{3}{@{}l}{\textit{Calibration and costs}}\\
 $\bar q_{\mathrm{cal}}$ & scalar & Calibration mean. \\
 $r$ & scalar & Reservation output. \\
 $\phi$ & scalar & Standard broker fee. \\
 $c_s$ & scalar & Self-search cost. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Learning and predictions}}\\
-$\mathcal H_i^t$ & $\R^{d\times n_i^t}\times\R^{n_i^t}$ & Agent $i$ history of partner types and realized outputs. \\
-$\mathcal H_b^t$ & $\R^{d\times n_b^t}\times\R^{d\times n_b^t}\times\R^{n_b^t}$ & Broker history of ordered pair types and outputs. \\
+$\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\in\R^{n_i^t}$ & Agent $i$ history; observation $\ell$ is partner agent type $\Xi_{i,\cdot\ell}^t$ and output $y_{i\ell}^t$. \\
+$\mathcal H_b^t=(\Xi_b^t,y_b^t,n_b^t)$ & $\Xi_b^t\in\R^{2d\times n_b^t}$, $y_b^t\in\R^{n_b^t}$ & Broker history; observation $\ell$ has ordered-pair input $\Xi_{b,\cdot\ell}^t=[x_u;x_v]$ and output $y_{b\ell}^t$. \\
 $\Theta_i^t$ & NN parameters & Agent $i$ MLP weights. \\
 $\Theta_b^t$ & NN parameters & Broker MLP weights. \\
-$\hat q_i^t$ & function & Agent predictor $\R^d\to\R$. \\
-$\hat q_b^t$ & function & Broker predictor $\R^{2d}\to\R$. \\
 $v_b^t(i,j)$ & scalar & Symmetric broker prediction for unordered pair $\{i,j\}$. \\
-$v_{i\to j}^{\mathrm{self},t}$ & scalar & Self-offer score. \\
 $w_{j\leftarrow i}^t$ & scalar & Receiver acceptance score. \\
 $\bar q_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed empirical means. \\
 $C_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed counts. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Period state and market objects}}\\
-$\mathcal N_G^t(i)$ & subset of $[N]$ & Non-broker graph neighbors of $i$. \\
-$U^t$ & subset of $[N]$ & Period stranger pool. \\
 $s_i^t$ & $\R^2$ & Satisfaction scores for self and broker channels. \\
 $\chi_i^t$ & binary & Indicator that agent $i$ has ever used the broker. \\
-$\tau_i^t$ & integer & Agent tenure. \\
 $M_i^t$ & set & Agent $i$ current-period counterparties. \\
 $z_i^t$ & channel & Channel chosen by demander $i$. \\
 $d_i^t$ & integer & Current-period demand. \\
@@ -168,17 +174,26 @@ $\mathrm{Roster}^t$ & subset of $[N]$ & Standing roster. \\
 $\mathrm{rep}_b^t$ & scalar & Broker reputation. \\
 $D_+^t$ & subset of $[N]$ & Broker clients with positive residual offer quota. \\
 $\mathcal D^t$ & list & Demand records $(i,z_i^t,d_i^t)$ with $d_i^t>0$. \\
-$\mathcal R^t$ & list & Accepted records $(i,j,z,\pi,q,\hat q,p,o_1,o_2)$; $\pi=1$ for principal positions and $p$ is principal price or $\mathrm{NaN}$. \\
+$\mathcal R^t$ & list & Accepted records: standard $(i,j,z,0,q,\hat q,o_1,o_2)$; \caponly{principal $(i,j,z,1,q,\hat q,p,o_1,o_2)$}. \\
 \addlinespace[0.25em]
-\multicolumn{3}{@{}l}{\textit{Metrics and sentinels}}\\
-$m^t$ & $\R^m$ & Period metrics. \\
-$\mathcal M$ & $\R^{T\times m}$ & Metric table, $\mathcal M_{t\cdot}=m^t$. \\
-$\kappa_b^t$ & scalar & EWMA broker exposure MAE. \\
-$n_{\kappa,b}^t$ & integer & Cumulative broker exposure-error count. \\
-$\bot,\emptyset,\mathrm{NaN}$ & sentinels & Undefined score, empty object, and missing numeric value. \\
+\multicolumn{3}{@{}l}{\caponly{\textit{Capture readiness}}}\\
+\caponly{$\kappa_b^t$} & \caponly{scalar} & \caponly{EWMA broker exposure MAE.} \\
+\caponly{$n_{\kappa,b}^t$} & \caponly{integer} & \caponly{Cumulative broker exposure-error count.} \\
+\caponly{$\mathrm{CapReady}_b^t$} & \caponly{binary} & \caponly{Principal-mode readiness gate.} \\
 \bottomrule
 \end{longtable}
 \endgroup
+
+The mutable simulation state at the end of period $t$ is
+\[
+S^t=\Bigl(
+X^t,G^t,\gamma,
+\{ \mathcal H_i^t,\Theta_i^t,\bar q_{i\cdot}^t,C_{i\cdot}^t,
+s_i^t,\chi_i^t,M_i^t\}_{i=1}^N,
+\mathcal H_b^t,\Theta_b^t,\mathrm{Roster}^t,D^t,
+\mathrm{rep}_b^t,\caponly{\kappa_b^t,n_{\kappa,b}^t}
+\Bigr).
+\]
 
 The matching function is
 \[
@@ -188,15 +203,24 @@ f(x_i,x_j)
 \qquad
 g(x_i,x_j)=1+\delta\,\operatorname{sign}(x_i^\top Bx_j).
 \]
-Calibration draws random pairs $(i_\ell,j_\ell)$ and sets
-\[
-\bar q_{\mathrm{cal}}
-=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},
-\qquad
-r=0.60\bar q_{\mathrm{cal}},
-\qquad
-\phi=c_s=\lambda_c(\bar q_{\mathrm{cal}}-r).
-\]
+\section{Top-Level Simulation}
+
+\begin{breakablealgorithm}
+\caption{Transient Brokerage Simulation}
+\label{alg:simulation}
+\begin{algorithmic}[1]
+\Require Parameters $\vartheta$ and seed.
+\Ensure Final state $S^T$ and \diag{measure table $\mathcal M\in\R^{T\times m}$}.
+\State $S^0\gets\Call{\procInitialize}{\vartheta,\mathrm{seed}}$
+\For{$t=1,\ldots,T$}
+    \State $(S^t,\mathcal R^t)\gets\Call{\procPeriodUpdate}{S^{t-1},t,\vartheta}$
+    \State \diag{$\mathcal M_{t\cdot}\gets\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$}
+\EndFor
+\State \Return $(S^T,\diag{\mathcal M})$
+\end{algorithmic}
+\end{breakablealgorithm}
+
+\section{Training}
 
 For any one-hidden-layer predictor with input dimension $p_{\mathrm{in}}$ and hidden width $h$,
 \[
@@ -207,114 +231,225 @@ where $\xi\in\R^{p_{\mathrm{in}}}$, $W_1\in\R^{h\times p_{\mathrm{in}}}$,
 $b_1,w_2\in\R^h$, and $b_2\in\R$.
 Agent networks use $(p_{\mathrm{in}},h)=(d,h_a)$; the broker network uses
 $(p_{\mathrm{in}},h)=(2d,h_b)$.
-The symmetric broker score is
+For broker symmetry augmentation, let
 \[
-v_b^t(i,j)=\frac{1}{2}\left[
-\hat q_b^t([x_i^t;x_j^t])+\hat q_b^t([x_j^t;x_i^t])
-\right].
+\mathsf P_d=
+\begin{bmatrix}
+0_{d\times d} & I_d\\
+I_d & 0_{d\times d}
+\end{bmatrix},
+\qquad
+\mathsf P_d[a;b]=[b;a]\quad(a,b\in\R^d).
 \]
-
-Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node.
-The self-search proposal score is defined only for observed graph neighbors and
-period strangers:
-\[
-v_{i\to j}^{\mathrm{self},t}=
-\begin{cases}
-\bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
-\hat q_i^t(x_j^t), & j\in U^t\setminus\mathcal N_G^t(i),\\
-\bot, & \text{otherwise}.
-\end{cases}
-\]
-Thus direct pair means dominate predictor extrapolations when pair-specific
-experience exists. The receiver-side acceptance score for a one-sided offer is
-\[
-w_{j\leftarrow i}^t=
-\begin{cases}
-\bar q_{ji}^t, & (i,j)\in \EG^t,\ C_{ji}^t>0,\\
-\hat q_j^t(x_i^t), & \text{otherwise}.
-\end{cases}
-\]
-
-\section{Top-Level Simulation}
-
-\begin{algorithm}[H]
-\caption{Transient Brokerage Simulation}
-\label{alg:simulation}
-\begin{algorithmic}[1]
-\Require Parameters $\vartheta$ and seed.
-\Ensure Final state $S^T$ and metric table $\mathcal M\in\R^{T\times m}$.
-\State $S^0\gets\Call{\procInitialize}{\vartheta,\mathrm{seed}}$
-\For{$t=1,\ldots,T$}
-    \State $(S^t,\mathcal R^t)\gets\Call{\procPeriodUpdate}{S^{t-1},t,\vartheta}$
-    \State $m^t\gets\Call{\procCollectMetrics}{S^t,\mathcal R^t,\vartheta}$
-    \State $\mathcal M_{t\cdot}\gets m^t$
-\EndFor
-\State \Return $(S^T,\mathcal M)$
-\end{algorithmic}
-\end{algorithm}
-
-\section{Training and Channel Choice}
 
 \begin{localvartable}{training}
-$\Xi_{\mathrm{tr}}$ & $\R^{p_{\mathrm{in}}\times n}$ & Generic training inputs. \\
-$y$ & $\R^n$ & Generic training targets. \\
+$p_{\mathrm{in}},h$ & integers & Predictor input dimension and hidden width. \\
+$\xi$ & $\R^{p_{\mathrm{in}}}$ & Predictor input vector. \\
+$\Theta$ & NN parameters & Generic MLP parameters $(W_1,b_1,w_2,b_2)$. \\
+$W_1,b_1,w_2,b_2$ & matrix, vectors, scalar & One-hidden-layer MLP weights and biases. \\
+$h_a,h_b$ & integers & Agent and broker hidden widths. \\
+$\Xi_{\mathrm{tr}},y_{\mathrm{tr}}$ & $\R^{p_{\mathrm{in}}\times n}$, $\R^n$ & Generic training inputs and targets. \\
 $\mathcal L$ & scalar & Full-batch MSE objective. \\
 $e$ & integer & Gradient-step index. \\
 $W$ & integer & Training-window length. \\
-$n_i,n_b$ & integers & Agent and broker history lengths. \\
+$n_i,n_b$ & integers & Current values of history lengths $n_i^t$ and $n_b^t$. \\
+$L_i,L_b$ & ordered index sets & Training-window observation indices. \\
 $\Delta_i,\Delta_b$ & integers & New observations since last training call. \\
 $E_i,E_b$ & integers & Agent and broker gradient-step counts. \\
-$\Xi_{i,\mathrm{tr}},y_i$ & matrix, vector & Agent $i$ training batch. \\
-$\Xi_{b,\mathrm{tr}},y_b$ & matrix, vector & Symmetry-augmented broker training batch. \\
+$\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}}$ & $\R^{d\times |L_i|}$, $\R^{|L_i|}$ & Agent $i$ training view of $\mathcal H_i^t$. \\
+$\Xi_{b,\mathrm{tr}},y_{b,\mathrm{tr}}$ & $\R^{2d\times 2|L_b|}$, $\R^{2|L_b|}$ & Symmetry-augmented broker training view of $\mathcal H_b^t$. \\
 \end{localvartable}
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
 \caption{\procTrainNN}
 \label{alg:trainnn}
 \begin{algorithmic}[1]
-\Require Network parameters $\Theta$, data $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y\in\R^n$,
+\Require Network parameters $\Theta$, inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$,
 steps $E$, learning rate $\eta_{\mathrm{lr}}$.
 \For{$e=1,\ldots,E$}
     \State $\mathcal L(\Theta)\gets n^{-1}\sum_{\ell=1}^n
-    \left(\mathrm{NN}_{\Theta}(\Xi_{\mathrm{tr},\cdot\ell})-y_\ell\right)^2$
+    \left(\mathrm{NN}_{\Theta}(\Xi_{\mathrm{tr},\cdot\ell})-y_{\mathrm{tr},\ell}\right)^2$
     \State $\Theta\gets\Theta-\eta_{\mathrm{lr}}\nabla_{\Theta}\mathcal L(\Theta)$
 \EndFor
 \State \Return $\Theta$
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
-\begin{algorithm}[H]
+Within period-level routines, state variables without a superscript refer to
+their current-period values.
+
+\begin{breakablealgorithm}
 \caption{\procTrainPredictors}
 \label{alg:trainpredictors}
 \begin{algorithmic}[1]
 \Require State $S$, period $t$, parameters $(E_{\mathrm{init}},\eta_{\mathrm{lr}})$.
 \State $W\gets 500$
 \For{$i=1,\ldots,N$ in parallel}
-    \State $n_i\gets|\mathcal H_i|$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
+    \State $n_i\gets n_i^t$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
-        \State $(\Xi_{i,\mathrm{tr}},y_i)\gets$ most recent $\min(W,n_i)$ columns of $\mathcal H_i$.
+        \State $L_i\gets$ ordered indices of the most recent $\min(W,n_i)$ observations in $\mathcal H_i$.
+        \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
         \State $E_i\gets\max\{50,\lceil E_{\mathrm{init}}\Delta_i/n_i\rceil\}$.
-        \State $\Theta_i\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_i,E_i,\eta_{\mathrm{lr}}}$; $\Delta_i\gets0$.
+        \State $\Theta_i\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},E_i,\eta_{\mathrm{lr}}}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
-\State $n_b\gets|\mathcal H_b|$, $\Delta_b\gets$ broker observations since last training.
+\State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
 \If{$n_b>0$ and $\Delta_b>0$}
-    \State Build the last $n=\min(W,n_b)$ broker observations
-    $\{(x_u,x_v,y_\ell)\}_{\ell=1}^n$.
-    \State $\Xi_{b,\mathrm{tr}}\gets\bigl([x_u;x_v]_{\ell=1}^n,[x_v;x_u]_{\ell=1}^n\bigr)\in\R^{2d\times 2n}$.
-    \State $y_b\gets(y_1,\ldots,y_n,y_1,\ldots,y_n)\in\R^{2n}$.
+    \State $L_b\gets$ ordered indices of the most recent $\min(W,n_b)$ observations in $\mathcal H_b$.
+    \State $\Xi_{b,\mathrm{tr}}\gets\bigl[(\Xi_b^t)_{\cdot L_b},\mathsf P_d(\Xi_b^t)_{\cdot L_b}\bigr]$.
+    \State $y_{b,\mathrm{tr}}\gets\bigl((y_b^t)_{L_b},(y_b^t)_{L_b}\bigr)$.
     \State $E_b\gets\max\{50,\lceil E_{\mathrm{init}}\Delta_b/n_b\rceil\}$.
-    \State $\Theta_b\gets\Call{\procTrainNN}{\Theta_b,\Xi_{b,\mathrm{tr}},y_b,E_b,\eta_{\mathrm{lr}}}$; $\Delta_b\gets0$.
+    \State $\Theta_b\gets\Call{\procTrainNN}{\Theta_b,\Xi_{b,\mathrm{tr}},y_{b,\mathrm{tr}},E_b,\eta_{\mathrm{lr}}}$; $\Delta_b\gets0$.
 \EndIf
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
+
+\section{Initialization}
+
+Calibration draws random pairs $(i_\ell,j_\ell)$ and sets
+\[
+\bar q_{\mathrm{cal}}
+=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},
+\qquad
+r=0.60\bar q_{\mathrm{cal}},
+\qquad
+\phi=c_s=\lambda_c(\bar q_{\mathrm{cal}}-r).
+\]
+\caponly{The capture-readiness gate is}
+\[
+\caponly{\mathrm{CapReady}_b^t=
+\begin{cases}
+1, & n_{\kappa,b}^t\ge n_{\min}
+\quad\mathrm{and}\quad
+\kappa_b^t/(\bar q_{\mathrm{cal}}-r)\le\kappa_{\max},\\
+0, & \text{otherwise},
+\end{cases}
+\qquad \mathrm{CapReady}_b^0=0.}
+\]
+
+\begin{localvartable}{\procInitialize}
+$\lambda_c$ & scalar & Cost rate used to set $\phi$ and $c_s$. \\
+$(i_\ell,j_\ell)$ & pair in $[N]^2$ & Random calibration pair. \\
+\caponly{$n_{\min},\kappa_{\max}$} & \caponly{scalars} & \caponly{Principal-mode confidence gate.} \\
+$d_\gamma$ & integer & Number of active curve dimensions. \\
+$p_{\mathrm{rewire}}$ & scalar & Watts-Strogatz rewiring probability. \\
+$\nu_\ell$ & integer & Frequency for active curve coordinate $\ell$. \\
+$\psi_\ell$ & scalar & Phase for active curve coordinate $\ell$. \\
+$A_0$ & $\R^{d\times d}$ & Raw matrix used to construct $A$. \\
+$\Sigma_x$ & $\R^{d\times d}$ & Empirical agent type second moment. \\
+$B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric regime matrix. \\
+$B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization regime matrix. \\
+$\Xi_{b,\mathrm{seed}},y_{b,\mathrm{seed}}$ & $\R^{2d\times 2n_b^0}$, $\R^{2n_b^0}$ & Symmetry-augmented broker seed training batch. \\
+\end{localvartable}
+
+\begin{localvartable}{\procInitializeAgent}
+$\sigma_x$ & scalar & Agent type noise scale. \\
+$u_i$ & scalar & Agent $i$ curve position. \\
+$\epsilon_i$ & $\R^d$ & Agent type noise for agent $i$. \\
+$\pi_{ij}^{\mathrm{ent}}$ & scalar & Entrant attachment probability. \\
+$\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachment set. \\
+\end{localvartable}
+
+\begin{breakablealgorithm}
+\caption{\procInitializeAgent}
+\label{alg:initializeagent}
+\begin{algorithmic}[1]
+\Require State $S$, agent slot $i$, period counter $t$, parameters $\vartheta$.
+\Ensure Agent slot $i$ is initialized in $S$.
+\State Draw $u_i\sim\mathrm{Unif}[0,1]$ and
+$\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
+\State $x_i^t\gets(\gamma(u_i)+\epsilon_i)/\|\gamma(u_i)+\epsilon_i\|_2$.
+\State Reset $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ to zero observations, $\bar q_{i\cdot}^t$, $C_{i\cdot}^t$,
+$\chi_i^t$, and $M_i^t$; draw fresh agent MLP weights $\Theta_i^t$ with output bias $Q$.
+\If{$t=0$}
+    \State $s_i^t\gets(0,0)$.
+\Else
+    \State Remove $i$ from $\mathrm{Roster}^t$, $D^t$, and $M_j^t$ for all $j$;
+    delete all incident edges in $G^t$; set $\bar q_{ji}^t,C_{ji}^t\gets0$ for all $j\ne i$.
+    \State Sample $\mathcal V_i^{\mathrm{ent}}\subset[N]\setminus\{i\}$ without replacement,
+    $|\mathcal V_i^{\mathrm{ent}}|=\min(\lfloor k_G/2\rfloor,N-1)$, with
+    \[
+    \pi_{ij}^{\mathrm{ent}}
+    \propto \exp\{-\|x_i^t-x_j^t\|_2^2\}.
+    \]
+    \State Add edges $(i,j)$ to $G^t$ for all $j\in\mathcal V_i^{\mathrm{ent}}$.
+    \State $s_{i,\mathrm{self}}^t\gets
+    \begin{cases}
+    |\mathcal V_i^{\mathrm{ent}}|^{-1}\sum_{j\in\mathcal V_i^{\mathrm{ent}}}s_{j,\mathrm{self}}^t,
+    & \mathcal V_i^{\mathrm{ent}}\ne\emptyset,\\
+    0, & \mathcal V_i^{\mathrm{ent}}=\emptyset.
+    \end{cases}$
+    \State $s_{i,\mathrm{broker}}^t\gets\mathrm{rep}_b^t$.
+\EndIf
+\end{algorithmic}
+\end{breakablealgorithm}
+
+\begin{breakablealgorithm}
+\caption{\procInitialize}
+\label{alg:initialize}
+\begin{algorithmic}[1]
+\Require Parameters $\vartheta$ and seed.
+\Ensure Initial state $S^0$.
+\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{1,\ldots,5\}$ and phases
+$\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
+\State Allocate empty agent and broker containers in $S^0$ and store $\gamma$.
+\For{$i=1,\ldots,N$}
+    \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
+\EndFor
+\State Draw ideal agent type $c$ as a noisy curve point.
+\State Draw $A_0\in\R^{d\times d}$ iid standard normal and set
+$A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
+\State $\Sigma_x\gets N^{-1}\sum_i x_i^0(x_i^0)^\top$.
+\State Draw symmetric zero-trace $B_0$ and set
+\[
+B_{\mathrm{raw}}\gets B_0-
+\frac{\operatorname{tr}(\Sigma_xB_0\Sigma_xA)}{\operatorname{tr}(\Sigma_xA\Sigma_xA)}A,\qquad
+B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
+\]
+\State Calibrate $(\bar q_{\mathrm{cal}},r,\phi,c_s)$.
+\State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and
+rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
+\State Initialize $\mathcal H_b^0$, $\Theta_b^0$, and $\mathrm{rep}_b^0$.
+\State \caponly{Initialize capture gate: $\kappa_b^0\gets0$, $n_{\kappa,b}^0\gets0$,
+and $\mathrm{CapReady}_b^0\gets0$.}
+\State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with
+$|\mathrm{Roster}^0|=\lceil0.2N\rceil$; add broker edges $(i,N+1)$ for all roster members.
+\For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
+    \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and
+    $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update
+    $\bar q_{ij}^0,C_{ij}^0,\bar q_{ji}^0,C_{ji}^0$.
+\EndFor
+\State Let $\mathcal B_{\mathrm{seed}}\gets
+\{\{i,j\}\in\EG^0:i,j\in\mathrm{Roster}^0\}$; shuffle and keep at most 100 edges.
+\For{each $\{i,j\}\in\mathcal B_{\mathrm{seed}}$}
+    \State Append column $[x_i^0;x_j^0]$ to $\Xi_b^0$; append the existing
+    edge outcome $q_{ij}$ to $y_b^0$; increment $n_b^0$.
+\EndFor
+\If{$n_b^0>0$}
+    \State Set $\mathrm{rep}_b^0$ to mean broker seed output.
+\Else
+    \State Set $\mathrm{rep}_b^0\gets0$.
+\EndIf
+\State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and
+$s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
+\For{each $i$ with $n_i^0>0$}
+    \State $\Theta_i^0\gets\Call{\procTrainNN}{\Theta_i^0,\Xi_i^0,y_i^0,E_{\mathrm{init}},\eta_{\mathrm{lr}}}$.
+\EndFor
+\State $\Xi_{b,\mathrm{seed}}\gets[\Xi_b^0,\mathsf P_d\Xi_b^0]$,
+$y_{b,\mathrm{seed}}\gets(y_b^0,y_b^0)$.
+\State $\Theta_b^0\gets\Call{\procTrainNN}{\Theta_b^0,\Xi_{b,\mathrm{seed}},y_{b,\mathrm{seed}},E_{\mathrm{init}},\eta_{\mathrm{lr}}}$.
+\State \Return $S^0$.
+\end{algorithmic}
+\end{breakablealgorithm}
+
+\section{Channel Choice}
 
 \begin{localvartable}{\procChooseChannel}
 $U_{\mathrm{self}}$ & scalar & Self-channel score. \\
 $U_{\mathrm{broker}}$ & scalar & Broker-channel score. \\
 \end{localvartable}
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
 \caption{\procChooseChannel}
 \label{alg:choosechannel}
 \begin{algorithmic}[1]
@@ -329,71 +464,19 @@ $U_{\mathrm{broker}}$ & scalar & Broker-channel score. \\
 \EndIf
 \State \Return $\mathrm{self}$ w.p. $1/2$, else $\mathrm{broker}$ \Comment{$U_{\mathrm{self}}=U_{\mathrm{broker}}$}.
 \end{algorithmic}
-\end{algorithm}
-
-\section{Initialization}
-
-\begin{localvartable}{\procInitialize}
-$\nu_\ell$ & integer & Frequency for active curve coordinate $\ell$. \\
-$\psi_\ell$ & scalar & Phase for active curve coordinate $\ell$. \\
-$\gamma$ & $[0,1]\to\R^d$ & Type curve. \\
-$u_i$ & scalar & Agent $i$ curve position. \\
-$\epsilon_i$ & $\R^d$ & Agent $i$ type noise. \\
-$A_0$ & $\R^{d\times d}$ & Raw matrix used to construct $A$. \\
-$\Sigma_x$ & $\R^{d\times d}$ & Empirical type second moment. \\
-$B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric regime matrix. \\
-$B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization regime matrix. \\
-\end{localvartable}
-
-\begin{algorithm}[H]
-\caption{\procInitialize}
-\label{alg:initialize}
-\begin{algorithmic}[1]
-\Require Parameters $\vartheta$ and seed.
-\Ensure Initial state $S^0$.
-\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{1,\ldots,5\}$ and phases
-$\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$.
-\For{$i=1,\ldots,N$}
-    \State Draw $u_i\sim\mathrm{Unif}[0,1]$, compute $\gamma(u_i)\in\R^d$, draw
-    $\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
-    \State $x_i^0\gets(\gamma(u_i)+\epsilon_i)/\|\gamma(u_i)+\epsilon_i\|_2$.
-\EndFor
-\State Draw ideal type $c$ as a noisy curve point.
-\State Draw $A_0\in\R^{d\times d}$ iid standard normal and set
-$A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
-\State $\Sigma_x\gets N^{-1}\sum_i x_i^0(x_i^0)^\top$.
-\State Draw symmetric zero-trace $B_0$ and set
-\[
-B_{\mathrm{raw}}\gets B_0-
-\frac{\operatorname{tr}(\Sigma_xB_0\Sigma_xA)}{\operatorname{tr}(\Sigma_xA\Sigma_xA)}A,\qquad
-B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
-\]
-\State Calibrate $(\bar q_{\mathrm{cal}},r,\phi,c_s)$.
-\State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and
-rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $b=N+1$.
-\State Initialize all agent histories, partner means, MLPs, satisfaction scores,
-broker-tried flags, tenures, and active-match sets.
-\State Initialize broker history, broker MLP, reputation, and capture-confidence state.
-\State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with
-$|\mathrm{Roster}^0|=\lceil0.2N\rceil$; add broker edges $(i,b)$ for all roster members.
-\State Seed $\mathcal H_b^0$ with up to 100 random unordered roster-member pairs;
-for each pair draw $q_{ij}$, append to $\mathcal H_b^0$, and add edge $(i,j)$.
-\For{$i=1,\ldots,N$}
-    \State Sample up to five non-broker neighbors $j$ of $i$; draw $q_{ij}$ and
-    append $(x_j,q_{ij})$ to $\mathcal H_i^0$; update $\bar q_{ij}^0,C_{ij}^0$.
-\EndFor
-\State Set $\mathrm{rep}_b^0$ to mean broker seed output; set
-$s_{i,\mathrm{self}}^0$ to mean own seed output and
-$s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
-\State Train each non-empty agent MLP on its seed history for $E_{\mathrm{init}}$ steps.
-\State Train the broker MLP on symmetry-augmented seed history for $E_{\mathrm{init}}$ steps.
-\State \Return $S^0$.
-\end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 \section{One Period}
 
-\begin{algorithm}[H]
+\begin{localvartable}{\procPeriodUpdate}
+$K$ & integer & Active-demand bound. \\
+$p_{\mathrm{demand}}$ & scalar & Per-position demand probability. \\
+$p_{\mathrm{roster}}$ & scalar & Roster-churn probability. \\
+$\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
+\diag{$\Delta_{\mathrm{net}}$} & \diag{integer} & \diag{Network-measure interval.} \\
+\end{localvartable}
+
+\begin{breakablealgorithm}
 \caption{\procPeriodUpdate}
 \label{alg:period}
 \begin{algorithmic}[1]
@@ -402,11 +485,12 @@ $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
 \State Clear accumulators, set $M_i^t\gets\emptyset$ for all $i$, and set $D^t\gets\emptyset$.
 \State Refresh roster: remove each roster member with probability
 $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil0.2N\rceil$.
-\State Synchronize broker edges to $\mathrm{Roster}^t\cup D^t\cup\{i:M_i^t
-\text{ contains a broker-channel match}\}$.
+\State $\EG^t\gets
+(\EG^t\setminus\{\{i,N+1\}:i\in[N]\})
+\cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\}$.
 \State $\mathcal D^t\gets\emptyset$.
 \For{$i=1,\ldots,N$}
-    \State $\tau_i^t\gets\tau_i^{t-1}+1$; draw $d_i^t\sim\mathrm{Binomial}(K,p_{\mathrm{demand}})$.
+    \State Draw $d_i^t\sim\mathrm{Binomial}(K,p_{\mathrm{demand}})$.
     \If{$d_i^t>0$}
         \State $z_i^t\gets\Call{\procChooseChannel}{i,\mathrm{rep}_b^{t-1}}$.
         \State Append $(i,z_i^t,d_i^t)$ to $\mathcal D^t$.
@@ -415,7 +499,9 @@ $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil0.2N\rceil$.
         \EndIf
     \EndIf
 \EndFor
-\State Synchronize broker edges using the updated $D^t$.
+\State $\EG^t\gets
+(\EG^t\setminus\{\{i,N+1\}:i\in[N]\})
+\cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\cup D^t\}$.
 \State $\Call{\procTrainPredictors}{S,t,\vartheta}$.
 \State $\mathcal R^t\gets\Call{\procOfferMarket}{S,\mathcal D^t,\vartheta}$.
 \State $\Call{\procUpdateSatisfaction}{S,\mathcal D^t,\mathcal R^t}$.
@@ -424,34 +510,34 @@ $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil0.2N\rceil$.
 \Else
     \State $\mathrm{rep}_b^t\gets \mathrm{rep}_b^{t-1}$.
 \EndIf
-\State $\Call{\procUpdateBrokerConfidence}{S,\mathcal R^t}$ and compute pure diagnostics.
+\State $\Call{\procUpdateBrokerConfidence}{S,\mathcal R^t}$.
+\If{$t\bmod \Delta_{\mathrm{net}}=0$}
+    \State \diag{Recompute broker betweenness, Burt constraint, and effective size on $G^t$.}
+\EndIf
 \For{$i=1,\ldots,N$}
     \If{agent $i$ exits with probability $\eta_{\mathrm{exit}}$}
-        \State Replace slot $i$ by a fresh entrant with new type, empty histories,
-        fresh MLP, zero tenure, and $\lfloor k_G/2\rfloor$ type-proximity edges.
+        \State $\Call{\procInitializeAgent}{S^t,i,t,\vartheta}$.
     \EndIf
 \EndFor
-\If{$t\bmod \Delta_{\mathrm{net}}=0$}
-    \State Recompute broker betweenness, Burt constraint, and effective size on $G^t$.
-\EndIf
 \State \Return $(S^t,\mathcal R^t)$.
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 \section{Offer Market}
 
-The market creates at most $d_i^t$ outgoing offers from demander $i$.
-Receivers have no per-period capacity constraint; acceptance is pairwise, so a
-receiver may accept multiple offers in the same period. A demanded position can
-remain unmatched if no acceptable offer is formed.
-
 \begin{localvartable}{\procOfferMarket}
+$\hat q_i^t$ & $\R^d\to\R$ & Agent predictor. \\
+$\hat q_b^t$ & $\R^{2d}\to\R$ & Broker predictor. \\
+$\mathcal N_G^t(i)$ & subset of $[N]$ & Non-broker graph neighbors of $i$. \\
+$U^t$ & subset of $[N]$ & Period stranger pool. \\
+$n_{\mathrm{strangers}}$ & integer & Period stranger-pool size. \\
+$v_{i\to j}^{\mathrm{self},t}$ & scalar & Self-offer score. \\
 $\Omega_i$ & integer & Residual offer quota for demander $i$. \\
 $\Omega$ & $\mathbb Z_{\ge0}^N$ & Residual quota vector. \\
 $O^t$ & map & Directed offer book. \\
 $O_{ij}^t$ & offer record & Record $(i,j,z,v)$ for offer $i\to j$. \\
 $\mathcal P_O^t$ & set & Unordered pairs represented in $O^t$. \\
-$\mathcal Z^t$ & subset of $[N]$ & Captured origins removed from standard offers. \\
+\caponly{$\mathcal Z^t$} & \caponly{subset of $[N]$} & \caponly{Acquired clients removed from standard offers.} \\
 $\mathcal U_i^{\mathrm{self}}$ & subset of $[N]$ & Self-search candidate set. \\
 $\mathcal I_i^{\mathrm{self}}$ & list & Self-search candidates sorted by score. \\
 $\mathcal P_b^t$ & set & Feasible unordered broker-pair set. \\
@@ -462,7 +548,40 @@ $\alpha,\beta$ & indices & Ordered endpoints induced by one unordered broker pai
 $\iota$ & $\{0,1\}$ & Return value of \procAddOffer. \\
 \end{localvartable}
 
-\begin{algorithm}[H]
+The symmetric broker score is
+\[
+v_b^t(i,j)=\frac{1}{2}\left[
+\hat q_b^t([x_i^t;x_j^t])+\hat q_b^t([x_j^t;x_i^t])
+\right].
+\]
+Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node.
+The self-search proposal score is defined only for observed graph neighbors and
+period strangers:
+\[
+v_{i\to j}^{\mathrm{self},t}=
+\begin{cases}
+\bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
+\hat q_i^t(x_j^t), & j\in U^t\setminus\mathcal N_G^t(i),\\
+\bot, & \text{otherwise}.
+\end{cases}
+\]
+Thus direct pair means dominate predictor extrapolations when pair-specific
+experience exists; $\bot$ denotes no valid self-search score. The receiver-side
+acceptance score for a one-sided offer is
+\[
+w_{j\leftarrow i}^t=
+\begin{cases}
+\bar q_{ji}^t, & (i,j)\in \EG^t,\ C_{ji}^t>0,\\
+\hat q_j^t(x_i^t), & \text{otherwise}.
+\end{cases}
+\]
+
+The market creates at most $d_i^t$ outgoing offers from demander $i$.
+Receivers have no per-period capacity constraint; acceptance is pairwise, so a
+receiver may accept multiple offers in the same period. A demanded position can
+remain unmatched if no acceptable offer is formed.
+
+\begin{breakablealgorithm}
 \caption{\procAddOffer}
 \label{alg:addoffer}
 \begin{algorithmic}[1]
@@ -476,9 +595,9 @@ $\iota$ & $\{0,1\}$ & Return value of \procAddOffer. \\
 \EndIf
 \State \Return $1$.
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
 \caption{\procOfferMarket}
 \label{alg:market}
 \begin{algorithmic}[1]
@@ -488,23 +607,23 @@ $\iota$ & $\{0,1\}$ & Return value of \procAddOffer. \\
 \State $O^t\gets\emptyset$, $\mathcal P_O^t\gets\emptyset$, $\mathcal R^t\gets\emptyset$.
 \State Draw one period-level stranger pool $U^t\subset[N]$ uniformly without replacement,
 $|U^t|=\min(n_{\mathrm{strangers}},N)$.
-\State $\mathcal Z^t\gets\emptyset$.
-\If{principal mode is enabled}
-    \State $\mathcal Z^t\gets\Call{\procClientOriginCapture}{S,\mathcal D^t,\Omega,\mathcal R^t,\vartheta}$.
+\State \caponly{$\mathcal Z^t\gets\emptyset$.}
+\If{\caponly{principal mode is enabled}}
+    \State \caponly{$\mathcal Z^t\gets\Call{\procAcquireClientDemand}{S,\mathcal D^t,\Omega,\mathcal R^t,\vartheta}$.}
 \EndIf
 \For{each $(i,\mathrm{self},d_i)\in\mathcal D^t$ with $\Omega_i>0$}
     \State $\mathcal U_i^{\mathrm{self}}\gets
     \{j\in\mathcal N_G^t(i):C_{ij}^t>0\}
     \cup (U^t\setminus\mathcal N_G^t(i))$.
-    \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t\cup\mathcal Z^t$.
+    \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t\caponly{\cup\mathcal Z^t}$.
     \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r}
     (-v_{i\to j}^{\mathrm{self},t})$.
     \For{the first $\min(\Omega_i,|\mathcal I_i^{\mathrm{self}}|)$ agents $j$ in $\mathcal I_i^{\mathrm{self}}$}
         \State $\Call{\procAddOffer}{O^t,\mathcal P_O^t,i,j,\mathrm{self},v_{i\to j}^{\mathrm{self},t}}$.
     \EndFor
 \EndFor
-\State $\Ab^t\gets(\mathrm{Roster}^t\cup D^t)\setminus\mathcal Z^t$.
-\State $D_+^t\gets\{i:(i,\mathrm{broker},d_i)\in\mathcal D^t,\ i\notin\mathcal Z^t,\ \Omega_i>0\}$.
+\State $\Ab^t\gets(\mathrm{Roster}^t\cup D^t)\caponly{\setminus\mathcal Z^t}$.
+\State $D_+^t\gets\{i:(i,\mathrm{broker},d_i)\in\mathcal D^t,\ \caponly{i\notin\mathcal Z^t},\ \Omega_i>0\}$.
 \State $\mathcal P_b^t\gets\{\{i,j\}:i\ne j,\ (i\in D_+^t,j\in\Ab^t)\ \text{or}\ (j\in D_+^t,i\in\Ab^t)\}$.
 \State $\mathcal I_b\gets\argsort_{\{i,j\}\in\mathcal P_b^t:v_b^t(i,j)>r}(-v_b^t(i,j))$.
 \For{each $\{i,j\}\in\mathcal I_b$}
@@ -527,9 +646,9 @@ $|U^t|=\min(n_{\mathrm{strangers}},N)$.
 \EndFor
 \State \Return $\mathcal R^t$.
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
 \caption{\procFinalizeStandard}
 \label{alg:finalizestandard}
 \begin{algorithmic}[1]
@@ -539,93 +658,99 @@ $o=(i,j,z,v)$, optional reverse offer $o'$.
     \State \Return.
 \EndIf
 \State Draw $q_{ij}^t=Q+f(x_i^t,x_j^t)+\varepsilon$, $\varepsilon\sim \mathcal N(0,\sigma_\varepsilon^2)$.
-\State Append $(x_j^t,q_{ij}^t)$ to $\mathcal H_i$ and $(x_i^t,q_{ij}^t)$ to $\mathcal H_j$.
+\State Append columns $x_j^t$ to $\Xi_i$ and $x_i^t$ to $\Xi_j$; append
+$q_{ij}^t$ to $y_i$ and $y_j$; increment $n_i$ and $n_j$.
 \State Update $\bar q_{ij},C_{ij}$ and $\bar q_{ji},C_{ji}$.
 \State Add edge $(i,j)$ to $G^t$; add $j$ to $M_i^t$ and $i$ to $M_j^t$.
 \If{$z=\mathrm{broker}$ or $(o'\ne\emptyset$ and $o'.z=\mathrm{broker})$}
-    \State Append $(x_i^t,x_j^t,q_{ij}^t)$ once to $\mathcal H_b$.
+    \State Append column $[x_i^t;x_j^t]$ to $\Xi_b$; append $q_{ij}^t$ to $y_b$; increment $n_b$.
     \State $z^\star\gets\mathrm{broker}$.
 \Else
     \State $z^\star\gets\mathrm{self}$.
 \EndIf
-\State Append accepted record $(i,j,z^\star,0,q_{ij}^t,v,\mathrm{NaN},o,o')$ to $\mathcal R^t$.
+\State Append accepted record $(i,j,z^\star,0,q_{ij}^t,v,o,o')$ to $\mathcal R^t$.
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
-\section{Optional Client-Origin Resource Capture}
+\section{Optional Client-Demand Acquisition}
 
-\begin{localvartable}{\procClientOriginCapture}
-$p_i$ & scalar & Acquisition price per captured position. \\
-$\mathcal J_i$ & subset of $[N]$ & Planned recipient set. \\
-$\Gamma_i$ & scalar & Expected net capture gain. \\
-$\mathcal I_c$ & list & Feasible capture origins sorted by $\Gamma_i$. \\
+\begin{localvartable}{\caponly{\procAcquireClientDemand}}
+\caponly{$p_i$} & \caponly{scalar} & \caponly{Acquisition price per acquired position.} \\
+\caponly{$\mathcal J_i$} & \caponly{subset of $[N]$} & \caponly{Planned recipient set.} \\
+\caponly{$\Gamma_i$} & \caponly{scalar} & \caponly{Expected net acquisition gain.} \\
+\caponly{$\mathcal I_{\mathrm{acq}}$} & \caponly{list} & \caponly{Feasible client acquisitions sorted by $\Gamma_i$.} \\
 \end{localvartable}
 
-\begin{algorithm}[H]
-\caption{\procClientOriginCapture}
-\label{alg:capture}
+\begin{breakablealgorithm}
+\caption{\caponly{\procAcquireClientDemand}}
+\label{alg:acquireclientdemand}
+\begingroup
+\color{capturered}
 \begin{algorithmic}[1]
-\Require State $S$, demand records $\mathcal D^t$, residual quotas $\Omega$, accepted records $\mathcal R^t$.
-\Ensure Captured origins $\mathcal Z^t$; principal records appended to $\mathcal R^t$.
-\If{$n_{\kappa,b}<n_{\min}$ or $\kappa_b^t/(\bar q_{\mathrm{cal}}-r)>\kappa_{\max}$}
+\Require \caponly{State $S$, demand records $\mathcal D^t$, residual quotas $\Omega$, accepted records $\mathcal R^t$.}
+\Ensure \caponly{Acquired clients $\mathcal Z^t$; principal records appended to $\mathcal R^t$.}
+\If{$\mathrm{CapReady}_b^t=0$}
     \State \Return $\emptyset$.
 \EndIf
-\State $D_+^t\gets\{i:(i,\mathrm{broker},d_i)\in\mathcal D^t,\Omega_i>0\}$,
-$\Ab^t\gets\mathrm{Roster}^t\cup D^t$.
-\State Score $\mathcal P_b^t=\{\{i,j\}:i\in D_+^t,\ j\in\Ab^t,\ i\ne j\}$ by $v_b^t(i,j)$.
+\State \caponly{$D_+^t\gets\{i:(i,\mathrm{broker},d_i)\in\mathcal D^t,\Omega_i>0\}$,
+$\Ab^t\gets\mathrm{Roster}^t\cup D^t$.}
+\State \caponly{Score $\mathcal P_b^t=\{\{i,j\}:i\in D_+^t,\ j\in\Ab^t,\ i\ne j\}$ by $v_b^t(i,j)$.}
 \For{$i\in D_+^t$}
-    \State $p_i\gets n_i^{-1}\sum_{\ell'=1}^{n_i}y_{i\ell'}$ if $n_i>0$, else $p_i\gets\bar q_{\mathrm{cal}}$.
-    \State $\mathcal J_i\gets$ top $\Omega_i$ distinct $j\in\Ab^t\setminus\{i\}$ with $v_b^t(i,j)>r$.
-    \State $\Gamma_i\gets\sum_{j\in \mathcal J_i}v_b^t(i,j)-\Omega_i p_i-\Omega_i\phi$.
+    \State \caponly{$p_i\gets (n_i^t)^{-1}\sum_{\ell=1}^{n_i^t}y_{i\ell}^t$ if $n_i^t>0$, else $p_i\gets\bar q_{\mathrm{cal}}$.}
+    \State \caponly{$\mathcal J_i\gets$ top $\Omega_i$ distinct $j\in\Ab^t\setminus\{i\}$ with $v_b^t(i,j)>r$.}
+    \State \caponly{$\Gamma_i\gets\sum_{j\in \mathcal J_i}v_b^t(i,j)-\Omega_i p_i-\Omega_i\phi$.}
 \EndFor
-\State $\mathcal I_c\gets\argsort_{i:|\mathcal J_i|=\Omega_i,\ p_i\ge r,\ \Gamma_i>0}(-\Gamma_i)$; $\mathcal Z^t\gets\emptyset$.
-\For{$i\in \mathcal I_c$}
-    \State Recompute $\mathcal J_i$ from the sorted pair list, excluding current matches and $\mathcal Z^t$.
+\State \caponly{$\mathcal I_{\mathrm{acq}}\gets\argsort_{i:|\mathcal J_i|=\Omega_i,\ p_i\ge r,\ \Gamma_i>0}(-\Gamma_i)$; $\mathcal Z^t\gets\emptyset$.}
+\For{$i\in \mathcal I_{\mathrm{acq}}$}
+    \State \caponly{Recompute $\mathcal J_i$ from the sorted pair list, excluding current matches and $\mathcal Z^t$.}
     \If{$|\mathcal J_i|<\Omega_i$}
         \State continue.
     \EndIf
-    \State Add $i$ to $\mathcal Z^t$; record principal payment $\Omega_i p_i$ to $i$; set $\Omega_i\gets0$.
+    \State \caponly{Add $i$ to $\mathcal Z^t$; record principal payment $\Omega_i p_i$ to $i$; set $\Omega_i\gets0$.}
     \For{$j\in \mathcal J_i$}
-        \State Mark $(i,j)$ as current before receiver evaluation.
+        \State \caponly{Mark $(i,j)$ as current before receiver evaluation.}
         \If{$w_{j\leftarrow i}^t>r$}
-            \State Draw $q_{ij}^t$; append $(x_i^t,x_j^t,q_{ij}^t)$ to $\mathcal H_b$.
-            \State Add principal active matches $i\leftrightarrow j$.
-            \State Append $(i,j,\mathrm{broker},1,q_{ij}^t,v_b^t(i,j),p_i,\emptyset,\emptyset)$ to $\mathcal R^t$.
+            \State \caponly{Draw $q_{ij}^t$; append column $[x_i^t;x_j^t]$ to $\Xi_b$;
+            append $q_{ij}^t$ to $y_b$; increment $n_b$.}
+            \State \caponly{Add principal active matches $i\leftrightarrow j$.}
+            \State \caponly{Append $(i,j,\mathrm{broker},1,q_{ij}^t,v_b^t(i,j),p_i,\emptyset,\emptyset)$ to $\mathcal R^t$.}
         \Else
-            \State Record rejected principal exposure with realized value $0$ and prediction $v_b^t(i,j)$.
+            \State \caponly{Record rejected principal exposure with realized value $0$ and prediction $v_b^t(i,j)$.}
         \EndIf
     \EndFor
 \EndFor
-\State \Return $\mathcal Z^t$.
+\State \Return \caponly{$\mathcal Z^t$}.
 \end{algorithmic}
-\end{algorithm}
+\endgroup
+\end{breakablealgorithm}
 
-Principal positions update broker history only when accepted. They do not update
-agent histories, agent-agent edges, or agent partner means.
+\caponly{Principal positions update broker history only when accepted. They do not update
+agent histories, agent-agent edges, or agent partner means.}
 
-\section{Satisfaction, Confidence, and Metrics}
+\section{Satisfaction, Confidence, and Measures}
 
 \begin{localvartable}{satisfaction and confidence}
 $Y_i$ & scalar & Agent $i$ period satisfaction numerator. \\
 $n_{i,b}^{\mathrm{std}}$ & integer & Standard broker offer credits for demander $i$. \\
 $\tilde q_i^t$ & scalar & Channel-specific satisfaction input. \\
-$P_i^{\mathrm{capture},t}$ & scalar & Principal payment to origin $i$, zero absent capture. \\
+\caponly{$P_i^{\mathrm{acq},t}$} & \caponly{scalar} & \caponly{Principal payment to acquired client $i$, zero absent acquisition.} \\
 $\zeta$ & accepted record & Iterator over $\mathcal R^t$. \\
-$\mathcal E_{\mathrm{err},b}^t$ & set & Broker exposure-error observations. \\
-$e_b^t$ & scalar & Period mean absolute exposure error. \\
+$\mathbf{1}\{\cdot\}$ & indicator & Equals $1$ when its condition is true and $0$ otherwise. \\
+\caponly{$\mathcal E_{\mathrm{err},b}^t$} & \caponly{set} & \caponly{Broker exposure-error observations.} \\
+\caponly{$e_b^t$} & \caponly{scalar} & \caponly{Period mean absolute exposure error.} \\
 \end{localvartable}
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
 \caption{\procUpdateSatisfaction}
 \label{alg:satisfaction}
 \begin{algorithmic}[1]
 \Require State $S$, demand records $\mathcal D^t$, accepted records $\mathcal R^t$.
 \For{each $(i,z_i,d_i)\in\mathcal D^t$}
     \State $Y_i\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}}
-    \one\{o\ne\emptyset,\ o.\mathrm{from}=i,\ \zeta.\pi=0\}\,\zeta.q
-    +P_i^{\mathrm{capture},t}$.
+    \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i,\ \zeta.\pi=0\}\,\zeta.q
+    \caponly{+P_i^{\mathrm{acq},t}}$.
     \State $n_{i,b}^{\mathrm{std}}\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}}
-    \one\{o\ne\emptyset,\ o.\mathrm{from}=i,\ o.z=\mathrm{broker},\ \zeta.\pi=0\}$.
+    \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i,\ o.z=\mathrm{broker},\ \zeta.\pi=0\}$.
     \If{$z_i=\mathrm{self}$}
         \State $\tilde q_i^t\gets Y_i/d_i-c_s$.
     \Else
@@ -634,40 +759,43 @@ $e_b^t$ & scalar & Period mean absolute exposure error. \\
     \State $s_{i,z_i}^t\gets(1-\omega)s_{i,z_i}^{t-1}+\omega\tilde q_i^t$.
 \EndFor
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
-\begin{algorithm}[H]
-\caption{\procUpdateBrokerConfidence}
+\begin{breakablealgorithm}
+\caption{\caponly{\procUpdateBrokerConfidence}}
 \label{alg:confidence}
+\begingroup
+\color{capturered}
 \begin{algorithmic}[1]
-\Require State $S$, accepted records $\mathcal R^t$.
-\State $\mathcal E_{\mathrm{err},b}^t\gets\emptyset$.
+\Require \caponly{State $S$, accepted records $\mathcal R^t$.}
+\State \caponly{$\mathcal E_{\mathrm{err},b}^t\gets\emptyset$.}
 \For{each accepted record $\zeta\in\mathcal R^t$}
     \For{each standard offer credit $o\in\{\zeta.o_1,\zeta.o_2\}$}
         \If{$o\ne\emptyset$ and $o.z=\mathrm{broker}$}
-            \State Add $(o.v,\zeta.q)$ to $\mathcal E_{\mathrm{err},b}^t$.
+            \State \caponly{Add $(o.v,\zeta.q)$ to $\mathcal E_{\mathrm{err},b}^t$.}
         \EndIf
     \EndFor
-    \If{$\zeta.\pi=1$}
-        \State Add $(\zeta.\hat q,\zeta.q)$ to $\mathcal E_{\mathrm{err},b}^t$.
+    \If{\caponly{$\zeta.\pi=1$}}
+        \State \caponly{Add $(\zeta.\hat q,\zeta.q)$ to $\mathcal E_{\mathrm{err},b}^t$.}
     \EndIf
 \EndFor
-\If{$|\mathcal E_{\mathrm{err},b}^t|>0$}
-    \State $e_b^t\gets|\mathcal E_{\mathrm{err},b}^t|^{-1}\sum_{(\hat q,q)\in\mathcal E_{\mathrm{err},b}^t}|\hat q-q|$.
-    \State $\kappa_b^t\gets e_b^t$ if $n_{\kappa,b}^{t-1}=0$, else
-    $(1-\omega)\kappa_b^{t-1}+\omega e_b^t$.
-    \State $n_{\kappa,b}^t\gets n_{\kappa,b}^{t-1}+|\mathcal E_{\mathrm{err},b}^t|$.
+\If{\caponly{$|\mathcal E_{\mathrm{err},b}^t|>0$}}
+    \State \caponly{$e_b^t\gets|\mathcal E_{\mathrm{err},b}^t|^{-1}\sum_{(\hat q,q)\in\mathcal E_{\mathrm{err},b}^t}|\hat q-q|$.}
+    \State \caponly{$\kappa_b^t\gets e_b^t$ if $n_{\kappa,b}^{t-1}=0$, else
+    $(1-\omega)\kappa_b^{t-1}+\omega e_b^t$.}
+    \State \caponly{$n_{\kappa,b}^t\gets n_{\kappa,b}^{t-1}+|\mathcal E_{\mathrm{err},b}^t|$.}
 \EndIf
 \end{algorithmic}
-\end{algorithm}
+\endgroup
+\end{breakablealgorithm}
 
-\paragraph{\procCollectMetrics.}
-$\Call{\procCollectMetrics}{S^t,\mathcal R^t,\vartheta}$ is a pure measurement
+\paragraph{\diag{\procCollectMeasures.}}
+\diag{$\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ is a pure measure-collection
 function. It records demand, outsourcing, accepted matches, realized output,
 selected-sample prediction quality, deterministic holdout prediction quality,
 broker access and assessment counts, satisfaction, reputation, roster size,
 broker access size, degree summaries, cached broker network measures, and
-principal-mode diagnostics when enabled. Metrics do not feed back into
-$S^{t+1}$ except through state variables updated above.
+principal-mode diagnostics when enabled. The measures themselves do not feed
+back into $S^{t+1}$.}
 
 \end{document}

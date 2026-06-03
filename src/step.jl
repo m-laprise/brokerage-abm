@@ -441,17 +441,17 @@ function step_period!(state::ModelState)
     accum.broker_access_size = broker_access_size(broker)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Step 5: Entry/exit
-    # ══════════════════════════════════════════════════════════════════════
-    process_entry_exit!(state, rng)
-    sync_broker_edges!(G, agents, broker)
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Step 6: Recording and measurement
+    # Step 5: Recording and measurement
     # ══════════════════════════════════════════════════════════════════════
     if state.period % p.network_measure_interval == 0
         update_cached_network_measures!(state)
     end
+
+    # ══════════════════════════════════════════════════════════════════════
+    # Step 6: Entry/exit
+    # ══════════════════════════════════════════════════════════════════════
+    process_entry_exit!(state, rng)
+    sync_broker_edges!(G, agents, broker)
 
     return nothing
 end

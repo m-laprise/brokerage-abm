@@ -81,17 +81,24 @@ using StableRNGs: StableRNG
     end
 
     @testset "broker history seeded" begin
-        @test state.broker.history_count > 0
-        @test state.broker.history_count <= 100
+        roster_list = sort(collect(state.broker.roster))
+        expected_broker_seed = count(
+            has_edge(state.G, roster_list[i], roster_list[j]) for
+            i in 1:length(roster_list) for j in (i + 1):length(roster_list)
+        )
+        @test state.broker.history_count == min(100, expected_broker_seed)
         @test state.broker.n_new_obs == 0  # training consumed them
     end
 
-    @testset "agent histories seeded from neighbors" begin
-        # Most agents should have some seed observations (up to 5)
-        n_with_history = count(a -> a.history_count > 0, state.agents)
-        @test n_with_history > N * 0.5  # most agents have neighbors
-        # No agent has more than 5 seed observations
-        @test all(a.history_count <= 5 for a in state.agents)
+    @testset "agent histories seeded from all initial neighbors" begin
+        expected_history_counts = [
+            count(j -> 1 <= j <= N, neighbors(state.G, i)) for i in 1:N
+        ]
+        @test [a.history_count for a in state.agents] == expected_history_counts
+        @test all(
+            state.agents[i].partner_count[j] == 1 for i in 1:N for
+            j in neighbors(state.G, i) if 1 <= j <= N
+        )
         # n_new_obs was reset after initial training
         @test all(a.n_new_obs == 0 for a in state.agents)
     end
@@ -119,9 +126,14 @@ using StableRNGs: StableRNG
         )
         @test all(!a.tried_broker for a in state.agents)
         @test all(a.periods_alive == 0 for a in state.agents)
-        # Broker reputation set from seed data
-        @test state.broker.has_had_clients == true
-        @test state.broker.last_reputation > 0.0
+        # Broker reputation set from seed data when roster-roster ties exist
+        if state.broker.history_count > 0
+            @test state.broker.has_had_clients == true
+            @test state.broker.last_reputation > 0.0
+        else
+            @test state.broker.has_had_clients == false
+            @test state.broker.last_reputation == 0.0
+        end
     end
 
     @testset "curve_point returns unit vectors" begin

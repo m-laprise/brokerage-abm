@@ -8,7 +8,7 @@ using TransientBrokerage: record_agent_history!, record_broker_history!
 using TransientBrokerage: remove_agent_edges!, update_broker_reputation!
 using TransientBrokerage: update_capture_confidence_mae!, update_partner_mean!
 using TransientBrokerage: update_satisfaction!
-using Graphs: degree, has_edge, nv
+using Graphs: degree, has_edge, neighbors, nv
 using LinearAlgebra: I, norm
 using StableRNGs: StableRNG
 using Statistics: mean
@@ -287,10 +287,23 @@ end
         @test length(broker.roster) == TransientBrokerage.roster_target_size(p.N)
         @test all(has_edge(state.G, rid, broker.node_id) for rid in broker.roster)
 
+        expected_history_counts = [
+            count(j -> 1 <= j <= p.N, neighbors(state.G, i)) for i in 1:p.N
+        ]
         seeded_agents = [a for a in state.agents if a.history_count > 0]
-        @test broker.history_count > 0
+        roster_list = sort(collect(broker.roster))
+        expected_broker_seed = count(
+            has_edge(state.G, roster_list[i], roster_list[j]) for
+            i in 1:length(roster_list) for j in (i + 1):length(roster_list)
+        )
+        @test [a.history_count for a in state.agents] == expected_history_counts
+        @test broker.history_count == min(100, expected_broker_seed)
         @test !isempty(seeded_agents)
-        @test broker.last_reputation ≈ mean(broker.history_q[1:broker.history_count])
+        if broker.history_count > 0
+            @test broker.last_reputation ≈ mean(broker.history_q[1:broker.history_count])
+        else
+            @test broker.last_reputation == 0.0
+        end
         @test all(
             a.satisfaction_self ≈ mean(a.history_q[1:a.history_count]) for
             a in seeded_agents

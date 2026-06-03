@@ -304,7 +304,7 @@ With sufficient data, the network can in principle learn the piecewise linear st
 
 #### 2c. Broker's model
 
-**History.** $\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}_{m=1}^{n_b}$ records both parties' types and the realized match output from every match the broker has mediated. Seeded at initialization from random roster member pairs (§11c).
+**History.** $\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}_{m=1}^{n_b}$ records both parties' types and the realized match output from every match the broker has mediated. At initialization, it is seeded from existing roster-roster ties that the broker observes without adding new agent-agent edges (§11c).
 
 **Input and capacity.** The broker's network takes both parties' types as input: $\mathbf{z} = [\mathbf{x}_i; \mathbf{x}_j]$ ($2d = 16$ inputs). The hidden layer has $h_b = 32$ units. Total parameters: $h_b \cdot (2d + 1) + (h_b + 1) = 577$. No hand-crafted features (such as outer products) are provided.
 
@@ -397,7 +397,7 @@ where $K$ is the maximum number of active demands the agent can initiate in the 
 
 Agent $i$'s self-search candidate pool has two components:
 
-**Known neighbors.** Direct network neighbors in $G$ with no active current-period relationship with $i$ and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Not every graph neighbor is known in this sense: the initial network contains edges created by the network initialization, but each agent's seed history records only a subset of neighbor pairings (§11c). Neighbors with no stored partner mean are omitted from the known-neighbor component rather than being reclassified as strangers.
+**Known neighbors.** Direct network neighbors in $G$ with no active current-period relationship with $i$ and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Initial histories include all non-broker graph neighbors (§11c), so initial direct ties are known neighbors from period 1. Later graph neighbors can still lack a stored partner mean if a tie exists without a direct realized relationship.
 
 **Strangers.** A fixed period-level pool $U^t$ of $\min(n_{\mathrm{strangers}}, N)$ agents is sampled uniformly without replacement from the population, where $n_{\mathrm{strangers}} = 10$ (default). Each self-searching demander can evaluate members of this pool that are not current neighbors and are not already current-period counterparties. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
 
@@ -470,7 +470,7 @@ This simplification treats the self-search channel as a single reduced-form outs
 
 The search-risk-transfer asymmetry sharpens this comparison. Self-search exposes the agent to the risk of paying for effort on requested relationship positions that yield no placement, whereas standard brokerage shifts more of that downside onto the intermediary because compensation is tied more closely to successful matching. As a result, outsourcing can be attractive not only because the broker has better information or broader access, but also because it converts some search cost from a non-contingent expenditure into a contingent payment. This mechanism is especially relevant for agents facing uncertain fill rates, sparse networks, or highly lumpy demand.
 
-**Initial conditions.** Self-satisfaction is initialized from each agent's seed match outcomes (mean of 5 neighbor pairings). Broker-satisfaction is initialized to the broker's seed-data reputation (mean of 100 seed broker match outcomes). Both values are grounded in actual data, not an arbitrary constant. Since the broker's seed reputation and the typical agent's seed self-satisfaction are close but not identical, the first period's outsourcing decisions reflect genuine (if noisy) differences in local match quality rather than a symmetric coin flip. Agents with above-average self-satisfaction prefer self-search; those with below-average self-satisfaction are more open to outsourcing. The broker's early client base is thus self-selected rather than random.
+**Initial conditions.** Self-satisfaction is initialized from each agent's seed match outcomes over all initial non-broker graph neighbors. Broker-satisfaction is initialized to the broker's seed-data reputation, computed from existing roster-roster ties observed by the broker. Both values are grounded in actual data, not an arbitrary constant. Since the broker's seed reputation and the typical agent's seed self-satisfaction are close but not identical, the first period's outsourcing decisions reflect genuine (if noisy) differences in local match quality rather than a symmetric coin flip. Agents with above-average self-satisfaction prefer self-search; those with below-average self-satisfaction are more open to outsourcing. The broker's early client base is thus self-selected rather than random.
 
 #### 6c. Broker reputation
 
@@ -518,7 +518,7 @@ The implementation-level pseudocode is consolidated in `simulation_pseudocode.te
 
 ### 10. Performance Measures
 
-Computed on $G$ (which includes the broker as a permanent node; §4a) each measurement period. No agent uses these measures in its decisions; they are outputs for analysis.
+Computed on $G$ (which includes the broker as a permanent node; §4a) each measurement period. Broker structural measures are recorded after current-period matching and pure diagnostics, before agent entry/exit, so they describe the network position on which period-$t$ brokerage occurred. No agent uses these measures in its decisions; they are outputs for analysis.
 
 #### Network measures
 
@@ -681,8 +681,8 @@ The initialization procedure is specified in `simulation_pseudocode.tex` (`Initi
 - Agent types are drawn at random positions on the sinusoidal curve with noise, then projected to the unit sphere (§0).
 - The matching function parameters ($\mathbf{c}$, $\mathbf{A}$, $\mathbf{B}$) are drawn once and held fixed (§1).
 - Calibration quantities ($\bar{q}_{\text{cal}}$, $r$, $\phi$, $c_s$) are computed from 10,000 random agent pairs (§11b).
-- Each agent's history is seeded with 5 pairings from its neighbors in $G$, ensuring initial predictions reflect the local network.
-- The broker's roster is seeded at the fixed target size $R^* = \lceil 0.20 \cdot N \rceil$, and its history is seeded from 100 random roster member pairs.
+- Each agent's history is seeded with one observation for every initial non-broker neighbor in $G$, ensuring initial predictions reflect the full local network.
+- The broker's roster is seeded at the fixed target size $R^* = \lceil 0.20 \cdot N \rceil$, and its history is seeded from up to 100 existing roster-roster graph ties. Broker history seeding observes existing relationships and does not densify the initial graph.
 - All neural networks are trained from random weights for $E_{\text{init}}$ steps on their seed histories before the first period (§2a). These seed histories initialize predictive capability. Resource capture, when enabled, still waits for the live confidence gate in §12 before the broker can act as principal.
 
 #### 11d. Reproducibility

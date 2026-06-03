@@ -92,10 +92,11 @@ Complete model initialization following `simulation_pseudocode.tex` (`Initialize
 2. Matching function (c, A, B)
 3. Calibration (q_cal, r, phi, c_s)
 4. Network (Watts-Strogatz + broker node)
-5. Broker roster seeding and broker history seeding (up to 100 random roster-member observations)
-6. Agent history seeding (5 neighbor pairings)
-7. State variables (satisfaction, reputation)
-8. Neural network initial training (E_init steps)
+5. Broker roster seeding
+6. Agent history seeding from all initial non-broker graph edges
+7. Broker history seeding from existing roster-roster graph edges
+8. State variables (satisfaction, reputation)
+9. Neural network initial training (E_init steps)
 """
 function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::ModelState
     rng = StableRNG(params.seed)
@@ -186,38 +187,35 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
         )
     end
 
-    # ── Broker history seeding (100 observations from random roster member pairs) ──
-    roster_list = collect(broker.roster)
-    n_broker_seed = min(100, length(roster_list) * (length(roster_list) - 1) ÷ 2)
-    broker_seed_count = 0
-    for _ in 1:n_broker_seed * 3  # oversample to avoid i==j collisions
-        broker_seed_count >= n_broker_seed && break
-        i_idx = rand(rng, 1:length(roster_list))
-        j_idx = rand(rng, 1:length(roster_list))
-        i_idx == j_idx && continue
-        aid_i = roster_list[i_idx]
-        aid_j = roster_list[j_idx]
-
-        q = match_output(agents[aid_i].type, agents[aid_j].type, env, rng)
-        record_broker_history!(broker, agents[aid_i].type, agents[aid_j].type, q)
-        # Also create an edge (the broker mediated this initial placement)
-        add_match_edge!(G, aid_i, aid_j)
-        broker_seed_count += 1
-    end
-
-    # ── Agent history seeding (5 pairings from neighbors) ──
+    # ── Agent history seeding from all initial non-broker graph edges ──
+    edge_i = Int[]
+    edge_j = Int[]
+    edge_q = Float64[]
     for i in 1:N
-        nbrs = collect(neighbors(G, i))
-        filter!(n -> n != broker_node && n >= 1 && n <= N, nbrs)
-        isempty(nbrs) && continue
-        n_seed = min(5, length(nbrs))
-        shuffle!(rng, nbrs)
-        for s in 1:n_seed
-            j = nbrs[s]
+        for j in neighbors(G, i)
+            (j <= i || j > N) && continue
             q = match_output(agents[i].type, agents[j].type, env, rng)
             record_agent_history!(agents[i], agents[j].type, q)
             update_partner_mean!(agents[i], j, q)
+            record_agent_history!(agents[j], agents[i].type, q)
+            update_partner_mean!(agents[j], i, q)
+            push!(edge_i, i)
+            push!(edge_j, j)
+            push!(edge_q, q)
         end
+    end
+
+    # ── Broker history seeding from existing roster-roster graph edges ──
+    roster_edge_indices = [
+        idx for idx in eachindex(edge_i) if
+        (edge_i[idx] in broker.roster) && (edge_j[idx] in broker.roster)
+    ]
+    shuffle!(rng, roster_edge_indices)
+    n_broker_seed = min(100, length(roster_edge_indices))
+    for idx in @view roster_edge_indices[1:n_broker_seed]
+        record_broker_history!(
+            broker, agents[edge_i[idx]].type, agents[edge_j[idx]].type, edge_q[idx]
+        )
     end
 
     # ── State variables (from seed data, not q_cal) ──
