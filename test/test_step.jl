@@ -72,8 +72,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     @testset "collect_period_metrics returns valid NamedTuple" begin
         p = default_params(N=50, T=10, T_burn=2, seed=42)
         state = initialize_model(p)
-        step_period!(state)
-        metrics = collect_period_metrics(state)
+        metrics = step_period!(state)
         @test metrics.period == 1
         @test metrics.n_total_matches >= 0
         @test 0.0 <= metrics.outsourcing_rate <= 1.0
@@ -88,10 +87,9 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "collect_period_metrics reports agent-only degree summaries from G" begin
-        p = default_params(N=51, T=10, T_burn=2, seed=42)
+        p = default_params(N=51, T=10, T_burn=2, seed=42, eta=0.0)
         state = initialize_model(p)
-        step_period!(state)
-        metrics = collect_period_metrics(state)
+        metrics = step_period!(state)
 
         degrees = sort(degree(state.G)[1:p.N])
         n = length(degrees)
@@ -105,6 +103,35 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         @test metrics.median_degree ≈ expected_median
         @test metrics.min_degree == first(degrees)
         @test metrics.max_degree == last(degrees)
+    end
+
+    @testset "step_period! returns pre-turnover measurements" begin
+        p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.95)
+        state = initialize_model(p)
+        metrics = step_period!(state)
+        post_turnover_degrees = TransientBrokerage.degree_summary(state)
+        collected_after_turnover = collect_period_metrics(state)
+
+        @test metrics.mean_degree == state.accum.mean_degree
+        @test metrics.median_degree == state.accum.median_degree
+        @test metrics.min_degree == state.accum.min_degree
+        @test metrics.max_degree == state.accum.max_degree
+        @test collected_after_turnover.mean_degree == post_turnover_degrees.mean_degree
+        @test collected_after_turnover.max_degree == post_turnover_degrees.max_degree
+        @test (
+            metrics.mean_degree != post_turnover_degrees.mean_degree ||
+            metrics.max_degree != post_turnover_degrees.max_degree
+        )
+
+        final_state, df = run_simulation(
+            default_params(N=50, T=2, T_burn=1, seed=42, eta=0.95)
+        )
+        final_degrees = TransientBrokerage.degree_summary(final_state)
+        @test df.mean_degree[end] == final_state.accum.mean_degree
+        @test (
+            df.mean_degree[end] != final_degrees.mean_degree ||
+            df.max_degree[end] != final_degrees.max_degree
+        )
     end
 
     @testset "degree quantile diagnostics exclude the broker node" begin

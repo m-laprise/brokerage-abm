@@ -11,9 +11,10 @@ using Statistics: mean
 """Safe mean that returns NaN on empty vectors."""
 safe_mean(v) = isempty(v) ? NaN : mean(v)
 
-"""Sorted agent-node degrees for the current graph `G`, excluding the broker node."""
-function agent_node_degrees(state::ModelState)
-    degrees = Vector{Int}(undef, state.params.N)
+"""Fill `degrees` with sorted agent-node degrees, excluding the broker node."""
+function fill_agent_node_degrees!(degrees::Vector{Int}, state::ModelState)
+    N = state.params.N
+    length(degrees) == N || resize!(degrees, N)
     @inbounds for agent in state.agents
         degrees[agent.id] = degree(state.G, agent.id)
     end
@@ -21,14 +22,13 @@ function agent_node_degrees(state::ModelState)
     return degrees
 end
 
-"""
-    degree_summary(state) -> NamedTuple
+"""Sorted agent-node degrees for the current graph `G`, excluding the broker node."""
+function agent_node_degrees(state::ModelState)
+    return fill_agent_node_degrees!(Vector{Int}(undef, state.params.N), state)
+end
 
-Agent-node degree summary statistics for the current graph `G`, excluding the
-broker node from the distribution used for the median and other summaries.
-"""
-function degree_summary(state::ModelState)
-    degrees = agent_node_degrees(state)
+"""Summary statistics for an already sorted agent-degree vector."""
+function summarize_sorted_degrees(degrees::Vector{Int})
     n = length(degrees)
     mid = n ÷ 2
     median_degree =
@@ -40,6 +40,29 @@ function degree_summary(state::ModelState)
         min_degree=Float64(first(degrees)),
         max_degree=Float64(last(degrees)),
     )
+end
+
+"""
+    degree_summary(state) -> NamedTuple
+
+Agent-node degree summary statistics for the current graph `G`, excluding the
+broker node from the distribution used for the median and other summaries.
+"""
+function degree_summary(state::ModelState)
+    degrees = agent_node_degrees(state)
+    return summarize_sorted_degrees(degrees)
+end
+
+"""Record pre-turnover agent-degree distribution and summaries in period accumulators."""
+function record_agent_degree_summary!(state::ModelState)
+    a = state.accum
+    fill_agent_node_degrees!(a.agent_degrees, state)
+    stats = summarize_sorted_degrees(a.agent_degrees)
+    a.mean_degree = stats.mean_degree
+    a.median_degree = stats.median_degree
+    a.min_degree = stats.min_degree
+    a.max_degree = stats.max_degree
+    return stats
 end
 
 """
@@ -193,9 +216,9 @@ function run_simulation(params::ModelParams; verify::Bool=false, sort_by_pc1::Bo
     sizehint!(rows, params.T)
 
     for t in 1:params.T
-        step_period!(state)
+        metrics = step_period!(state)
         verify && verify_invariants(state)
-        push!(rows, collect_period_metrics(state))
+        push!(rows, metrics)
     end
 
     df = DataFrame(rows)

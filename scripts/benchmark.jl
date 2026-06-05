@@ -12,7 +12,8 @@ using TransientBrokerage
 using TransientBrokerage: step_period!, train_agent_nn!, train_broker_nn!,
                           process_entry_exit!, update_cached_network_measures!,
                           predict_nn!, init_neural_net, NNGradBuffers,
-                          train_step!
+                          train_step!, agent_hidden_width, broker_hidden_width,
+                          broker_pair_feature_dim
 using BenchmarkTools
 using StableRNGs: StableRNG
 using Profile
@@ -111,38 +112,42 @@ println("\n── NN primitives ──")
 
 # Agent prediction
 rng = StableRNG(99)
-nn_a = init_neural_net(8, 16, rng)
-buf_a = zeros(16)
-z_a = randn(rng, 8)
+d = 8
+h_agent = agent_hidden_width(d)
+h_broker = broker_hidden_width(d)
+d_broker = broker_pair_feature_dim(d)
+nn_a = init_neural_net(d, h_agent, rng)
+buf_a = zeros(h_agent)
+z_a = randn(rng, d)
 b_pred_a = @benchmark predict_nn!($nn_a, $buf_a, $z_a) samples=1000 evals=1000
-summary_line("predict_nn! (agent, d=8, h=16)", b_pred_a)
+summary_line("predict_nn! (agent, d=8, h=$(h_agent))", b_pred_a)
 
 # Broker prediction
-nn_b_nn = init_neural_net(16, 32, rng)
-buf_b = zeros(32)
-z_b = randn(rng, 16)
+nn_b_nn = init_neural_net(d_broker, h_broker, rng)
+buf_b = zeros(h_broker)
+z_b = randn(rng, d_broker)
 b_pred_b = @benchmark predict_nn!($nn_b_nn, $buf_b, $z_b) samples=1000 evals=1000
-summary_line("predict_nn! (broker, 2d=16, h=32)", b_pred_b)
+summary_line("predict_nn! (broker, features=$(d_broker), h=$(h_broker))", b_pred_b)
 
 # Agent training step (20 obs)
 grad_a = NNGradBuffers(nn_a)
-X_a = randn(rng, 8, 20); q_a = randn(rng, 20)
+X_a = randn(rng, d, 20); q_a = randn(rng, 20)
 b_step_a = @benchmark train_step!($nn_a, $grad_a, $X_a, $q_a, 0.03) samples=30 evals=1
 summary_line("train_step! (agent, n=20)", b_step_a)
 
 # Agent training step (200 obs, near typical window)
-X_a200 = randn(rng, 8, 200); q_a200 = randn(rng, 200)
+X_a200 = randn(rng, d, 200); q_a200 = randn(rng, 200)
 b_step_a200 = @benchmark train_step!($nn_a, $grad_a, $X_a200, $q_a200, 0.03) samples=30 evals=1
 summary_line("train_step! (agent, n=200)", b_step_a200)
 
-# Broker training step (400 obs, symmetry-augmented window/2)
+# Broker training step (400 observed pairs)
 grad_b = NNGradBuffers(nn_b_nn)
-X_b400 = randn(rng, 16, 400); q_b400 = randn(rng, 400)
+X_b400 = randn(rng, d_broker, 400); q_b400 = randn(rng, 400)
 b_step_b400 = @benchmark train_step!($nn_b_nn, $grad_b, $X_b400, $q_b400, 0.03) samples=20 evals=1
 summary_line("train_step! (broker, n=400)", b_step_b400)
 
 # Broker training step (2000 obs, full window)
-X_b2000 = randn(rng, 16, 2000); q_b2000 = randn(rng, 2000)
+X_b2000 = randn(rng, d_broker, 2000); q_b2000 = randn(rng, 2000)
 b_step_b2000 = @benchmark train_step!($nn_b_nn, $grad_b, $X_b2000, $q_b2000, 0.03) samples=10 evals=1
 summary_line("train_step! (broker, n=2000)", b_step_b2000)
 

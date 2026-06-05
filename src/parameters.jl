@@ -27,6 +27,15 @@ Fixed target roster size implied by the standing broker roster share.
 """
 roster_target_size(N::Int) = min(N, ceil(Int, ROSTER_TARGET_FRAC * N))
 
+"""Broker hidden width implied by type dimensionality."""
+broker_hidden_width(d::Int)::Int = max(1, 8 * d)
+
+"""Agent hidden width implied by type dimensionality."""
+agent_hidden_width(d::Int)::Int = max(1, 2 * d)
+
+broker_hidden_width(p::ModelParams)::Int = broker_hidden_width(p.d)
+agent_hidden_width(p::ModelParams)::Int = agent_hidden_width(p.d)
+
 """
     default_params(; seed=42, kwargs...)::ModelParams
 
@@ -55,8 +64,6 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Neural network
         :eta_lr => 0.03,
         :E_init => 200,
-        :h_a => 16,
-        :h_b => 32,
         # Search
         :n_strangers => 10,
         :eta => 0.02,
@@ -91,8 +98,6 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:search_cost_rate],
         defaults[:eta_lr],
         defaults[:E_init],
-        defaults[:h_a],
-        defaults[:h_b],
         defaults[:n_strangers],
         defaults[:eta],
         defaults[:roster_churn],
@@ -142,8 +147,8 @@ function validate_params(p::ModelParams)
     # Neural network
     @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"
     @assert p.E_init >= 1 "E_init must be >= 1, got $(p.E_init)"
-    @assert p.h_a >= 1 "h_a must be >= 1, got $(p.h_a)"
-    @assert p.h_b >= 1 "h_b must be >= 1, got $(p.h_b)"
+    @assert agent_hidden_width(p) >= 1 "agent hidden width must be >= 1"
+    @assert broker_hidden_width(p) >= 1 "broker hidden width must be >= 1"
 
     # Search
     @assert p.n_strangers >= 0 "n_strangers must be >= 0, got $(p.n_strangers)"

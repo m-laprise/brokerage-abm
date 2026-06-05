@@ -764,7 +764,7 @@ configs = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 T = 200
-N_SIM = 1000
+N_SIM = 800
 N_SEEDS = 5
 RERUN = "--rerun" in ARGS
 BASELINE_ONLY = "--baseline" in ARGS

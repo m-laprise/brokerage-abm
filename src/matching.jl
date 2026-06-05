@@ -74,12 +74,12 @@ function push_accepted_relationship!(
         nothing
     else
         OfferCredit(
-        offer2.from_id,
-        offer2.to_id,
-        offer2.channel,
-        offer2.predicted_value,
-        offer2_connected,
-    )
+            offer2.from_id,
+            offer2.to_id,
+            offer2.channel,
+            offer2.predicted_value,
+            offer2_connected,
+        )
     end
 
     push!(
@@ -194,7 +194,6 @@ function run_offer_market!(
     reset_offer_book!(offer_book, N)
     reset_principal_payments!(ws, N)
     search = ws.search
-    sample_period_strangers!(search.period_strangers, N, params.n_strangers, rng)
 
     ledger = ws.ledger
     remaining = ledger.offer_remaining
@@ -250,6 +249,7 @@ function run_offer_market!(
         demand_channels[idx] == :self || continue
         did = demand_agent_ids[idx]
         remaining[did] > 0 || continue
+        sample_period_strangers!(search.period_strangers, N, params.n_strangers, rng)
         append_self_search_offers!(
             ws,
             agents[did],

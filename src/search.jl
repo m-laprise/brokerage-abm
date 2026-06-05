@@ -100,8 +100,7 @@ end
     return @inbounds (offer_book.offer_index[i, j], offer_book.offer_index[j, i])
 end
 
-@inline offer_at(offer_book::OfferBook, idx::Int)::DirectedOffer =
-    @inbounds offer_book.offers[idx]
+@inline offer_at(offer_book::OfferBook, idx::Int)::DirectedOffer = @inbounds offer_book.offers[idx]
 
 function sample_period_strangers!(
     out::Vector{Int}, N::Int, n_strangers::Int, rng::AbstractRNG
@@ -231,6 +230,8 @@ function prepare_broker_pair_scores!(
     broker_access::Vector{Int},
     agents::Vector{Agent},
     params::ModelParams,
+    ;
+    sort_scores::Bool=true,
 )
     broker_pairs = ws.broker_pairs
     pair_scores = broker_pairs.broker_pair_scores
@@ -270,13 +271,12 @@ function prepare_broker_pair_scores!(
     n_pairs = length(pair_scores)
     n_pairs == 0 && return pair_scores
 
-    d = params.d
-    d2 = 2 * d
-    n_pred = 2 * n_pairs
-    if size(broker_pairs.Z_batch, 1) != d2 || size(broker_pairs.Z_batch, 2) < n_pred
+    d_broker = broker_pair_feature_dim(params.d)
+    n_pred = n_pairs
+    if size(broker_pairs.Z_batch, 1) != d_broker || size(broker_pairs.Z_batch, 2) < n_pred
         cap = max(n_pred, 2 * size(broker_pairs.Z_batch, 2), 256)
-        broker_pairs.Z_batch = Matrix{Float64}(undef, d2, cap)
-        broker_pairs.H_batch = Matrix{Float64}(undef, params.h_b, cap)
+        broker_pairs.Z_batch = Matrix{Float64}(undef, d_broker, cap)
+        broker_pairs.H_batch = Matrix{Float64}(undef, broker_hidden_width(params), cap)
         resize!(broker_pairs.Y_batch, cap)
     end
     Z_batch = broker_pairs.Z_batch
@@ -287,25 +287,140 @@ function prepare_broker_pair_scores!(
         _, i, j = pair_scores[pair_idx]
         xi = agents[i].type
         xj = agents[j].type
-        col_a = 2 * pair_idx - 1
-        col_b = col_a + 1
-        for k in 1:d
-            Z_batch[k, col_a] = xi[k]
-            Z_batch[d + k, col_a] = xj[k]
-            Z_batch[k, col_b] = xj[k]
-            Z_batch[d + k, col_b] = xi[k]
-        end
+        fill_broker_pair_features!(Z_batch, pair_idx, xi, xj)
     end
 
     predict_nn_batch!(broker.nn, H_batch, Y_batch, Z_batch, n_pred)
 
     @inbounds for pair_idx in 1:n_pairs
         _, i, j = pair_scores[pair_idx]
-        score = 0.5 * (Y_batch[2 * pair_idx - 1] + Y_batch[2 * pair_idx])
+        score = Y_batch[pair_idx]
         pair_scores[pair_idx] = (-score, i, j)
     end
-    sort!(pair_scores; alg=QuickSort)
+    sort_scores && sort!(pair_scores; alg=QuickSort)
     return pair_scores
+end
+
+@inline function broker_offer_key(
+    neg_score::Float64, from_id::Int, to_id::Int
+)::Tuple{Float64,Int,Int,Int,Int}
+    lo = min(from_id, to_id)
+    hi = max(from_id, to_id)
+    return (neg_score, lo, hi, from_id, to_id)
+end
+
+function ensure_broker_top_offer_buffers!(
+    broker_pairs::BrokerPairWorkspace, N::Int, quota::Int
+)
+    counts = broker_pairs.broker_top_counts
+    if length(counts) < N
+        old_len = length(counts)
+        resize!(counts, N)
+        @inbounds for i in (old_len + 1):N
+            counts[i] = 0
+        end
+    end
+
+    top_offers = broker_pairs.broker_top_offers
+    if size(top_offers, 1) < quota || size(top_offers, 2) < N
+        n_rows = max(quota, size(top_offers, 1))
+        n_cols = max(N, size(top_offers, 2))
+        broker_pairs.broker_top_offers = Matrix{Tuple{Float64,Int,Int,Int,Int}}(
+            undef, n_rows, n_cols
+        )
+    end
+    return nothing
+end
+
+@inline function insert_broker_top_offer!(
+    top_offers::Matrix{Tuple{Float64,Int,Int,Int,Int}},
+    counts::Vector{Int},
+    from_id::Int,
+    to_id::Int,
+    neg_score::Float64,
+    quota::Int,
+)::Nothing
+    quota <= 0 && return nothing
+    offer = broker_offer_key(neg_score, from_id, to_id)
+    count = @inbounds counts[from_id]
+    if count < quota
+        count += 1
+        @inbounds begin
+            counts[from_id] = count
+            top_offers[count, from_id] = offer
+        end
+        return nothing
+    end
+
+    worst_idx = 1
+    worst = @inbounds top_offers[1, from_id]
+    @inbounds for idx in 2:quota
+        candidate = top_offers[idx, from_id]
+        if isless(worst, candidate)
+            worst = candidate
+            worst_idx = idx
+        end
+    end
+    if isless(offer, worst)
+        @inbounds top_offers[worst_idx, from_id] = offer
+    end
+    return nothing
+end
+
+function select_broker_offer_candidates!(
+    ws::SimWorkspace,
+    pair_scores::Vector{Tuple{Float64,Int,Int}},
+    broker_demanders::Vector{Int},
+    remaining::Vector{Int},
+    r::Float64,
+)
+    broker_pairs = ws.broker_pairs
+    selected = broker_pairs.broker_selected_offers
+    empty!(selected)
+    isempty(pair_scores) && return selected
+    isempty(broker_demanders) && return selected
+
+    max_quota = 0
+    @inbounds for did in broker_demanders
+        max_quota = max(max_quota, remaining[did])
+    end
+    max_quota <= 0 && return selected
+
+    N = length(remaining)
+    ensure_broker_top_offer_buffers!(broker_pairs, N, max_quota)
+    counts = broker_pairs.broker_top_counts
+    top_offers = broker_pairs.broker_top_offers
+    offer_index = ws.offer_book.offer_index
+
+    @inbounds for did in broker_demanders
+        counts[did] = 0
+    end
+
+    demander_mask = broker_pairs.broker_demander_mask
+    access_mask = broker_pairs.broker_access_mask
+    @inbounds for (neg_score, i, j) in pair_scores
+        score = -neg_score
+        score > r || continue
+
+        if demander_mask[i] && access_mask[j] && remaining[i] > 0
+            if offer_index[i, j] == 0
+                insert_broker_top_offer!(top_offers, counts, i, j, neg_score, remaining[i])
+            end
+        end
+        if demander_mask[j] && access_mask[i] && remaining[j] > 0
+            if offer_index[j, i] == 0
+                insert_broker_top_offer!(top_offers, counts, j, i, neg_score, remaining[j])
+            end
+        end
+    end
+
+    @inbounds for did in broker_demanders
+        for idx in 1:counts[did]
+            push!(selected, top_offers[idx, did])
+        end
+    end
+    sort!(selected; alg=QuickSort)
+    return selected
 end
 
 function append_broker_offers!(
@@ -347,30 +462,23 @@ function append_broker_offers!(
     isempty(broker_access) && return 0
 
     pair_scores = prepare_broker_pair_scores!(
-        ws, broker, broker_demanders, broker_access, agents, params
+        ws, broker, broker_demanders, broker_access, agents, params; sort_scores=false
     )
     isempty(pair_scores) && return 0
+    selected_offers = select_broker_offer_candidates!(
+        ws, pair_scores, broker_demanders, remaining, r
+    )
+    isempty(selected_offers) && return 0
 
-    demander_mask = broker_pairs.broker_demander_mask
-    access_mask = broker_pairs.broker_access_mask
     offer_book = ws.offer_book
     sent = 0
-    @inbounds for item in pair_scores
-        neg_score, i, j = item
+    @inbounds for item in selected_offers
+        neg_score, _, _, from_id, to_id = item
         score = -neg_score
-        score <= r && break
-
-        if demander_mask[i] && access_mask[j] && remaining[i] > 0
-            if add_offer!(offer_book, i, j, :broker, score)
-                remaining[i] -= 1
-                sent += 1
-            end
-        end
-        if demander_mask[j] && access_mask[i] && remaining[j] > 0
-            if add_offer!(offer_book, j, i, :broker, score)
-                remaining[j] -= 1
-                sent += 1
-            end
+        remaining[from_id] > 0 || continue
+        if add_offer!(offer_book, from_id, to_id, :broker, score)
+            remaining[from_id] -= 1
+            sent += 1
         end
     end
     return sent

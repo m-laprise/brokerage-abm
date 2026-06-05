@@ -262,7 +262,7 @@ $$q_{ij} \approx \begin{cases} (1 + \delta) \cdot \mathbf{a}_i^\top \mathbf{x}_j
 
 A linear model $\boldsymbol{\beta}^\top \mathbf{x}_j$ fitted on this mixture learns an *average slope* that is systematically wrong for both regimes. To separate the two regimes, the agent needs to detect that the slope of the relationship between $\mathbf{x}_j$ and outcomes changes along the direction $\mathbf{b}_i$. This is an unsupervised change-point detection problem in $d$ dimensions that requires qualitatively more sophisticated analysis than simple linear regression, regardless of sample size.
 
-**Why the broker can resolve the regime.** The broker observes $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ triples across many different pairings. The regime depends on $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$, which is a *bilinear* function of both types. The broker's network, taking $[\mathbf{x}_i; \mathbf{x}_j]$ as input (§2c), can learn that certain combinations of $(\mathbf{x}_i, \mathbf{x}_j)$ systematically produce higher or lower match quality, capturing the regime effect through the nonlinear interactions learned by its hidden layer. The regime boundary that is hidden from the individual agent (because it requires conditioning on $\mathbf{x}_i$, which is fixed in single-agent data) is *visible* in the broker's input (because $\mathbf{x}_i$ varies across observations in cross-agent data).
+**Why the broker can resolve the regime.** The broker observes $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ triples across many different pairings. The regime depends on $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$, which is a *bilinear* function of both types. The broker's network receives symmetric additive and pairwise-product features (§2c), so cross-agent data make the regime boundary directly learnable from variation in both $\mathbf{x}_i$ and $\mathbf{x}_j$. The regime boundary that is hidden from the individual agent (because it requires conditioning on $\mathbf{x}_i$, which is fixed in single-agent data) is *visible* in the broker's input (because $\mathbf{x}_i$ varies across observations in cross-agent data).
 
 **Why the gap affects match selection.** The gain operates multiplicatively on the base interaction. Among an agent's candidates with a high true interaction component, some are in the high-gain regime and others in the low-gain regime. The agent's linear model, fitting the average slope, ranks these candidates similarly. But their true match qualities differ by a factor of $(1 + \delta) / (1 - \delta)$ (3:1 at $\delta = 0.5$). The broker, knowing the regime, can identify which top candidates are high-gain and rank them above the low-gain candidates. This produces *different selections* from the same candidate pool.
 
@@ -276,9 +276,9 @@ Both agents and the broker use the same architecture: a fully-connected network 
 
 $$\hat{q}(\mathbf{z}) = \mathbf{w}_2^\top \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1) + b_2$$
 
-where $\mathbf{z}$ is the input feature vector, $\mathbf{W}_1$ is the hidden-layer weight matrix, $\mathbf{b}_1$ is the hidden bias vector, $\mathbf{w}_2$ is the output-layer weight vector, and $b_2$ is the output bias. Neither agents nor the broker use hand-crafted features; both receive raw type vectors as input and learn the relevant structure from data.
+where $\mathbf{z}$ is the input feature vector, $\mathbf{W}_1$ is the hidden-layer weight matrix, $\mathbf{b}_1$ is the hidden bias vector, $\mathbf{w}_2$ is the output-layer weight vector, and $b_2$ is the output bias. Agents receive raw partner type vectors. The broker receives a symmetric pair representation defined in §2c.
 
-**Fitting.** Each period, the network weights are updated by minimizing MSE using vanilla gradient descent on the full batch with a fixed learning rate $\eta_{\mathrm{lr}}$ (default 0.03). No explicit regularization is applied: at the data scales the broker and agents accumulate, adding weight decay has no measurable effect on held-out fit, so it is omitted for simplicity.
+**Fitting.** Each period, the network weights are updated by minimizing MSE using vanilla gradient descent on the full batch with a fixed learning rate $\eta_{\mathrm{lr}}$ (default 0.03). Gradients are computed by automatic differentiation through DifferentiationInterface with Enzyme. No explicit regularization is applied: at the data scales the broker and agents accumulate, adding weight decay has no measurable effect on held-out fit, so it is omitted for simplicity.
 
 **Initialization.** At $t = 0$ each network is trained from random weights for $E_{\text{init}}$ gradient steps (default 200) on its seed history. The output bias $b_2$ is initialized to $Q$ (the DGP offset, §1a) rather than zero so that an untrained network predicts the population-mean match quality. This avoids a large negative-bias artifact for fresh entrants whose network has not yet been trained, and is irrelevant for mature networks (the first training steps on any real data move $b_2$ to its fitted value). All other weights follow He initialization.
 
@@ -288,7 +288,7 @@ $$E_t = \max\!\left(50, \; \left\lceil E_{\text{init}} \cdot \frac{n_{\text{new}
 
 where $n_{\text{new}}$ is the number of observations added this period and $n_{\text{total}} = |\mathcal{H}^t|$ is the current history size. The floor of 50 ensures that mature networks continue to receive enough gradient updates per period to converge close to the DGP's best-achievable fit, rather than stagnating far below it.
 
-**Training window.** To avoid diluting new observations in a large full-batch gradient, each training period uses at most the $W = 500$ most recent observations from the agent's or broker's history. The warm start preserves what was learned from older data. This sliding window ensures that the gradient reflects recent experience while being large enough, after symmetry augmentation for the broker, to contain a representative cross-section of match types.
+**Training window.** To avoid diluting new observations in a large full-batch gradient, each training period uses at most the $W = 500$ most recent observations from the agent's or broker's history. The warm start preserves what was learned from older data. This sliding window ensures that the gradient reflects recent experience while remaining large enough to contain a representative cross-section of match types.
 
 **Prediction.** Given a fitted network, the prediction for a candidate match is a single forward pass. An agent evaluates $\hat{q}_i(\mathbf{x}_j)$ for candidate partners $\mathbf{x}_j$, ranks feasible candidates by predicted or known-partner quality, and emits up to its current demand count in directed offers (§5a). Because $f$ is symmetric, the same model serves both roles: evaluating potential counterparties (as demander) and evaluating incoming proposals (as counterparty). The broker evaluates pair-level predictions over the broker-accessible unordered pair set and emits directed offers for broker demanders from that shared ranking (§5b).
 
@@ -296,7 +296,7 @@ where $n_{\text{new}}$ is the number of observations added this period and $n_{\
 
 **History.** $\mathcal{H}_i^t = \{(\mathbf{x}_j, q_{ij})\}_{m=1}^{n_i}$ records the other party's type and the realized match output from every match $i$ has participated in, regardless of role. Because $f$ is symmetric (§1a), observations from both roles pool into a single history.
 
-**Input and capacity.** The agent's network takes the partner's type as input: $\mathbf{z} = \mathbf{x}_j$ ($d = 8$ inputs). The hidden layer has $h_a = 16$ units. Total parameters: $h_a \cdot (d + 1) + (h_a + 1) = 161$.
+**Input and capacity.** The agent's network takes the partner's type as input: $\mathbf{z} = \mathbf{x}_j$ ($d = 8$ inputs in the baseline). The hidden width is derived from type dimensionality, $h_A = 2d$, so the baseline uses 16 hidden units. Total parameters are $h_A(d + 2) + 1$, equal to 161 at $d = 8$.
 
 **Why this architecture.** The regime-dependent gain (§1c) makes the agent's local prediction problem *piecewise linear*: for a fixed agent $i$, the target function is $f_i(\mathbf{x}_j) \approx (1 \pm \delta) \cdot \mathbf{a}_i^\top \mathbf{x}_j + \text{quality}$, with two different slopes on either side of a hyperplane boundary $\mathbf{b}_i^\top \mathbf{x}_j = 0$ that the agent does not know. A one-hidden-layer ReLU network is the natural function approximator for this structure: each ReLU unit computes a hinge function $\max(\mathbf{w}^\top \mathbf{x}_j + b, 0)$, and a small number of such units can represent piecewise linear functions with learned breakpoints.
 
@@ -306,11 +306,21 @@ With sufficient data, the network can in principle learn the piecewise linear st
 
 **History.** $\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}_{m=1}^{n_b}$ records both parties' types and the realized match output from every match the broker has mediated. At initialization, it is seeded from existing roster-roster ties that the broker observes without adding new agent-agent edges (§11c).
 
-**Input and capacity.** The broker's network takes both parties' types as input: $\mathbf{z} = [\mathbf{x}_i; \mathbf{x}_j]$ ($2d = 16$ inputs). The hidden layer has $h_b = 32$ units. Total parameters: $h_b \cdot (2d + 1) + (h_b + 1) = 577$. No hand-crafted features (such as outer products) are provided.
+**Input and capacity.** The broker's network takes a symmetric pair feature vector:
 
-**Fitting.** The broker's network must learn a predictive approximation to the bilinear interaction structure $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ and the regime boundary $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$ from the raw concatenated inputs. The architecture does not encode bilinear products directly: no outer-product or hand-crafted pairwise interaction features are supplied. Instead, the one-hidden-layer ReLU network approximates the resulting pair-quality surface as a piecewise linear function of $[\mathbf{x}_i; \mathbf{x}_j]$. With 32 hidden units, the broker model has enough capacity in the calibrated simulations to approximate the relevant ranking structure, but this is an empirical modeling assumption about finite-sample approximation and training, not a mathematical guarantee that the architecture exactly represents the bilinear forms.
+$$
+\psi(\mathbf{x}_i,\mathbf{x}_j)
+= \left[
+\mathbf{x}_i+\mathbf{x}_j;\;
+\operatorname{vech}\!\left(\frac{\mathbf{x}_i\mathbf{x}_j^\top+\mathbf{x}_j\mathbf{x}_i^\top}{2}\right)
+\right].
+$$
 
-To exploit the symmetry of $f$, the broker augments its training data by including both orderings of each observation: for each $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ in $\mathcal{H}_b$, the broker trains on both $[\mathbf{x}_i; \mathbf{x}_j]$ and $[\mathbf{x}_j; \mathbf{x}_i]$ with the same target $q_{ij}$. This doubles the effective training set and ensures the network learns that the two input slots are interchangeable.
+The half-vectorization $\operatorname{vech}$ keeps the lower-triangular entries of the symmetric matrix, so the broker input dimension is $d_B = d + d(d+1)/2$, equal to 44 at $d = 8$. The broker hidden width is derived from type dimensionality, $h_B = 8d$, so the baseline uses 64 hidden units. Total parameters are $h_B(d_B + 2) + 1$, equal to 2945 at $d = 8$.
+
+**Fitting.** The broker's network must learn a predictive approximation to the bilinear interaction structure $\mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j$ and the regime boundary $\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j$. The additive block captures symmetric one-body quality structure, while the half-vectorized symmetric outer-product block exposes the pairwise complementarity terms directly. The one-hidden-layer ReLU network then learns a nonlinear mapping from this symmetric pair representation to match quality.
+
+Because $\psi(\mathbf{x}_i,\mathbf{x}_j)=\psi(\mathbf{x}_j,\mathbf{x}_i)$, each observed unordered pair contributes one training row. No ordered-pair symmetry augmentation is used.
 
 **Data scope.** The broker learns only from matches it mediates. It does not observe outcomes of self-search matches. After a brokered match forms, the realized output $q_{ij}$ is observed by all parties involved (the two agents and the broker), and the broker adds $(\mathbf{x}_i, \mathbf{x}_j, q_{ij})$ to $\mathcal{H}_b$.
 
@@ -399,7 +409,7 @@ Agent $i$'s self-search candidate pool has two components:
 
 **Known neighbors.** Direct network neighbors in $G$ with no active current-period relationship with $i$ and at least one previously observed match with $i$ (equivalently, a stored partner mean). For each such neighbor $j$, the agent evaluates quality using the **average of realized outcomes** from prior matches with $j$: $\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}$, where $n_{ij}$ is the number of times $i$ and $j$ have matched. This is a direct empirical estimate, not a model prediction. Initial histories include all non-broker graph neighbors (§11c), so initial direct ties are known neighbors from period 1. Later graph neighbors can still lack a stored partner mean if a tie exists without a direct realized relationship.
 
-**Strangers.** A fixed period-level pool $U^t$ of $\min(n_{\mathrm{strangers}}, N)$ agents is sampled uniformly without replacement from the population, where $n_{\mathrm{strangers}} = 10$ (default). Each self-searching demander can evaluate members of this pool that are not current neighbors and are not already current-period counterparties. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals.
+**Strangers.** Each self-searching demander $i$ independently samples its own pool $U_i^t$ of $\min(n_{\mathrm{strangers}}, N)$ agents uniformly without replacement from the population, where $n_{\mathrm{strangers}} = 10$ (default). The demander can evaluate members of this pool that are not current neighbors and are not already current-period counterparties. The agent has no prior history with these candidates and evaluates them using its **prediction model**: $\hat{q}_i(\mathbf{x}_j)$ (§2b). Strangers represent cold outreach: attending trade events, browsing listings, or following up on indirect referrals. Independent pools avoid creating artificial same-period attention shocks in which all self-searching demanders evaluate the same small set of strangers.
 
 Agent $i$ orders feasible self-search candidates by this demander-side evaluation and emits up to $d_i$ directed offers to candidates whose evaluation exceeds $r$.
 
@@ -413,9 +423,9 @@ $$\mathcal{A}_b^t = \text{Roster}^t \cup D^t.$$
 
 Agents already on the standing roster remain on it whether or not they outsource in the current period; current clients expand access only for the current period and do not become lagged standing members for that reason.
 
-For every unordered pair $\{i,j\}$ such that one side is a broker-client demander and the other side is in $\mathcal{A}_b^t$, the broker computes predicted match quality and ranks the pairs globally. Traversing this one ranked list, the broker emits a directed broker offer $i \to j$ whenever $i$ is a broker-client demander, $j \in \mathcal{A}_b^t$, $i$ still has unfilled active broker demand, and the predicted value exceeds $r$. If both sides are broker-client demanders and both have remaining active demand, the same unordered pair can therefore generate reciprocal broker offers.
+For every unordered pair $\{i,j\}$ such that one side is a broker-client demander and the other side is in $\mathcal{A}_b^t$, the broker computes predicted match quality. For each broker-client demander $i$, it keeps only the highest-valued accessible counterparties above $r$, up to $i$'s residual active broker demand. The selected directed broker offers are then processed in the same deterministic score order that a full global pair ranking would induce. If both sides are broker-client demanders and both have remaining active demand, the same unordered pair can therefore generate reciprocal broker offers.
 
-**Implementation note.** The code may realize these rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: the stranger pool is sampled once per period, broker-side offers follow the single global pair ranking, current-period duplicate-pair exclusion may be implemented with an exact period-local index, and neural-network training still uses the same data windows and gradient steps. The implementation organizes scratch state into subsystem workspaces, including a directed-offer book for offer construction and acceptance, and a period ledger for demand, satisfaction, payment, and accepted-match buffers.
+**Implementation note.** The code may realize these rules with performance-oriented scratch buffers and caches, provided the stochastic object is unchanged: each self-searching demander samples an independent stranger pool, standard broker-side offers are selected by per-client residual quota before the selected union is ordered, current-period duplicate-pair exclusion may be implemented with an exact period-local index, and neural-network training still uses the same data windows and gradient steps. The implementation organizes scratch state into subsystem workspaces, including a directed-offer book for offer construction and acceptance, and a period ledger for demand, satisfaction, payment, and accepted-match buffers. Resource-capture planning still uses the full sorted broker pair list because whole-lot feasibility depends on each client's complete ranked accessible set.
 
 #### 5c. Shared offer acceptance
 
@@ -486,7 +496,7 @@ The broker maintains a **roster** of agents it knows and can propose as counterp
 
 $$R^* = \lceil \alpha_R N \rceil, \qquad \alpha_R = 0.20,$$
 
-by drawing $R^*$ agents uniformly at random from the population (default 200 at $N = 1000$). This ensures the broker can serve early outsourcers without frequent no-match failures that would drive broker satisfaction down before the broker has a chance to demonstrate value. The broker's history is seeded with observations from random roster member pairs, and those seed placements create the corresponding agent-agent ties in $G$ (§11c).
+by drawing $R^*$ agents uniformly at random from the population (default 200 at $N = 1000$). This ensures the broker can serve early outsourcers without frequent no-match failures that would drive broker satisfaction down before the broker has a chance to demonstrate value. The broker's history is seeded from existing roster-roster ties in the initial graph, capped at 100 observed ties. Broker seeding does not create new agent-agent ties in $G$ (§11c).
 
 **Standing roster with replenishment.** The broker maintains this roster as a standing access base. At the start of each period, after prior-period active matches are cleared and before current-period demand is realized, each current roster member independently exits the roster with exogenous probability $p_{\text{roster}}$ (default $0.02$). The broker then replenishes uniformly at random from agents not currently on the roster until the target size $R^*$ is restored. Formally, if $\widetilde{\text{Roster}}^t$ is the post-churn roster,
 
@@ -567,6 +577,8 @@ The broker-agent gap in holdout $R^2$ is the purest measure of the informational
 
 #### Other measures
 
+All period outputs are recorded after current-period matching, satisfaction, reputation, confidence, and diagnostics updates, but before agent entry/exit turnover. This timing ensures period-$t$ measurements describe the market state produced by period-$t$ matching rather than the replacement state prepared for period $t+1$.
+
 **Access vs. assessment decomposition.** For each accepted broker-directed offer, record whether receiver $j$ was a direct neighbor of offer sender $i$ in $G$ at the time of the offer. If not: access value (the sender could not have found this counterparty through its own network). If yes: assessment value (the sender could have found this counterparty but the broker predicted match quality better).
 
 **Match quality by channel.** Average realized match output $\bar{q}_c^t$ per period, where $c \in \{\text{self}, \text{brokered}\}$.
@@ -614,13 +626,13 @@ Parameters are organized into four categories reflecting their role in the analy
 | $\eta_{\mathrm{lr}}$ | Learning rate | 0.03 | Vanilla gradient descent, full-batch, no weight decay |
 | $E_{\text{init}}$ | Initial training steps | 200 | Full convergence at initialization; in production periods each agent retrains every other period on a deterministic parity schedule, with steps $\max(50, \lceil E_{\text{init}} \cdot n_{\text{new}} / n_{\text{total}} \rceil)$ |
 | $W$ | Training window | 500 | Train on at most $W$ most recent observations (sliding window) |
-| $h_a$ | Agent hidden width | 16 | One hidden layer, ReLU activations |
-| $h_b$ | Broker hidden width | 32 | One hidden layer, ReLU activations |
 | $b_2^{(0)}$ | Initial output bias | $Q$ | Untrained networks predict population-mean quality rather than zero |
 | $\sigma_\varepsilon$ | Match output noise SD | 0.10 | |
 | $\delta$ | Regime gain strength (§1c) | 0.5 | $\delta = 0$: no regime effect; $\delta = 1$: maximum gain contrast |
 | $\lambda_c$ | Shared search-cost rate | 0.15 | $\phi = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$, $c_s = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$; $c_s$ is a self-search cost per demanded relationship position, $\phi$ a successful standard-placement fee; §11b |
 | $p_{\text{roster}}$ | Standing-roster churn probability (§7) | 0.02 | Each roster member is dropped independently at the start of a period, before uniform replenishment back to $R^*$ |
+
+Neural-network hidden widths are derived from $d$ rather than calibrated as model parameters: $h_A = 2d$ for agents and $h_B = 8d$ for the broker.
 
 **Phase diagram axes.** Primary parameters of interest.
 
@@ -808,6 +820,9 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 
 ## Figures
 
+Unless otherwise stated, the base-model and capture exploration scripts generate
+simulation figures with $N = 800$, $T = 200$, and 5 seeds.
+
 **Fig. 1.** The informational mechanism.
 - *Purpose:* Establishes the core mechanism: the broker learns faster than individual agents, the gap widens with matching complexity, and this drives increasing outsourcing (Propositions 1.1, 1.2, 1.3).
 - *Content:* All panels at default parameters ($d_\gamma = 8$, $\rho = 0.50$), using the base active-demand offer market.
@@ -851,7 +866,7 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 
 **Fig. S6.** Network degree diagnostics in the base-model exploration.
 - *Purpose:* Tracks how the overall connectivity of $G$ evolves as the market densifies, complementing the broker-centered structural-hole measures.
-- *Content:* Four panels with time on the horizontal axis and agent-network degree statistics on the vertical axis: mean degree, median degree, minimum degree, and maximum degree (computed over agent nodes only, excluding the broker).
+- *Content:* Three time-series panels with time on the horizontal axis and agent-network degree statistics on the vertical axis: mean and median degree in a shared panel, minimum degree, and maximum degree (computed over agent nodes only, excluding the broker). A fourth panel shows the histogram of the agent-node degree distribution in the last recorded period, pooled across seeds.
 
 ## References
 

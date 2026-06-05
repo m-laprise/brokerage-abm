@@ -3,6 +3,7 @@ using TransientBrokerage
 using TransientBrokerage: ActiveMatch, Agent, CachedNetworkMeasures, CalibrationConstants
 using TransientBrokerage: CurveGeometry, MatchingEnv, NNGradBuffers, PeriodAccumulators
 using TransientBrokerage: Q_OFFSET, R_BASE_FRAC, effective_history_size
+using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using TransientBrokerage: has_current_match, init_neural_net, partner_mean
 using TransientBrokerage: record_agent_history!, record_broker_history!
 using TransientBrokerage: reset_accumulators!
@@ -100,13 +101,16 @@ using LinearAlgebra: norm
     @testset "NeuralNet parameter counts" begin
         rng = StableRNG(42)
         p = default_params()
-        nn_a = init_neural_net(p.d, p.h_a, rng)
+        h_agent = agent_hidden_width(p)
+        h_broker = broker_hidden_width(p)
+        d_broker = broker_pair_feature_dim(p.d)
+        nn_a = init_neural_net(p.d, h_agent, rng)
         n_params_a = length(nn_a.W1) + length(nn_a.b1) + length(nn_a.w2) + 1
-        @test n_params_a == 161  # 16*8 + 16 + 16 + 1
+        @test n_params_a == h_agent * (p.d + 2) + 1
 
-        nn_b = init_neural_net(2*p.d, p.h_b, rng)
+        nn_b = init_neural_net(d_broker, h_broker, rng)
         n_params_b = length(nn_b.W1) + length(nn_b.b1) + length(nn_b.w2) + 1
-        @test n_params_b == 577  # 32*16 + 32 + 32 + 1
+        @test n_params_b == h_broker * (d_broker + 2) + 1
     end
 
     @testset "ActiveMatch construction" begin
@@ -160,7 +164,8 @@ using LinearAlgebra: norm
     @testset "Agent history recording and growth" begin
         rng = StableRNG(42)
         p = default_params(N=20)
-        nn = init_neural_net(p.d, p.h_a, rng)
+        h_agent = agent_hidden_width(p)
+        nn = init_neural_net(p.d, h_agent, rng)
         agent = Agent(
             id=1,
             type=randn(rng, p.d),
@@ -168,7 +173,7 @@ using LinearAlgebra: norm
             history_q=Vector{Float64}(undef, 4),
             nn=nn,
             nn_grad=NNGradBuffers(nn),
-            predict_buf=zeros(p.h_a),
+            predict_buf=zeros(h_agent),
             partner_sum=zeros(20),
             partner_count=zeros(Int, 20),
         )
@@ -205,7 +210,7 @@ using LinearAlgebra: norm
         broker.history_Xi = Matrix{Float64}(undef, d, 2)
         broker.history_Xj = Matrix{Float64}(undef, d, 2)
         broker.history_q = Vector{Float64}(undef, 2)
-        broker.train_X = Matrix{Float64}(undef, 2 * d, 4)
+        broker.train_X = Matrix{Float64}(undef, broker_pair_feature_dim(d), 4)
         broker.train_q = Vector{Float64}(undef, 4)
         broker.history_count = 0
         broker.n_new_obs = 0
@@ -224,14 +229,16 @@ using LinearAlgebra: norm
         @test broker.n_new_obs == 3
         @test size(broker.history_Xi, 2) >= 3
         @test size(broker.history_Xj, 2) >= 3
-        @test size(broker.train_X, 2) >= 6
+        @test size(broker.train_X, 1) == broker_pair_feature_dim(d)
+        @test size(broker.train_X, 2) >= 3
         @test broker.history_q[3] == 3.0
     end
 
     @testset "Partner mean tracking" begin
         rng = StableRNG(42)
         p = default_params(N=10)
-        nn = init_neural_net(p.d, p.h_a, rng)
+        h_agent = agent_hidden_width(p)
+        nn = init_neural_net(p.d, h_agent, rng)
         agent = Agent(
             id=1,
             type=randn(rng, p.d),
@@ -239,7 +246,7 @@ using LinearAlgebra: norm
             history_q=Vector{Float64}(undef, 16),
             nn=nn,
             nn_grad=NNGradBuffers(nn),
-            predict_buf=zeros(p.h_a),
+            predict_buf=zeros(h_agent),
             partner_sum=zeros(10),
             partner_count=zeros(Int, 10),
         )
@@ -257,7 +264,8 @@ using LinearAlgebra: norm
     @testset "Current matches are tracked independently of K" begin
         rng = StableRNG(42)
         p = default_params(N=10, K=3)
-        nn = init_neural_net(p.d, p.h_a, rng)
+        h_agent = agent_hidden_width(p)
+        nn = init_neural_net(p.d, h_agent, rng)
         agent = Agent(
             id=1,
             type=randn(rng, p.d),
@@ -265,7 +273,7 @@ using LinearAlgebra: norm
             history_q=Vector{Float64}(undef, 16),
             nn=nn,
             nn_grad=NNGradBuffers(nn),
-            predict_buf=zeros(p.h_a),
+            predict_buf=zeros(h_agent),
             partner_sum=zeros(10),
             partner_count=zeros(Int, 10),
         )

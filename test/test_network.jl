@@ -2,6 +2,7 @@ using Test
 using TransientBrokerage
 using TransientBrokerage: Agent, NNGradBuffers, add_broker_edge!, add_entrant_edges!
 using TransientBrokerage: add_match_edge!, build_network, init_neural_net
+using TransientBrokerage: agent_hidden_width
 using TransientBrokerage: remove_agent_edges!
 using Graphs: nv, ne, neighbors, has_edge, degree
 using StableRNGs: StableRNG
@@ -44,12 +45,21 @@ using LinearAlgebra: normalize
         G = build_network(N, 6, 0.1, rng)
         types = [normalize(randn(rng, 8)) for _ in 1:N]
         # Build minimal Agent structs for the new add_entrant_edges! signature
-        d = 8; h_a = 16
-        mock_agents = [Agent(id=i, type=types[i],
-            history_X=Matrix{Float64}(undef, d, 0), history_q=Float64[],
-            nn=init_neural_net(d, h_a, rng), nn_grad=NNGradBuffers(init_neural_net(d, h_a, rng)),
-            predict_buf=zeros(h_a), partner_sum=zeros(N), partner_count=zeros(Int, N),
-        ) for i in 1:N]
+        d = 8
+        h_agent = agent_hidden_width(d)
+        mock_agents = [
+            Agent(
+                id=i,
+                type=types[i],
+                history_X=Matrix{Float64}(undef, d, 0),
+                history_q=Float64[],
+                nn=init_neural_net(d, h_agent, rng),
+                nn_grad=NNGradBuffers(init_neural_net(d, h_agent, rng)),
+                predict_buf=zeros(h_agent),
+                partner_sum=zeros(N),
+                partner_count=zeros(Int, N),
+            ) for i in 1:N
+        ]
         remove_agent_edges!(G, 1)
         add_entrant_edges!(G, 1, types[1], mock_agents, rng; n_edges=3)
         @test degree(G, 1) == 3

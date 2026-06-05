@@ -2,16 +2,114 @@
     learning.jl
 
 Neural network prediction models for agents and broker.
-One-hidden-layer ReLU networks trained by vanilla full-batch gradient descent
-with hand-written forward and backward passes using BLAS `mul!`.
+One-hidden-layer ReLU networks trained by vanilla full-batch gradient descent.
+Gradients are computed through DifferentiationInterface with Enzyme.
 
-Agent: input x_j (d features), h_a hidden units.
-Broker: input [x_i; x_j] (2d features), h_b hidden units.
-No hand-crafted features; both receive raw type vectors.
+Agent: input x_j (d features), with width derived from d.
+Broker: symmetric additive and bilinear pair features, with width derived from d.
 """
 
 using LinearAlgebra: mul!, dot, BLAS
 using Random: AbstractRNG
+using DifferentiationInterface: AutoEnzyme, Constant, gradient!
+using Enzyme: Enzyme
+
+const NN_AD_BACKEND = AutoEnzyme(; mode=Enzyme.Reverse)
+
+"""Number of symmetric broker pair features for d-dimensional types."""
+@inline broker_pair_feature_dim(d::Int)::Int = d + (d * (d + 1)) ÷ 2
+
+"""
+    fill_broker_pair_features!(z, xi, xj) -> Nothing
+
+Fill `z` with symmetric broker pair features:
+`xi + xj` followed by the lower-triangular half-vectorization of
+`(xi*xj' + xj*xi') / 2`.
+"""
+function fill_broker_pair_features!(
+    z::AbstractVector{Float64}, xi::AbstractVector{Float64}, xj::AbstractVector{Float64}
+)
+    d = length(xi)
+    @assert length(xj) == d
+    @assert length(z) >= broker_pair_feature_dim(d)
+
+    @inbounds for k in 1:d
+        z[k] = xi[k] + xj[k]
+    end
+
+    pos = d + 1
+    @inbounds for col in 1:d
+        for row in col:d
+            z[pos] = if row == col
+                xi[row] * xj[col]
+            else
+                0.5 * (xi[row] * xj[col] + xj[row] * xi[col])
+            end
+            pos += 1
+        end
+    end
+    return nothing
+end
+
+"""Matrix-column variant of `fill_broker_pair_features!` for batched scoring."""
+function fill_broker_pair_features!(
+    Z::AbstractMatrix{Float64},
+    colidx::Int,
+    xi::AbstractVector{Float64},
+    xj::AbstractVector{Float64},
+)
+    d = length(xi)
+    @assert length(xj) == d
+    @assert size(Z, 1) >= broker_pair_feature_dim(d)
+
+    @inbounds for k in 1:d
+        Z[k, colidx] = xi[k] + xj[k]
+    end
+
+    pos = d + 1
+    @inbounds for col in 1:d
+        for row in col:d
+            Z[pos, colidx] = if row == col
+                xi[row] * xj[col]
+            else
+                0.5 * (xi[row] * xj[col] + xj[row] * xi[col])
+            end
+            pos += 1
+        end
+    end
+    return nothing
+end
+
+"""Matrix-column source variant for broker history buffers."""
+function fill_broker_pair_features!(
+    Z::AbstractMatrix{Float64},
+    colidx::Int,
+    Xi::AbstractMatrix{Float64},
+    xi_col::Int,
+    Xj::AbstractMatrix{Float64},
+    xj_col::Int,
+)
+    d = size(Xi, 1)
+    @assert size(Xj, 1) == d
+    @assert size(Z, 1) >= broker_pair_feature_dim(d)
+
+    @inbounds for k in 1:d
+        Z[k, colidx] = Xi[k, xi_col] + Xj[k, xj_col]
+    end
+
+    pos = d + 1
+    @inbounds for col in 1:d
+        for row in col:d
+            Z[pos, colidx] = if row == col
+                Xi[row, xi_col] * Xj[col, xj_col]
+            else
+                0.5 * (Xi[row, xi_col] * Xj[col, xj_col] + Xj[row, xj_col] * Xi[col, xi_col])
+            end
+            pos += 1
+        end
+    end
+    return nothing
+end
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Initialization
@@ -148,25 +246,111 @@ end
 # Training
 # ─────────────────────────────────────────────────────────────────────────────
 
+@inline nn_param_count(h::Int, d_in::Int)::Int = h * d_in + 2 * h + 1
+
+function ensure_nn_param_buffers!(grad::NNGradBuffers, h::Int, d_in::Int)
+    n_params = nn_param_count(h, d_in)
+    length(grad.theta) == n_params || resize!(grad.theta, n_params)
+    length(grad.dtheta) == n_params || resize!(grad.dtheta, n_params)
+    return nothing
+end
+
+function pack_nn_params!(theta::Vector{Float64}, nn::NeuralNet)
+    h, d_in = size(nn.W1)
+    @assert length(theta) == nn_param_count(h, d_in)
+    pos = 1
+    @inbounds for k in 1:d_in, i in 1:h
+        theta[pos] = nn.W1[i, k]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        theta[pos] = nn.b1[i]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        theta[pos] = nn.w2[i]
+        pos += 1
+    end
+    theta[pos] = nn.b2
+    return nothing
+end
+
+function unpack_nn_grad!(grad::NNGradBuffers, h::Int, d_in::Int)
+    theta_grad = grad.dtheta
+    @assert length(theta_grad) == nn_param_count(h, d_in)
+    pos = 1
+    @inbounds for k in 1:d_in, i in 1:h
+        grad.dW1[i, k] = theta_grad[pos]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        grad.db1[i] = theta_grad[pos]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        grad.dw2[i] = theta_grad[pos]
+        pos += 1
+    end
+    grad.db2[] = theta_grad[pos]
+    return nothing
+end
+
+function apply_nn_gradient!(nn::NeuralNet, grad::NNGradBuffers, lr::Float64)
+    h, d_in = size(nn.W1)
+    theta_grad = grad.dtheta
+    pos = 1
+    @inbounds for k in 1:d_in, i in 1:h
+        nn.W1[i, k] -= lr * theta_grad[pos]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        nn.b1[i] -= lr * theta_grad[pos]
+        pos += 1
+    end
+    @inbounds for i in 1:h
+        nn.w2[i] -= lr * theta_grad[pos]
+        pos += 1
+    end
+    nn.b2 -= lr * theta_grad[pos]
+    return nothing
+end
+
+function nn_loss_theta(
+    theta::Vector{Float64},
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n::Int,
+    h::Int,
+    d_in::Int,
+)::Float64
+    w1_stop = h * d_in
+    b1_start = w1_stop + 1
+    w2_start = b1_start + h
+    b2 = theta[w2_start + h]
+
+    total_mse = 0.0
+    @inbounds for j in 1:n
+        y_j = b2
+        for i in 1:h
+            act = theta[b1_start + i - 1]
+            for k in 1:d_in
+                act += theta[(k - 1) * h + i] * X[k, j]
+            end
+            if act > 0.0
+                y_j += theta[w2_start + i - 1] * act
+            end
+        end
+        err = y_j - q[j]
+        total_mse += err * err
+    end
+    return total_mse / n
+end
+
 """
     train_step!(nn, grad, X, q, lr)
 
-One vanilla-GD step with hand-written forward + backward, using BLAS `mul!`
-for all three matmuls. `grad` owns pre-allocated activation and gradient
-buffers; resized once on first contact, then reused for the lifetime of the NN.
-
-Forward:
-    Z1 = W1 * X .+ b1
-    A  = relu(Z1)
-    Y  = A' * w2 .+ b2
-
-Backward (MSE on full batch, no regularization):
-    r  = (Y - q)                            shape n
-    dw2 = (2/n) * A * r                     shape h
-    db2 = (2/n) * sum(r)                    scalar
-    dZ1[i,j] = (2/n) * w2[i] * r[j] * (Z1[i,j] > 0)
-    dW1 = dZ1 * X'                          shape h x d_in
-    db1 = sum(dZ1; dims=2)                  shape h
+One vanilla-GD step. Gradients are computed through DifferentiationInterface
+with the Enzyme backend, then copied into `grad` and applied to `nn`.
 """
 function train_step!(
     nn::NeuralNet, grad::NNGradBuffers, X::Matrix{Float64}, q::Vector{Float64}, lr::Float64
@@ -180,7 +364,7 @@ end
 
 One vanilla-GD step on the first `n` columns/elements of contiguous training
 buffers `X` and `q`. This supports broker training directly on the active prefix
-of the preallocated symmetry-augmented buffer without recopying it.
+of the preallocated broker feature buffer without recopying it.
 """
 function train_step_prefix!(
     nn::NeuralNet,
@@ -191,84 +375,22 @@ function train_step_prefix!(
     lr::Float64,
 )
     h = size(nn.W1, 1)
-    ensure_nn_buffers!(grad, h, n)
-
-    Z1 = grad.Z1;
-    A = grad.A;
-    dZ1 = grad.dZ1;
-    Y = grad.Y
-    b1 = nn.b1;
-    w2 = nn.w2;
-    b2 = nn.b2
-
-    Xv = view(X, :, 1:n)
-    qv = view(q, 1:n)
-    Z1v = view(Z1, :, 1:n)
-    Av = view(A, :, 1:n)
-    dZ1v = view(dZ1, :, 1:n)
-    Yv = view(Y, 1:n)
-
-    BLAS.gemm!('N', 'N', 1.0, nn.W1, Xv, 0.0, Z1v)
-
-    # Z1 += b1 (broadcast along columns), A = relu(Z1)
-    @inbounds for j in 1:n, i in 1:h
-        z = Z1v[i, j] + b1[i]
-        Z1v[i, j] = z
-        Av[i, j] = z > 0.0 ? z : 0.0
-    end
-
-    # Y = A' * w2 + b2
-    BLAS.gemv!('T', 1.0, Av, w2, 0.0, Yv)
-    @inbounds for j in 1:n
-        Yv[j] += b2
-    end
-
-    # ── Backward ─────────────────────────────────────────────────────────────
-    inv_n = 1.0 / n
-    two_over_n = 2.0 * inv_n
-
-    # r = Y - q   (store in Yv; reused below)
-    sum_r = 0.0
-    @inbounds for j in 1:n
-        rj = Yv[j] - qv[j]
-        Yv[j] = rj
-        sum_r += rj
-    end
-
-    # dw2 = (2/n) * A * r
-    BLAS.gemv!('N', two_over_n, Av, Yv, 0.0, grad.dw2)
-
-    # db2 = (2/n) * sum(r)
-    grad.db2[] = two_over_n * sum_r
-
-    # dZ1[i,j] = (2/n) * w2[i] * r[j] * (Z1[i,j] > 0)
-    # db1[i]   = sum_j dZ1[i,j]
-    fill!(grad.db1, 0.0)
-    @inbounds for j in 1:n
-        rj_scaled = two_over_n * Yv[j]
-        for i in 1:h
-            if Z1v[i, j] > 0.0
-                g = w2[i] * rj_scaled
-                dZ1v[i, j] = g
-                grad.db1[i] += g
-            else
-                dZ1v[i, j] = 0.0
-            end
-        end
-    end
-
-    # dW1 = dZ1 * X'   (h x d_in)
-    BLAS.gemm!('N', 'T', 1.0, dZ1v, Xv, 0.0, grad.dW1)
-
-    # ── Weight update ────────────────────────────────────────────────────────
-    @inbounds @simd for idx in eachindex(nn.W1)
-        nn.W1[idx] -= lr * grad.dW1[idx]
-    end
-    @inbounds @simd for i in 1:h
-        nn.b1[i] -= lr * grad.db1[i]
-        nn.w2[i] -= lr * grad.dw2[i]
-    end
-    nn.b2 -= lr * grad.db2[]
+    d_in = size(nn.W1, 2)
+    ensure_nn_param_buffers!(grad, h, d_in)
+    pack_nn_params!(grad.theta, nn)
+    gradient!(
+        nn_loss_theta,
+        grad.dtheta,
+        NN_AD_BACKEND,
+        grad.theta,
+        Constant(X),
+        Constant(q),
+        Constant(n),
+        Constant(h),
+        Constant(d_in),
+    )
+    unpack_nn_grad!(grad, h, d_in)
+    apply_nn_gradient!(nn, grad, lr)
 
     return nothing
 end
@@ -430,47 +552,39 @@ function train_agent_nn!(agent::Agent, params::ModelParams)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Broker training (with symmetry augmentation)
+# Broker training
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
     train_broker_nn!(broker, params)
 
-Train the broker's neural network on symmetry-augmented recent history.
+Train the broker's neural network on symmetric pair features from recent history.
 Uses a sliding window of the most recent TRAIN_WINDOW observations.
-Each observation produces two training examples (symmetry augmentation).
 """
 function train_broker_nn!(broker::Broker, params::ModelParams)
     n = broker.history_count
     n <= 0 && return nothing
 
     d = params.d
+    d_broker = broker_pair_feature_dim(d)
 
     # Sliding window
     n_use = min(n, TRAIN_WINDOW)
     start_idx = n - n_use + 1
-    n_aug = 2 * n_use
 
     # Ensure training buffers are large enough
-    if size(broker.train_X, 2) < n_aug
-        new_cap = max(n_aug, 2 * size(broker.train_X, 2))
-        broker.train_X = Matrix{Float64}(undef, 2 * d, new_cap)
+    if size(broker.train_X, 1) != d_broker || size(broker.train_X, 2) < n_use
+        new_cap = max(n_use, 2 * size(broker.train_X, 2), 128)
+        broker.train_X = Matrix{Float64}(undef, d_broker, new_cap)
         resize!(broker.train_q, new_cap)
     end
 
-    # Build symmetry-augmented training data from window
+    # Build symmetric-feature training data from window
     @inbounds for (idx, j) in enumerate(start_idx:n)
-        for k in 1:d
-            broker.train_X[k, idx] = broker.history_Xi[k, j]
-            broker.train_X[d + k, idx] = broker.history_Xj[k, j]
-        end
+        fill_broker_pair_features!(
+            broker.train_X, idx, broker.history_Xi, j, broker.history_Xj, j
+        )
         broker.train_q[idx] = broker.history_q[j]
-
-        for k in 1:d
-            broker.train_X[k, n_use + idx] = broker.history_Xj[k, j]
-            broker.train_X[d + k, n_use + idx] = broker.history_Xi[k, j]
-        end
-        broker.train_q[n_use + idx] = broker.history_q[j]
     end
 
     # Adaptive steps
@@ -482,7 +596,7 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
         broker.nn_grad,
         broker.train_X,
         broker.train_q,
-        n_aug,
+        n_use,
         n_steps,
         params.eta_lr,
     )

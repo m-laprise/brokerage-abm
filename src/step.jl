@@ -99,6 +99,7 @@ function update_holdout_metrics!(state::ModelState)
     p = state.params
     N = p.N
     d = p.d
+    d_broker = broker_pair_feature_dim(d)
     agents = state.agents
     broker = state.broker
     env = state.env
@@ -123,10 +124,10 @@ function update_holdout_metrics!(state::ModelState)
     holdout = ws.holdout
     if length(match_output.Ax_buf) != d ||
         length(match_output.Bx_buf) != d ||
-        length(holdout.z_buf) != 2 * d
+        length(holdout.z_buf) != d_broker
         match_output.Ax_buf = Vector{Float64}(undef, d)
         match_output.Bx_buf = Vector{Float64}(undef, d)
-        holdout.z_buf = Vector{Float64}(undef, 2 * d)
+        holdout.z_buf = Vector{Float64}(undef, d_broker)
     end
     for v in (
         holdout.agent_preds,
@@ -195,17 +196,8 @@ function update_holdout_metrics!(state::ModelState)
                 agents[i].nn, agents[i].predict_buf, agents[j].type
             )
             agent_trues[partner_idx] = q_true
-            for k in 1:d
-                z_buf[k] = agents[i].type[k]
-                z_buf[d + k] = agents[j].type[k]
-            end
-            pred_ij = predict_nn!(broker.nn, broker.predict_buf, z_buf)
-            for k in 1:d
-                z_buf[k] = agents[j].type[k]
-                z_buf[d + k] = agents[i].type[k]
-            end
-            pred_ji = predict_nn!(broker.nn, broker.predict_buf, z_buf)
-            broker_preds[partner_idx] = 0.5 * (pred_ij + pred_ji)
+            fill_broker_pair_features!(z_buf, agents[i].type, agents[j].type)
+            broker_preds[partner_idx] = predict_nn!(broker.nn, broker.predict_buf, z_buf)
         end
 
         prepare_true_ranks!(agent_trues, n_partners, true_order, true_ranks)
@@ -246,9 +238,11 @@ function update_holdout_metrics!(state::ModelState)
 end
 
 """
-    step_period!(state) -> Nothing
+    step_period!(state) -> NamedTuple
 
-Execute one complete period of the simulation.
+Execute one complete period of the simulation and return the pre-turnover period
+metrics. Entry/exit turnover is processed after the returned metrics are
+captured.
 """
 function step_period!(state::ModelState)
     p = state.params
@@ -446,6 +440,8 @@ function step_period!(state::ModelState)
     if state.period % p.network_measure_interval == 0
         update_cached_network_measures!(state)
     end
+    record_agent_degree_summary!(state)
+    metrics = collect_period_metrics(state)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 6: Entry/exit
@@ -453,5 +449,5 @@ function step_period!(state::ModelState)
     process_entry_exit!(state, rng)
     sync_broker_edges!(G, agents, broker)
 
-    return nothing
+    return metrics
 end

@@ -1,6 +1,7 @@
 using Test
 using TransientBrokerage
 using TransientBrokerage: CalibrationConstants, MatchingEnv, R_BASE_FRAC
+using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using StableRNGs: StableRNG
 
 @testset "Initialization" begin
@@ -104,15 +105,18 @@ using StableRNGs: StableRNG
     end
 
     @testset "neural networks initialized and trained" begin
-        @test all(size(a.nn.W1) == (p.h_a, d) for a in state.agents)
-        @test all(length(a.nn.b1) == p.h_a for a in state.agents)
-        @test all(length(a.nn.w2) == p.h_a for a in state.agents)
+        h_agent = agent_hidden_width(p)
+        h_broker = broker_hidden_width(p)
+        d_broker = broker_pair_feature_dim(d)
+        @test all(size(a.nn.W1) == (h_agent, d) for a in state.agents)
+        @test all(length(a.nn.b1) == h_agent for a in state.agents)
+        @test all(length(a.nn.w2) == h_agent for a in state.agents)
         @test all(isfinite(a.nn.b2) && all(isfinite, a.nn.W1) for a in state.agents)
         @test all(
             size(a.train_X, 1) == d && length(a.train_q) == size(a.train_X, 2) for
             a in state.agents
         )
-        @test size(state.broker.nn.W1) == (p.h_b, 2 * d)
+        @test size(state.broker.nn.W1) == (h_broker, d_broker)
         @test isfinite(state.broker.nn.b2)
     end
 

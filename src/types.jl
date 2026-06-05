@@ -17,7 +17,7 @@ mutable struct NeuralNet
     b2::Float64           # scalar
 end
 
-"""Pre-allocated gradient and activation buffers matching a NeuralNet's shape.
+"""Pre-allocated gradient buffers matching a NeuralNet's shape.
 Owning these per-NN (rather than per-thread) keeps training thread-safe:
 each agent's NN and its buffers can be trained concurrently without locks."""
 mutable struct NNGradBuffers
@@ -26,41 +26,15 @@ mutable struct NNGradBuffers
     dw2::Vector{Float64}  # h         (gradient of w2)
     db2::Base.RefValue{Float64}       # scalar gradient of b2
 
-    # Forward/backward activation scratch, grown on demand and reused across
-    # training calls.
-    Z1::Matrix{Float64}   # h x n  pre-activations
-    A::Matrix{Float64}    # h x n  post-ReLU activations
-    dZ1::Matrix{Float64}  # h x n  gradient wrt pre-activations
-    Y::Vector{Float64}    # n      predictions, reused as residuals
+    # DifferentiationInterface/Enzyme parameter-gradient scratch.
+    theta::Vector{Float64}
+    dtheta::Vector{Float64}
 end
 
 """Create zero-initialized gradient buffers matching `nn`."""
 function NNGradBuffers(nn::NeuralNet)
     h, d_in = size(nn.W1)
-    return NNGradBuffers(
-        zeros(h, d_in),
-        zeros(h),
-        zeros(h),
-        Ref(0.0),
-        Matrix{Float64}(undef, h, 0),
-        Matrix{Float64}(undef, h, 0),
-        Matrix{Float64}(undef, h, 0),
-        Float64[],
-    )
-end
-
-"""Ensure the activation scratch buffers are sized for at least n columns.
-Grows with doubling to amortize resizes across training calls."""
-function ensure_nn_buffers!(grad::NNGradBuffers, h::Int, n::Int)
-    cur = size(grad.Z1, 2)
-    if cur < n
-        new_cap = max(n, 2 * cur, 16)
-        grad.Z1 = Matrix{Float64}(undef, h, new_cap)
-        grad.A = Matrix{Float64}(undef, h, new_cap)
-        grad.dZ1 = Matrix{Float64}(undef, h, new_cap)
-        resize!(grad.Y, new_cap)
-    end
-    return nothing
+    return NNGradBuffers(zeros(h, d_in), zeros(h), zeros(h), Ref(0.0), Float64[], Float64[])
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,7 +69,7 @@ Base.@kwdef mutable struct Agent
     # Neural network and prediction buffer
     nn::NeuralNet
     nn_grad::NNGradBuffers                   # pre-allocated gradient buffers
-    predict_buf::Vector{Float64}             # length h_a, for zero-alloc forward pass
+    predict_buf::Vector{Float64}             # length agent_hidden_width(params)
     n_new_obs::Int = 0                       # observations since last training (for adaptive schedule)
     train_X::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # contiguous training scratch
     train_q::Vector{Float64} = Float64[]                     # matching q scratch
@@ -225,10 +199,10 @@ Base.@kwdef mutable struct Broker
     # Neural network
     nn::NeuralNet
     nn_grad::NNGradBuffers
-    predict_buf::Vector{Float64}              # length h_b
+    predict_buf::Vector{Float64}              # length broker_hidden_width(params)
     n_new_obs::Int = 0
 
-    # Pre-allocated training matrix for symmetry augmentation (2d x 2*capacity)
+    # Pre-allocated training matrix for symmetric broker pair features
     train_X::Matrix{Float64}
     train_q::Vector{Float64}
 
@@ -269,10 +243,10 @@ function record_broker_history!(
         broker.history_Xj = new_Xj
         resize!(broker.history_q, new_cap)
 
-        # Also grow symmetry-augmented training buffers
-        new_train_cap = 2 * new_cap
-        d2 = size(broker.train_X, 1)  # 2d
-        new_train_X = Matrix{Float64}(undef, d2, new_train_cap)
+        # Also grow broker feature training buffers
+        new_train_cap = max(new_cap, 2 * size(broker.train_X, 2))
+        d_broker = size(broker.train_X, 1)
+        new_train_X = Matrix{Float64}(undef, d_broker, new_train_cap)
         broker.train_X = new_train_X
         resize!(broker.train_q, new_train_cap)
     end
@@ -391,6 +365,13 @@ Base.@kwdef mutable struct PeriodAccumulators
     # Current-period counterparty concentration
     median_counterparties::Float64 = NaN
     max_counterparties::Int = 0
+
+    # Agent-network degree summaries recorded before entry/exit turnover.
+    agent_degrees::Vector{Int} = Int[]
+    mean_degree::Float64 = NaN
+    median_degree::Float64 = NaN
+    min_degree::Float64 = NaN
+    max_degree::Float64 = NaN
 end
 
 """Zero all per-period fields while preserving vector capacity for reuse."""
@@ -434,6 +415,11 @@ function reset_accumulators!(a::PeriodAccumulators)
     a.broker_access_size = 0
     a.median_counterparties = NaN
     a.max_counterparties = 0
+    empty!(a.agent_degrees)
+    a.mean_degree = NaN
+    a.median_degree = NaN
+    a.min_degree = NaN
+    a.max_degree = NaN
     return nothing
 end
 
@@ -482,8 +468,6 @@ struct ModelParams
     # Neural network
     eta_lr::Float64              # learning rate (default 0.03)
     E_init::Int                  # initial training steps (default 200)
-    h_a::Int                     # agent hidden layer width (default 16)
-    h_b::Int                     # broker hidden layer width (default 32)
 
     # Search
     n_strangers::Int             # period-level stranger pool size (default 10)
@@ -531,12 +515,21 @@ Base.@kwdef mutable struct BrokerPairWorkspace
     access_seen::Vector{Bool} = Bool[]
     access_touched::Vector{Int} = Int[]  # sparse-clear markers for broker access deduplication
     # Batched prediction scratch
-    Z_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # 2d x n_pairs input
+    Z_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # broker feature input
     H_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # h x n_pairs hidden
     Y_batch::Vector{Float64} = Float64[]                      # n_pairs output
     period_broker_demanders::Vector{Int} = Int[]
     period_broker_access_ids::Vector{Int} = Int[]
     broker_pair_scores::Vector{Tuple{Float64,Int,Int}} = Tuple{Float64,Int,Int}[]
+    broker_top_counts::Vector{Int} = Int[]
+    broker_top_offers::Matrix{Tuple{Float64,Int,Int,Int,Int}} = Matrix{
+        Tuple{Float64,Int,Int,Int,Int}
+    }(
+        undef, 0, 0
+    )
+    broker_selected_offers::Vector{Tuple{Float64,Int,Int,Int,Int}} = Tuple{
+        Float64,Int,Int,Int,Int
+    }[]
     broker_demander_mask::Vector{Bool} = Bool[]
     broker_demander_touched::Vector{Int} = Int[]
     broker_access_mask::Vector{Bool} = Bool[]

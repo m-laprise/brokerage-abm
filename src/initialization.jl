@@ -49,9 +49,9 @@ When sort_by_pc1=true, types are sorted by first principal component for
 type-assortative Watts-Strogatz ordering. When false (default), types are in random
 order, producing a non-assortative initial network.
 """
-function generate_agent_types(N::Int, geo::CurveGeometry, sigma_x::Float64,
-                               rng::AbstractRNG;
-                               sort_by_pc1::Bool = false)::Tuple{Vector{Vector{Float64}}, Vector{Int}}
+function generate_agent_types(
+    N::Int, geo::CurveGeometry, sigma_x::Float64, rng::AbstractRNG; sort_by_pc1::Bool=false
+)::Tuple{Vector{Vector{Float64}},Vector{Int}}
     d = geo.d
     sigma_per_dim = sigma_x / sqrt(d)
 
@@ -98,7 +98,7 @@ Complete model initialization following `simulation_pseudocode.tex` (`Initialize
 8. State variables (satisfaction, reputation)
 9. Neural network initial training (E_init steps)
 """
-function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::ModelState
+function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelState
     rng = StableRNG(params.seed)
     p = params
     d = p.d
@@ -112,8 +112,9 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     # (perturbation of a random curve position)
 
     # ── Matching environment (A, B, c) ──
-    env = generate_matching_env(d, p.rho, p.delta, p.sigma_eps, sorted_types, rng;
-                                 sigma_x=p.sigma_x, curve_geo=geo)
+    env = generate_matching_env(
+        d, p.rho, p.delta, p.sigma_eps, sorted_types, rng; sigma_x=p.sigma_x, curve_geo=geo
+    )
 
     # ── Calibration ──
     cal = calibrate(env, sorted_types, p, rng)
@@ -126,28 +127,31 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     n_roster_seed = roster_target_size(N)
 
     # Initialize broker NN
-    broker_nn = init_neural_net(2 * d, p.h_b, rng)
+    d_broker = broker_pair_feature_dim(d)
+    h_broker = broker_hidden_width(p)
+    h_agent = agent_hidden_width(p)
+    broker_nn = init_neural_net(d_broker, h_broker, rng)
     broker_grad = NNGradBuffers(broker_nn)
 
-    broker = Broker(
-        node_id = broker_node,
-        roster = Set{Int}(),
-        current_clients = Set{Int}(),
-        history_Xi = Matrix{Float64}(undef, d, 64),
-        history_Xj = Matrix{Float64}(undef, d, 64),
-        history_q = Vector{Float64}(undef, 64),
-        history_count = 0,
-        nn = broker_nn,
-        nn_grad = broker_grad,
-        predict_buf = zeros(p.h_b),
-        n_new_obs = 0,
-        train_X = Matrix{Float64}(undef, 2 * d, 128),
-        train_q = Vector{Float64}(undef, 128),
-        last_reputation = 0.0,     # set from seed data below
-        has_had_clients = false,
-        capture_confidence_mae = 0.0,
-        capture_confidence_ready = false,
-        capture_error_count = 0,
+    broker = Broker(;
+        node_id=broker_node,
+        roster=Set{Int}(),
+        current_clients=Set{Int}(),
+        history_Xi=Matrix{Float64}(undef, d, 64),
+        history_Xj=Matrix{Float64}(undef, d, 64),
+        history_q=Vector{Float64}(undef, 64),
+        history_count=0,
+        nn=broker_nn,
+        nn_grad=broker_grad,
+        predict_buf=zeros(h_broker),
+        n_new_obs=0,
+        train_X=Matrix{Float64}(undef, d_broker, 128),
+        train_q=Vector{Float64}(undef, 128),
+        last_reputation=0.0,     # set from seed data below
+        has_had_clients=false,
+        capture_confidence_mae=0.0,
+        capture_confidence_ready=false,
+        capture_error_count=0,
     )
 
     # Seed roster with random agents
@@ -164,26 +168,26 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     initial_train_cap = 16
     agents = Vector{Agent}(undef, N)
     for i in 1:N
-        nn = init_neural_net(d, p.h_a, rng)
-        agents[i] = Agent(
-            id = i,
-            type = sorted_types[i],
-            active_matches = ActiveMatch[],
-            history_X = Matrix{Float64}(undef, d, initial_hist_cap),
-            history_q = Vector{Float64}(undef, initial_hist_cap),
-            history_count = 0,
-            nn = nn,
-            nn_grad = NNGradBuffers(nn),
-            predict_buf = zeros(p.h_a),
-            n_new_obs = 0,
-            train_X = Matrix{Float64}(undef, d, initial_train_cap),
-            train_q = Vector{Float64}(undef, initial_train_cap),
-            partner_sum = zeros(N),
-            partner_count = zeros(Int, N),
-            satisfaction_self = 0.0,   # set from seed data below
-            satisfaction_broker = 0.0, # no broker experience at init
-            tried_broker = false,
-            periods_alive = 0,
+        nn = init_neural_net(d, h_agent, rng)
+        agents[i] = Agent(;
+            id=i,
+            type=sorted_types[i],
+            active_matches=ActiveMatch[],
+            history_X=Matrix{Float64}(undef, d, initial_hist_cap),
+            history_q=Vector{Float64}(undef, initial_hist_cap),
+            history_count=0,
+            nn=nn,
+            nn_grad=NNGradBuffers(nn),
+            predict_buf=zeros(h_agent),
+            n_new_obs=0,
+            train_X=Matrix{Float64}(undef, d, initial_train_cap),
+            train_q=Vector{Float64}(undef, initial_train_cap),
+            partner_sum=zeros(N),
+            partner_count=zeros(Int, N),
+            satisfaction_self=0.0,   # set from seed data below
+            satisfaction_broker=0.0, # no broker experience at init
+            tried_broker=false,
+            periods_alive=0,
         )
     end
 
@@ -221,7 +225,8 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     # ── State variables (from seed data, not q_cal) ──
     # Broker reputation: mean of seed broker match outcomes
     if broker.history_count > 0
-        broker.last_reputation = sum(broker.history_q[k] for k in 1:broker.history_count) / broker.history_count
+        broker.last_reputation =
+            sum(broker.history_q[k] for k in 1:broker.history_count) / broker.history_count
         broker.has_had_clients = true
     end
     # Agent self-satisfaction: mean of seed match outcomes
@@ -235,18 +240,18 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool = false)::Model
     end
 
     # Build model state
-    state = ModelState(
-        params = p,
-        rng = rng,
-        period = 0,
-        env = env,
-        cal = cal,
-        curve_geo = geo,
-        agents = agents,
-        broker = broker,
-        G = G,
-        accum = PeriodAccumulators(),
-        cached_network = CachedNetworkMeasures(),
+    state = ModelState(;
+        params=p,
+        rng=rng,
+        period=0,
+        env=env,
+        cal=cal,
+        curve_geo=geo,
+        agents=agents,
+        broker=broker,
+        G=G,
+        accum=PeriodAccumulators(),
+        cached_network=CachedNetworkMeasures(),
     )
 
     # ── Initial neural network training ──

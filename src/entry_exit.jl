@@ -83,7 +83,7 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     agent.n_new_obs = 0
 
     # Re-initialize neural network
-    agent.nn = init_neural_net(d, p.h_a, rng)
+    agent.nn = init_neural_net(d, agent_hidden_width(p), rng)
     agent.nn_grad = NNGradBuffers(agent.nn)
     fill!(agent.predict_buf, 0.0)
 

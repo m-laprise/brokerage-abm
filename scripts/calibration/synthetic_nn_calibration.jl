@@ -11,8 +11,9 @@ using Random, Statistics, LinearAlgebra, Printf
 using StableRNGs: StableRNG
 using TransientBrokerage
 using TransientBrokerage: MatchingEnv, generate_matching_env, match_signal, Q_OFFSET,
-                          ModelParams, default_params, generate_curve_geometry,
-                          generate_agent_types
+                          default_params, generate_curve_geometry, generate_agent_types,
+                          broker_hidden_width, broker_pair_feature_dim,
+                          fill_broker_pair_features!
 
 # ── Minimal NN with pluggable activation ─────────────────────────────────────
 struct MiniNN
@@ -91,19 +92,18 @@ function predict_batch(nn::MiniNN, X::Matrix{Float64}, act_fn)
 end
 
 # ── Synthetic DGP data ──────────────────────────────────────────────────────
-"""Generate (X, q) where X is stacked [x_i; x_j] (2d x n) and q is the signal."""
+"""Generate symmetric broker pair features and match signals."""
 function gen_data(n, env::MatchingEnv, types::Vector{Vector{Float64}}, rng)
     d = env.d
     N = length(types)
-    X = Matrix{Float64}(undef, 2d, n)
+    X = Matrix{Float64}(undef, broker_pair_feature_dim(d), n)
     q = Vector{Float64}(undef, n)
     for k in 1:n
         i = rand(rng, 1:N); j = rand(rng, 1:N)
         while j == i
             j = rand(rng, 1:N)
         end
-        X[1:d, k] .= types[i]
-        X[d+1:2d, k] .= types[j]
+        fill_broker_pair_features!(X, k, types[i], types[j])
         q[k] = Q_OFFSET + match_signal(types[i], types[j], env) + env.sigma_eps * randn(rng)
     end
     X, q
@@ -111,7 +111,7 @@ end
 
 # ── Scan core ───────────────────────────────────────────────────────────────
 function eval_config(; n_train, n_test=5000, h, activation, lr, lambda_wd,
-                     n_steps, d=8, seed=42, symmetry_aug=true)
+                     n_steps, d=8, seed=42)
     rng = StableRNG(seed)
     # Build env and types
     p = default_params(seed=seed)
@@ -124,23 +124,9 @@ function eval_config(; n_train, n_test=5000, h, activation, lr, lambda_wd,
     X_tr, q_tr = gen_data(n_train, env, types, rng)
     X_te, q_te = gen_data(n_test, env, types, rng)
 
-    # Symmetry augmentation (swap x_i and x_j)
-    if symmetry_aug
-        X_aug = Matrix{Float64}(undef, 2d, 2 * n_train)
-        q_aug = Vector{Float64}(undef, 2 * n_train)
-        X_aug[:, 1:n_train] .= X_tr
-        q_aug[1:n_train] .= q_tr
-        for k in 1:n_train
-            X_aug[1:d, n_train + k] .= X_tr[d+1:2d, k]
-            X_aug[d+1:2d, n_train + k] .= X_tr[1:d, k]
-            q_aug[n_train + k] = q_tr[k]
-        end
-        X_tr = X_aug; q_tr = q_aug
-    end
-
     # Train
     act_fn, dact_fn = ACT_FNS[activation]
-    nn = init_mini(2d, h, rng)
+    nn = init_mini(size(X_tr, 1), h, rng)
     lambda_over_n = lambda_wd / max(size(X_tr, 2), 1)
     for _ in 1:n_steps
         train_step_mini!(nn, X_tr, q_tr, lr, lambda_over_n, act_fn, dact_fn)
@@ -156,11 +142,11 @@ end
 # ── Scan 1: data size x width x activation, at "good" lr/steps ──────────────
 function scan_data_width_act()
     println("\n══ SCAN 1: n_train × width × activation (lr=0.01, 5000 steps, λ=0.01) ══")
-    println("Q: how much do width and activation matter; is 200 window crushing R²?")
+    println("Q: how much do width and activation matter with symmetric broker features?")
     @printf "%-8s %-6s %-5s %8s %8s %8s\n" "n_train" "width" "act" "R²" "bias" "MSE"
     println(repeat("-", 55))
     for n in [100, 200, 500, 2000, 10000]
-        for h in [16, 32, 64]
+        for h in [32, broker_hidden_width(8), 128]
             for a in [:relu, :tanh, :gelu]
                 r = eval_config(n_train=n, h=h, activation=a, lr=0.01,
                                lambda_wd=0.01, n_steps=5000)
@@ -172,13 +158,14 @@ end
 
 # ── Scan 2: lr × steps at fixed "good" setup ────────────────────────────────
 function scan_lr_steps()
-    println("\n══ SCAN 2: lr × n_steps (n_train=2000, h=32, ReLU, λ=0.01) ══")
+    h = broker_hidden_width(8)
+    println("\n══ SCAN 2: lr × n_steps (n_train=2000, h=$(h), ReLU, λ=0.01) ══")
     println("Q: is 200 steps/period enough at lr=0.01; should we go higher?")
     @printf "%-8s %-10s %8s %8s\n" "lr" "n_steps" "R²" "bias"
     println(repeat("-", 38))
     for lr in [0.003, 0.01, 0.03, 0.1]
         for ns in [200, 1000, 5000, 20000]
-            r = eval_config(n_train=2000, h=32, activation=:relu, lr=lr,
+            r = eval_config(n_train=2000, h=h, activation=:relu, lr=lr,
                            lambda_wd=0.01, n_steps=ns)
             @printf "%8.3f %10d %+8.3f %+8.3f\n" lr ns r.r2 r.bias
         end
@@ -187,11 +174,12 @@ end
 
 # ── Scan 3: weight decay ────────────────────────────────────────────────────
 function scan_lambda()
-    println("\n══ SCAN 3: λ_nn at n_train=2000, h=32, lr=0.03, 5000 steps ══")
+    h = broker_hidden_width(8)
+    println("\n══ SCAN 3: λ_nn at n_train=2000, h=$(h), lr=0.03, 5000 steps ══")
     @printf "%-10s %8s %8s\n" "λ_nn" "R²" "bias"
     println(repeat("-", 30))
     for λ in [0.0, 0.001, 0.01, 0.1, 1.0]
-        r = eval_config(n_train=2000, h=32, activation=:relu, lr=0.03,
+        r = eval_config(n_train=2000, h=h, activation=:relu, lr=0.03,
                        lambda_wd=λ, n_steps=5000)
         @printf "%10.4f %+8.3f %+8.3f\n" λ r.r2 r.bias
     end
@@ -204,7 +192,7 @@ function scan_best_combo()
     @printf "%-8s %-6s %-5s %-8s %-6s %8s\n" "n_train" "h" "act" "lr" "steps" "R²"
     println(repeat("-", 50))
     configs = [
-        (h=32, act=:tanh, lr=0.03, steps=5000),
+        (h=broker_hidden_width(8), act=:relu, lr=0.03, steps=5000),
         (h=64, act=:tanh, lr=0.03, steps=5000),
         (h=64, act=:gelu, lr=0.03, steps=5000),
         (h=128, act=:tanh, lr=0.03, steps=5000),

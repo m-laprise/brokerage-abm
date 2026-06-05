@@ -34,8 +34,8 @@ using Statistics: mean
 #   deduplication.
 # - Broker offers: hybrid access set Roster union current_clients, exclusion of
 #   period strangers and captured origins, unordered feasible pair construction,
-#   sorted broker predictions, two-direction offers for broker demanders, and
-#   quota decrement only when an offer is actually added.
+#   per-client quota-bounded broker predictions, two-direction offers for broker
+#   demanders, and quota decrement only when an offer is actually added.
 # - Standard acceptance/finalization: reciprocal acceptance, one-sided receiver
 #   thresholding, rejected-offer no-op behavior, bilateral history and partner
 #   mean updates, graph-edge creation, active-match symmetry, single broker
@@ -98,13 +98,7 @@ function configure_micro_state!(state)
     end
 
     state.env = MatchingEnv(
-        2,
-        0.0,
-        zeros(2),
-        Matrix{Float64}(I, 2, 2),
-        zeros(2, 2),
-        0.0,
-        0.0,
+        2, 0.0, zeros(2), Matrix{Float64}(I, 2, 2), zeros(2, 2), 0.0, 0.0
     )
     state.cal = CalibrationConstants(2.0, 1.2, 0.2, 0.2)
 
@@ -156,8 +150,6 @@ function micro_state(; enable_principal::Bool=false, seed::Int=314)
         roster_churn=0.0,
         n_strangers=0,
         E_init=1,
-        h_a=2,
-        h_b=2,
         network_measure_interval=1,
         T=3,
         T_burn=1,
@@ -293,8 +285,9 @@ end
         seeded_agents = [a for a in state.agents if a.history_count > 0]
         roster_list = sort(collect(broker.roster))
         expected_broker_seed = count(
-            has_edge(state.G, roster_list[i], roster_list[j]) for
-            i in 1:length(roster_list) for j in (i + 1):length(roster_list)
+            has_edge(state.G, roster_list[i], roster_list[j]) for i in
+                                                                  1:length(roster_list) for
+            j in (i + 1):length(roster_list)
         )
         @test [a.history_count for a in state.agents] == expected_history_counts
         @test broker.history_count == min(100, expected_broker_seed)
@@ -319,8 +312,7 @@ end
         agents[1].satisfaction_self = 3.0
         agents[1].satisfaction_broker = 1.0
         agents[1].tried_broker = true
-        @test TransientBrokerage.outsourcing_decision(agents[1], 0.0, StableRNG(1)) ==
-            :self
+        @test TransientBrokerage.outsourcing_decision(agents[1], 0.0, StableRNG(1)) == :self
 
         agents[2].satisfaction_self = 1.0
         agents[2].satisfaction_broker = 3.0
@@ -331,8 +323,7 @@ end
         agents[3].satisfaction_self = 2.0
         agents[3].satisfaction_broker = 100.0
         agents[3].tried_broker = false
-        @test TransientBrokerage.outsourcing_decision(agents[3], 1.0, StableRNG(3)) ==
-            :self
+        @test TransientBrokerage.outsourcing_decision(agents[3], 1.0, StableRNG(3)) == :self
         @test TransientBrokerage.outsourcing_decision(agents[3], 3.0, StableRNG(4)) ==
             :broker
 
@@ -346,8 +337,8 @@ end
         ) == expected_tie
 
         @test all(
-            TransientBrokerage.agent_retrains_this_period(i, t) ==
-            (isodd(i) == isodd(t)) for i in 1:4, t in 1:4
+            TransientBrokerage.agent_retrains_this_period(i, t) == (isodd(i) == isodd(t))
+            for i in 1:4, t in 1:4
         )
 
         state = micro_state()
@@ -406,8 +397,7 @@ end
         )
 
         @test sent == 2
-        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] ==
-            [(2, 3.0), (6, 2.5)]
+        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] == [(2, 3.0), (6, 2.5)]
         excluded = (1, 3, 4, 5, state.broker.node_id)
         @test all(o -> !(o.to_id in excluded), ws.offer_book.offers)
 
@@ -425,7 +415,7 @@ end
         ws = state.workspace
         broker.roster = Set([2, 3])
         broker.current_clients = Set([1, 4])
-        linear_prediction!(broker.nn, [1.0, 0.0, 1.0, 0.0])
+        linear_prediction!(broker.nn, [1.0, 0.0, 0.0, 0.0, 0.0])
 
         broker_access = ws.broker_pairs.period_broker_access_ids
         TransientBrokerage.collect_broker_access_ids!(
@@ -450,8 +440,7 @@ end
         )
 
         @test sent == 4
-        @test [(o.from_id, o.to_id) for o in ws.offer_book.offers] ==
-            [(1, 2), (1, 3), (1, 4), (4, 1)]
+        @test [(o.from_id, o.to_id) for o in ws.offer_book.offers] == [(1, 2), (1, 3), (1, 4), (4, 1)]
         @test all(o -> o.to_id != 5, ws.offer_book.offers)
         @test remaining[1] == 0
         @test remaining[4] == 0
@@ -676,12 +665,10 @@ end
             principal_payment=principal_payment,
         )
 
-        @test agents[1].satisfaction_self ≈ (1 - p.omega) * 1.0 +
-            p.omega * (4.0 - cal.c_s)
-        @test agents[2].satisfaction_broker ≈ (1 - p.omega) * 2.0 +
-            p.omega * (4.0 - cal.phi)
-        @test agents[3].satisfaction_broker ≈ (1 - p.omega) * 3.0 +
-            p.omega * 5.0
+        @test agents[1].satisfaction_self ≈ (1 - p.omega) * 1.0 + p.omega * (4.0 - cal.c_s)
+        @test agents[2].satisfaction_broker ≈
+            (1 - p.omega) * 2.0 + p.omega * (4.0 - cal.phi)
+        @test agents[3].satisfaction_broker ≈ (1 - p.omega) * 3.0 + p.omega * 5.0
         @test agents[5].satisfaction_self == 9.0
         @test agents[2].tried_broker
         @test agents[3].tried_broker
@@ -727,8 +714,7 @@ end
         push!(state.agents[2].active_matches, ActiveMatch(1, false, :self))
         types_before = [copy(a.type) for a in state.agents]
 
-        step_period!(state)
-        metrics = collect_period_metrics(state)
+        metrics = step_period!(state)
 
         @test state.period == 1
         @test 1 in state.broker.current_clients
@@ -739,11 +725,10 @@ end
         @test metrics.period == 1
         @test metrics.n_total_matches ==
             metrics.n_self_matches +
-            metrics.n_broker_standard +
-            metrics.n_broker_principal
+              metrics.n_broker_standard +
+              metrics.n_broker_principal
         @test metrics.total_demand == state.params.N * state.params.K
-        @test metrics.outsourcing_rate ==
-            metrics.outsourced_slots / metrics.total_demand
+        @test metrics.outsourcing_rate == metrics.outsourced_slots / metrics.total_demand
         @test metrics.roster_size == target_roster
         @test metrics.broker_access_size == broker_access_size(state.broker)
         @test metrics.broker_access_size >= metrics.roster_size

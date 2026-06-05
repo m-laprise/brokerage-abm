@@ -3,6 +3,14 @@ using TransientBrokerage
 using TransientBrokerage: ActiveMatch, add_match_edge!, remove_agent_edges!
 using StableRNGs: StableRNG
 
+function set_constant_prediction!(nn, value::Float64)
+    nn.W1 .= 0.0
+    nn.b1 .= 1.0
+    nn.w2 .= 0.0
+    nn.b2 = value
+    return nothing
+end
+
 @testset "Search" begin
     @testset "Self-search offers rank known neighbors by value" begin
         p = default_params(N=20, T=5, T_burn=1, n_strangers=0, seed=7)
@@ -34,8 +42,7 @@ using StableRNGs: StableRNG
         )
 
         @test sent == 2
-        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] ==
-            [(2, 9.0), (3, 7.0)]
+        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] == [(2, 9.0), (3, 7.0)]
     end
 
     @testset "Self-search no longer filters candidates by K capacity" begin
@@ -84,6 +91,53 @@ using StableRNGs: StableRNG
         @test all(x -> 1 <= x <= p.N, strangers)
     end
 
+    @testset "Self-search demanders draw independent stranger pools" begin
+        p = default_params(N=20, T=5, T_burn=1, K=1, n_strangers=3, seed=19)
+        state = initialize_model(p)
+        agents = state.agents
+        G = state.G
+        ws = state.workspace
+
+        for i in 1:p.N
+            remove_agent_edges!(G, i)
+            set_constant_prediction!(agents[i].nn, state.cal.r + 10.0)
+        end
+
+        demand_agent_ids = [1, 2]
+        demand_channels = [:self, :self]
+        demand_counts = [1, 1]
+        expected_rng = StableRNG(901)
+        pools = [
+            copy(
+                TransientBrokerage.sample_period_strangers!(
+                    Int[], p.N, p.n_strangers, expected_rng
+                ),
+            ) for _ in 1:2
+        ]
+        expected_targets = [
+            first(j for j in pools[idx] if j != demand_agent_ids[idx]) for idx in 1:2
+        ]
+
+        TransientBrokerage.run_offer_market!(
+            demand_agent_ids,
+            demand_channels,
+            demand_counts,
+            agents,
+            state.broker,
+            state.env,
+            G,
+            p,
+            state.cal,
+            StableRNG(901);
+            ws=ws,
+            accepted_matches=TransientBrokerage.AcceptedMatch[],
+            accum=state.accum,
+        )
+
+        @test pools[1] != pools[2]
+        @test [(o.from_id, o.to_id) for o in ws.offer_book.offers] == collect(zip(demand_agent_ids, expected_targets))
+    end
+
     @testset "Offer book stores one unordered pair for reciprocal offers" begin
         ws = TransientBrokerage.SimWorkspace()
         offer_book = ws.offer_book
@@ -98,7 +152,7 @@ using StableRNGs: StableRNG
         @test offer_book.offer_pairs == [(1, 2)]
     end
 
-    @testset "Broker offers use one shared unordered-pair ranking" begin
+    @testset "Broker offers use per-client quota-bounded ranking" begin
         p = default_params(N=20, T=5, T_burn=1, K=1, seed=17)
         state = initialize_model(p)
         broker = state.broker
