@@ -230,13 +230,17 @@ using LinearAlgebra: normalize
             train_q=Vector{Float64}(undef, 8),
         )
 
-        n_steps = compute_adaptive_steps(p.E_init, n_new, agent.history_count)
+        n_steps = compute_adaptive_steps(p.E_init, n_new, agent.history_count; min_steps=p.train_steps)
         train_agent_nn!(agent, p)
-        train_nn!(
+        # Live agent training uses Adam; with no period marks the window spans the
+        # full history, so the reference runs the same Adam over all observations.
+        nref = agent.history_count
+        TransientBrokerage.train_nn_prefix_adam!(
             nn_ref,
             grad_ref,
-            Matrix(history_X[:, 1:agent.history_count]),
-            Vector(history_q[1:agent.history_count]),
+            Matrix(history_X[:, 1:nref]),
+            Vector(history_q[1:nref]),
+            nref,
             n_steps,
             p.eta_lr,
         )

@@ -129,7 +129,10 @@ $d$ & scalar & Agent type dimension. \\
 $k_G$ & scalar & Watts-Strogatz graph degree. \\
 $\omega$ & scalar & Satisfaction/confidence EWMA weight. \\
 $E_{\mathrm{init}}$ & scalar & Initial training steps. \\
-$\eta_{\mathrm{lr}}$ & scalar & MLP learning rate. \\
+$E_{\mathrm{steps}}$ & scalar & Minimum (floor) training steps per period. \\
+$\eta_{\mathrm{lr}}$ & scalar & MLP Adam learning rate. \\
+$W_p$ & scalar & Training-window horizon, in periods. \\
+$M$ & scalar & Per-call training observation cap. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Agent types, networks, and output}}\\
 $G^t=(V,\EG^t)$ & graph & Undirected graph, $V=[N]\cup\{N+1\}$; node $N+1$ is the broker. \\
@@ -256,12 +259,13 @@ $d_b$ & integer & Broker symmetric pair-feature dimension. \\
 $\psi_b$ & function & Symmetric broker pair-feature map. \\
 $\Xi_{\mathrm{tr}},y_{\mathrm{tr}}$ & $\R^{p_{\mathrm{in}}\times n}$, $\R^n$ & Generic training inputs and targets. \\
 $\mathcal L$ & scalar & Full-batch MSE objective. \\
-$e$ & integer & Gradient-step index. \\
-$W$ & integer & Training-window length. \\
+$e$ & integer & Update-step index. \\
+$(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $A_i,A_b$ are the agent/broker instances. \\
+$\beta_1,\beta_2,\epsilon$ & scalars & Adam constants $(0.9,\,0.999,\,10^{-8})$. \\
 $n_i,n_b$ & integers & Current values of history lengths $n_i^t$ and $n_b^t$. \\
-$L_i,L_b$ & ordered index sets & Training-window observation indices. \\
+$L_i,L_b$ & ordered index sets & Training-window indices: observations from the most recent $W_p$ periods, subsampled evenly to at most $M$. \\
 $\Delta_i,\Delta_b$ & integers & New observations since last training call. \\
-$E_i,E_b$ & integers & Agent and broker gradient-step counts. \\
+$E_i,E_b$ & integers & Agent and broker update-step counts. \\
 $\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}}$ & $\R^{d\times |L_i|}$, $\R^{|L_i|}$ & Agent $i$ training view of $\mathcal H_i^t$. \\
 $\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}}$ & $\R^{d_b\times |L_b|}$, $\R^{|L_b|}$ & Broker symmetric-feature training view of $\mathcal H_b^t$. \\
 \end{localvartable}
@@ -271,13 +275,17 @@ $\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}}$ & $\R^{d_b\times |L_b|}$, $\R^{|L_b|}$ 
 \label{alg:trainnn}
 \begin{algorithmic}[1]
 \Require Network parameters $\Theta$, inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$,
-steps $E$, learning rate $\eta_{\mathrm{lr}}$.
+steps $E$, learning rate $\eta_{\mathrm{lr}}$, persistent Adam state $(m,v,\tau)$.
 \For{$e=1,\ldots,E$}
-    \State $\mathcal L(\Theta)\gets n^{-1}\sum_{\ell=1}^n
+    \State $g\gets\nabla_{\Theta}\mathcal L(\Theta)$, \quad
+    $\mathcal L(\Theta)= n^{-1}\sum_{\ell=1}^n
     \left(\mathrm{NN}_{\Theta}(\Xi_{\mathrm{tr},\cdot\ell})-y_{\mathrm{tr},\ell}\right)^2$
-    \State $\Theta\gets\Theta-\eta_{\mathrm{lr}}\nabla_{\Theta}\mathcal L(\Theta)$
+    \State $\tau\gets\tau+1$
+    \State $m\gets\beta_1 m+(1-\beta_1)g$, \quad $v\gets\beta_2 v+(1-\beta_2)\,g\odot g$
+    \State $\Theta\gets\Theta-\eta_{\mathrm{lr}}\,
+    \dfrac{m/(1-\beta_1^{\tau})}{\sqrt{v/(1-\beta_2^{\tau})}+\epsilon}$
 \EndFor
-\State \Return $\Theta$
+\State \Return $\Theta,(m,v,\tau)$
 \end{algorithmic}
 \end{breakablealgorithm}
 
@@ -288,24 +296,23 @@ their current-period values.
 \caption{\procTrainPredictors}
 \label{alg:trainpredictors}
 \begin{algorithmic}[1]
-\Require State $S$, period $t$, parameters $(E_{\mathrm{init}},\eta_{\mathrm{lr}})$.
-\State $W\gets 500$
+\Require State $S$, period $t$, parameters $(E_{\mathrm{init}},E_{\mathrm{steps}},\eta_{\mathrm{lr}},W_p,M)$.
 \For{$i=1,\ldots,N$ in parallel}
     \State $n_i\gets n_i^t$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
-        \State $L_i\gets$ ordered indices of the most recent $\min(W,n_i)$ observations in $\mathcal H_i$.
+        \State $L_i\gets$ indices of $\mathcal H_i$ observations from the most recent $W_p$ periods; if $|L_i|>M$, keep $M$ spaced evenly across $L_i$.
         \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
-        \State $E_i\gets\max\{50,\lceil E_{\mathrm{init}}\Delta_i/n_i\rceil\}$.
-        \State $\Theta_i\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},E_i,\eta_{\mathrm{lr}}}$; $\Delta_i\gets0$.
+        \State $E_i\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta_i/n_i\rceil\}$.
+        \State $(\Theta_i,A_i)\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},E_i,\eta_{\mathrm{lr}},A_i}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
 \State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
 \If{$n_b>0$ and $\Delta_b>0$}
-    \State $L_b\gets$ ordered indices of the most recent $\min(W,n_b)$ observations in $\mathcal H_b$.
+    \State $L_b\gets$ indices of $\mathcal H_b$ observations from the most recent $W_p$ periods; if $|L_b|>M$, keep $M$ spaced evenly across $L_b$.
     \State $\Psi_{b,\mathrm{tr}}\gets\left[\psi_b\!\left((X_{b,1}^t)_{\cdot\ell},(X_{b,2}^t)_{\cdot\ell}\right)\right]_{\ell\in L_b}$.
     \State $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
-    \State $E_b\gets\max\{50,\lceil E_{\mathrm{init}}\Delta_b/n_b\rceil\}$.
-    \State $\Theta_b\gets\Call{\procTrainNN}{\Theta_b,\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}},E_b,\eta_{\mathrm{lr}}}$; $\Delta_b\gets0$.
+    \State $E_b\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta_b/n_b\rceil\}$.
+    \State $(\Theta_b,A_b)\gets\Call{\procTrainNN}{\Theta_b,\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}},E_b,\eta_{\mathrm{lr}},A_b}$; $\Delta_b\gets0$.
 \EndIf
 \end{algorithmic}
 \end{breakablealgorithm}

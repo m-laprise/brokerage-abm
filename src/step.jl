@@ -443,6 +443,14 @@ function step_period!(state::ModelState)
     record_agent_degree_summary!(state)
     metrics = collect_period_metrics(state)
 
+    # Period mark for the period-based training window: every learner, every
+    # period (independent of training parity), before entry/exit. Entrants reset
+    # their marks in enter_agent!.
+    @inbounds for i in 1:N
+        push!(agents[i].obs_period_marks, agents[i].history_count)
+    end
+    push!(broker.obs_period_marks, broker.history_count)
+
     # ══════════════════════════════════════════════════════════════════════
     # Step 6: Entry/exit
     # ══════════════════════════════════════════════════════════════════════

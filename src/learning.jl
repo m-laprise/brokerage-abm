@@ -16,6 +16,11 @@ using Enzyme: Enzyme
 
 const NN_AD_BACKEND = AutoEnzyme(; mode=Enzyme.Reverse)
 
+# Adam optimizer hyperparameters (standard defaults).
+const ADAM_BETA1 = 0.9
+const ADAM_BETA2 = 0.999
+const ADAM_EPS = 1e-8
+
 """Number of symmetric broker pair features for d-dimensional types."""
 @inline broker_pair_feature_dim(d::Int)::Int = d + (d * (d + 1)) ÷ 2
 
@@ -252,6 +257,13 @@ function ensure_nn_param_buffers!(grad::NNGradBuffers, h::Int, d_in::Int)
     n_params = nn_param_count(h, d_in)
     length(grad.theta) == n_params || resize!(grad.theta, n_params)
     length(grad.dtheta) == n_params || resize!(grad.dtheta, n_params)
+    # Adam moments must start at zero whenever (re)sized; a fresh size also resets
+    # the Adam timestep so bias correction restarts with the new parameter vector.
+    if length(grad.m) != n_params
+        grad.m = zeros(n_params)
+        grad.v = zeros(n_params)
+        grad.adam_t[] = 0
+    end
     return nothing
 end
 
@@ -312,6 +324,36 @@ function apply_nn_gradient!(nn::NeuralNet, grad::NNGradBuffers, lr::Float64)
         pos += 1
     end
     nn.b2 -= lr * theta_grad[pos]
+    return nothing
+end
+
+"""
+    apply_nn_adam!(nn, grad, lr)
+
+Apply one Adam update. `grad.dtheta` must already hold the raw packed gradient
+(as produced by `gradient!`). This updates the persistent first/second moment
+buffers in place, overwrites `grad.dtheta` with the bias-corrected Adam step
+`m̂ / (√v̂ + ϵ)`, and applies it through `apply_nn_gradient!`. The Adam timestep
+`grad.adam_t` advances once per call and persists across periods, so warm-started
+weights carry warm-started moments.
+"""
+function apply_nn_adam!(nn::NeuralNet, grad::NNGradBuffers, lr::Float64)
+    grad.adam_t[] += 1
+    t = grad.adam_t[]
+    bc1 = 1.0 - ADAM_BETA1^t
+    bc2 = 1.0 - ADAM_BETA2^t
+    m = grad.m
+    v = grad.v
+    g = grad.dtheta
+    @inbounds for i in eachindex(g)
+        gi = g[i]
+        mi = ADAM_BETA1 * m[i] + (1.0 - ADAM_BETA1) * gi
+        vi = ADAM_BETA2 * v[i] + (1.0 - ADAM_BETA2) * gi * gi
+        m[i] = mi
+        v[i] = vi
+        g[i] = (mi / bc1) / (sqrt(vi / bc2) + ADAM_EPS)
+    end
+    apply_nn_gradient!(nn, grad, lr)
     return nothing
 end
 
@@ -396,14 +438,76 @@ function train_step_prefix!(
 end
 
 """
-    compute_adaptive_steps(E_init, n_new, n_total) -> Int
+    train_step_prefix_adam!(nn, grad, X, q, n, lr)
 
-Adaptive training schedule: more steps when data is new, fewer when history is large.
-Floor of 50 steps ensures meaningful updates even with large histories.
+One Adam step on the first `n` columns/elements of contiguous training buffers
+`X` and `q`. This is the live-model optimizer for both agents and the broker; it
+shares the exact loss (`nn_loss_theta`) and Enzyme gradient path with the vanilla
+GD step, swapping only the parameter update rule (`apply_nn_adam!`).
 """
-function compute_adaptive_steps(E_init::Int, n_new::Int, n_total::Int)::Int
+function train_step_prefix_adam!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n::Int,
+    lr::Float64,
+)
+    h = size(nn.W1, 1)
+    d_in = size(nn.W1, 2)
+    ensure_nn_param_buffers!(grad, h, d_in)
+    pack_nn_params!(grad.theta, nn)
+    gradient!(
+        nn_loss_theta,
+        grad.dtheta,
+        NN_AD_BACKEND,
+        grad.theta,
+        Constant(X),
+        Constant(q),
+        Constant(n),
+        Constant(h),
+        Constant(d_in),
+    )
+    apply_nn_adam!(nn, grad, lr)
+    return nothing
+end
+
+"""
+    train_nn_prefix_adam!(nn, grad, X, q, n_active, n_steps, lr)
+
+Adam analogue of `train_nn_prefix!`: run `n_steps` Adam steps on the first
+`n_active` observations of contiguous training buffers.
+"""
+function train_nn_prefix_adam!(
+    nn::NeuralNet,
+    grad::NNGradBuffers,
+    X::Matrix{Float64},
+    q::Vector{Float64},
+    n_active::Int,
+    n_steps::Int,
+    lr::Float64,
+)
+    @assert 1 <= n_active <= size(X, 2) "train_nn_prefix_adam! requires 1 <= n_active <= size(X, 2)"
+    @assert n_active <= length(q) "train_nn_prefix_adam! requires n_active <= length(q)"
+    for _ in 1:n_steps
+        train_step_prefix_adam!(nn, grad, X, q, n_active, lr)
+    end
+    return nothing
+end
+
+"""
+    compute_adaptive_steps(E_init, n_new, n_total; min_steps) -> Int
+
+Adaptive training schedule: more steps when data is new (`n_new` large relative to
+total history `n_total`), settling to `min_steps` once history dominates. `n_total`
+is the full history size (not the training window), so the step count is
+independent of the window/cap. `min_steps` is the per-period step floor.
+"""
+function compute_adaptive_steps(
+    E_init::Int, n_new::Int, n_total::Int; min_steps::Int=ADAPTIVE_FLOOR
+)::Int
     n_total <= 0 && return E_init
-    return max(ADAPTIVE_FLOOR, ceil(Int, E_init * n_new / n_total))
+    return max(min_steps, ceil(Int, E_init * n_new / n_total))
 end
 
 """
@@ -470,84 +574,101 @@ end
 # Agent training
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Maximum training window: train on at most this many recent observations.
-The warm start preserves what was learned from older data."""
-const TRAIN_WINDOW = 500
-
 """Minimum GD steps per training period."""
 const ADAPTIVE_FLOOR = 50
 
 """Minimum capacity jump for agent training scratch after initialization."""
 const AGENT_TRAIN_BUFFER_FLOOR = 128
 
-"""Small windows are cheaper to materialize directly than to route through the
-agent-owned training scratch. This preserves the hot-path win on larger windows
-without penalizing tiny seeded histories during initialization."""
-const AGENT_TRAIN_DIRECT_COPY_THRESHOLD = 8
+"""
+    period_training_window(marks, n, window_periods, max_obs) -> (start_idx, window, count)
+
+Resolve the period horizon to history columns. `marks[k]` is the cumulative
+`history_count` at the end of the learner's k-th period, so the most recent
+`window_periods` periods span the `window`-wide block `start_idx:n` (start is index
+1 if fewer periods exist). `count = min(window, max_obs)` observations are taken
+from that block, evenly spaced via `windowed_index` — using the full budget exactly
+when the window exceeds the cap, and every observation otherwise.
+"""
+function period_training_window(marks::Vector{Int}, n::Int, window_periods::Int, max_obs::Int)
+    P = length(marks)
+    start_idx = P <= window_periods ? 1 : min(marks[P - window_periods] + 1, n)
+    window = n - start_idx + 1
+    count = min(window, max_obs)
+    return start_idx, window, count
+end
 
 """
-    ensure_agent_train_buffers!(agent, d, n)
+    windowed_index(start_idx, window, count, k) -> Int
+
+0-based `k`-th source column when taking `count` observations evenly spaced across
+the `window`-wide block beginning at `start_idx`. Integer arithmetic, no
+allocation; reduces to consecutive indices when `count == window`.
+"""
+@inline windowed_index(start_idx::Int, window::Int, count::Int, k::Int)::Int =
+    start_idx + (k * window) ÷ count
+
+"""
+    ensure_agent_train_buffers!(agent, d, n, max_obs)
 
 Ensure the agent's contiguous training scratch can hold `n` observations.
 Growth jumps past tiny capacities to avoid repeated hot-path reallocations as
-histories lengthen, while still capping the scratch at the training window.
+histories lengthen, while still capping the scratch at `max_obs`.
 """
-function ensure_agent_train_buffers!(agent::Agent, d::Int, n::Int)
+function ensure_agent_train_buffers!(agent::Agent, d::Int, n::Int, max_obs::Int)
     if size(agent.train_X, 1) != d || size(agent.train_X, 2) < n
         current_cap = size(agent.train_X, 2)
-        new_cap = min(TRAIN_WINDOW, max(n, 2 * current_cap, AGENT_TRAIN_BUFFER_FLOOR))
+        new_cap = min(max_obs, max(n, 2 * current_cap, AGENT_TRAIN_BUFFER_FLOOR))
         agent.train_X = Matrix{Float64}(undef, d, new_cap)
         resize!(agent.train_q, new_cap)
     end
     return nothing
 end
 
-function train_agent_nn_impl!(agent::Agent, params::ModelParams, direct_copy_small::Bool)
+function train_agent_nn_impl!(agent::Agent, params::ModelParams)
     n = agent.history_count
     n <= 0 && return nothing
 
-    n_use = min(n, TRAIN_WINDOW)
-    start_idx = n - n_use + 1
+    # Period-based window: observations from the most recent train_window_periods
+    # periods, evenly subsampled to the compute cap when the window exceeds it.
+    start_idx, window, count = period_training_window(
+        agent.obs_period_marks, n, params.train_window_periods, params.train_max_obs
+    )
 
-    # Adaptive steps
-    n_steps = compute_adaptive_steps(params.E_init, agent.n_new_obs, n)
+    # Step count is set by the new-data ratio over full history (independent of the
+    # window/cap), settling to the params.train_steps floor once history dominates.
+    n_steps = compute_adaptive_steps(params.E_init, agent.n_new_obs, n; min_steps=params.train_steps)
     agent.n_new_obs = 0
 
-    if direct_copy_small && n_use <= AGENT_TRAIN_DIRECT_COPY_THRESHOLD
-        X = view(agent.history_X, :, start_idx:n)
-        q = view(agent.history_q, start_idx:n)
-        train_nn!(agent.nn, agent.nn_grad, X, q, n_steps, params.eta_lr)
-    else
-        d = params.d
-        ensure_agent_train_buffers!(agent, d, n_use)
+    d = params.d
+    ensure_agent_train_buffers!(agent, d, count, params.train_max_obs)
 
-        history_X = agent.history_X
-        train_X = agent.train_X
-        @inbounds for col in 1:n_use, row in 1:d
-            train_X[row, col] = history_X[row, start_idx + col - 1]
+    history_X = agent.history_X
+    train_X = agent.train_X
+    train_q = agent.train_q
+    @inbounds for k in 0:(count - 1)
+        j = windowed_index(start_idx, window, count, k)
+        col = k + 1
+        for row in 1:d
+            train_X[row, col] = history_X[row, j]
         end
-        copyto!(agent.train_q, 1, agent.history_q, start_idx, n_use)
-        train_nn_prefix!(
-            agent.nn,
-            agent.nn_grad,
-            agent.train_X,
-            agent.train_q,
-            n_use,
-            n_steps,
-            params.eta_lr,
-        )
+        train_q[col] = agent.history_q[j]
     end
+    train_nn_prefix_adam!(
+        agent.nn, agent.nn_grad, agent.train_X, agent.train_q, count, n_steps, params.eta_lr
+    )
     return nothing
 end
 
 """
     train_agent_nn!(agent, params)
 
-Train the agent's neural network on recent history with adaptive step count.
-Uses a sliding window of at most `TRAIN_WINDOW` observations.
+Train the agent's neural network on the observations recorded in the most recent
+`train_window_periods` periods (see `period_training_window`), with an adaptive
+step count and warm-started Adam state.
 """
 function train_agent_nn!(agent::Agent, params::ModelParams)
-    train_agent_nn_impl!(agent, params, false)
+    train_agent_nn_impl!(agent, params)
     return nothing
 end
 
@@ -558,8 +679,8 @@ end
 """
     train_broker_nn!(broker, params)
 
-Train the broker's neural network on symmetric pair features from recent history.
-Uses a sliding window of the most recent TRAIN_WINDOW observations.
+Train the broker on symmetric pair features from the period-based window
+(`period_training_window`), subsampled across its span to `train_max_obs`.
 """
 function train_broker_nn!(broker::Broker, params::ModelParams)
     n = broker.history_count
@@ -568,35 +689,39 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
     d = params.d
     d_broker = broker_pair_feature_dim(d)
 
-    # Sliding window
-    n_use = min(n, TRAIN_WINDOW)
-    start_idx = n - n_use + 1
+    # Period-based window, evenly subsampled to the cap when it exceeds it.
+    start_idx, window, count = period_training_window(
+        broker.obs_period_marks, n, params.train_window_periods, params.train_max_obs
+    )
 
     # Ensure training buffers are large enough
-    if size(broker.train_X, 1) != d_broker || size(broker.train_X, 2) < n_use
-        new_cap = max(n_use, 2 * size(broker.train_X, 2), 128)
+    if size(broker.train_X, 1) != d_broker || size(broker.train_X, 2) < count
+        new_cap = max(count, 2 * size(broker.train_X, 2), 128)
         broker.train_X = Matrix{Float64}(undef, d_broker, new_cap)
         resize!(broker.train_q, new_cap)
     end
 
-    # Build symmetric-feature training data from window
-    @inbounds for (idx, j) in enumerate(start_idx:n)
+    # Build symmetric-feature training data from the evenly-spaced window sample
+    @inbounds for k in 0:(count - 1)
+        j = windowed_index(start_idx, window, count, k)
+        col = k + 1
         fill_broker_pair_features!(
-            broker.train_X, idx, broker.history_Xi, j, broker.history_Xj, j
+            broker.train_X, col, broker.history_Xi, j, broker.history_Xj, j
         )
-        broker.train_q[idx] = broker.history_q[j]
+        broker.train_q[col] = broker.history_q[j]
     end
 
-    # Adaptive steps
-    n_steps = compute_adaptive_steps(params.E_init, broker.n_new_obs, n)
+    # Step count is set by the new-data ratio over full history (independent of the
+    # window/cap), settling to the params.train_steps floor once history dominates.
+    n_steps = compute_adaptive_steps(params.E_init, broker.n_new_obs, n; min_steps=params.train_steps)
     broker.n_new_obs = 0
 
-    train_nn_prefix!(
+    train_nn_prefix_adam!(
         broker.nn,
         broker.nn_grad,
         broker.train_X,
         broker.train_q,
-        n_use,
+        count,
         n_steps,
         params.eta_lr,
     )

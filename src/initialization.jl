@@ -255,10 +255,11 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
     )
 
     # ── Initial neural network training ──
+    # No period marks recorded yet, so the window spans the full seed history.
     for agent in agents
         if agent.history_count > 0
             agent.n_new_obs = agent.history_count  # treat all seed data as new
-            train_agent_nn_impl!(agent, p, true)
+            train_agent_nn!(agent, p)
         end
     end
     if broker.history_count > 0

@@ -61,9 +61,13 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Economics
         :omega => 0.2,
         :search_cost_rate => SEARCH_COST_RATE_BASE,
-        # Neural network
-        :eta_lr => 0.03,
+        # Neural network (Adam optimizer; lr 0.01 is the standard Adam scale and
+        # the value validated in scripts/diagnostics for gain recovery)
+        :eta_lr => 0.01,
         :E_init => 200,
+        :train_window_periods => 40,
+        :train_max_obs => 2000,
+        :train_steps => 100,
         # Search
         :n_strangers => 10,
         :eta => 0.02,
@@ -98,6 +102,9 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:search_cost_rate],
         defaults[:eta_lr],
         defaults[:E_init],
+        defaults[:train_window_periods],
+        defaults[:train_max_obs],
+        defaults[:train_steps],
         defaults[:n_strangers],
         defaults[:eta],
         defaults[:roster_churn],
@@ -147,6 +154,9 @@ function validate_params(p::ModelParams)
     # Neural network
     @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"
     @assert p.E_init >= 1 "E_init must be >= 1, got $(p.E_init)"
+    @assert p.train_window_periods >= 1 "train_window_periods must be >= 1, got $(p.train_window_periods)"
+    @assert p.train_max_obs >= 1 "train_max_obs must be >= 1, got $(p.train_max_obs)"
+    @assert p.train_steps >= 1 "train_steps must be >= 1, got $(p.train_steps)"
     @assert agent_hidden_width(p) >= 1 "agent hidden width must be >= 1"
     @assert broker_hidden_width(p) >= 1 "broker hidden width must be >= 1"
 

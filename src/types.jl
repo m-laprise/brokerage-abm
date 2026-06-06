@@ -29,12 +29,24 @@ mutable struct NNGradBuffers
     # DifferentiationInterface/Enzyme parameter-gradient scratch.
     theta::Vector{Float64}
     dtheta::Vector{Float64}
+
+    # Adam optimizer state, sized lazily to the packed parameter count and
+    # persisted across training periods. Warm-starting the moment estimates
+    # alongside the weights mirrors the spec's per-period warm start; the
+    # per-parameter second moment is what lets training recover the
+    # low-curvature interaction/gain directions that vanilla GD starves.
+    m::Vector{Float64}                # first moment (mean of gradients)
+    v::Vector{Float64}                # second moment (mean of squared gradients)
+    adam_t::Base.RefValue{Int}        # Adam timestep for bias correction
 end
 
 """Create zero-initialized gradient buffers matching `nn`."""
 function NNGradBuffers(nn::NeuralNet)
     h, d_in = size(nn.W1)
-    return NNGradBuffers(zeros(h, d_in), zeros(h), zeros(h), Ref(0.0), Float64[], Float64[])
+    return NNGradBuffers(
+        zeros(h, d_in), zeros(h), zeros(h), Ref(0.0),
+        Float64[], Float64[], Float64[], Float64[], Ref(0),
+    )
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -65,6 +77,10 @@ Base.@kwdef mutable struct Agent
     history_X::Matrix{Float64}               # d x capacity
     history_q::Vector{Float64}               # realized outputs, matching columns of history_X
     history_count::Int = 0                   # total observations recorded
+
+    # Cumulative history_count at the end of each period alive; defines the
+    # period-based training window (see learning.jl period_training_window).
+    obs_period_marks::Vector{Int} = Int[]
 
     # Neural network and prediction buffer
     nn::NeuralNet
@@ -195,6 +211,10 @@ Base.@kwdef mutable struct Broker
     history_Xj::Matrix{Float64}               # counterparty types
     history_q::Vector{Float64}                # realized outputs
     history_count::Int = 0
+
+    # Cumulative history_count at the end of each period (period-based training
+    # window; see Agent.obs_period_marks).
+    obs_period_marks::Vector{Int} = Int[]
 
     # Neural network
     nn::NeuralNet
@@ -466,8 +486,11 @@ struct ModelParams
     search_cost_rate::Float64    # shared search-cost rate on the surplus scale (default 0.15)
 
     # Neural network
-    eta_lr::Float64              # learning rate (default 0.03)
+    eta_lr::Float64              # Adam learning rate (default 0.01)
     E_init::Int                  # initial training steps (default 200)
+    train_window_periods::Int    # training look-back horizon, in periods (default 40)
+    train_max_obs::Int           # per-call observation cap; window subsampled to this (default 2000)
+    train_steps::Int             # min update steps per period; floor of the adaptive schedule (default 100)
 
     # Search
     n_strangers::Int             # period-level stranger pool size (default 10)
