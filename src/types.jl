@@ -299,6 +299,7 @@ struct CalibrationConstants
     r::Float64         # outside option (0.60 * q_cal)
     phi::Float64       # successful standard-placement fee
     c_s::Float64       # self-search cost per demanded relationship position
+    mad_f::Float64     # mean absolute deviation of the signal f; forecast-error scale for the capture gate
 end
 
 """Prediction quality metrics: R-squared, bias, and rank correlation."""
@@ -484,6 +485,7 @@ struct ModelParams
     # Economics
     omega::Float64               # satisfaction recency weight (default 0.2)
     search_cost_rate::Float64    # shared search-cost rate on the surplus scale (default 0.15)
+    reservation_frac::Float64    # outside option as a fraction of q_cal: r = reservation_frac*q_cal (default 0.60)
 
     # Neural network
     eta_lr::Float64              # Adam learning rate (default 0.01)

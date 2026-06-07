@@ -1,6 +1,6 @@
 using Test
 using TransientBrokerage
-using TransientBrokerage: Q_OFFSET, R_BASE_FRAC, calibrate, generate_matching_env
+using TransientBrokerage: Q_OFFSET, calibrate, generate_matching_env
 using TransientBrokerage: match_output, match_output!, match_signal, match_signal!
 using TransientBrokerage: regime_gain, regime_gain!
 using StableRNGs: StableRNG
@@ -183,11 +183,16 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         surplus_scale = cal.q_cal - cal.r
         @test cal.q_cal > 0.0
         @test cal.r > 0.0
-        @test cal.r ≈ R_BASE_FRAC * cal.q_cal
+        @test cal.r ≈ p.reservation_frac * cal.q_cal
         @test cal.phi > 0.0
         @test cal.phi ≈ p.search_cost_rate * surplus_scale
         @test cal.c_s ≈ p.search_cost_rate * surplus_scale
         @test cal.c_s ≈ cal.phi
+        # mad_f is the capture-gate forecast-error scale: positive and, unlike
+        # phi/c_s, independent of the reservation.
+        @test cal.mad_f > 0.0
+        cal_r2 = calibrate(env, types, default_params(reservation_frac=0.30), StableRNG(55))
+        @test cal_r2.mad_f ≈ cal.mad_f
     end
 
     @testset "Shared-cost calibration responds to the common rate" begin

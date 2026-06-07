@@ -2,7 +2,7 @@ using Test
 using TransientBrokerage
 using TransientBrokerage: ActiveMatch, Agent, CachedNetworkMeasures, CalibrationConstants
 using TransientBrokerage: CurveGeometry, MatchingEnv, NNGradBuffers, PeriodAccumulators
-using TransientBrokerage: Q_OFFSET, R_BASE_FRAC, effective_history_size
+using TransientBrokerage: Q_OFFSET, effective_history_size
 using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using TransientBrokerage: has_current_match, init_neural_net, partner_mean
 using TransientBrokerage: record_agent_history!, record_broker_history!
@@ -26,7 +26,7 @@ using LinearAlgebra: norm
         @test p.network_measure_interval == 20
         @test p.enable_principal == false
         @test p.capture_min_error_obs == 100
-        @test p.capture_error_threshold == 0.65
+        @test p.capture_error_threshold == 0.50
     end
 
     @testset "public export surface keeps internals explicit" begin

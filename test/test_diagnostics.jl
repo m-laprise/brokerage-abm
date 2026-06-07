@@ -35,6 +35,7 @@ using TransientBrokerage
         "q_cal",
         "r",
         "phi",
+        "mad_f",
     ])
 
     @test Set(keys(summary)) == expected_keys
@@ -57,6 +58,7 @@ using TransientBrokerage
         "mean_satisfaction_self" => Float64,
         "mean_satisfaction_broker" => Float64,
         "betweenness" => Float64,
+        "mad_f" => Float64,
     )
     @test all(isa(summary[key], value_type) for (key, value_type) in expected_types)
 end

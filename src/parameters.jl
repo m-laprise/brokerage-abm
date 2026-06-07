@@ -7,9 +7,6 @@ Default parameter construction and validation for the Transient Brokerage ABM (v
 """Constant offset added to match output so calibrated quality is positive."""
 const Q_OFFSET = 1.0
 
-"""Reservation-output fraction used to set `r = R_BASE_FRAC * q_cal`."""
-const R_BASE_FRAC = 0.60
-
 # Shared search-cost rate, expressed as a share of the calibration surplus
 # scale (q_cal - r). Both channels use the same level, but the self-search cost
 # remains per demanded relationship position while the broker fee is contingent
@@ -61,6 +58,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Economics
         :omega => 0.2,
         :search_cost_rate => SEARCH_COST_RATE_BASE,
+        :reservation_frac => 0.60,
         # Neural network (Adam optimizer; lr 0.01 is the standard Adam scale and
         # the value validated in scripts/diagnostics for gain recovery)
         :eta_lr => 0.01,
@@ -75,7 +73,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Model 1
         :enable_principal => false,
         :capture_min_error_obs => 100,
-        :capture_error_threshold => 0.65,
+        :capture_error_threshold => 0.50,
         # Simulation
         :network_measure_interval => 20,
         :T => 200,
@@ -100,6 +98,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:p_rewire],
         defaults[:omega],
         defaults[:search_cost_rate],
+        defaults[:reservation_frac],
         defaults[:eta_lr],
         defaults[:E_init],
         defaults[:train_window_periods],
@@ -150,6 +149,7 @@ function validate_params(p::ModelParams)
     # Economics
     @assert 0.0 < p.omega < 1.0 "omega must be in (0, 1), got $(p.omega)"
     @assert 0.0 <= p.search_cost_rate <= 1.0 "search_cost_rate must be in [0, 1], got $(p.search_cost_rate)"
+    @assert 0.0 <= p.reservation_frac < 1.0 "reservation_frac must be in [0, 1), got $(p.reservation_frac)"
 
     # Neural network
     @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"

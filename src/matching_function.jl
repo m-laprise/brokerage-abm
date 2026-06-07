@@ -207,8 +207,9 @@ end
 """
     calibrate(env, agent_types, params, rng; n_samples=10_000) -> CalibrationConstants
 
-Monte Carlo calibration of E[q] from random agent pairs.
-Returns calibration constants: q_cal, r, phi, c_s.
+Monte Carlo calibration from random agent pairs. Returns q_cal (mean output),
+r, phi, c_s, and mad_f (mean absolute deviation of the signal f, the
+forecast-error scale used by the capture-readiness gate).
 """
 function calibrate(env::MatchingEnv,
                    agent_types::Vector{Vector{Float64}},
@@ -219,16 +220,22 @@ function calibrate(env::MatchingEnv,
     d = env.d
     Ax_buf = Vector{Float64}(undef, d)
     Bx_buf = Vector{Float64}(undef, d)
-    total = 0.0
-    for _ in 1:n_samples
+    samples = Vector{Float64}(undef, n_samples)
+    for k in 1:n_samples
         i = rand(rng, 1:n_agents)
         j = rand(rng, 1:n_agents)
-        total += Q_OFFSET + match_signal!(Ax_buf, Bx_buf, agent_types[i], agent_types[j], env)
+        samples[k] = Q_OFFSET + match_signal!(Ax_buf, Bx_buf, agent_types[i], agent_types[j], env)
     end
-    q_cal = total / n_samples
-    r = R_BASE_FRAC * q_cal
+    q_cal = sum(samples) / n_samples
+    # MAD of the signal: the constant Q_OFFSET drops out, so this is MAD(f).
+    mad_acc = 0.0
+    @inbounds for k in 1:n_samples
+        mad_acc += abs(samples[k] - q_cal)
+    end
+    mad_f = mad_acc / n_samples
+    r = params.reservation_frac * q_cal
     surplus_scale = q_cal - r
     phi = params.search_cost_rate * surplus_scale
     c_s = params.search_cost_rate * surplus_scale
-    return CalibrationConstants(q_cal, r, phi, c_s)
+    return CalibrationConstants(q_cal, r, phi, c_s, mad_f)
 end

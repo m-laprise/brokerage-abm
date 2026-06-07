@@ -1,6 +1,6 @@
 using Test
 using TransientBrokerage
-using TransientBrokerage: CalibrationConstants, MatchingEnv, R_BASE_FRAC
+using TransientBrokerage: CalibrationConstants, MatchingEnv
 using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using StableRNGs: StableRNG
 
@@ -29,7 +29,7 @@ using StableRNGs: StableRNG
         @test state.cal.phi > 0
         @test state.cal.c_s >= 0
         @test state.cal.r < state.cal.q_cal
-        @test state.cal.r ≈ R_BASE_FRAC * state.cal.q_cal
+        @test state.cal.r ≈ state.params.reservation_frac * state.cal.q_cal
     end
 
     @testset "parameter validation rejects invalid Watts-Strogatz degree" begin

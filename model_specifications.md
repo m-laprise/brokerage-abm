@@ -342,9 +342,9 @@ Matches form when both parties expect positive gains from trade, following a heu
 
 All agents share a common outside option $r$: the minimum per-period match value an agent requires to participate. Below this threshold, the agent prefers to remain unmatched. The outside option is calibrated at initialization:
 
-$$r = 0.60 \cdot \bar{q}_{\text{cal}}$$
+$$r = f_r \cdot \bar{q}_{\text{cal}}$$
 
-where $\bar{q}_{\text{cal}}$ is the mean match output computed from a Monte Carlo sample (§11c). The 0.60 calibration sets the outside option at 60% of average match value, producing a market where approximately 40% of match output is surplus available for gains from trade. A constant $r$ means the profitability comparison is the same for every counterparty.
+where $\bar{q}_{\text{cal}}$ is the mean match output computed from a Monte Carlo sample (§11c) and $f_r$ is the reservation fraction (parameter `reservation_frac`, default 0.60). The default $f_r = 0.60$ sets the outside option at 60% of average match value, producing a market where approximately 40% of match output is surplus available for gains from trade. A constant $r$ means the profitability comparison is the same for every counterparty.
 
 #### 3b. Participation constraints
 
@@ -439,7 +439,7 @@ There is no counterparty-side capacity conflict resolution and no outer round lo
 
 ### 6. The Outsourcing Decision
 
-A **calibration reference** $\bar{q}_{\text{cal}} = E[q]$ is computed once at initialization from a Monte Carlo sample of random agent pairs (§11c). This is the unconditional mean match output, used to scale the reservation value $r$, broker fee $\phi$, and self-search cost $c_s$ (§11b). It is not used to initialize satisfaction indices or broker reputation; those are initialized from actual seed data (see below).
+A **calibration reference** $\bar{q}_{\text{cal}} = E[q]$ is computed once at initialization from a Monte Carlo sample of random agent pairs (§11c). This is the unconditional mean match output, used to scale the reservation value $r$, broker fee $\phi$, and self-search cost $c_s$ (§11b). It is not used to initialize satisfaction indices or broker reputation; those are initialized from actual seed data (see below). The same sample also yields a **calibration dispersion** $\mathrm{MAD}_f = E\,|f - E[f]|$, the mean absolute deviation of the signal, which is the forecast-error scale used by the capture-readiness gate (§12a).
 
 #### 6a. Satisfaction tracking
 
@@ -595,7 +595,7 @@ All period outputs are recorded after current-period matching, satisfaction, rep
 
 **Whole-network degree summaries.** Mean, median (the 0.5 quantile), minimum, and maximum agent-node degree are recorded each period. These summarize network densification among market participants and exclude the broker node from the degree distribution.
 
-**Resource-capture diagnostics.** Under Model 1, the recorded period outputs include: whether the broker satisfied the capture readiness gate; the broker's raw live error $\kappa_b^t$ and scaled live error $\kappa_b^t/(\bar{q}_{\text{cal}} - r)$; the number of captured origin clients; the number of captured positions; the number of accepted and rejected principal positions; principal acceptance rate; principal-mode share, defined as captured positions divided by outsourced requested positions; mean principal surplus and loss rate over all captured positions, with rejected positions counted as realized zero; and principal exposure RMSE over accepted and rejected principal positions.
+**Resource-capture diagnostics.** Under Model 1, the recorded period outputs include: whether the broker satisfied the capture readiness gate; the broker's raw live error $\kappa_b^t$ and scaled live error $\kappa_b^t/\mathrm{MAD}_f$; the number of captured origin clients; the number of captured positions; the number of accepted and rejected principal positions; principal acceptance rate; principal-mode share, defined as captured positions divided by outsourced requested positions; mean principal surplus and loss rate over all captured positions, with rejected positions counted as realized zero; and principal exposure RMSE over accepted and rejected principal positions.
 
 ## Part II. Parameters, Calibration, and Initialization
 
@@ -622,7 +622,8 @@ Parameters are organized into four categories reflecting their role in the analy
 
 | Symbol | Meaning | Default | Notes |
 |--------|---------|---------|-------|
-| $r$ | Outside option | $0.60 \cdot \bar{q}_{\text{cal}}$ | Constant for all agents; calibrated at initialization |
+| $f_r$ | Reservation fraction (`reservation_frac`) | 0.60 | Sets the outside option $r = f_r\,\bar{q}_{\text{cal}}$; must be in $[0,1)$ |
+| $r$ | Outside option | $f_r \cdot \bar{q}_{\text{cal}}$ | Derived; constant for all agents; calibrated at initialization |
 | $\eta_{\mathrm{lr}}$ | Adam learning rate | 0.01 | Adam optimizer, full-batch over the training window, no weight decay |
 | $E_{\text{init}}$ | Initial training steps | 200 | Steps on the seed history at $t=0$ |
 | $E_{\text{steps}}$ | Per-period steps (floor) | 100 | Floor of the adaptive schedule $\max(E_{\text{steps}}, \lceil E_{\text{init}} n_{\text{new}}/n_{\text{total}}\rceil)$; broker retrains every period, each agent every other (parity, a compute optimization that also mildly regularizes data-poor agents) |
@@ -648,7 +649,7 @@ Neural-network hidden widths are derived from $d$ rather than calibrated as mode
 |--------|---------|---------|-------|
 | `enable_principal` | Resource capture toggle | false | Enables client-origin whole-lot resource capture (§12) |
 | `capture_min_error_obs` | Minimum broker-controlled error observations before capture | 100 | The broker must have enough live standard-brokerage or principal exposure errors before it can become principal |
-| `capture_error_threshold` | Capture confidence threshold | 0.65 | Capture is allowed when $\kappa_b^t / (\bar{q}_{\text{cal}} - r)$ is at or below this threshold |
+| `capture_error_threshold` | Capture confidence threshold ($\kappa_{\max}$) | 0.50 | Capture is allowed when $\kappa_b^t / \mathrm{MAD}_f$ is at or below this threshold (§12a). A tuning parameter with no first-principles value; selects the capture regime (§12a) and is swept (deferred alternatives in §13) |
 
 **OAT sensitivity parameters.** Varied one at a time while holding all others at defaults.
 
@@ -693,7 +694,7 @@ The initialization procedure is specified in `simulation_pseudocode.tex` (`Initi
 
 - Agent types are drawn at random positions on the sinusoidal curve with noise, then projected to the unit sphere (§0).
 - The matching function parameters ($\mathbf{c}$, $\mathbf{A}$, $\mathbf{B}$) are drawn once and held fixed (§1).
-- Calibration quantities ($\bar{q}_{\text{cal}}$, $r$, $\phi$, $c_s$) are computed from 10,000 random agent pairs (§11b).
+- Calibration quantities ($\bar{q}_{\text{cal}}$, $r$, $\phi$, $c_s$, $\mathrm{MAD}_f$) are computed from 10,000 random agent pairs (§11b, §6).
 - Each agent's history is seeded with one observation for every initial non-broker neighbor in $G$, ensuring initial predictions reflect the full local network.
 - The broker's roster is seeded at the fixed target size $R^* = \lceil 0.20 \cdot N \rceil$, and its history is seeded from up to 100 existing roster-roster graph ties. Broker history seeding observes existing relationships and does not densify the initial graph.
 - All neural networks are trained from random weights for $E_{\text{init}}$ steps on their seed histories before the first period (§2a). These seed histories initialize predictive capability. Resource capture, when enabled, still waits for the live confidence gate in §12 before the broker can act as principal.
@@ -716,10 +717,18 @@ Resource capture can operate in period $t$ only if:
 
 $$
 n_{\text{broker error}}^t \geq n_{\min}, \qquad
-\frac{\kappa_b^t}{\bar{q}_{\text{cal}} - r} \leq \kappa_{\max} .
+\frac{\kappa_b^t}{\mathrm{MAD}_f} \leq \kappa_{\max} .
 $$
 
-Defaults are $n_{\min} = 100$ and $\kappa_{\max} = 0.65$. The first condition prevents capture before the broker has enough live error observations; the second requires prediction error to be small relative to the calibrated surplus scale.
+Defaults are $n_{\min} = 100$ and $\kappa_{\max} = 0.50$. The first condition prevents capture before the broker has enough live error observations. The second compares the broker's live error to $\mathrm{MAD}_f$, the dispersion of the signal (§6). Unlike the surplus scale $\bar{q}_{\text{cal}} - r$ used previously, $\mathrm{MAD}_f$ is independent of the reservation, so the gate measures forecast accuracy rather than the level of surplus at stake.
+
+Three points qualify the interpretation of $\kappa_b^t / \mathrm{MAD}_f$:
+
+- It is only approximately the broker's error relative to a naive forecaster that always predicts the mean. The broker is scored on realized output $q$, whose noise makes the naive forecaster's error equal to the dispersion of $q$, not of $f$; the two coincide only when noise is small relative to signal. A ratio near 1 therefore means roughly, not exactly, no better than naive.
+- The best attainable ratio is the noise floor $E|\varepsilon| / \mathrm{MAD}_f$, which varies with the parameters (small under strong interaction, approaching or exceeding $\kappa_{\max}$ under near-pure quality, where the signal is barely above noise). A fixed $\kappa_{\max}$ thus demands different amounts of skill across the parameter space, rather than a constant one.
+- The value of $\kappa_{\max}$ has no first-principles justification and is treated as a tuning parameter. The earlier surplus-scaled gate used 0.65; the current default $\kappa_{\max} = 0.50$ was chosen by sweeping $\kappa_{\max}$ at baseline (§13 records two alternative definitions that would make a single value carry consistent meaning across the parameter space).
+
+$\kappa_{\max}$ selects the capture regime, not merely a rate. A higher (looser) threshold lets a skilled broker clear the gate early and capture essentially all brokered demand, leaving standard brokerage residual; this **near-complete capture** regime gives clean comparative statics. A lower (stricter) threshold admits capture only when the broker's accuracy clears a high bar, so capture coexists with standard brokerage and self-search and the aggregate captured share stays well below one; in this **contested capture** regime the readiness gate may also be satisfied only intermittently, when the broker's live accuracy hovers near the bar. This distinction concerns the share of demand captured across clients; individual lots remain whole (§12b). The default $\kappa_{\max} = 0.50$ sits near the boundary between the two regimes: capture is substantial but not total and the standard channels persist. The capture-threshold sweep varies $\kappa_{\max}$ across both regimes.
 
 #### 12b. Whole-lot acquisition
 
@@ -818,6 +827,8 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 #### 13e. Other Design Choices
 
 **Alternative acquisition pricing.** The baseline acquisition price is the origin client's historical mean, with lots below reservation ineligible (§12b). A future variant could use negotiated prices or fixed outside-option prices, but those alternatives would change how hard capture is and are not part of the baseline model.
+
+**Capture-gate threshold scale.** The capture-readiness gate (§12a) normalizes the broker's live error by the signal dispersion $\mathrm{MAD}_f$ and compares it to a fixed $\kappa_{\max}$, which is a swept tuning value. Two alternatives would give a single $\kappa_{\max}$ more consistent meaning. (i) A floor-relative threshold $\kappa_{\max} = \text{floor} + \alpha\,(1 - \text{floor})$, with $\text{floor} = E|\varepsilon| / \mathrm{MAD}_f$ computed at calibration and $\alpha \in (0,1)$ the dial, would demand the same fraction of attainable skill everywhere, rather than a nominal value whose difficulty varies with the noise floor across the parameter space. (ii) Normalizing by the dispersion of realized output $q$ instead of the signal $f$ would make the ratio exactly the broker's error relative to a naive mean-predicting forecaster, at the cost of folding irreducible noise into the scale. Both are deferred; the baseline keeps the simpler signal-dispersion scale.
 
 ## Figures
 

@@ -22,12 +22,15 @@ function counterparty_ask(agent::Agent, q_cal::Float64)::Float64
     return total / n
 end
 
-"""Scaled live broker error used by the principal-mode readiness gate."""
+"""
+Live broker error for the principal-mode gate, scaled by `mad_f` (the signal's
+mean absolute deviation). This is the broker error relative to a naive
+mean-predicting forecaster: 1 means no better than naive, below 1 means better.
+"""
 function capture_scaled_mae(broker::Broker, cal::CalibrationConstants)::Float64
     broker.capture_confidence_ready || return NaN
-    surplus_scale = cal.q_cal - cal.r
-    surplus_scale <= 0.0 && return Inf
-    return broker.capture_confidence_mae / surplus_scale
+    cal.mad_f <= 0.0 && return Inf
+    return broker.capture_confidence_mae / cal.mad_f
 end
 
 """True when the broker has enough live accuracy to consider principal mode."""

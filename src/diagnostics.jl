@@ -47,5 +47,6 @@ function diagnostic_summary(state::ModelState)::Dict{String,Any}
         "q_cal" => state.cal.q_cal,
         "r" => state.cal.r,
         "phi" => state.cal.phi,
+        "mad_f" => state.cal.mad_f,
     )
 end

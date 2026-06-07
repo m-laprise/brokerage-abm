@@ -151,6 +151,7 @@ $B$ & $\R^{d\times d}$ & Symmetric regime operator. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Calibration and costs}}\\
 $\bar q_{\mathrm{cal}}$ & scalar & Calibration mean. \\
+$\mathrm{MAD}_f$ & scalar & Calibration signal dispersion; capture-gate error scale. \\
 $r$ & scalar & Reservation output. \\
 $\phi$ & scalar & Standard broker fee. \\
 $c_s$ & scalar & Self-search cost. \\
@@ -324,17 +325,21 @@ Calibration draws random pairs $(i_\ell,j_\ell)$ and sets
 \bar q_{\mathrm{cal}}
 =\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},
 \qquad
-r=0.60\bar q_{\mathrm{cal}},
+r=f_r\,\bar q_{\mathrm{cal}},
 \qquad
-\phi=c_s=\lambda_c(\bar q_{\mathrm{cal}}-r).
+\phi=c_s=\lambda_c(\bar q_{\mathrm{cal}}-r),
+\qquad
+\mathrm{MAD}_f=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000}
+\bigl|f(x_{i_\ell},x_{j_\ell})-(\bar q_{\mathrm{cal}}-Q)\bigr|.
 \]
-\caponly{The capture-readiness gate is}
+\caponly{The capture-readiness gate scales the broker error by $\mathrm{MAD}_f$
+(signal dispersion):}
 \[
 \caponly{\mathrm{CapReady}_b^t=
 \begin{cases}
 1, & n_{\kappa,b}^t\ge n_{\min}
 \quad\mathrm{and}\quad
-\kappa_b^t/(\bar q_{\mathrm{cal}}-r)\le\kappa_{\max},\\
+\kappa_b^t/\mathrm{MAD}_f\le\kappa_{\max},\\
 0, & \text{otherwise},
 \end{cases}
 \qquad \mathrm{CapReady}_b^0=0.}
@@ -342,6 +347,7 @@ r=0.60\bar q_{\mathrm{cal}},
 
 \begin{localvartable}{\procInitialize}
 $\lambda_c$ & scalar & Cost rate used to set $\phi$ and $c_s$. \\
+$f_r$ & scalar & Reservation fraction; sets $r=f_r\,\bar q_{\mathrm{cal}}$ (default 0.60). \\
 $(i_\ell,j_\ell)$ & pair in $[N]^2$ & Random calibration pair. \\
 \caponly{$n_{\min},\kappa_{\max}$} & \caponly{scalars} & \caponly{Principal-mode confidence gate.} \\
 $d_\gamma$ & integer & Number of active curve dimensions. \\
