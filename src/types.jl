@@ -484,8 +484,8 @@ struct ModelParams
 
     # Economics
     omega::Float64               # satisfaction recency weight (default 0.2)
-    search_cost_rate::Float64    # shared search-cost rate on the surplus scale (default 0.15)
-    reservation_frac::Float64    # outside option as a fraction of q_cal: r = reservation_frac*q_cal (default 0.60)
+    search_cost_rate::Float64    # shared friction rate: phi = c_s = search_cost_rate*q_cal (default 0.05)
+    reservation_frac::Float64    # outside option as a fraction of q_cal: r = reservation_frac*q_cal (default 0.60; may exceed 1)
 
     # Neural network
     eta_lr::Float64              # Adam learning rate (default 0.01)
@@ -502,7 +502,7 @@ struct ModelParams
     # Model 1
     enable_principal::Bool       # resource capture mode (default false)
     capture_min_error_obs::Int   # minimum broker-controlled errors before capture
-    capture_error_threshold::Float64  # max MAE / (q_cal - r) for capture
+    capture_error_threshold::Float64  # max MAE / mad_f for capture (default 0.50)
 
     # Simulation
     network_measure_interval::Int # M (default 20)

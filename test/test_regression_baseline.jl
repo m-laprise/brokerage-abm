@@ -17,6 +17,9 @@ using TransientBrokerage
 # tuning the now-parameterized schedule to its cost/benefit knees:
 # train_window_periods=40, train_max_obs=2000, train_steps=100 (per-period step
 # count decoupled from the window/cap and set over full history).
+# Baseline refreshed on 2026-06-07 after decoupling the frictions and reservation
+# from the surplus scale (phi = c_s = lambda_c * q_cal, r = reservation_frac *
+# q_cal) and setting lambda_c = 0.05 (5% commission).
 @testset "Regression Baseline" begin
     using Statistics: mean
 
@@ -25,25 +28,25 @@ using TransientBrokerage
     tail = df[df.period .> 5, :]
 
     # Match counts
-    @test mean(tail.n_total_matches) ≈ 97.53333333333333 atol=0.01
+    @test mean(tail.n_total_matches) ≈ 96.66666666666667 atol=0.01
 
     # Outsourcing rate
-    @test mean(tail.outsourcing_rate) ≈ 0.2539920307370028 atol=1e-4
+    @test mean(tail.outsourcing_rate) ≈ 0.2700317189401856 atol=1e-4
 
     # Prediction quality (per-agent averaged, hc>0 only)
     broker_r2 = mean(filter(!isnan, tail.broker_holdout_r2))
     agent_r2 = mean(filter(!isnan, tail.agent_holdout_r2))
-    @test broker_r2 ≈ -0.025860213533228173 atol=1e-4
-    @test agent_r2 ≈ 0.27275453888288465 atol=1e-4
+    @test broker_r2 ≈ -0.010606320711684596 atol=1e-4
+    @test agent_r2 ≈ 0.15569880930562482 atol=1e-4
 
     # Match output
-    @test mean(filter(!isnan, tail.q_self_mean)) ≈ 1.5965108105858135 atol=1e-4
+    @test mean(filter(!isnan, tail.q_self_mean)) ≈ 1.5923663701412667 atol=1e-4
 
     # Counterparty concentration diagnostics
-    @test mean(tail.median_counterparties) ≈ 3.7333333333333334 atol=1e-4
+    @test mean(tail.median_counterparties) ≈ 3.6666666666666665 atol=1e-4
     @test maximum(tail.max_counterparties) == 12
 
     # Broker state at end
-    @test df.betweenness[end] ≈ 0.01867470558493084 atol=1e-6
+    @test df.betweenness[end] ≈ 0.024247104191761647 atol=1e-6
     @test df.roster_size[end] == 10
 end

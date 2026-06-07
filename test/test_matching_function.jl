@@ -180,19 +180,21 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         env = test_env(types)
         p = default_params()
         cal = calibrate(env, types, p, StableRNG(55))
-        surplus_scale = cal.q_cal - cal.r
         @test cal.q_cal > 0.0
         @test cal.r > 0.0
+        # r, phi, c_s are independent fractions of q_cal (decoupled).
         @test cal.r ≈ p.reservation_frac * cal.q_cal
         @test cal.phi > 0.0
-        @test cal.phi ≈ p.search_cost_rate * surplus_scale
-        @test cal.c_s ≈ p.search_cost_rate * surplus_scale
+        @test cal.phi ≈ p.search_cost_rate * cal.q_cal
+        @test cal.c_s ≈ p.search_cost_rate * cal.q_cal
         @test cal.c_s ≈ cal.phi
-        # mad_f is the capture-gate forecast-error scale: positive and, unlike
-        # phi/c_s, independent of the reservation.
-        @test cal.mad_f > 0.0
+        # phi/c_s do not depend on the reservation: changing reservation_frac
+        # leaves them (and mad_f) unchanged.
         cal_r2 = calibrate(env, types, default_params(reservation_frac=0.30), StableRNG(55))
+        @test cal_r2.phi ≈ cal.phi
+        @test cal_r2.c_s ≈ cal.c_s
         @test cal_r2.mad_f ≈ cal.mad_f
+        @test cal.mad_f > 0.0
     end
 
     @testset "Shared-cost calibration responds to the common rate" begin

@@ -20,7 +20,7 @@ using LinearAlgebra: norm
         @test p.K == 5
         @test p.p_demand == 0.50
         @test p.omega == 0.20
-        @test p.search_cost_rate == 0.15
+        @test p.search_cost_rate == 0.05
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
         @test p.network_measure_interval == 20

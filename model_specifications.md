@@ -344,7 +344,7 @@ All agents share a common outside option $r$: the minimum per-period match value
 
 $$r = f_r \cdot \bar{q}_{\text{cal}}$$
 
-where $\bar{q}_{\text{cal}}$ is the mean match output computed from a Monte Carlo sample (§11c) and $f_r$ is the reservation fraction (parameter `reservation_frac`, default 0.60). The default $f_r = 0.60$ sets the outside option at 60% of average match value, producing a market where approximately 40% of match output is surplus available for gains from trade. A constant $r$ means the profitability comparison is the same for every counterparty.
+where $\bar{q}_{\text{cal}}$ is the mean match output computed from a Monte Carlo sample (§11c) and $f_r$ is the reservation coefficient (parameter `reservation_frac`, default 0.60). The default $f_r = 0.60$ sets the outside option at 60% of average match value. Search costs are independent of $r$ (§3c), so $f_r$ may take any nonnegative value, including $f_r \geq 1$, which places the outside option at or above the typical match and is the region where the participation constraint binds most. A constant $r$ means the profitability comparison is the same for every counterparty.
 
 #### 3b. Participation constraints
 
@@ -357,13 +357,13 @@ When the broker proposes a match, it applies the constraint using its own predic
 
 #### 3c. Search costs
 
-The model uses a single calibrated friction level for both channels:
+The model uses a single calibrated friction level for both channels, set as a fraction of the calibration mean and independent of the reservation:
 
 $$
-\phi = c_s = \lambda_c \cdot (\bar{q}_{\text{cal}} - r).
+\phi = c_s = \lambda_c \cdot \bar{q}_{\text{cal}}.
 $$
 
-At the baseline $\lambda_c = 0.15$, the common friction level is $0.15\cdot(\bar{q}_{\text{cal}} - r)$. The distinction between $\phi$ and $c_s$ is therefore not their magnitude, but how that same friction enters realized payoffs:
+$\lambda_c$ is the intermediation cost as a fraction of match value: $\phi$ is a commission the broker charges on a placement and $c_s$ the equivalent cost of acquiring a relationship through self-search. At the baseline $\lambda_c = 0.05$, this is a 5% commission, within the range of real brokerage fees. The friction does not depend on $r$, so $r$ can be varied without changing it. The distinction between $\phi$ and $c_s$ is therefore not their magnitude, but how that same friction enters realized payoffs:
 
 - **Self-search** labels the common friction as $c_s$ and charges it on each demanded relationship position routed through self-search, whether or not that position is filled.
 - **Standard brokerage** labels the same friction as $\phi$ and charges it only on successful **standard** brokered placements.
@@ -591,7 +591,7 @@ All period outputs are recorded after current-period matching, satisfaction, rep
 
 **Broker access size.** Number of distinct agents in the broker's within-period access set, $|\mathcal{A}_b^t| = |\text{Roster}^t \cup D^t|$, where $D^t$ is the set of current-period broker clients. In the recorded period outputs, this is measured after current outsourcing decisions have formed $D^t$ and before Step 5 entry/exit. This is the meaningful quantity for how many agents the broker can search over in period $t$. Because current clients can already be on the standing roster, broker access size is generally smaller than standing roster size plus the number of current broker clients.
 
-**Counterparty concentration.** The median and maximum number of current-period counterparties per agent are recorded each period. These are diagnostics, not constraints: the model no longer caps incoming accepted offers.
+**Counterparty concentration.** The median and maximum number of current-period counterparties per agent are recorded each period. These are diagnostics, not constraints: the model does not cap incoming accepted offers.
 
 **Whole-network degree summaries.** Mean, median (the 0.5 quantile), minimum, and maximum agent-node degree are recorded each period. These summarize network densification among market participants and exclude the broker node from the degree distribution.
 
@@ -622,7 +622,7 @@ Parameters are organized into four categories reflecting their role in the analy
 
 | Symbol | Meaning | Default | Notes |
 |--------|---------|---------|-------|
-| $f_r$ | Reservation fraction (`reservation_frac`) | 0.60 | Sets the outside option $r = f_r\,\bar{q}_{\text{cal}}$; must be in $[0,1)$ |
+| $f_r$ | Reservation coefficient (`reservation_frac`) | 0.60 | Sets the outside option $r = f_r\,\bar{q}_{\text{cal}}$; must be $\geq 0$ (may exceed 1) |
 | $r$ | Outside option | $f_r \cdot \bar{q}_{\text{cal}}$ | Derived; constant for all agents; calibrated at initialization |
 | $\eta_{\mathrm{lr}}$ | Adam learning rate | 0.01 | Adam optimizer, full-batch over the training window, no weight decay |
 | $E_{\text{init}}$ | Initial training steps | 200 | Steps on the seed history at $t=0$ |
@@ -631,7 +631,7 @@ Parameters are organized into four categories reflecting their role in the analy
 | $b_2^{(0)}$ | Initial output bias | $Q$ | Untrained networks predict population-mean quality rather than zero |
 | $\sigma_\varepsilon$ | Match output noise SD | 0.10 | |
 | $\delta$ | Regime gain strength (§1c) | 0.5 | $\delta = 0$: no regime effect; $\delta = 1$: maximum gain contrast |
-| $\lambda_c$ | Shared search-cost rate | 0.15 | $\phi = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$, $c_s = \lambda_c\cdot(\bar{q}_{\text{cal}} - r)$; $c_s$ is a self-search cost per demanded relationship position, $\phi$ a successful standard-placement fee; §11b |
+| $\lambda_c$ | Shared friction rate | 0.05 | $\phi = c_s = \lambda_c\,\bar{q}_{\text{cal}}$ (independent of $r$); intermediation cost as a fraction of match value (5% commission); $c_s$ is a self-search cost per demanded relationship position, $\phi$ a successful standard-placement fee; §11b |
 | $p_{\text{roster}}$ | Standing-roster churn probability (§7) | 0.02 | Each roster member is dropped independently at the start of a period, before uniform replenishment back to $R^*$ |
 
 Neural-network hidden widths are derived from $d$ rather than calibrated as model parameters: $h_A = 2d$ for agents and $h_B = 8d$ for the broker.
@@ -679,14 +679,14 @@ The activity parameters $p_{\text{demand}}$ and $K$ jointly determine the market
 
 #### 11b. Search-cost calibration
 
-The two channel costs are calibrated jointly from the average match surplus scale $(\bar{q}_{\text{cal}} - r)$ using a shared search-cost rate $\lambda_c$:
+The two channel costs are calibrated as a shared fraction $\lambda_c$ of the calibration mean $\bar{q}_{\text{cal}}$, independent of the reservation $r$:
 
 $$
-\phi = \lambda_c \cdot (\bar{q}_{\text{cal}} - r), \qquad
-c_s = \lambda_c \cdot (\bar{q}_{\text{cal}} - r).
+\phi = \lambda_c \cdot \bar{q}_{\text{cal}}, \qquad
+c_s = \lambda_c \cdot \bar{q}_{\text{cal}}.
 $$
 
-In the default $\lambda_c = 0.15$, both channels use the same friction level. The two quantities are computed once at initialization and held constant thereafter, but they enter realized payoffs asymmetrically: $c_s$ is charged on each requested self-search relationship position regardless of fill, whereas $\phi$ is charged only on successful standard brokered placements.
+In the default $\lambda_c = 0.05$ (a 5% intermediation cost on match value), both channels use the same friction level. The two quantities are computed once at initialization and held constant thereafter, but they enter realized payoffs asymmetrically: $c_s$ is charged on each requested self-search relationship position regardless of fill, whereas $\phi$ is charged only on successful standard brokered placements. Because the frictions do not depend on $r$, they stay positive and fixed as $r$ varies, so the reservation can be swept across and above $\bar{q}_{\text{cal}}$ while $\phi$ and $c_s$ remain unchanged.
 
 #### 11c. Initial conditions
 
@@ -720,13 +720,13 @@ n_{\text{broker error}}^t \geq n_{\min}, \qquad
 \frac{\kappa_b^t}{\mathrm{MAD}_f} \leq \kappa_{\max} .
 $$
 
-Defaults are $n_{\min} = 100$ and $\kappa_{\max} = 0.50$. The first condition prevents capture before the broker has enough live error observations. The second compares the broker's live error to $\mathrm{MAD}_f$, the dispersion of the signal (§6). Unlike the surplus scale $\bar{q}_{\text{cal}} - r$ used previously, $\mathrm{MAD}_f$ is independent of the reservation, so the gate measures forecast accuracy rather than the level of surplus at stake.
+Defaults are $n_{\min} = 100$ and $\kappa_{\max} = 0.50$. The first condition prevents capture before the broker has enough live error observations. The second compares the broker's live error to $\mathrm{MAD}_f$, the dispersion of the signal (§6). Because $\mathrm{MAD}_f$ is independent of the reservation, the gate measures forecast accuracy, not the surplus at stake.
 
 Three points qualify the interpretation of $\kappa_b^t / \mathrm{MAD}_f$:
 
 - It is only approximately the broker's error relative to a naive forecaster that always predicts the mean. The broker is scored on realized output $q$, whose noise makes the naive forecaster's error equal to the dispersion of $q$, not of $f$; the two coincide only when noise is small relative to signal. A ratio near 1 therefore means roughly, not exactly, no better than naive.
 - The best attainable ratio is the noise floor $E|\varepsilon| / \mathrm{MAD}_f$, which varies with the parameters (small under strong interaction, approaching or exceeding $\kappa_{\max}$ under near-pure quality, where the signal is barely above noise). A fixed $\kappa_{\max}$ thus demands different amounts of skill across the parameter space, rather than a constant one.
-- The value of $\kappa_{\max}$ has no first-principles justification and is treated as a tuning parameter. The earlier surplus-scaled gate used 0.65; the current default $\kappa_{\max} = 0.50$ was chosen by sweeping $\kappa_{\max}$ at baseline (§13 records two alternative definitions that would make a single value carry consistent meaning across the parameter space).
+- $\kappa_{\max}$ has no first-principles justification and is a tuning parameter. The default $\kappa_{\max} = 0.50$ was chosen by sweeping $\kappa_{\max}$ at baseline (§13 records two alternative definitions that would make a single value carry consistent meaning across the parameter space).
 
 $\kappa_{\max}$ selects the capture regime, not merely a rate. A higher (looser) threshold lets a skilled broker clear the gate early and capture essentially all brokered demand, leaving standard brokerage residual; this **near-complete capture** regime gives clean comparative statics. A lower (stricter) threshold admits capture only when the broker's accuracy clears a high bar, so capture coexists with standard brokerage and self-search and the aggregate captured share stays well below one; in this **contested capture** regime the readiness gate may also be satisfied only intermittently, when the broker's live accuracy hovers near the bar. This distinction concerns the share of demand captured across clients; individual lots remain whole (§12b). The default $\kappa_{\max} = 0.50$ sits near the boundary between the two regimes: capture is substantial but not total and the standard channels persist. The capture-threshold sweep varies $\kappa_{\max}$ across both regimes.
 
@@ -829,6 +829,10 @@ Both alternatives create richer dynamics but add parameters and complicate the s
 **Alternative acquisition pricing.** The baseline acquisition price is the origin client's historical mean, with lots below reservation ineligible (§12b). A future variant could use negotiated prices or fixed outside-option prices, but those alternatives would change how hard capture is and are not part of the baseline model.
 
 **Capture-gate threshold scale.** The capture-readiness gate (§12a) normalizes the broker's live error by the signal dispersion $\mathrm{MAD}_f$ and compares it to a fixed $\kappa_{\max}$, which is a swept tuning value. Two alternatives would give a single $\kappa_{\max}$ more consistent meaning. (i) A floor-relative threshold $\kappa_{\max} = \text{floor} + \alpha\,(1 - \text{floor})$, with $\text{floor} = E|\varepsilon| / \mathrm{MAD}_f$ computed at calibration and $\alpha \in (0,1)$ the dial, would demand the same fraction of attainable skill everywhere, rather than a nominal value whose difficulty varies with the noise floor across the parameter space. (ii) Normalizing by the dispersion of realized output $q$ instead of the signal $f$ would make the ratio exactly the broker's error relative to a naive mean-predicting forecaster, at the cost of folding irreducible noise into the scale. Both are deferred; the baseline keeps the simpler signal-dispersion scale.
+
+**Price reference (mean vs median).** The reservation $r$ and the frictions $\phi, c_s$ are anchored to the calibration mean $\bar{q}_{\text{cal}} = E[q]$ (§3a, §11b). A future variant could anchor them to the **median** of the calibration draws. Match output is mildly positively skewed (measured skewness $\approx 0.1$–$0.3$; the mean exceeds the median by up to $\sim 2\%$ of a standard deviation). The median would therefore track the typical match rather than a center pulled up by the upper tail, and $f_r = 1$ would place $r$ exactly at the 50th percentile, a clean participation anchor. The costs: the mean is the natural expected-value object used elsewhere (the capture acquisition price and the no-history ask fallback, §12b, §6), it composes linearly for expected surplus and fee revenue, and it is a lower-variance estimator; the mean-median gap is also parameter-dependent, so the swap would shift $r$, $\phi$, $c_s$ by a small, cell-varying amount across sweeps. Given the small skew the choice would not materially change dynamics, so it is deferred as an interpretation choice (representative transaction price vs expected output). If adopted, the median should replace the mean everywhere rather than adding a second reference.
+
+**Offset-invariance of the price anchor.** $r$, $\phi$, and $c_s$ are fractions of $\bar{q}_{\text{cal}}$, which is dominated by the constant offset $Q$ (§0), since $\bar{q}_{\text{cal}} \approx Q$ when $E[f] \approx 0$. Their magnitude relative to the match-value spread therefore depends on the value chosen for $Q$. Only $r = \bar{q}_{\text{cal}}$ ($f_r = 1$) is invariant to $Q$; for $f_r \neq 1$ and for the frictions, a different $Q$ would change how far $r$ sits from the typical match and how large the frictions are relative to the value differences that drive matching. An offset-invariant variant would anchor the reservation gap and the frictions to the match-value spread, e.g. $r = \bar{q}_{\text{cal}} - k\,\sigma_f$ and $\phi = c_s = \lambda\,\sigma_f$ with $\sigma_f$ the standard deviation of the signal. This is deferred; the baseline fixes $Q = 1$ and sets the coefficients so that $r$ and the frictions sit at sensible positions relative to the spread at that offset (§3a, §3c).
 
 ## Figures
 

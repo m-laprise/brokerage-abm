@@ -233,9 +233,11 @@ function calibrate(env::MatchingEnv,
         mad_acc += abs(samples[k] - q_cal)
     end
     mad_f = mad_acc / n_samples
+    # r, phi, c_s are independent fractions of q_cal. Decoupling phi/c_s from the
+    # reservation lets r be swept freely (including r >= q_cal) without the
+    # frictions vanishing or turning negative.
     r = params.reservation_frac * q_cal
-    surplus_scale = q_cal - r
-    phi = params.search_cost_rate * surplus_scale
-    c_s = params.search_cost_rate * surplus_scale
+    phi = params.search_cost_rate * q_cal
+    c_s = params.search_cost_rate * q_cal
     return CalibrationConstants(q_cal, r, phi, c_s, mad_f)
 end

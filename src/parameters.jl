@@ -7,11 +7,13 @@ Default parameter construction and validation for the Transient Brokerage ABM (v
 """Constant offset added to match output so calibrated quality is positive."""
 const Q_OFFSET = 1.0
 
-# Shared search-cost rate, expressed as a share of the calibration surplus
-# scale (q_cal - r). Both channels use the same level, but the self-search cost
-# remains per demanded relationship position while the broker fee is contingent
-# on realized standard placements.
-const SEARCH_COST_RATE_BASE = 0.15
+# Shared friction rate as a share of the calibration mean q_cal, independent of
+# the reservation r: phi = c_s = search_cost_rate * q_cal. The broker fee is thus
+# a commission on match value; 0.05 (5%) is a standard brokerage commission. Both
+# channels use the same level, but the self-search cost is per demanded
+# relationship position while the broker fee is contingent on realized standard
+# placements.
+const SEARCH_COST_RATE_BASE = 0.05
 
 # Fixed roster target share: broker maintains this fraction of the population
 # on its standing roster.
@@ -149,7 +151,7 @@ function validate_params(p::ModelParams)
     # Economics
     @assert 0.0 < p.omega < 1.0 "omega must be in (0, 1), got $(p.omega)"
     @assert 0.0 <= p.search_cost_rate <= 1.0 "search_cost_rate must be in [0, 1], got $(p.search_cost_rate)"
-    @assert 0.0 <= p.reservation_frac < 1.0 "reservation_frac must be in [0, 1), got $(p.reservation_frac)"
+    @assert p.reservation_frac >= 0.0 "reservation_frac must be >= 0, got $(p.reservation_frac)"
 
     # Neural network
     @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"
