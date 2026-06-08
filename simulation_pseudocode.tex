@@ -322,15 +322,15 @@ their current-period values.
 
 Calibration draws random pairs $(i_\ell,j_\ell)$ and sets
 \[
+\begin{aligned}
 \bar q_{\mathrm{cal}}
-=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},
+&=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},\\
+r&=f_r\,\bar q_{\mathrm{cal}},
 \qquad
-r=f_r\,\bar q_{\mathrm{cal}},
-\qquad
-\phi=c_s=\lambda_c\,\bar q_{\mathrm{cal}},
-\qquad
-\mathrm{MAD}_f=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000}
+\phi=c_s=\lambda_c\,\bar q_{\mathrm{cal}},\\
+\mathrm{MAD}_f&=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000}
 \bigl|f(x_{i_\ell},x_{j_\ell})-(\bar q_{\mathrm{cal}}-Q)\bigr|.
+\end{aligned}
 \]
 \caponly{The capture-readiness gate is}
 \[
