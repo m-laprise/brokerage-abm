@@ -29,12 +29,14 @@ const COL_BASE_REF  = :gray60        # base model reference (dashed)
 # Font sizes
 # ─────────────────────────────────────────────────────────────────────────────
 
-const SUPTITLE_FS   = 16
-const TITLE_FS      = 12
-const LABEL_FS      = 10
-const TICK_FS       = 9
-const ROW_LABEL_FS  = 12
-const FOOTER_FS     = 10
+# Sizes are chosen so that, after the figures are downscaled to \linewidth in the
+# report, axis/tick labels stay legible (the raw figures look large on their own).
+const SUPTITLE_FS   = 22
+const TITLE_FS      = 17
+const LABEL_FS      = 15
+const TICK_FS       = 14
+const ROW_LABEL_FS  = 16
+const FOOTER_FS     = 14
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared kwargs
@@ -49,8 +51,8 @@ function ax_kw(T::Int)
 end
 
 """Compact legend style shared across all legends."""
-const LEG_KW = (; labelsize=9, patchsize=(10, 10), padding=(3, 3, 2, 2),
-                  rowgap=0, patchlabelgap=3, framewidth=0.5)
+const LEG_KW = (; labelsize=13, patchsize=(14, 12), padding=(4, 4, 3, 3),
+                  rowgap=1, patchlabelgap=4, framewidth=0.5)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Time-series helpers

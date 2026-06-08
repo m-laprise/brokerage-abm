@@ -45,6 +45,9 @@ const SWEEP_SEEDS = collect(1:5)
 # OAT axis levels (§2a). `key` is the `default_params` keyword; `label` names the
 # output directory; `models` lists which models the axis is run under.
 const RHO_VALS = [0.0, 0.5, 1.0]
+# The OAT rho axis is denser than the phase rho axis (extra 0.3, 0.7) for line-plot
+# resolution; phase grids keep RHO_VALS so their index-keyed cells are not disturbed.
+const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 1.0]
 const ETA_VALS = [0.01, 0.02, 0.03]
 const N_VALS   = [500, 1000, 1500]
 const R_VALS   = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
@@ -59,7 +62,7 @@ const DELTA_VALS     = [0.0, 0.50, 0.75]
 const K_VALS         = [4, 12]
 
 const OAT_AXES = [
-    (label = "rho",              key = :rho,                     vals = RHO_VALS, models = [:base, :capture]),
+    (label = "rho",              key = :rho,                     vals = RHO_OAT,  models = [:base, :capture]),
     (label = "eta",              key = :eta,                     vals = ETA_VALS, models = [:base, :capture]),
     (label = "N",                key = :N,                       vals = N_VALS,   models = [:base, :capture]),
     (label = "reservation_frac", key = :reservation_frac,        vals = R_VALS,   models = [:base, :capture]),

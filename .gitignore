@@ -34,3 +34,10 @@ Manifest.toml
 
 # Log files
 *.log
+# Generated diagnostic outputs (reproducible by re-running the scripts)
+scripts/diagnostics/_results/
+scripts/diagnostics/adv_results/
+*.jld2
+# SLURM job logs
+*.out
+*.err
