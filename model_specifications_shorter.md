@@ -184,7 +184,7 @@ The broker learns only from mediated matches. It does not observe self-search ou
 
 Matches use a common reservation threshold and channel-specific cost accounting.
 
-At initialization, 10,000 random agent pairs define the calibration mean $\bar{q}_{\text{cal}} = E[q]$. This calibration quantity scales $r$, $\phi$, and $c_s$.
+At initialization, 10,000 random agent pairs define the calibration mean $\bar{q}_{\text{cal}} = E[q]$. This calibration quantity scales $r$, $\phi$, and $c_s$; the same draw also fixes the signal-dispersion scale $\mathrm{MAD}_f = E\,|f - E[f]|$ used by the capture gate (§9a).
 
 #### 4a. Outside options
 
@@ -192,7 +192,7 @@ All agents share a reservation threshold $r$, calibrated at initialization:
 
 $$r = f_r \cdot \bar{q}_{\text{cal}}$$
 
-where $\bar{q}_{\text{cal}}$ is the calibration mean and $f_r$ is the reservation coefficient (default 0.60).
+where $\bar{q}_{\text{cal}}$ is the calibration mean and $f_r$ is the reservation coefficient (default 0.60). Since $\phi$ and $c_s$ do not depend on $r$ (§4c), $f_r$ may take any nonnegative value, including $f_r \geq 1$, and is swept as an analysis axis.
 
 #### 4b. Participation constraints
 

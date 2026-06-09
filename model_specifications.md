@@ -618,11 +618,11 @@ Parameters are organized into four categories reflecting their role in the analy
 | $\sigma_x$ | Type noise scale | 0.5 | Expected distance from agent to curve position |
 | $\alpha_R$ | Target roster share (§7) | 0.20 | Standing roster target size is $R^* = \lceil \alpha_R N \rceil$ |
 
-**Calibration parameters.** Set during model development. Constant in production runs.
+**Calibration parameters.** Computed at initialization or set by design, and held fixed within a run. Most are also constant across runs; the reservation coefficient $f_r$ and the regime strength $\delta$ are swept as analysis axes (see the sweep tables below).
 
 | Symbol | Meaning | Default | Notes |
 |--------|---------|---------|-------|
-| $f_r$ | Reservation coefficient (`reservation_frac`) | 0.60 | Sets the outside option $r = f_r\,\bar{q}_{\text{cal}}$; must be $\geq 0$ (may exceed 1) |
+| $f_r$ | Reservation coefficient (`reservation_frac`) | 0.60 | Sets the outside option $r = f_r\,\bar{q}_{\text{cal}}$; $\geq 0$ (may exceed 1). Decoupled from the frictions (§11b), so it is swept freely as an analysis axis — one at a time and in phase-diagram pairs (below) |
 | $r$ | Outside option | $f_r \cdot \bar{q}_{\text{cal}}$ | Derived; constant for all agents; calibrated at initialization |
 | $\eta_{\mathrm{lr}}$ | Adam learning rate | 0.01 | Adam optimizer, full-batch over the training window, no weight decay |
 | $E_{\text{init}}$ | Initial training steps | 200 | Steps on the seed history at $t=0$ |
@@ -642,6 +642,9 @@ Neural-network hidden widths are derived from $d$ rather than calibrated as mode
 |--------|---------|---------|-------|
 | $d_\gamma$ | Active dimensions | 8 | {2, 4, 6, 8} |
 | $\rho$ | Quality-interaction mixing weight | 0.50 | {0, 0.10, 0.30, 0.50, 0.70, 0.90, 1.0} |
+| $f_r$ | Reservation coefficient (`reservation_frac`) | 0.60 | {0.40, 0.60, 0.90, 1.20} |
+
+The reservation coefficient $f_r$ is swept both as a one-at-a-time axis and in phase-diagram pairs (with $\rho$, $\eta_{\mathrm{exit}}$, and $N$). Its range spans the outside option from well below the typical match to above it ($f_r > 1$), the region where the participation constraint binds hardest; the frictions are unaffected because they no longer scale with the surplus $\bar{q}_{\text{cal}} - r$ (§11b).
 
 **Model 1 parameters.** Apply only under resource capture (§12).
 
@@ -871,7 +874,7 @@ simulation figures with $N = 800$, $T = 200$, and 5 seeds.
 - *Content:* $\rho$ on horizontal axis; broker-agent gap in holdout $R^2$; outsourcing rate at steady state.
 
 **Fig. S3.** OAT parameter sweeps.
-- *Content:* Grid of panels varying $\eta_{\mathrm{exit}}$, $\delta$, $p_{\text{demand}}$, $K$ while holding others at defaults.
+- *Content:* Grid of panels varying $f_r$, $\eta_{\mathrm{exit}}$, $\delta$, $p_{\text{demand}}$, $K$ while holding others at defaults.
 
 **Fig. S4.** Network visualization snapshots.
 - *Content:* The network $G$ at early, middle, and late periods. Broker node positioned centrally. Under Model 1, captured positions suppress direct client-recipient ties.
