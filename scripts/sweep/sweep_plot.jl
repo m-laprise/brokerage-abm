@@ -15,7 +15,7 @@ Plot-job kinds (from `manifest.jld2` `plot_jobs`):
                    per-grid-point data.jld2 + tail-averaged summary.jld2 +
                    one heatmap per steady-state metric (generalized X x Y).
 
-Extends the blueprints per della_sweep.md §2a/§5: the network-stats figure adds
+Extends the exploration-script blueprints: the network-stats figure adds
 the broker's Burt `constraint` and `effective_size`; the heatmaps generalize to
 arbitrary X x Y pairs and add `constraint`/`effective_size`.
 

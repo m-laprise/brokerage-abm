@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Della sweep orchestrator (staged). See della_sweep.md.
+# Della sweep orchestrator (staged).
 #
 # Canonical flow (smoke-test then submit):
 #   ./submit.sh resolve          # LOGIN node: registry update + resolve + download
