@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Della sweep orchestrator (staged).
+# Sweep orchestrator (staged).
 #
 # Canonical flow (smoke-test then submit):
 #   ./submit.sh resolve          # LOGIN node: registry update + resolve + download
@@ -11,11 +11,11 @@
 #   ./submit.sh plot             # submit the dependent plot array (afterany)
 #   ./submit.sh status           # squeue for this user's sweep jobs
 #
-# Della compute nodes have NO internet: every network/IO step (registry update,
+# Cluster compute nodes are assumed to have NO internet: every network/IO step (registry update,
 # resolve, package download) happens in `resolve` on the login node; only the
 # compute-heavy precompile/simulation run under sbatch/srun.
 #
-# Cluster settings (Della): account=bstewart, partition=cpu, --time=03:00:00 maps
+# Cluster settings come from the environment (TB_ACCOUNT, TB_DATA_ROOT); --time=03:00:00 maps
 # to the `short` QOS. Override via env: TB_DATA_ROOT, TB_TAG, TB_THROTTLE (array
 # %K, default 100), TB_PLOT_THROTTLE (default 24), TB_TIME (compute walltime).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -24,8 +24,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-DATA_ROOT="${TB_DATA_ROOT:-/projects/BSTEWART/mlaprise/tb_sweeps}"
-ACCOUNT="${TB_ACCOUNT:-bstewart}"
+DATA_ROOT="${TB_DATA_ROOT:?set TB_DATA_ROOT to the directory that will hold the sweep data}"
+ACCOUNT="${TB_ACCOUNT:?set TB_ACCOUNT to your SLURM account}"
 THROTTLE="${TB_THROTTLE:-200}"
 PLOT_THROTTLE="${TB_PLOT_THROTTLE:-24}"
 COMPUTE_TIME="${TB_TIME:-03:00:00}"
@@ -64,7 +64,7 @@ case "$stage" in
 
   setup)
     mkdir -p "$LOGDIR"
-    jid=$(sbatch --parsable \
+    jid=$(sbatch --parsable --account="$ACCOUNT" \
         --output="$LOGDIR/setup_%j.out" --error="$LOGDIR/setup_%j.err" \
         "$SCRIPT_DIR/slurm_setup.sh" "$REPO")
     echo "setup job submitted: $jid"
@@ -86,7 +86,7 @@ case "$stage" in
   smoke)
     idx="${2:-0}"
     mkdir -p "$LOGDIR"
-    jid=$(sbatch --parsable --time="$COMPUTE_TIME" --array="${idx}-${idx}" \
+    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" --array="${idx}-${idx}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
         "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
     echo "smoke job submitted: $jid (task $idx)"
@@ -96,7 +96,7 @@ case "$stage" in
   compute)
     [ -f "$SWEEP_DIR/counts.env" ] || { echo "run ./submit.sh manifest first"; exit 1; }
     source "$SWEEP_DIR/counts.env"
-    jid=$(sbatch --parsable --time="$COMPUTE_TIME" \
+    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" \
         --array="0-$((NRUNS - 1))%${THROTTLE}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
         "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
@@ -114,7 +114,7 @@ case "$stage" in
         [ -n "${COMPUTE_JOBID:-}" ] && dep="--dependency=afterany:${COMPUTE_JOBID}"
     fi
     [ -z "$dep" ] && echo "WARNING: no COMPUTE_JOBID found; submitting plot array with no dependency"
-    jid=$(sbatch --parsable $dep \
+    jid=$(sbatch --parsable --account="$ACCOUNT" $dep \
         --array="0-$((NPLOT - 1))%${PLOT_THROTTLE}" \
         --output="$LOGDIR/plot_%A_%a.out" --error="$LOGDIR/plot_%A_%a.err" \
         "$SCRIPT_DIR/slurm_plot.sh" "$REPO" "$SWEEP_DIR")

@@ -22,7 +22,9 @@ include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, 
 using JLD2
 using Statistics: mean, std, cor, cov, var
 
-const ROOT = get(ENV, "TB_SWEEP_DIR", "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438")
+const ROOT = get(ENV, "TB_SWEEP_DIR") do
+    error("set TB_SWEEP_DIR to the sweep root directory")
+end
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "paper", "figs"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
@@ -85,8 +87,6 @@ const OUTCOMES = [
 function fig1_position_work()
     mb = load_mdfs("oat/rho=0.5/base"); mc = load_mdfs("oat/rho=0.5/capture")
     fig = Figure(size=(1150, 860))
-    Label(fig[0, 1:2], "Broker betweenness centrality and access fraction"; fontsize=SUPTITLE_FS,
-        font=:bold, tellwidth=false)
     axa = Axis(fig[1, 1]; title="Betweenness centrality over time", xlabel="period",
         ylabel="broker betweenness centrality",
         titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS,
@@ -121,11 +121,11 @@ function fig1_position_work()
     axc = Axis(fig[2, 1:2]; title="Across regimes (one dot per regime, late-window means)",
         xlabel="broker betweenness centrality", ylabel="access fraction", titlesize=TITLE_FS,
         xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS, yticklabelsize=TICK_FS)
-    sc = scatter!(axc, bx, ay; color=og, colormap=:viridis, colorrange=extrema(og), markersize=13,
+    sc = scatter!(axc, bx, ay; color=og, colormap=Reverse(:plasma), colorrange=extrema(og), markersize=13,
         strokewidth=0.4, strokecolor=:gray30)
-    Colorbar(fig[2, 3], sc; label="output gap q (broker minus self)", labelsize=LABEL_FS,
+    Colorbar(fig[2, 3], sc; label="output gap q", labelsize=LABEL_FS,
         ticklabelsize=TICK_FS)
-    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 14); rowgap!(fig.layout, 14)
+    colgap!(fig.layout, 14); rowgap!(fig.layout, 14)
     savefig("fig1_position_work.png", fig)
 end
 
@@ -138,8 +138,6 @@ function fig2_rank_lines()
     shown = [o for o in OUTCOMES if o[1] in
         ("Broker rank correlation", "Rank correlation gap", "Broker output q", "Output gap q")]
     fig = Figure(size=(980, 760))
-    Label(fig[0, 1:2], "Late-window means vs. effective rank";
-        fontsize=SUPTITLE_FS, font=:bold, tellwidth=false)
     for (k, (ttl, f)) in enumerate(shown)
         rr = div(k - 1, 2) + 1; cc = mod(k - 1, 2) + 1
         ax = Axis(fig[rr, cc]; title=ttl, xlabel = rr == 2 ? "effective rank r₉₀" : "",
@@ -156,7 +154,7 @@ function fig2_rank_lines()
             axislegend(ax, els, ["δ = 0", "δ = 0.5", "δ = 0.75"]; position=:rt, LEG_KW...)
         end
     end
-    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 14); rowgap!(fig.layout, 10)
+    colgap!(fig.layout, 14); rowgap!(fig.layout, 10)
     savefig("fig2_rank_lines.png", fig)
 end
 
@@ -175,8 +173,6 @@ function fig3_grid_lines()
               byname("Access fraction")  byname("Broker prediction R²")    byname("Prediction R² gap");
               byname("Outsourcing rate") byname("Broker output q")         byname("Output gap q")]
     fig = Figure(size=(1280, 980))
-    Label(fig[0, 1:3], "Late-window means across the matching-function grid";
-        fontsize=SUPTITLE_FS, font=:bold, tellwidth=false)
     axs = Matrix{Axis}(undef, 3, 3)
     for rr in 1:3, cc in 1:3
         ttl, f = layout[rr, cc]
@@ -193,7 +189,7 @@ function fig3_grid_lines()
         axs[rr, cc] = ax
     end
     for rr in 1:3; linkyaxes!(axs[rr, 2], axs[rr, 3]) end   # pairs share a y-axis
-    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
+    colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
     savefig("fig3_grid_lines.png", fig)
 end
 
@@ -212,10 +208,8 @@ function fig4_advantage()
     end
     rks = [r90(r, d) for (r, d) in zip(rho, dlt)]
     xs = [("Broker betweenness centrality", bw), ("Access fraction", ac)]
-    ys = [("Rank correlation gap (broker − agent)", rg), ("Output gap q (broker − self)", qg)]
+    ys = [("Rank correlation gap", rg), ("Output gap q", qg)]
     fig = Figure(size=(1150, 940))
-    Label(fig[0, 1:2], "Structural measures vs. informational and output gaps";
-        fontsize=SUPTITLE_FS, font=:bold, tellwidth=false)
     for (ri, (ylab, yv)) in enumerate(ys), (ci, (xlab, xv)) in enumerate(xs)
         ax = Axis(fig[ri, ci]; xlabel = ri == 2 ? xlab : "", ylabel = ci == 1 ? ylab : "",
             title = ri == 1 ? xlab : "", titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS,
@@ -223,21 +217,22 @@ function fig4_advantage()
         for rv in sort(unique(rho))
             mm = rho .== rv
             scatter!(ax, xv[mm], yv[mm]; color=(RHO_COLORS[rv], 0.8), markersize=msz.(rks[mm]),
-                strokewidth=0.3, strokecolor=:gray30, label="ρ = $rv")
+                strokewidth=0.3, strokecolor=:gray30)
         end
-        if ri == 1 && ci == 2   # fixed-size swatches: plot markers have data-dependent sizes
+        # legends in panel corners the data leaves empty (fixed-size swatches:
+        # plot markers have data-dependent sizes)
+        if ri == 1 && ci == 2
             rvs = sort(unique(rho))
             els = [MarkerElement(marker=:circle, color=RHO_COLORS[v], markersize=12) for v in rvs]
-            axislegend(ax, els, ["ρ = $v" for v in rvs], "ρ (complementarity\nvs quality)";
-                position=:rt, LEG_KW...)
+            axislegend(ax, els, ["ρ = $v" for v in rvs]; position=:rb, LEG_KW...)
         end
         if ri == 2 && ci == 1
             ks = round.((RKLO, (RKLO + RKHI) / 2, RKHI); digits=0)
             els = [MarkerElement(marker=:circle, color=:gray55, markersize=msz(k)) for k in ks]
-            axislegend(ax, els, ["r₉₀ = $(Int(k))" for k in ks], "Effective rank"; position=:rt, LEG_KW...)
+            axislegend(ax, els, ["r₉₀ = $(Int(k))" for k in ks], "Effective rank"; position=:lt, LEG_KW...)
         end
     end
-    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
+    colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
     savefig("fig4_advantage.png", fig)
 end
 
@@ -250,8 +245,6 @@ function fig5_capture()
               ("f_r (reservation threshold)", ["0.4", "0.6", "0.9"], ["oat/reservation_frac=$(r)/capture" for r in (0.4, 0.6, 0.9)]),
               ("η (turnover)", ["0.01", "0.02", "0.03"], ["oat/eta=$(e)/capture" for e in (0.01, 0.02, 0.03)])]
     fig = Figure(size=(1340, 760))
-    Label(fig[0, 1:4], "Captured demand share across regimes"; fontsize=SUPTITLE_FS,
-        font=:bold, tellwidth=false)
     for (ci, (name, vals, cells)) in enumerate(sweeps)
         st = [seedstat_f(load_mdfs(c), capshare) for c in cells]
         ax = Axis(fig[1, ci]; title=name, ylabel = ci == 1 ? "captured share of\noutsourced demand" : "",
@@ -286,7 +279,7 @@ function fig5_capture()
         end
         ci == 4 && axislegend(ax, "Reservation\nthreshold"; position=:lb, LEG_KW...)
     end
-    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 12); rowgap!(fig.layout, 14)
+    colgap!(fig.layout, 12); rowgap!(fig.layout, 14)
     savefig("fig5_capture.png", fig)
 end
 
@@ -320,15 +313,20 @@ function fig6_dynamics()
     yl = (yrange(mpaB, mpaC), yrange(dmnB, dmdB, dmnC, dmdC), yrange(bwB, bwC), yrange(acB, acC), (0, 1.02))
 
     fig = Figure(size=(1220, 560))
-    Label(fig[0, 1:5], "Baseline dynamics over time"; fontsize=SUPTITLE_FS, font=:bold, tellwidth=false)
+    # all fonts slightly smaller than the shared sizes: this figure has 10 panels
+    T6, L6, K6, G6 = TITLE_FS - 6, LABEL_FS - 3, TICK_FS - 3, 15
     mk(r, c, ttl, ylim) = Axis(fig[r, c]; title=ttl, xlabel = r == 2 ? "period" : "",
-        xticks=50:50:200, titlesize=TITLE_FS - 3, xlabelsize=LABEL_FS, xticklabelsize=TICK_FS,
-        yticklabelsize=TICK_FS, limits=((TSTART, 201), ylim))
-    drw!(ax, s, col; lbl="", ls=:solid, pts=false, lw=2.2) = pts ?
-        scatterlines!(ax, s[1], s[2]; color=col, linewidth=lw, markersize=6, linestyle=ls, label=lbl) :
-        lines!(ax, s[1], s[2]; color=col, linewidth=lw, linestyle=ls, label=lbl)
-    # pale-gray cross-overlays first, so each row's own series draws on top
-    gry!(ax, s; ls=:solid, pts=false, lbl="") = drw!(ax, s, COL_OVERLAY; ls=ls, pts=pts, lw=1.6, lbl=lbl)
+        xticks=50:50:200, titlesize=T6, xlabelsize=L6, xticklabelsize=K6,
+        yticklabelsize=K6, limits=((TSTART, 201), ylim))
+    # a `label` keyword is only passed when a label is requested: a plot with
+    # label="" would still register a (blank) legend entry
+    function drw!(ax, s, col; lbl=nothing, ls=:solid, pts=false, lw=2.2)
+        kw = isnothing(lbl) ? (;) : (; label=lbl)
+        pts ? scatterlines!(ax, s[1], s[2]; color=col, linewidth=lw, markersize=6, linestyle=ls, kw...) :
+              lines!(ax, s[1], s[2]; color=col, linewidth=lw, linestyle=ls, kw...)
+    end
+    # pale-gray cross-overlays first, so each row's own series draws on top; never labeled
+    gry!(ax, s; ls=:solid, pts=false) = drw!(ax, s, COL_OVERLAY; ls=ls, pts=pts, lw=1.6)
     # top row: no capture (gray = capture counterparts; explained in the caption)
     let a = mk(1, 1, "Matches per agent", yl[1])
         gry!(a, mpaC); drw!(a, mpaB, COL_DIAG)
@@ -336,7 +334,7 @@ function fig6_dynamics()
     let a = mk(1, 2, "Network degree", yl[2])
         gry!(a, dmnC); gry!(a, dmdC; ls=:dot)
         drw!(a, dmnB, COL_AGENT; lbl="mean"); drw!(a, dmdB, COL_AGENT; lbl="median", ls=:dot)
-        axislegend(a; position=:rb, LEG_KW...)
+        axislegend(a; position=:rb, LEG_KW..., labelsize=G6, patchsize=(15, 11))
     end
     let a = mk(1, 3, "Broker betweenness\ncentrality", yl[3])
         gry!(a, bwC; pts=true); drw!(a, bwB, COL_GAP; pts=true)
@@ -364,12 +362,12 @@ function fig6_dynamics()
     let a = mk(2, 5, "", yl[5])
         gry!(a, osB)
         drw!(a, osC, COL_BROKER; lbl="outsourcing rate")
-        drw!(a, capC, COL_CAPTURE; lbl="captured share\nof total demand", ls=:dash)
-        axislegend(a; position=:rb, LEG_KW...)
+        drw!(a, capC, COL_CAPTURE; lbl="capture share", ls=:dash)
+        axislegend(a; position=:rb, LEG_KW..., labelsize=G6, patchsize=(15, 11))
     end
-    Label(fig[1, 0], "No capture"; rotation=π/2, font=:bold, fontsize=LABEL_FS, tellheight=false)
-    Label(fig[2, 0], "Capture"; rotation=π/2, font=:bold, fontsize=LABEL_FS, tellheight=false)
-    rowsize!(fig.layout, 0, Fixed(42)); colsize!(fig.layout, 0, Fixed(30))
+    Label(fig[1, 0], "No capture"; rotation=π/2, font=:bold, fontsize=L6, tellheight=false)
+    Label(fig[2, 0], "Capture"; rotation=π/2, font=:bold, fontsize=L6, tellheight=false)
+    colsize!(fig.layout, 0, Fixed(30))
     colgap!(fig.layout, 12); rowgap!(fig.layout, 12)
     savefig("fig6_dynamics.png", fig)
 end

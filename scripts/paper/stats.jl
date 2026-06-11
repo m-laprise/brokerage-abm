@@ -18,7 +18,9 @@ Usage: julia --project scripts/paper/stats.jl
 
 using JLD2, DataFrames, Statistics, Printf, Dates
 
-const ROOT = get(ENV, "TB_SWEEP_DIR", "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438")
+const ROOT = get(ENV, "TB_SWEEP_DIR") do
+    error("set TB_SWEEP_DIR to the sweep root directory")
+end
 const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "paper", "values.tex"))
 const LATE = (181, 200)
 const EARLY = (50, 70)

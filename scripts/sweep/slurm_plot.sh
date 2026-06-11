@@ -8,7 +8,6 @@
 # each plot task tolerates missing shards and the report agent lists gaps.
 # Args: $1 = repo root, $2 = sweep dir (exported as TB_SWEEP_DIR).
 #SBATCH --job-name=tb_plot
-#SBATCH --account=bstewart
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

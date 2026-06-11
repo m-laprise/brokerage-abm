@@ -8,7 +8,6 @@
 #          slurm_sweep.sh <repo_root> <sweep_dir>
 # Args: $1 = repo root, $2 = sweep dir (exported as TB_SWEEP_DIR).
 #SBATCH --job-name=tb_run
-#SBATCH --account=bstewart
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

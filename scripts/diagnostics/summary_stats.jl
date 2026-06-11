@@ -17,7 +17,9 @@ Usage: julia --project scripts/diagnostics/summary_stats.jl
 
 using JLD2, DataFrames, Statistics
 
-const ROOT = "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438"
+const ROOT = get(ENV, "TB_SWEEP_DIR") do
+    error("set TB_SWEEP_DIR to the sweep root directory")
+end
 
 nm(v) = (w = filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 r2(x) = round(x; digits=2); r3(x) = round(x; digits=3)

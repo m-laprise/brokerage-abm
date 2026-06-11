@@ -13,7 +13,9 @@ include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, 
 using JLD2
 using Statistics: mean, std, cor, cov, var
 
-const ROOT = "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438"
+const ROOT = get(ENV, "TB_SWEEP_DIR") do
+    error("set TB_SWEEP_DIR to the sweep root directory")
+end
 const OUT = joinpath(ROOT, "report")
 const RHO5 = [0.0, 0.3, 0.5, 0.7, 1.0]
 const RHO_COLORS = Dict(0.0 => :seagreen, 0.3 => :mediumaquamarine, 0.5 => :goldenrod,

@@ -1,7 +1,7 @@
 """
     sweep_config.jl
 
-Single source of truth for the Della parameter sweep.
+Single source of truth for the parameter sweep.
 
 Defines the OAT axes (§2a), the kappa_max sub-sweep (§2c), the six phase-diagram
 pairs (§2b), the baseline, the seed list, and the storage layout (§4). Expands

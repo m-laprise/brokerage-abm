@@ -4,7 +4,6 @@
 # amortized (Enzyme/CairoMakie are expensive to precompile). Run before the
 # compute array. Args: $1 = repo root.
 #SBATCH --job-name=tb_setup
-#SBATCH --account=bstewart
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

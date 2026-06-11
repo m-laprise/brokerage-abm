@@ -1,39 +1,56 @@
-% captions.tex: hand-edited source of truth for the results-section figure captions.
-% One pcaption block per figure; the name matches the \pvcaption{name} reference in
-% section_source.tex (and the fig:<name> label). Captions may use \pv{key} references:
-% data values come from values.tex (stats.jl), display conventions from figmeta.tex
+% captions.tex: hand-edited source of truth for the results-section figure titles
+% and captions. One ptitle and one pcaption block per figure; the name matches the
+% \pvtitle{name} / \pvcaption{name} references in section_source.tex (and the
+% fig:<name> label). Titles are rendered by the TeX (as the bold lead-in of the
+% caption), not baked into the PNGs. Blocks may use \pv{key} references: data
+% values come from values.tex (stats.jl), display conventions from figmeta.tex
 % (figures.jl), so derivation facts quoted here cannot drift from the figure code.
 % Convention: captions describe elements and derivations only, no interpretation.
 
+\begin{ptitle}{position}
+Broker betweenness centrality and access fraction
+\end{ptitle}
 \begin{pcaption}{position}
-Broker betweenness centrality and access fraction. Top row: ensemble means over
-time at the baseline regime pair (no capture, blue; capture, orange), as
-\pv{rollWin}-observation rolling means; betweenness is measured every
-\pv{betwInterval} periods. Bottom: late means across the one-at-a-time no-capture
-regimes, one dot per regime, colored by the late-mean output gap (broker minus
-self). Axes start at $t=\pv{axisStart}$ (end of burn-in).
+Top row: ensemble means over time at the baseline regime pair (no capture, blue;
+capture, orange), as \pv{rollWin}-observation rolling means; betweenness is
+measured every \pv{betwInterval} periods. Bottom: late means across the
+one-at-a-time no-capture regimes, one dot per regime, colored by the late-mean
+output gap (broker minus self). Axes start at $t=\pv{axisStart}$ (end of
+burn-in).
 \end{pcaption}
 
+\begin{ptitle}{ranklines}
+Late-window means vs. effective rank
+\end{ptitle}
 \begin{pcaption}{ranklines}
-Late means of four outcomes against the effective rank $r_{90}$ of the matching
-function, across the $\rho\times\delta$ grid ($\rho=1$ omitted) plus the
+Four outcomes against the effective rank $r_{90}$ of the matching function;
+late means, across the $\rho\times\delta$ grid ($\rho=1$ omitted) plus the
 one-at-a-time $\rho$ regimes; one line per gain $\delta$, no capture.
 \end{pcaption}
 
+\begin{ptitle}{grid}
+Late-window means across the matching-function grid
+\end{ptitle}
 \begin{pcaption}{grid}
-Late means of nine outcomes across the $\rho\times\delta$ grid (no capture;
-$\rho=1$ omitted; one-at-a-time $\rho$ regimes refine the $\delta=0.5$ line), one
-line per gain $\delta$. The first column is on the unit scale; in columns two and
-three, panels in the same row share a y-axis.
+Nine outcomes across the $\rho\times\delta$ grid, late means (no capture;
+$\rho=1$ omitted; one-at-a-time $\rho$ regimes refine the $\delta=0.5$ line),
+one line per gain $\delta$. The first column is on the unit scale; in columns
+two and three, panels in the same row share a y-axis.
 \end{pcaption}
 
+\begin{ptitle}{advantage}
+Structural measures vs. informational and output gaps
+\end{ptitle}
 \begin{pcaption}{advantage}
 Rank-correlation gap (broker minus agent) and output gap (broker minus self)
-against broker betweenness and access fraction; late means, one dot per
-no-capture regime. Color gives $\rho$; marker size gives the effective rank
+against broker betweenness centrality and access fraction; late means, one dot
+per no-capture regime. Color gives $\rho$; marker size gives the effective rank
 $r_{90}$.
 \end{pcaption}
 
+\begin{ptitle}{capture}
+Captured demand share across regimes
+\end{ptitle}
 \begin{pcaption}{capture}
 Captured share of outsourced demand. Top row: late means (line) and $\pm 1$ SD
 over seeds (band) along the $\rho$, $N$, $f_r$, and $\eta$ sweeps. Bottom row:
@@ -41,14 +58,17 @@ captured share against four late-mean outcomes, one dot per capture regime (all
 \pv{nCapture}), colored by $f_r$.
 \end{pcaption}
 
+\begin{ptitle}{dynamics}
+Baseline dynamics over time
+\end{ptitle}
 \begin{pcaption}{dynamics}
-Baseline dynamics over time without capture (top row) and with capture (bottom
-row): matches per agent, agent network degree (mean, solid; median, dotted),
-broker betweenness centrality, access fraction, and outsourcing rate. Lines are
+Without capture (top row) and with capture (bottom row): matches per agent,
+agent network degree (mean, solid; median, dotted), broker betweenness
+centrality, access fraction, and outsourcing rate. Lines are
 \pv{rollWin}-observation rolling ensemble means; betweenness is rolled over its
 \pv{betwInterval}-period measurements. In each panel, pale gray reproduces the
 corresponding series of the other row, so the two regimes can be compared
-directly. The capture row's last panel adds the captured share of total demand
-(dashed). Panels in the same column share y-ranges; axes start at
-$t=\pv{axisStart}$.
+directly. The capture row's last panel adds the capture share, the captured
+share of total demand (dashed). Panels in the same column share y-ranges; axes
+start at $t=\pv{axisStart}$.
 \end{pcaption}
