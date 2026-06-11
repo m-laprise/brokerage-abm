@@ -41,3 +41,5 @@ scripts/diagnostics/adv_results/
 # SLURM job logs
 *.out
 *.err
+# Paper pipeline build artifacts (compile-check wrapper)
+paper/_build/
