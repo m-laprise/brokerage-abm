@@ -40,3 +40,5 @@ scripts/diagnostics/adv_results/
 *.err
 # Paper pipeline build artifacts (compile-check wrapper)
 paper/_build/
+# Figure-input digest: small derived dataset enabling local figure rendering
+!paper/figdata.jld2

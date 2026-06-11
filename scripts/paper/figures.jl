@@ -1,11 +1,12 @@
 """
     scripts/paper/figures.jl
 
-Figures for the paper's results section, numbered in order of first citation in the
-prose. Reads only saved sweep data plus the initialization-only DGP rank grid
-(scripts/diagnostics/_results/dgp_rank_grid.jld2). CairoMakie only; no simulation;
-no hard-coded results (literal constants are selection/display conventions only).
-Outputs print-resolution PNGs to paper/figs/.
+Figures for the paper's results section, numbered in order of first citation in
+the prose. Reads ONLY paper/figdata.jld2 (the small derived dataset written by
+scripts/paper/figdata.jl on the cluster), so figures render locally with no
+access to the sweep. CairoMakie only; no simulation; no hard-coded results
+(literal constants are display conventions only). Outputs print-resolution PNGs
+to paper/figs/ and the display-convention keys to paper/figmeta.tex.
 
   fig1_position_work  betweenness + access over time (both baselines) and cross-regime scatter
   fig2_rank_lines     four outcomes vs the effective rank of the matching function
@@ -18,13 +19,10 @@ Outputs print-resolution PNGs to paper/figs/.
 Usage: julia --project scripts/paper/figures.jl
 """
 
-include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean, access_fraction
+include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
 using JLD2
-using Statistics: mean, std, cor, cov, var
+using Statistics: mean
 
-const ROOT = get(ENV, "TB_SWEEP_DIR") do
-    error("set TB_SWEEP_DIR to the sweep root directory")
-end
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "paper", "figs"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
@@ -34,58 +32,22 @@ const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-p
 const ROLLW = 5                       # rolling-mean window, in observations
 const BETWINT = 20                    # betweenness measurement interval, periods
 const TSTART = 30                     # displayed axes start here; data never cut
-const RHO5 = [0.0, 0.3, 0.5, 0.7, 1.0]
 const RHO_COLORS = Dict(0.0 => :seagreen, 0.3 => :mediumaquamarine, 0.5 => :goldenrod,
                         0.7 => :darkorange, 1.0 => :firebrick)
 const DELTA_COLORS = Dict(0.0 => :steelblue, 0.5 => :goldenrod, 0.75 => :firebrick)
 const FR_COLORS = Dict(0.4 => :black, 0.6 => :deepskyblue, 0.9 => :darkorange, 1.2 => :firebrick)
 const COL_OVERLAY = :gray72           # pale-gray cross-overlay in fig6
 
-nanmean(v) = (w = filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
-tailmean(df, col) = nanmean(df[(df.period .>= 181) .& (df.period .<= 200), col])   # late-window mean [181,200]
-seedstat(mdfs, col) = (vs = filter(!isnan, [tailmean(d, col) for d in mdfs]); (mean(vs), std(vs)))
-load_mdfs(rel) = jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f; f["mdfs"] end
-load_cfg(rel) = jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f; f["config"] end
-access_tail(df) = nanmean(access_fraction(df)[(df.period .>= 181) .& (df.period .<= 200)])
-cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
-period_ens(mdfs, f) = (per = mdfs[1].period; (per, [nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)]))
-savefig(fname, fig) = (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
-
-# rho x delta grid cells; axis values read from each cell's config metadata
-function rho_delta_grid(model)
-    out = Dict{Tuple{Float64,Float64},Vector{DataFrame}}()
-    cellsdir = joinpath(ROOT, "phase", "rho_delta", "cells")
-    for d in sort(readdir(cellsdir))
-        p = joinpath(cellsdir, d, model, "data.jld2")
-        isfile(p) || continue
-        m, cfg = jldopen(p, "r") do f; (f["mdfs"], f["config"]) end
-        out[(Float64(cfg["rho"]), Float64(cfg["delta"]))] = m
-    end
-    return out
-end
-
-RG = JLD2.load(joinpath(@__DIR__, "..", "diagnostics", "_results", "dgp_rank_grid.jld2"))
-r90(rho, dl) = RG["r90"][(Float64(rho), Float64(dl))]
-const RKLO, RKHI = extrema(values(RG["r90"]))          # display scales derived from the artifact
+const FD = JLD2.load(normpath(joinpath(@__DIR__, "..", "..", "paper", "figdata.jld2")))["figdata"]
+const PER = FD["period"]
+const SER = FD["series"]
+r90(rho, dl) = FD["r90"][(Float64(rho), Float64(dl))]
+const RKLO, RKHI = extrema(values(FD["r90"]))          # display scales derived from the artifact
 msz(k) = 6 + 12 * (k - RKLO) / (RKHI - RKLO)           # marker size from effective rank
-
-# the nine outcomes shared by figures 2 and 3
-qgap(m) = seedstat(m, :q_broker_standard_mean)[1] - seedstat(m, :q_self_mean)[1]
-const OUTCOMES = [
-    ("Betweenness centrality",  m -> seedstat(m, :betweenness)[1]),
-    ("Access fraction",        cell_access),
-    ("Broker prediction R²",   m -> seedstat(m, :broker_holdout_r2)[1]),
-    ("Prediction R² gap",      m -> seedstat(m, :broker_holdout_r2)[1] - seedstat(m, :agent_holdout_r2)[1]),
-    ("Broker rank correlation", m -> seedstat(m, :broker_holdout_rank)[1]),
-    ("Rank correlation gap",   m -> seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1]),
-    ("Broker output q",        m -> seedstat(m, :q_broker_standard_mean)[1]),
-    ("Output gap q",           qgap),
-    ("Outsourcing rate",       m -> seedstat(m, :outsourcing_rate)[1]),
-]
+savefig(fname, fig) = (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
 
 # ── Figure 1: betweenness and access over time (both baselines) + cross-regime scatter ──
 function fig1_position_work()
-    mb = load_mdfs("oat/rho=0.5/base"); mc = load_mdfs("oat/rho=0.5/capture")
     fig = Figure(size=(1150, 860))
     axa = Axis(fig[1, 1]; title="Betweenness centrality over time", xlabel="period",
         ylabel="broker betweenness centrality",
@@ -94,30 +56,21 @@ function fig1_position_work()
     axb = Axis(fig[1, 2]; title="Access fraction over time", xlabel="period", ylabel="access fraction",
         titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS,
         yticklabelsize=TICK_FS, limits=((TSTART, 201), (0, nothing)))
-    for (m, col, ls, lbl) in ((mb, COL_AGENT, :solid, "no capture"), (mc, COL_CAPTURE, :solid, "capture"))
-        per, bw = period_ens(m, d -> d.betweenness)             # measured every 20 periods
-        mi = [i for i in eachindex(per) if per[i] % BETWINT == 0]
+    for (model, col, ls, lbl) in (("base", COL_AGENT, :solid, "no capture"),
+                                  ("capture", COL_CAPTURE, :solid, "capture"))
+        bw = SER[model]["betweenness"]                          # measured every BETWINT periods
+        mi = [i for i in eachindex(PER) if PER[i] % BETWINT == 0]
         sm = rolling_mean(bw[mi], ROLLW)
-        scatterlines!(axa, per[mi], sm; color=col, linestyle=ls, linewidth=2.2,
+        scatterlines!(axa, PER[mi], sm; color=col, linestyle=ls, linewidth=2.2,
             markersize=6, label=lbl)
-        pa, af = period_ens(m, access_fraction)                 # per-period
-        sm2 = rolling_mean(af, ROLLW)
-        lines!(axb, pa, sm2; color=col, linestyle=ls, linewidth=2.2, label=lbl)
+        sm2 = rolling_mean(SER[model]["access"], ROLLW)         # per-period
+        lines!(axb, PER, sm2; color=col, linestyle=ls, linewidth=2.2, label=lbl)
     end
     axislegend(axa; position=:rb, LEG_KW...); axislegend(axb; position=:rt, LEG_KW...)
-    # row 2: cross-regime scatter (base OAT cells), coloured by effective rank
-    cellspec = vcat(["oat/rho=$(r)/base" for r in RHO5],
-        ["oat/$a/base" for a in ("eta=0.01", "eta=0.02", "eta=0.03", "N=500", "N=1000", "N=1500",
-            "reservation_frac=0.4", "reservation_frac=0.6", "reservation_frac=0.9",
-            "reservation_frac=1.2", "delta=0.0", "delta=0.75", "k=4", "k=12")])
-    bx = Float64[]; ay = Float64[]; og = Float64[]
-    for rel in cellspec
-        isfile(joinpath(ROOT, rel, "data.jld2")) || continue
-        m = load_mdfs(rel)
-        b = seedstat(m, :betweenness)[1]; a = cell_access(m)
-        (isnan(b) || isnan(a)) && continue
-        push!(bx, b); push!(ay, a); push!(og, qgap(m))
-    end
+    # row 2: cross-regime scatter (base OAT cells), coloured by output gap
+    cells = FD["oat_cells"]
+    bx = [c["betw"] for c in cells]; ay = [c["access"] for c in cells]
+    og = [c["qgap"] for c in cells]
     axc = Axis(fig[2, 1:2]; title="Across regimes (one dot per regime, late-window means)",
         xlabel="broker betweenness centrality", ylabel="access fraction", titlesize=TITLE_FS,
         xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS, yticklabelsize=TICK_FS)
@@ -131,20 +84,17 @@ end
 
 # ── Figure 2: four outcomes against the effective rank of the matching function ──
 function fig2_rank_lines()
-    pts = [(r90(r, d), r, d, m) for ((r, d), m) in rho_delta_grid("base") if r != 1.0]
-    for r in (0.3, 0.7)   # OAT rho cells at delta = 0.5
-        push!(pts, (r90(r, 0.5), r, 0.5, load_mdfs("oat/rho=$r/base")))
-    end
-    shown = [o for o in OUTCOMES if o[1] in
-        ("Broker rank correlation", "Rank correlation gap", "Broker output q", "Output gap q")]
+    pts = [(r90(c["rho"], c["delta"]), c["rho"], c["delta"], c["outcomes"])
+           for c in FD["grid_cells"] if c["rho"] != 1.0]
+    shown = ("Broker rank correlation", "Rank correlation gap", "Broker output q", "Output gap q")
     fig = Figure(size=(980, 760))
-    for (k, (ttl, f)) in enumerate(shown)
+    for (k, ttl) in enumerate(shown)
         rr = div(k - 1, 2) + 1; cc = mod(k - 1, 2) + 1
         ax = Axis(fig[rr, cc]; title=ttl, xlabel = rr == 2 ? "effective rank r₉₀" : "",
             titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS)
         for d in (0.0, 0.5, 0.75)
-            grp = sort([(x, f(m)) for (x, dd, _, m) in [(p[1], p[3], p[2], p[4]) for p in pts] if dd == d]; by=first)
+            grp = sort([(p[1], p[4][ttl]) for p in pts if p[3] == d]; by=first)
             isempty(grp) && continue
             scatterlines!(ax, first.(grp), last.(grp); color=DELTA_COLORS[d], linewidth=1.6,
                 markersize=11, strokewidth=0.4, strokecolor=:gray30)
@@ -160,28 +110,24 @@ end
 
 # ── Figure 3: nine outcomes vs rho, one line per delta (rho = 1 dropped) ──
 function fig3_grid_lines()
-    grid = rho_delta_grid("base")
-    dls = sort(unique(last.(collect(keys(grid)))))
-    cells = Dict(k => m for (k, m) in grid if k[1] != 1.0)
-    for r in (0.3, 0.7)   # OAT rho cells refine the delta = 0.5 line
-        cells[(r, 0.5)] = load_mdfs("oat/rho=$r/base")
-    end
+    gcells = FD["grid_cells"]
+    dls = sort(unique([c["delta"] for c in gcells]))
+    cells = Dict((c["rho"], c["delta"]) => c["outcomes"] for c in gcells if c["rho"] != 1.0)
     # 3x3: first column = the [0,1]-bounded quantities (absolute 0-1 axis); columns
     # 2-3 = the rank-correlation, R², and output pairs (shared y-axis per row).
-    byname(n) = OUTCOMES[findfirst(o -> o[1] == n, OUTCOMES)]
-    layout = [byname("Betweenness centrality")      byname("Broker rank correlation") byname("Rank correlation gap");
-              byname("Access fraction")  byname("Broker prediction R²")    byname("Prediction R² gap");
-              byname("Outsourcing rate") byname("Broker output q")         byname("Output gap q")]
+    layout = ["Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
+              "Access fraction"        "Broker prediction R²"    "Prediction R² gap";
+              "Outsourcing rate"       "Broker output q"         "Output gap q"]
     fig = Figure(size=(1280, 980))
     axs = Matrix{Axis}(undef, 3, 3)
     for rr in 1:3, cc in 1:3
-        ttl, f = layout[rr, cc]
+        ttl = layout[rr, cc]
         ax = Axis(fig[rr, cc]; title=ttl, xlabel = rr == 3 ? "ρ (complementarity vs quality)" : "",
             xticks=[0, 0.3, 0.5, 0.7], titlesize=TITLE_FS, xlabelsize=LABEL_FS,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS,
             limits = cc == 1 ? (nothing, (0, 1.02)) : (nothing, nothing))
         for d in dls
-            pts = sort([(r, f(m)) for ((r, dd), m) in cells if dd == d]; by=first)
+            pts = sort([(r, o[ttl]) for ((r, dd), o) in cells if dd == d]; by=first)
             scatterlines!(ax, first.(pts), last.(pts); color=DELTA_COLORS[d], linewidth=2.0,
                 markersize=10, strokewidth=0.4, strokecolor=:gray30, label="δ = $d")
         end
@@ -195,17 +141,10 @@ end
 
 # ── Figure 4: structural measures vs informational/output gaps (4 panels) ──
 function fig4_advantage()
-    # every saved base cell; rho/delta read from each cell's config
-    rho = Float64[]; dlt = Float64[]; bw = Float64[]; ac = Float64[]; rg = Float64[]; qg = Float64[]
-    for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-        (endswith(root, "base") && "data.jld2" in files) || continue
-        m, cfg = jldopen(joinpath(root, "data.jld2"), "r") do f; (f["mdfs"], f["config"]) end
-        b = seedstat(m, :betweenness)[1]; isnan(b) && continue
-        push!(rho, Float64(cfg["rho"])); push!(dlt, Float64(cfg["delta"]))
-        push!(bw, b); push!(ac, cell_access(m))
-        push!(rg, seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1])
-        push!(qg, qgap(m))
-    end
+    bc = FD["base_cells"]   # every saved no-capture regime
+    rho = [c["rho"] for c in bc]; dlt = [c["delta"] for c in bc]
+    bw = [c["betw"] for c in bc]; ac = [c["access"] for c in bc]
+    rg = [c["rankgap"] for c in bc]; qg = [c["qgap"] for c in bc]
     rks = [r90(r, d) for (r, d) in zip(rho, dlt)]
     xs = [("Broker betweenness centrality", bw), ("Access fraction", ac)]
     ys = [("Rank correlation gap", rg), ("Output gap q", qg)]
@@ -238,35 +177,24 @@ end
 
 # ── Figure 5: captured share across sweeps (row 1) and vs the advantage measures (row 2) ──
 function fig5_capture()
-    capshare(d) = tailmean(d, :principal_mode_share)
-    seedstat_f(mdfs, f) = (vs = filter(!isnan, [f(d) for d in mdfs]); isempty(vs) ? (NaN, 0.0) : (mean(vs), std(vs)))
-    sweeps = [("ρ (complementarity vs quality)", string.(RHO5), ["oat/rho=$(r)/capture" for r in RHO5]),
-              ("N (market size)", ["500", "1000", "1500"], ["oat/N=$(n)/capture" for n in (500, 1000, 1500)]),
-              ("f_r (reservation threshold)", ["0.4", "0.6", "0.9"], ["oat/reservation_frac=$(r)/capture" for r in (0.4, 0.6, 0.9)]),
-              ("η (turnover)", ["0.01", "0.02", "0.03"], ["oat/eta=$(e)/capture" for e in (0.01, 0.02, 0.03)])]
+    sw = FD["capture_sweeps"]
+    sweeps = [("ρ (complementarity vs quality)", "rho"), ("N (market size)", "N"),
+              ("f_r (reservation threshold)", "fr"), ("η (turnover)", "eta")]
     fig = Figure(size=(1340, 760))
-    for (ci, (name, vals, cells)) in enumerate(sweeps)
-        st = [seedstat_f(load_mdfs(c), capshare) for c in cells]
+    for (ci, (name, key)) in enumerate(sweeps)
+        s = sw[key]; vals = s["labels"]; mu = s["mean"]; sd = s["sd"]
         ax = Axis(fig[1, ci]; title=name, ylabel = ci == 1 ? "captured share of\noutsourced demand" : "",
             xticks=(1:length(vals), vals), titlesize=TITLE_FS, ylabelsize=LABEL_FS - 1,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS, limits=(nothing, (0, 1.02)))
         x = 1:length(vals)
-        band!(ax, x, first.(st) .- last.(st), first.(st) .+ last.(st); color=(COL_CAPTURE, 0.15))
-        scatterlines!(ax, x, first.(st); color=COL_CAPTURE, markersize=9)
+        band!(ax, x, mu .- sd, mu .+ sd; color=(COL_CAPTURE, 0.15))
+        scatterlines!(ax, x, mu; color=COL_CAPTURE, markersize=9)
     end
     # row 2: every capture cell (f_r = 1.2 included), coloured by f_r
-    caps = String[]
-    for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-        endswith(root, "capture") && ("data.jld2" in files) && push!(caps, root)
-    end
-    cs = Float64[]; bw = Float64[]; ac = Float64[]; rg = Float64[]; qg = Float64[]; fr = Float64[]
-    for d in caps
-        m, cfg = jldopen(joinpath(d, "data.jld2"), "r") do f; (f["mdfs"], f["config"]) end
-        c = seedstat(m, :principal_mode_share)[1]; isnan(c) && continue
-        push!(cs, c); push!(bw, seedstat(m, :betweenness)[1]); push!(ac, cell_access(m))
-        push!(rg, seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1])
-        push!(qg, qgap(m)); push!(fr, Float64(cfg["reservation_frac"]))
-    end
+    cc = FD["capture_cells"]
+    cs = [c["capshare"] for c in cc]; bw = [c["betw"] for c in cc]
+    ac = [c["access"] for c in cc]; rg = [c["rankgap"] for c in cc]
+    qg = [c["qgap"] for c in cc]; fr = [c["fr"] for c in cc]
     panels = [("Betweenness centrality", bw), ("Access fraction", ac), ("Rank correlation gap", rg), ("Output gap q", qg)]
     for (ci, (xlab, xv)) in enumerate(panels)
         ax = Axis(fig[2, ci]; title=xlab, ylabel = ci == 1 ? "captured share of\noutsourced demand" : "",
@@ -286,30 +214,21 @@ end
 # ── Figure 6: baseline dynamics, no-capture (top) vs capture (bottom); each row also
 #    shows the other row's series in pale gray for direct comparison ──
 function fig6_dynamics()
-    relb = "oat/rho=0.5/base"; relc = "oat/rho=0.5/capture"
-    mb = load_mdfs(relb); mc = load_mdfs(relc)
-    Nb = load_cfg(relb)["N"]; Nc = load_cfg(relc)["N"]
-    function ot(mdfs, f)   # ensemble mean, 5-period rolling over full series, display trimming is axis-only
-        per = mdfs[1].period
-        sm = rolling_mean([nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)], ROLLW)
-        (per, sm)
-    end
-    function otb(mdfs)     # betweenness: rolling over the 20-period measurements
-        per = mdfs[1].period
-        raw = [nanmean(Float64[d.betweenness[t] for d in mdfs]) for t in eachindex(per)]
-        mi = [i for i in eachindex(per) if per[i] % BETWINT == 0]
-        (per[mi], rolling_mean(raw[mi], ROLLW))
+    # ensemble mean, ROLLW-rolling over the full series; display trimming is axis-only
+    ot(model, key) = (PER, rolling_mean(SER[model][key], ROLLW))
+    function otb(model)    # betweenness: rolling over the BETWINT-period measurements
+        mi = [i for i in eachindex(PER) if PER[i] % BETWINT == 0]
+        (PER[mi], rolling_mean(SER[model]["betweenness"][mi], ROLLW))
     end
     yrange(ss...) = (v = filter(!isnan, vcat((s[2][s[1] .>= TSTART] for s in ss)...));   # displayed window only
         lo = minimum(v); hi = maximum(v); pad = 0.06 * (hi - lo + eps()); (lo - pad, hi + pad))
-    mpaB = ot(mb, d -> 2 .* d.n_total_matches ./ Nb)
-    mpaC = ot(mc, d -> 2 .* d.n_total_matches ./ Nc)
-    dmnB, dmdB = ot(mb, d -> d.mean_degree), ot(mb, d -> d.median_degree)
-    dmnC, dmdC = ot(mc, d -> d.mean_degree), ot(mc, d -> d.median_degree)
-    bwB, bwC = otb(mb), otb(mc)
-    acB, acC = ot(mb, access_fraction), ot(mc, access_fraction)
-    osB, osC = ot(mb, d -> d.outsourcing_rate), ot(mc, d -> d.outsourcing_rate)
-    capC = ot(mc, d -> d.principal_mode_share .* d.outsourcing_rate)   # captured share of TOTAL demand
+    mpaB, mpaC = ot("base", "mpa"), ot("capture", "mpa")
+    dmnB, dmdB = ot("base", "mean_degree"), ot("base", "median_degree")
+    dmnC, dmdC = ot("capture", "mean_degree"), ot("capture", "median_degree")
+    bwB, bwC = otb("base"), otb("capture")
+    acB, acC = ot("base", "access"), ot("capture", "access")
+    osB, osC = ot("base", "outsourcing"), ot("capture", "outsourcing")
+    capC = ot("capture", "capshare_total")   # captured share of TOTAL demand
     yl = (yrange(mpaB, mpaC), yrange(dmnB, dmdB, dmnC, dmdC), yrange(bwB, bwC), yrange(acB, acC), (0, 1.02))
 
     fig = Figure(size=(1220, 560))

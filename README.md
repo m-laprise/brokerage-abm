@@ -92,14 +92,18 @@ The cluster account and the data destination are taken from the environment
 
 ## Reproducing the results section
 
-Given the dataset, three scripts rebuild everything the results section quotes:
-the statistics, the figures, and the assembled TeX itself (see
-`scripts/paper/README.md` for details). Set the environment variable
-`TB_SWEEP_DIR` to the dataset's root folder, then:
+The pipeline is two-tiered (see `scripts/paper/README.md`): the data-dependent
+steps run on the cluster and commit their small outputs (`values.tex`,
+`figdata.jld2`), after which the figures and the assembled TeX rebuild locally
+from a clone, with no access to the dataset. Editing prose, captions, or figure
+styling therefore never requires the cluster:
 
 ```bash
+# on the cluster, with TB_SWEEP_DIR set:
 julia --project scripts/diagnostics/dgp_rank_grid.jl   # once: effective-rank grid
 julia --project scripts/paper/stats.jl                 # -> paper/values.tex (every quoted number)
+julia --project scripts/paper/figdata.jl               # -> paper/figdata.jld2 (figure inputs)
+# locally, from a clone, no data access needed:
 julia --project scripts/paper/figures.jl               # -> paper/figs/*.png (print resolution)
 julia scripts/paper/build_section.jl                   # -> paper/results_section.tex
 ```
