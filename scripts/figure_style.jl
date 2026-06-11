@@ -30,13 +30,14 @@ const COL_BASE_REF  = :gray60        # base model reference (dashed)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Sizes are chosen so that, after the figures are downscaled to \linewidth in the
-# report, axis/tick labels stay legible (the raw figures look large on their own).
-const SUPTITLE_FS   = 22
-const TITLE_FS      = 17
-const LABEL_FS      = 15
-const TICK_FS       = 14
-const ROW_LABEL_FS  = 16
-const FOOTER_FS     = 14
+# paper (canvases of 1000-1350 px at roughly 190-210 px per printed inch), tick
+# labels print at >= 7 pt and axis labels at >= 8 pt.
+const SUPTITLE_FS   = 28
+const TITLE_FS      = 24
+const LABEL_FS      = 22
+const TICK_FS       = 19
+const ROW_LABEL_FS  = 22
+const FOOTER_FS     = 18
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared kwargs
@@ -50,9 +51,11 @@ function ax_kw(T::Int)
               xticks=0:step:T)
 end
 
-"""Compact legend style shared across all legends."""
-const LEG_KW = (; labelsize=13, patchsize=(14, 12), padding=(4, 4, 3, 3),
-                  rowgap=1, patchlabelgap=4, framewidth=0.5)
+"""Compact legend style shared across all legends. The semi-transparent
+background keeps data visible wherever a legend must overlap the plot area."""
+const LEG_KW = (; labelsize=18, titlesize=19, patchsize=(18, 13), padding=(6, 6, 4, 4),
+                  rowgap=1, patchlabelgap=5, framewidth=0.5,
+                  backgroundcolor=(:white, 0.72))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Time-series helpers

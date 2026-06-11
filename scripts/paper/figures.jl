@@ -22,10 +22,16 @@ include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, 
 using JLD2
 using Statistics: mean, std, cor, cov, var
 
-const ROOT = "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438"
+const ROOT = get(ENV, "TB_SWEEP_DIR", "/projects/BSTEWART/mlaprise/tb_sweeps/sweep/2026-06-07_f424438")
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "paper", "figs"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
+# Display conventions, quoted in the captions (paper/captions.tex) via the keys
+# emitted to paper/figmeta.tex. BETWINT matches the generation-time
+# network_measure_interval; TSTART is the end of burn-in (display trim only).
+const ROLLW = 5                       # rolling-mean window, in observations
+const BETWINT = 20                    # betweenness measurement interval, periods
+const TSTART = 30                     # displayed axes start here; data never cut
 const RHO5 = [0.0, 0.3, 0.5, 0.7, 1.0]
 const RHO_COLORS = Dict(0.0 => :seagreen, 0.3 => :mediumaquamarine, 0.5 => :goldenrod,
                         0.7 => :darkorange, 1.0 => :firebrick)
@@ -64,7 +70,7 @@ msz(k) = 6 + 12 * (k - RKLO) / (RKHI - RKLO)           # marker size from effect
 # the nine outcomes shared by figures 2 and 3
 qgap(m) = seedstat(m, :q_broker_standard_mean)[1] - seedstat(m, :q_self_mean)[1]
 const OUTCOMES = [
-    ("Betweenness",            m -> seedstat(m, :betweenness)[1]),
+    ("Betweenness centrality",  m -> seedstat(m, :betweenness)[1]),
     ("Access fraction",        cell_access),
     ("Broker prediction R²",   m -> seedstat(m, :broker_holdout_r2)[1]),
     ("Prediction R² gap",      m -> seedstat(m, :broker_holdout_r2)[1] - seedstat(m, :agent_holdout_r2)[1]),
@@ -79,22 +85,23 @@ const OUTCOMES = [
 function fig1_position_work()
     mb = load_mdfs("oat/rho=0.5/base"); mc = load_mdfs("oat/rho=0.5/capture")
     fig = Figure(size=(1150, 860))
-    Label(fig[0, 1:2], "Broker betweenness and access fraction"; fontsize=SUPTITLE_FS,
+    Label(fig[0, 1:2], "Broker betweenness centrality and access fraction"; fontsize=SUPTITLE_FS,
         font=:bold, tellwidth=false)
-    axa = Axis(fig[1, 1]; title="Betweenness over time", xlabel="period", ylabel="broker betweenness",
+    axa = Axis(fig[1, 1]; title="Betweenness centrality over time", xlabel="period",
+        ylabel="broker betweenness centrality",
         titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS,
-        yticklabelsize=TICK_FS, limits=((30, 201), (0, nothing)))
+        yticklabelsize=TICK_FS, limits=((TSTART, 201), (0, nothing)))
     axb = Axis(fig[1, 2]; title="Access fraction over time", xlabel="period", ylabel="access fraction",
         titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS,
-        yticklabelsize=TICK_FS, limits=((30, 201), (0, nothing)))
-    for (m, col, ls, lbl) in ((mb, COL_BASE_REF, :dash, "no capture"), (mc, COL_CAPTURE, :solid, "capture"))
+        yticklabelsize=TICK_FS, limits=((TSTART, 201), (0, nothing)))
+    for (m, col, ls, lbl) in ((mb, COL_AGENT, :solid, "no capture"), (mc, COL_CAPTURE, :solid, "capture"))
         per, bw = period_ens(m, d -> d.betweenness)             # measured every 20 periods
-        mi = [i for i in eachindex(per) if per[i] % 20 == 0]
-        sm = rolling_mean(bw[mi], 5)
+        mi = [i for i in eachindex(per) if per[i] % BETWINT == 0]
+        sm = rolling_mean(bw[mi], ROLLW)
         scatterlines!(axa, per[mi], sm; color=col, linestyle=ls, linewidth=2.2,
             markersize=6, label=lbl)
         pa, af = period_ens(m, access_fraction)                 # per-period
-        sm2 = rolling_mean(af, 5)
+        sm2 = rolling_mean(af, ROLLW)
         lines!(axb, pa, sm2; color=col, linestyle=ls, linewidth=2.2, label=lbl)
     end
     axislegend(axa; position=:rb, LEG_KW...); axislegend(axb; position=:rt, LEG_KW...)
@@ -103,21 +110,22 @@ function fig1_position_work()
         ["oat/$a/base" for a in ("eta=0.01", "eta=0.02", "eta=0.03", "N=500", "N=1000", "N=1500",
             "reservation_frac=0.4", "reservation_frac=0.6", "reservation_frac=0.9",
             "reservation_frac=1.2", "delta=0.0", "delta=0.75", "k=4", "k=12")])
-    bx = Float64[]; ay = Float64[]; rk = Float64[]
+    bx = Float64[]; ay = Float64[]; og = Float64[]
     for rel in cellspec
         isfile(joinpath(ROOT, rel, "data.jld2")) || continue
-        m = load_mdfs(rel); cfg = load_cfg(rel)
+        m = load_mdfs(rel)
         b = seedstat(m, :betweenness)[1]; a = cell_access(m)
         (isnan(b) || isnan(a)) && continue
-        push!(bx, b); push!(ay, a); push!(rk, r90(cfg["rho"], cfg["delta"]))
+        push!(bx, b); push!(ay, a); push!(og, qgap(m))
     end
     axc = Axis(fig[2, 1:2]; title="Across regimes (one dot per regime, late-window means)",
-        xlabel="broker betweenness", ylabel="access fraction", titlesize=TITLE_FS,
+        xlabel="broker betweenness centrality", ylabel="access fraction", titlesize=TITLE_FS,
         xlabelsize=LABEL_FS, ylabelsize=LABEL_FS, xticklabelsize=TICK_FS, yticklabelsize=TICK_FS)
-    sc = scatter!(axc, bx, ay; color=rk, colormap=:viridis, colorrange=(RKLO, RKHI), markersize=13,
+    sc = scatter!(axc, bx, ay; color=og, colormap=:viridis, colorrange=extrema(og), markersize=13,
         strokewidth=0.4, strokecolor=:gray30)
-    Colorbar(fig[2, 3], sc; label="effective rank r₉₀", labelsize=LABEL_FS, ticklabelsize=TICK_FS)
-    rowsize!(fig.layout, 0, Fixed(30)); colgap!(fig.layout, 14); rowgap!(fig.layout, 14)
+    Colorbar(fig[2, 3], sc; label="output gap q (broker minus self)", labelsize=LABEL_FS,
+        ticklabelsize=TICK_FS)
+    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 14); rowgap!(fig.layout, 14)
     savefig("fig1_position_work.png", fig)
 end
 
@@ -148,7 +156,7 @@ function fig2_rank_lines()
             axislegend(ax, els, ["δ = 0", "δ = 0.5", "δ = 0.75"]; position=:rt, LEG_KW...)
         end
     end
-    rowsize!(fig.layout, 0, Fixed(30)); colgap!(fig.layout, 14); rowgap!(fig.layout, 10)
+    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 14); rowgap!(fig.layout, 10)
     savefig("fig2_rank_lines.png", fig)
 end
 
@@ -163,7 +171,7 @@ function fig3_grid_lines()
     # 3x3: first column = the [0,1]-bounded quantities (absolute 0-1 axis); columns
     # 2-3 = the rank-correlation, R², and output pairs (shared y-axis per row).
     byname(n) = OUTCOMES[findfirst(o -> o[1] == n, OUTCOMES)]
-    layout = [byname("Betweenness")      byname("Broker rank correlation") byname("Rank correlation gap");
+    layout = [byname("Betweenness centrality")      byname("Broker rank correlation") byname("Rank correlation gap");
               byname("Access fraction")  byname("Broker prediction R²")    byname("Prediction R² gap");
               byname("Outsourcing rate") byname("Broker output q")         byname("Output gap q")]
     fig = Figure(size=(1280, 980))
@@ -172,7 +180,7 @@ function fig3_grid_lines()
     axs = Matrix{Axis}(undef, 3, 3)
     for rr in 1:3, cc in 1:3
         ttl, f = layout[rr, cc]
-        ax = Axis(fig[rr, cc]; title=ttl, xlabel = rr == 3 ? "ρ (channel mix)" : "",
+        ax = Axis(fig[rr, cc]; title=ttl, xlabel = rr == 3 ? "ρ (complementarity vs quality)" : "",
             xticks=[0, 0.3, 0.5, 0.7], titlesize=TITLE_FS, xlabelsize=LABEL_FS,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS,
             limits = cc == 1 ? (nothing, (0, 1.02)) : (nothing, nothing))
@@ -185,7 +193,7 @@ function fig3_grid_lines()
         axs[rr, cc] = ax
     end
     for rr in 1:3; linkyaxes!(axs[rr, 2], axs[rr, 3]) end   # pairs share a y-axis
-    rowsize!(fig.layout, 0, Fixed(30)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
+    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
     savefig("fig3_grid_lines.png", fig)
 end
 
@@ -203,7 +211,7 @@ function fig4_advantage()
         push!(qg, qgap(m))
     end
     rks = [r90(r, d) for (r, d) in zip(rho, dlt)]
-    xs = [("Broker betweenness", bw), ("Access fraction", ac)]
+    xs = [("Broker betweenness centrality", bw), ("Access fraction", ac)]
     ys = [("Rank correlation gap (broker − agent)", rg), ("Output gap q (broker − self)", qg)]
     fig = Figure(size=(1150, 940))
     Label(fig[0, 1:2], "Structural measures vs. informational and output gaps";
@@ -217,14 +225,19 @@ function fig4_advantage()
             scatter!(ax, xv[mm], yv[mm]; color=(RHO_COLORS[rv], 0.8), markersize=msz.(rks[mm]),
                 strokewidth=0.3, strokecolor=:gray30, label="ρ = $rv")
         end
-        ri == 1 && ci == 2 && axislegend(ax, "Channel mix"; position=:rt, LEG_KW...)
+        if ri == 1 && ci == 2   # fixed-size swatches: plot markers have data-dependent sizes
+            rvs = sort(unique(rho))
+            els = [MarkerElement(marker=:circle, color=RHO_COLORS[v], markersize=12) for v in rvs]
+            axislegend(ax, els, ["ρ = $v" for v in rvs], "ρ (complementarity\nvs quality)";
+                position=:rt, LEG_KW...)
+        end
         if ri == 2 && ci == 1
             ks = round.((RKLO, (RKLO + RKHI) / 2, RKHI); digits=0)
             els = [MarkerElement(marker=:circle, color=:gray55, markersize=msz(k)) for k in ks]
             axislegend(ax, els, ["r₉₀ = $(Int(k))" for k in ks], "Effective rank"; position=:rt, LEG_KW...)
         end
     end
-    rowsize!(fig.layout, 0, Fixed(30)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
+    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
     savefig("fig4_advantage.png", fig)
 end
 
@@ -232,7 +245,7 @@ end
 function fig5_capture()
     capshare(d) = tailmean(d, :principal_mode_share)
     seedstat_f(mdfs, f) = (vs = filter(!isnan, [f(d) for d in mdfs]); isempty(vs) ? (NaN, 0.0) : (mean(vs), std(vs)))
-    sweeps = [("ρ (channel mix)", string.(RHO5), ["oat/rho=$(r)/capture" for r in RHO5]),
+    sweeps = [("ρ (complementarity vs quality)", string.(RHO5), ["oat/rho=$(r)/capture" for r in RHO5]),
               ("N (market size)", ["500", "1000", "1500"], ["oat/N=$(n)/capture" for n in (500, 1000, 1500)]),
               ("f_r (reservation threshold)", ["0.4", "0.6", "0.9"], ["oat/reservation_frac=$(r)/capture" for r in (0.4, 0.6, 0.9)]),
               ("η (turnover)", ["0.01", "0.02", "0.03"], ["oat/eta=$(e)/capture" for e in (0.01, 0.02, 0.03)])]
@@ -241,7 +254,7 @@ function fig5_capture()
         font=:bold, tellwidth=false)
     for (ci, (name, vals, cells)) in enumerate(sweeps)
         st = [seedstat_f(load_mdfs(c), capshare) for c in cells]
-        ax = Axis(fig[1, ci]; title=name, ylabel = ci == 1 ? "captured share of outsourced demand" : "",
+        ax = Axis(fig[1, ci]; title=name, ylabel = ci == 1 ? "captured share of\noutsourced demand" : "",
             xticks=(1:length(vals), vals), titlesize=TITLE_FS, ylabelsize=LABEL_FS - 1,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS, limits=(nothing, (0, 1.02)))
         x = 1:length(vals)
@@ -261,9 +274,9 @@ function fig5_capture()
         push!(rg, seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1])
         push!(qg, qgap(m)); push!(fr, Float64(cfg["reservation_frac"]))
     end
-    panels = [("Betweenness", bw), ("Access fraction", ac), ("Rank correlation gap", rg), ("Output gap q", qg)]
+    panels = [("Betweenness centrality", bw), ("Access fraction", ac), ("Rank correlation gap", rg), ("Output gap q", qg)]
     for (ci, (xlab, xv)) in enumerate(panels)
-        ax = Axis(fig[2, ci]; title=xlab, ylabel = ci == 1 ? "captured share of outsourced demand" : "",
+        ax = Axis(fig[2, ci]; title=xlab, ylabel = ci == 1 ? "captured share of\noutsourced demand" : "",
             titlesize=TITLE_FS, xlabelsize=LABEL_FS, ylabelsize=LABEL_FS - 1,
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS, limits=(nothing, (0, 1.05)))
         for v in (0.4, 0.6, 0.9, 1.2)
@@ -271,9 +284,9 @@ function fig5_capture()
             scatter!(ax, xv[mm], cs[mm]; color=FR_COLORS[v], markersize=9,
                 strokewidth=0.3, strokecolor=:gray30, label="f_r = $v")
         end
-        ci == 4 && axislegend(ax, "Reservation threshold"; position=:lb, LEG_KW...)
+        ci == 4 && axislegend(ax, "Reservation\nthreshold"; position=:lb, LEG_KW...)
     end
-    rowsize!(fig.layout, 0, Fixed(30)); colgap!(fig.layout, 12); rowgap!(fig.layout, 14)
+    rowsize!(fig.layout, 0, Fixed(42)); colgap!(fig.layout, 12); rowgap!(fig.layout, 14)
     savefig("fig5_capture.png", fig)
 end
 
@@ -285,16 +298,16 @@ function fig6_dynamics()
     Nb = load_cfg(relb)["N"]; Nc = load_cfg(relc)["N"]
     function ot(mdfs, f)   # ensemble mean, 5-period rolling over full series, display trimming is axis-only
         per = mdfs[1].period
-        sm = rolling_mean([nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)], 5)
+        sm = rolling_mean([nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)], ROLLW)
         (per, sm)
     end
     function otb(mdfs)     # betweenness: rolling over the 20-period measurements
         per = mdfs[1].period
         raw = [nanmean(Float64[d.betweenness[t] for d in mdfs]) for t in eachindex(per)]
-        mi = [i for i in eachindex(per) if per[i] % 20 == 0]
-        (per[mi], rolling_mean(raw[mi], 5))
+        mi = [i for i in eachindex(per) if per[i] % BETWINT == 0]
+        (per[mi], rolling_mean(raw[mi], ROLLW))
     end
-    yrange(ss...) = (v = filter(!isnan, vcat((s[2][s[1] .>= 30] for s in ss)...));   # displayed window only
+    yrange(ss...) = (v = filter(!isnan, vcat((s[2][s[1] .>= TSTART] for s in ss)...));   # displayed window only
         lo = minimum(v); hi = maximum(v); pad = 0.06 * (hi - lo + eps()); (lo - pad, hi + pad))
     mpaB = ot(mb, d -> 2 .* d.n_total_matches ./ Nb)
     mpaC = ot(mc, d -> 2 .* d.n_total_matches ./ Nc)
@@ -309,24 +322,23 @@ function fig6_dynamics()
     fig = Figure(size=(1220, 560))
     Label(fig[0, 1:5], "Baseline dynamics over time"; fontsize=SUPTITLE_FS, font=:bold, tellwidth=false)
     mk(r, c, ttl, ylim) = Axis(fig[r, c]; title=ttl, xlabel = r == 2 ? "period" : "",
-        xticks=50:50:200, titlesize=TITLE_FS, xlabelsize=LABEL_FS, xticklabelsize=TICK_FS,
-        yticklabelsize=TICK_FS, limits=((30, 201), ylim))
+        xticks=50:50:200, titlesize=TITLE_FS - 3, xlabelsize=LABEL_FS, xticklabelsize=TICK_FS,
+        yticklabelsize=TICK_FS, limits=((TSTART, 201), ylim))
     drw!(ax, s, col; lbl="", ls=:solid, pts=false, lw=2.2) = pts ?
         scatterlines!(ax, s[1], s[2]; color=col, linewidth=lw, markersize=6, linestyle=ls, label=lbl) :
         lines!(ax, s[1], s[2]; color=col, linewidth=lw, linestyle=ls, label=lbl)
     # pale-gray cross-overlays first, so each row's own series draws on top
     gry!(ax, s; ls=:solid, pts=false, lbl="") = drw!(ax, s, COL_OVERLAY; ls=ls, pts=pts, lw=1.6, lbl=lbl)
-    # top row: no capture (gray = capture counterparts)
+    # top row: no capture (gray = capture counterparts; explained in the caption)
     let a = mk(1, 1, "Matches per agent", yl[1])
-        gry!(a, mpaC; lbl="capture (gray)"); drw!(a, mpaB, COL_DIAG; lbl="no capture")
-        axislegend(a; position=:rt, LEG_KW...)
+        gry!(a, mpaC); drw!(a, mpaB, COL_DIAG)
     end
     let a = mk(1, 2, "Network degree", yl[2])
-        gry!(a, dmnC); gry!(a, dmdC)
-        drw!(a, dmnB, COL_BROKER; lbl="mean"); drw!(a, dmdB, COL_AGENT; lbl="median")
+        gry!(a, dmnC); gry!(a, dmdC; ls=:dot)
+        drw!(a, dmnB, COL_AGENT; lbl="mean"); drw!(a, dmdB, COL_AGENT; lbl="median", ls=:dot)
         axislegend(a; position=:rb, LEG_KW...)
     end
-    let a = mk(1, 3, "Broker betweenness", yl[3])
+    let a = mk(1, 3, "Broker betweenness\ncentrality", yl[3])
         gry!(a, bwC; pts=true); drw!(a, bwB, COL_GAP; pts=true)
     end
     let a = mk(1, 4, "Access fraction", yl[4])
@@ -337,12 +349,11 @@ function fig6_dynamics()
     end
     # bottom row: capture (gray = no-capture counterparts)
     let a = mk(2, 1, "", yl[1])
-        gry!(a, mpaB; lbl="no capture (gray)"); drw!(a, mpaC, COL_DIAG; lbl="capture")
-        axislegend(a; position=:rt, LEG_KW...)
+        gry!(a, mpaB); drw!(a, mpaC, COL_DIAG)
     end
     let a = mk(2, 2, "", yl[2])
-        gry!(a, dmnB); gry!(a, dmdB)
-        drw!(a, dmnC, COL_BROKER); drw!(a, dmdC, COL_AGENT)
+        gry!(a, dmnB); gry!(a, dmdB; ls=:dot)
+        drw!(a, dmnC, COL_AGENT); drw!(a, dmdC, COL_AGENT; ls=:dot)
     end
     let a = mk(2, 3, "", yl[3])
         gry!(a, bwB; pts=true); drw!(a, bwC, COL_GAP; pts=true)
@@ -358,7 +369,7 @@ function fig6_dynamics()
     end
     Label(fig[1, 0], "No capture"; rotation=π/2, font=:bold, fontsize=LABEL_FS, tellheight=false)
     Label(fig[2, 0], "Capture"; rotation=π/2, font=:bold, fontsize=LABEL_FS, tellheight=false)
-    rowsize!(fig.layout, 0, Fixed(28)); colsize!(fig.layout, 0, Fixed(22))
+    rowsize!(fig.layout, 0, Fixed(42)); colsize!(fig.layout, 0, Fixed(30))
     colgap!(fig.layout, 12); rowgap!(fig.layout, 12)
     savefig("fig6_dynamics.png", fig)
 end
@@ -371,4 +382,12 @@ for (name, f) in (("fig1", fig1_position_work), ("fig2", fig2_rank_lines), ("fig
         println("  $name FAILED: ", sprint(showerror, e)[1:min(end, 400)])
     end
 end
-println("paper figures done")
+# emit the display-convention keys quoted by the captions (paper/captions.tex)
+open(normpath(joinpath(@__DIR__, "..", "..", "paper", "figmeta.tex")), "w") do io
+    println(io, "% figmeta.tex: generated by scripts/paper/figures.jl. Do not edit by hand.")
+    println(io, "% Display conventions used to render paper/figs/, quoted in captions via \\pv keys.")
+    println(io, "\\pvDefine{rollWin}{$ROLLW}")
+    println(io, "\\pvDefine{betwInterval}{$BETWINT}")
+    println(io, "\\pvDefine{axisStart}{$TSTART}")
+end
+println("paper figures done (+ figmeta.tex)")
