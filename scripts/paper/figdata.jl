@@ -129,15 +129,20 @@ fd["base_cells"] = let out = Dict{String,Float64}[]
     out
 end
 
-# ── captured share along the OAT capture axes (figure 5, top row) ──
+# ── captured share along the OAT capture axes (figure 4) ──
+# Per level: the individual seed late means (for the seed dots) and their mean
+# (the black summary dot). seeds[level] is the vector of per-seed late captured
+# shares; mean[level] is its seed mean.
 fd["capture_sweeps"] = let sw = Dict{String,Any}()
     axes = [("rho", string.((0.0, 0.3, 0.5, 0.7, 1.0)), ["oat/rho=$(r)/capture" for r in (0.0, 0.3, 0.5, 0.7, 1.0)]),
             ("N", ["500", "1000", "1500"], ["oat/N=$(n)/capture" for n in (500, 1000, 1500)]),
             ("fr", ["0.4", "0.6", "0.9"], ["oat/reservation_frac=$(r)/capture" for r in (0.4, 0.6, 0.9)]),
             ("eta", ["0.01", "0.02", "0.03"], ["oat/eta=$(e)/capture" for e in (0.01, 0.02, 0.03)])]
+    seedvals(rel) = filter(!isnan, [tailmean(d, :principal_mode_share) for d in load_mdfs(rel)])
     for (key, labels, rels) in axes
-        st = [seedstat(load_mdfs(rel), :principal_mode_share) for rel in rels]
-        sw[key] = Dict("labels" => collect(labels), "mean" => first.(st), "sd" => last.(st))
+        sv = [seedvals(rel) for rel in rels]
+        sw[key] = Dict("labels" => collect(labels), "seeds" => sv,
+                       "mean" => [nanmean(v) for v in sv])
     end
     sw
 end

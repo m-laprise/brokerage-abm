@@ -36,14 +36,44 @@ Across the simulations, the broker is the dominant channel in the market.
 Principals route most demand to the broker rather than to self-search: the
 outsourcing rate as a share of demand is
 \pv{outBaselineLate} at the no-capture baseline (late mean, up from an early mean
-of \pv{outBaselineEarly}), and it stays high across the no-capture regimes (late
+of \pv{outBaselineEarly}), and it stays high across no-capture regimes (late
 means of \pv{outBaseMin} to \pv{outBaseMax}). Principals prefer the broker because
 its matches are better. The realized value of broker-channel matches exceeds that
 of self-search matches in \pv{ogapBasePosN} of \pv{nBase} no-capture regimes, with
 an output gap (broker mean realized output minus self-search mean realized output)
-averaging $\pv{ogapBaseMean}$ across regimes (late means). This is the model's
+averaging $\pv{ogapBaseMean}$ across no-capture regimes (late means). This is the model's
 rendering of why relational work gets outsourced: the broker constructs better
-matches, on average, than clients do on their own.
+matches, on average, than clients do on their own. Table~\ref{tab:baseline-measures}
+collects these measures, and the assessment measures discussed below, at the
+no-capture baseline and across no-capture regimes.
+
+\begin{table}[t]
+\centering\small
+\caption{Baseline and across-regime measures without capture, as ensemble means
+over seeds. Early and late are time averages over $t\in[50,70]$ and
+$t\in[181,200]$; the across-regime column gives the median of the late mean over
+the \pv{nBase} no-capture regimes. The assessment-quality
+measures are used only as late-window statistics, so their early cells are blank.}
+\label{tab:baseline-measures}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{2}{c}{Baseline} & Across regimes \\
+\cmidrule(lr){2-3}
+Measure & early & late & late, median \\
+\midrule
+\multicolumn{4}{l}{\emph{Market use and access}} \\
+\quad Outsourcing rate & $\pv{outBaselineEarly}$ & $\pv{outBaselineLate}$ & $\pv{outBaseMed}$ \\
+\quad Output gap (broker $-$ self) & $\pv{ogapBaselineEarly}$ & $\pv{ogapBaselineLate}$ & $\pv{ogapBaseMed}$ \\
+\quad Access fraction & $\pv{accessBaselineEarly}$ & $\pv{accessBaselineLate}$ & $\pv{accessBaseMed}$ \\
+\addlinespace
+\multicolumn{4}{l}{\emph{Assessment quality}} \\
+\quad Broker holdout rank correlation & & $\pv{brokerRankBaseline}$ & $\pv{brokerRankBaseMed}$ \\
+\quad Broker holdout $R^2$ & & $\pv{brokerR2Baseline}$ & $\pv{brokerR2BaseMed}$ \\
+\quad Principal holdout rank correlation & & $\pv{agentRankBaseline}$ & $\pv{agentRankBaseMed}$ \\
+\quad Principal holdout $R^2$ & & $\pv{agentR2BaselineBase}$ & $\pv{agentR2BaseMed}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 The broker constructs these better matches by providing assessment,
 not access. The access fraction (the share of brokered placements between two
@@ -59,11 +89,12 @@ not from accurately predicting the output of potential matches. On a held-out
 sample of random partners (Appendix~A~\S8), the broker
 orders prospective pairings well (rank correlation of \pv{brokerRankBaseline} with
 the true ordering at the no-capture baseline, late mean, and
-\pv{brokerRankD0Min} to \pv{brokerRankD0Max} across the four easiest, $\delta=0$
-regimes) but predicts output levels poorly (holdout $R^2$ of \pv{brokerR2Baseline}
-at baseline, and negative on the hardest complementarity problems). Principals are
+$\pv{brokerRankBaseMean}$ on average across no-capture regimes)
+but predicts output levels poorly (holdout $R^2$ of \pv{brokerR2Baseline}
+at baseline, $\pv{brokerR2BaseMean}$ on average across no-capture regimes). Principals are
 weak on both, with a holdout rank correlation of \pv{agentRankBaseline} and a
-holdout $R^2$ of $\pv{agentR2BaselineBase}$ (baseline, late means). To pick the
+holdout $R^2$ of $\pv{agentR2BaselineBase}$ (baseline, late means;
+$\pv{agentRankBaseMean}$ and $\pv{agentR2BaseMean}$ on average across no-capture regimes). To pick the
 best matches, the broker's services rely on a good
 ordering of candidate pairings, even without an accurate appraisal of their
 absolute worth.
@@ -81,7 +112,7 @@ Different markets present brokers with matching problems of different kinds. In
 this model, recall that $\rho$ sets the composition of the match output, from pure
 general quality to pure complementarity, while $\delta$ controls the complexity of
 the complementarity component.
-Interestingly, across regimes, the broker's structural position tracks $\rho$
+Interestingly, across no-capture regimes, the broker's structural position tracks $\rho$
 while its prediction edge tracks $\delta$, and the two need not move together.
 
 The structural measures vary with the composition $\rho$ and are nearly flat in the
@@ -100,11 +131,12 @@ matches re-pair principals already tied to each other.
 
 Meanwhile, the prediction measures vary with the complexity of the complementarity
 component, $\delta$. Ordering is what the broker
-needs, and its rank correlation with realized output stays high across regimes
+needs, and its rank correlation with realized output stays high across no-capture regimes
 (\pv{brokerRankD0Min} to \pv{brokerRankD0Max} on the simplest problems,
 \pv{brokerRankBaseline} at baseline, falling to \pv{brokerRankHardCorner} at
 $\rho=0$, $\delta=0.75$; Fig.~\ref{fig:grid}), well above the principals'
-throughout (\pv{agentRankBaseline} at baseline). Performance at predicting the
+throughout (\pv{agentRankBaseline} at baseline, $\pv{agentRankBaseMean}$ on average
+across no-capture regimes). Performance at predicting the
 output behaves differently from ordering: the broker's holdout $R^2$ under pure
 complementarity ($\rho=0$) is
 $\pv{brokerR2Rho0D0}$ when the output is simple but strongly negative when it is
@@ -160,7 +192,7 @@ which agents form ties and which agents go to the broker. A brokered match adds 
 new agent-to-agent tie, after which the broker no longer lies on the pair's
 shortest path, only when the two were not already connected. Hence the broker's
 work densifies the network only when it
-provides access, not when it provides assessment, and across regimes access is
+provides access, not when it provides assessment, and across no-capture regimes access is
 rare and falling over time (Fig.~\ref{fig:position}).
 
 \begin{figure}[t]
@@ -192,7 +224,7 @@ The broker's structural advantage across no-capture regimes, measured by
 betweenness centrality, is negatively correlated with the access fraction
 (Fig.~\ref{fig:advantage}): the broker is most central where it bridges
 least. Bridging opportunity and bridging behavior thus move in opposite directions
-across regimes, another counter-intuitive pattern in light of existing theory.
+across no-capture regimes, another counter-intuitive pattern in light of existing theory.
 Clients value the broker's assessment services and outsource in large numbers, and
 the broker's ties to its many clients are what make it central; its advantageous
 position, however, does not correlate with making more access matches. Because
@@ -294,9 +326,9 @@ Matches per agent per period & \pv{mpaBaseLate} & \pv{mpaCaptureLate} \\
 Broker betweenness centrality & \pv{betwBaselineLate} & \pv{betwCaptureLate} \\
 Access fraction & \pv{accessBaselineLate} & \pv{accessCaptureLate} \\
 Satisfaction with the broker channel (early $\to$ late) & \pv{satBaseEarly} $\to$ \pv{satBaseLate} & \pv{satCaptureEarly} $\to$ \pv{satCaptureLate} \\
-Agent holdout rank correlation (random-partner) & \pv{agentRankBaseline} & \pv{agentRankCapBaseline} \\
-Agent holdout $R^2$ (random-partner) & $\pv{agentR2BaselineBase}$ & $\pv{agentR2CapBaseline}$ \\
-Agent training observations per period & \pv{agentObsBaselineBase} & \pv{agentObsBaselineCapture} \\
+Principal holdout rank correlation (random-partner) & \pv{agentRankBaseline} & \pv{agentRankCapBaseline} \\
+Principal holdout $R^2$ (random-partner) & $\pv{agentR2BaselineBase}$ & $\pv{agentR2CapBaseline}$ \\
+Principal training observations per period & \pv{agentObsBaselineBase} & \pv{agentObsBaselineCapture} \\
 \bottomrule
 \end{tabular}
 \end{table}
