@@ -138,7 +138,7 @@ end
 function fig4_capture()
     sw = FD["capture_sweeps"]
     sweeps = [("Matching problem", "rho", "ρ"),
-              ("Reservation", "fr", "f_r"), ("Turnover", "eta", "η")]
+              ("Reservation", "fr", "fᵣ"), ("Turnover", "eta", "η")]
     fig = Figure(size=(1340, 440))
     for (ci, (name, key, xl)) in enumerate(sweeps)
         s = sw[key]; vals = s["labels"]; sv = s["seeds"]; mu = s["mean"]
@@ -147,15 +147,17 @@ function fig4_capture()
             xticks=(1:length(vals), vals), titlesize=TITLE_FS, xlabelsize=LABEL_FS - 1,
             ylabelsize=LABEL_FS - 1, xticklabelsize=TICK_FS, yticklabelsize=TICK_FS,
             limits=(nothing, (0, 1.02)))
-        # small gray seed dots, deterministically dodged so overlapping seeds
-        # separate; one black dot per level for the across-seed mean; no line
+        # Gray seed dots, deterministically dodged so overlapping seeds separate;
+        # one black dot per level for the across-seed mean; no line.
         for (xi, seeds) in enumerate(sv)
             n = length(seeds)
-            dodge = n > 1 ? collect(range(-0.13, 0.13; length=n)) : [0.0]
+            dodge = n > 1 ? collect(range(-0.16, 0.16; length=n)) : [0.0]
             scatter!(ax, fill(Float64(xi), n) .+ dodge, seeds;
-                color=(:gray55, 0.9), markersize=5)
+                color=(:gray35, 0.70), markersize=8,
+                strokewidth=0.5, strokecolor=(:gray20, 0.85))
         end
-        scatter!(ax, 1:length(vals), mu; color=:black, markersize=12)
+        scatter!(ax, 1:length(vals), mu; color=:black, markersize=13,
+            strokewidth=0.8, strokecolor=:white)
     end
     # final panel: every capture cell (f_r = 1.2 included), captured share (x) vs output gap (y)
     cc = FD["capture_cells"]
@@ -166,7 +168,7 @@ function fig4_capture()
     for v in (0.4, 0.6, 0.9, 1.2)
         mm = fr .== v
         scatter!(ax, cs[mm], qg[mm]; color=FR_COLORS[v], markersize=9,
-            strokewidth=0.3, strokecolor=:gray30, label="f_r = $v")
+            strokewidth=0.3, strokecolor=:gray30, label="fᵣ = $v")
     end
     axislegend(ax, "Reservation"; position=:rt, LEG_KW...)
     colgap!(fig.layout, 16)
