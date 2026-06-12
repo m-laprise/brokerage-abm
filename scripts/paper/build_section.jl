@@ -120,6 +120,10 @@ write(wrapper, """
 \\usepackage{amsmath,amssymb,graphicx,booktabs}
 \\usepackage[font=small,labelfont=bf]{caption}
 \\graphicspath{{../}}
+% preview readability only (this wrapper is a smoke test, not the real paper):
+% separate paragraphs by a blank line instead of an indent
+\\setlength{\\parskip}{0.8\\baselineskip}
+\\setlength{\\parindent}{0pt}
 \\begin{document}
 \\input{../results_section.tex}
 \\end{document}

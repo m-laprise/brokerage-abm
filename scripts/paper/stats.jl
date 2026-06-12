@@ -90,7 +90,6 @@ pv("ogapBasePosN", fint(count(>(0), filter(!isnan, og))))
 ac_l = [late(c.mdfs, accessf) for c in B]; ac_e = [early(c.mdfs, accessf) for c in B]
 pv("accessAcrossBaseLate", f2(nm(ac_l)))
 pv("accessAcrossBaseEarly", f2(nm(ac_e)))
-pv("accessDecliningBaseN", fint(count(ac_l .< ac_e)))
 pv("brokerRankBaseline", f2(late(BL.mdfs, col(:broker_holdout_rank))))
 d0 = [late(c.mdfs, col(:broker_holdout_rank)) for c in B if c.cfg["delta"] == 0.0]
 pv("brokerRankD0Min", f2(minimum(d0))); pv("brokerRankD0Max", f2(maximum(d0)))
@@ -155,21 +154,6 @@ pv("ogapRho1Group", fs2(grp(1.0, c -> late(c.mdfs, ogap))))
 rho1 = [c for c in B if c.cfg["rho"] == 1.0]
 pv("rhoOneN", fint(length(rho1)))
 pv("rhoOneThinN", fint(count(c -> late(c.mdfs, col(:mean_degree)) < early(c.mdfs, col(:mean_degree)), rho1)))
-bt = [late(c.mdfs, col(:betweenness)) for c in B]
-brk = [late(c.mdfs, col(:broker_holdout_rank)) for c in B]
-pv("corrBetwAccess", f2(ncor(bt, ac_l)))
-fam = Dict{String,Vector{Int}}()
-for (i, c) in enumerate(B)
-    startswith(c.rel, "oat/") || continue
-    push!(get!(fam, split(split(c.rel, "/")[2], "=")[1], Int[]), i)
-end
-pv("corrBetwAccessEta", fs2(ncor(bt[fam["eta"]], ac_l[fam["eta"]])))
-pv("corrBetwAccessN", fs2(ncor(bt[fam["N"]], ac_l[fam["N"]])))
-pv("corrBetwAccessFr", f2(ncor(bt[fam["reservation_frac"]], ac_l[fam["reservation_frac"]])))
-pv("corrBetwAccessRho", f2(ncor(bt[fam["rho"]], ac_l[fam["rho"]])))
-pv("corrOgapBetw", fs2(ncor(og, bt)))
-pv("corrOgapAccess", f2(ncor(og, ac_l)))
-pv("corrOgapBrokerRank", f2(ncor(og, brk)))
 
 # ── 5.4 ──
 ps(m) = late(m, col(:principal_mode_share))
@@ -183,8 +167,6 @@ pv("capFr12", f2(ps(oatc("reservation_frac", "1.2").mdfs)))
 pv("capD0", f2(ps(oatc("delta", "0.0").mdfs))); pv("capD075", f2(ps(oatc("delta", "0.75").mdfs)))
 pv("capEta001", f2(ps(oatc("eta", "0.01").mdfs))); pv("capEta002", f2(ps(oatc("eta", "0.02").mdfs)))
 pv("capEta003", f2(ps(oatc("eta", "0.03").mdfs)))
-pv("capN500", f2(ps(oatc("N", "500").mdfs))); pv("capN1000", f2(ps(oatc("N", "1000").mdfs)))
-pv("capN1500", f2(ps(oatc("N", "1500").mdfs)))
 lr(v) = late(oatc("reservation_frac", v).mdfs, col(:capture_loss_rate))
 pv("lossFr04", f2(lr("0.4"))); pv("lossFr06", f2(lr("0.6")))
 pv("lossFr09", f2(lr("0.9"))); pv("lossFr12", f2(lr("1.2")))
@@ -221,8 +203,6 @@ pv("agentRankAcrossBase", f2(nm([late(b.mdfs, col(:agent_holdout_rank)) for (b, 
 pv("agentRankAcrossCapture", f2(nm([late(c.mdfs, col(:agent_holdout_rank)) for (_, c) in pairs])))
 pv("agentR2AcrossBase", f2(nm([late(b.mdfs, col(:agent_holdout_r2)) for (b, _) in pairs])))
 pv("agentR2AcrossCapture", f2(nm([late(c.mdfs, col(:agent_holdout_r2)) for (_, c) in pairs])))
-pv("agentRankEarlyAcrossBase", f2(nm([early(b.mdfs, col(:agent_holdout_rank)) for (b, _) in pairs])))
-pv("agentR2EarlyAcrossBase", f2(nm([early(b.mdfs, col(:agent_holdout_r2)) for (b, _) in pairs])))
 
 # ── emit values.tex ──
 open(OUTTEX, "w") do io

@@ -1,6 +1,7 @@
 plans/
 data/
 archive/*/data/
+archived_reports/
 CLAUDE.md
 AGENTS.md
 

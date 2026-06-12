@@ -24,7 +24,7 @@ node, `srun --partition=cpu --mem=8G`):
 Local tier (no data access; works from a clone of this repository):
 
 3. `julia --project scripts/paper/figures.jl`
-   Renders `paper/figs/fig1_*.png` ... `fig6_*.png` at print resolution,
+   Renders `paper/figs/fig1_*.png` ... `fig5_*.png` at print resolution,
    numbered in order of first citation in the prose, reading only
    `paper/figdata.jld2`; also writes `paper/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
@@ -42,6 +42,20 @@ Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
 editing `figures.jl` and rerunning steps 3-4 locally. The cluster tier reruns
 only when the underlying numbers change: a new sweep, or a figure needing a
 metric not yet extracted, which `figdata.jl` must then be taught to include.
+
+Word export (optional). To produce an editable `.docx` of the section — for
+co-authors or track-changes — convert the generated fragment with pandoc:
+
+```
+pandoc paper/results_section.tex -f latex -o results_section.docx \
+  --resource-path=paper
+```
+
+Pandoc reads the flattened fragment directly: math becomes native Word equations,
+the `booktabs` tables become Word tables, and the figures in `paper/figs/` are
+embedded (hence `--resource-path=paper`). Run step 4 first — the `.docx` reflects
+whatever is in `results_section.tex`. Needs only pandoc (>= 3), no LibreOffice.
+Document styling such as fonts can be set with a pandoc `--reference-doc`.
 
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 (figure titles and captions). `values.tex`, `figdata.jld2`, `figs/`,
