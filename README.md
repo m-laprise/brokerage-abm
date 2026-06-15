@@ -111,3 +111,9 @@ julia scripts/paper/build_section.jl                   # -> paper/results_sectio
 The last step fails if any value referenced in the prose was not computed, if 
 any computed value goes unused, or if a figure file is missing, and it finishes 
 by compiling the section.
+
+The **Supplementary Material** (`paper/supplement.pdf`) reproduces the structural-
+advantage analyses with the broker's two other ego-network measures, Burt's
+constraint and effective size, in four figures. It is a separate, self-contained
+pipeline (`supp_figdata.jl` -> `supp_figures.jl` -> `build_supplement.jl`), so it
+and the results section regenerate independently; see `scripts/paper/README.md`.

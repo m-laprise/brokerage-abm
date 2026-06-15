@@ -41,5 +41,8 @@ scripts/diagnostics/adv_results/
 *.err
 # Paper pipeline build artifacts (compile-check wrapper)
 paper/_build/
-# Figure-input digest: small derived dataset enabling local figure rendering
+# Supplement pdflatex aux artifact (the PDF itself is the deliverable, kept)
+paper/*.aux
+# Figure-input digests: small derived datasets enabling local figure rendering
 !paper/figdata.jld2
+!paper/supp_figdata.jld2

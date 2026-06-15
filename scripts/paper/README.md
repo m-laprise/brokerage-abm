@@ -60,3 +60,44 @@ Document styling such as fonts can be set with a pandoc `--reference-doc`.
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 (figure titles and captions). `values.tex`, `figdata.jld2`, `figs/`,
 `figmeta.tex`, and `results_section.tex` are generated and committed.
+
+## Supplementary Material (alternative structural measures)
+
+The results section measures the broker's structural advantage by betweenness
+centrality. The Supplementary Material reproduces the same analyses with the
+broker's two other saved ego-network measures, Burt's aggregate **constraint** and
+**effective size** (`src/measures.jl`), in four figures (S1-S4). It is a **separate,
+self-contained pipeline**: it shares no inputs or outputs with the steps above, so
+the results section and the supplement are regenerated independently of each other.
+The same two tiers apply.
+
+Cluster tier (needs the sweep; set `TB_SWEEP_DIR`; run on a compute node):
+
+1. `julia --project scripts/paper/supp_figdata.jl`
+   Extracts the supplement's figure-input dataset to `paper/supp_figdata.jld2`:
+   the baseline-pair per-period constraint/effective-size series (no-capture and
+   capture), the one-at-a-time and grid late means, and the per-regime late means
+   S1-S4 consume. Standalone twin of `figdata.jl`; no hard-coded results.
+
+Local tier (no data access; works from a clone):
+
+2. `julia --project scripts/paper/supp_figures.jl`
+   Renders `paper/supp_figs/supp_S1_*.png` ... `supp_S4_*.png` from
+   `paper/supp_figdata.jld2` only, and writes `paper/supp_figmeta.tex` (the
+   display conventions quoted in the captions). Standalone twin of `figures.jl`.
+3. `julia scripts/paper/build_supplement.jl`
+   Compiles the standalone `paper/supplement.tex` (own preamble; captions quote
+   display conventions only, via `\pv` keys resolved from `supp_figmeta.tex`, so
+   no number is hand-written) to `paper/supplement.pdf`. Validates every `\pv`
+   reference and figure path first. Needs only stock Julia and `pdflatex`.
+
+The four figures, each the structural-advantage analysis of a main-text figure
+redone for constraint and effective size: **S1** across the rho x delta grid (the
+structural panel of fig. 1); **S2** over time at baseline and against access
+fraction across regimes (fig. 2, without the access series on the time panels);
+**S3** the prediction/output gaps against each measure (fig. 3); **S4** the
+baseline time path, no-capture vs capture (the betweenness panel of fig. 5).
+
+Hand-edited source: `paper/supplement.tex` (standalone document and captions).
+`supp_figdata.jld2`, `supp_figs/`, `supp_figmeta.tex`, and `supplement.pdf` are
+generated; the `pdflatex` aux/log artifacts are not committed.
