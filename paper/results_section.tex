@@ -1,7 +1,7 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-06-12 18:16
+% Built by scripts/paper/build_section.jl on 2026-06-13 19:42
 % from section_source.tex + captions.tex + values.tex + figmeta.tex;
-% sweep 2026-06-07_f424438; repo commit e118fe7.
+% sweep 2026-06-07_f424438; repo commit fe8ea8a.
 % Every number was computed from the saved sweep data by scripts/paper/stats.jl.
 
 \section{Results}
@@ -48,10 +48,11 @@ no-capture baseline and across no-capture regimes.
 
 \begin{table}[t]
 \centering\small
-\caption{Baseline and across-regime measures without capture, as ensemble means
-over seeds. Early and late are time averages over $t\in[50,70]$ and
-$t\in[181,200]$; the across-regime column gives the median of the late mean over
-the 91 no-capture regimes.}
+\caption{\textbf{Broker use, access, and assessment quality.} Baseline and
+across-regime summaries for the no-capture model. Early and late are ensemble
+means over seeds averaged over $t\in[50,70]$ and $t\in[181,200]$; the
+across-regime column reports the median late mean across the 91
+no-capture regimes.}
 \label{tab:baseline-measures}
 \begin{tabular}{lccc}
 \toprule
@@ -263,10 +264,11 @@ matches are worth the most.
 
 \begin{table}[t]
 \centering\small
-\caption{Regime-group means at the three $\rho$ levels, no capture (late means).
-Each group pools the 14 regimes of the $\rho$ family at that level:
-the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells. Output gap is
-the realized value of broker-channel matches minus that of self-search matches.}
+\caption{\textbf{Matching-problem composition and structural advantage.}
+Regime-group means at the three $\rho$ levels in the no-capture model, using
+late means. Each group pools the 14 regimes of the $\rho$ family at
+that level: the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells.
+Output gap is broker-channel realized output minus self-search realized output.}
 \label{tab:rhogroups}
 \begin{tabular}{lccccc}
 \toprule
@@ -325,7 +327,9 @@ minus self-search) against the captured share, one dot per capture regime (all
 
 \begin{table}[t]
 \centering\footnotesize
-\caption{The baseline regime pair (late means unless noted).}
+\caption{\textbf{Baseline effects of capture.} Matched baseline regimes without
+and with capture, using late means unless an early-to-late change is shown.
+Captured share is defined only in the capture variant.}
 \label{tab:baseline}
 \begin{tabular}{@{}lcc@{}}
 \toprule

@@ -40,9 +40,7 @@ const COL_OVERLAY = :gray72           # pale-gray cross-overlay in fig5
 const FD = JLD2.load(normpath(joinpath(@__DIR__, "..", "..", "paper", "figdata.jld2")))["figdata"]
 const PER = FD["period"]
 const SER = FD["series"]
-r90(rho, dl) = FD["r90"][(Float64(rho), Float64(dl))]
-const RKLO, RKHI = extrema(values(FD["r90"]))          # display scales derived from the artifact
-msz(k) = 6 + 12 * (k - RKLO) / (RKHI - RKLO)           # marker size from effective rank
+const ADV_MARKER_SIZE = 10
 savefig(fname, fig) = (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
 
 # ── Figure 2: betweenness & access over time at baseline + cross-regime scatter ──
@@ -101,10 +99,9 @@ end
 # ── Figure 3: structural measures vs informational/output gaps (4 panels) ──
 function fig3_advantage()
     bc = FD["base_cells"]   # every saved no-capture regime
-    rho = [c["rho"] for c in bc]; dlt = [c["delta"] for c in bc]
+    rho = [c["rho"] for c in bc]
     bw = [c["betw"] for c in bc]; ac = [c["access"] for c in bc]
     rg = [c["rankgap"] for c in bc]; qg = [c["qgap"] for c in bc]
-    rks = [r90(r, d) for (r, d) in zip(rho, dlt)]
     xs = [("Broker betweenness centrality", bw), ("Access fraction", ac)]
     ys = [("Rank correlation gap", rg), ("Output gap q", qg)]
     fig = Figure(size=(1150, 940))
@@ -114,20 +111,13 @@ function fig3_advantage()
             xticklabelsize=TICK_FS, yticklabelsize=TICK_FS)
         for rv in sort(unique(rho))
             mm = rho .== rv
-            scatter!(ax, xv[mm], yv[mm]; color=(RHO_COLORS[rv], 0.8), markersize=msz.(rks[mm]),
+            scatter!(ax, xv[mm], yv[mm]; color=(RHO_COLORS[rv], 0.8), markersize=ADV_MARKER_SIZE,
                 strokewidth=0.3, strokecolor=:gray30)
         end
-        # legends in panel corners the data leaves empty (fixed-size swatches:
-        # plot markers have data-dependent sizes)
         if ri == 1 && ci == 2
             rvs = sort(unique(rho))
-            els = [MarkerElement(marker=:circle, color=RHO_COLORS[v], markersize=12) for v in rvs]
+            els = [MarkerElement(marker=:circle, color=RHO_COLORS[v], markersize=ADV_MARKER_SIZE) for v in rvs]
             axislegend(ax, els, ["ρ = $v" for v in rvs]; position=:rb, LEG_KW...)
-        end
-        if ri == 2 && ci == 1
-            ks = round.((RKLO, (RKLO + RKHI) / 2, RKHI); digits=0)
-            els = [MarkerElement(marker=:circle, color=:gray55, markersize=msz(k)) for k in ks]
-            axislegend(ax, els, ["r₉₀ = $(Int(k))" for k in ks], "Effective rank"; position=:lt, LEG_KW...)
         end
     end
     colgap!(fig.layout, 16); rowgap!(fig.layout, 12)
