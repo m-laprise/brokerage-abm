@@ -1,9 +1,9 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: Agent, NNGradBuffers, add_broker_edge!, add_entrant_edges!
-using TransientBrokerage: add_match_edge!, build_network, init_neural_net
-using TransientBrokerage: agent_hidden_width
-using TransientBrokerage: remove_agent_edges!
+using BrokerageABM
+using BrokerageABM: Agent, NNGradBuffers, add_broker_edge!, add_entrant_edges!
+using BrokerageABM: add_match_edge!, build_network, init_neural_net
+using BrokerageABM: agent_hidden_width
+using BrokerageABM: remove_agent_edges!
 using Graphs: nv, ne, neighbors, has_edge, degree
 using StableRNGs: StableRNG
 using LinearAlgebra: normalize

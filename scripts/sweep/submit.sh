@@ -15,25 +15,25 @@
 # resolve, package download) happens in `resolve` on the login node; only the
 # compute-heavy precompile/simulation run under sbatch/srun.
 #
-# Cluster settings come from the environment (TB_ACCOUNT, TB_DATA_ROOT); --time=03:00:00 maps
-# to the `short` QOS. Override via env: TB_DATA_ROOT, TB_TAG, TB_THROTTLE (array
-# %K, default 100), TB_PLOT_THROTTLE (default 24), TB_TIME (compute walltime).
+# Cluster settings come from the environment (BROKERAGE_ABM_ACCOUNT, BROKERAGE_ABM_DATA_ROOT); --time=03:00:00 maps
+# to the `short` QOS. Override via env: BROKERAGE_ABM_DATA_ROOT, BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array
+# %K, default 100), BROKERAGE_ABM_PLOT_THROTTLE (default 24), BROKERAGE_ABM_TIME (compute walltime).
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-DATA_ROOT="${TB_DATA_ROOT:?set TB_DATA_ROOT to the directory that will hold the sweep data}"
-ACCOUNT="${TB_ACCOUNT:?set TB_ACCOUNT to your SLURM account}"
-THROTTLE="${TB_THROTTLE:-200}"
-PLOT_THROTTLE="${TB_PLOT_THROTTLE:-24}"
-COMPUTE_TIME="${TB_TIME:-03:00:00}"
-JULIA_MODULE="${TB_JULIA_MODULE:-julia/1.11.3}"
+DATA_ROOT="${BROKERAGE_ABM_DATA_ROOT:?set BROKERAGE_ABM_DATA_ROOT to the directory that will hold the sweep data}"
+ACCOUNT="${BROKERAGE_ABM_ACCOUNT:?set BROKERAGE_ABM_ACCOUNT to your SLURM account}"
+THROTTLE="${BROKERAGE_ABM_THROTTLE:-200}"
+PLOT_THROTTLE="${BROKERAGE_ABM_PLOT_THROTTLE:-24}"
+COMPUTE_TIME="${BROKERAGE_ABM_TIME:-03:00:00}"
+JULIA_MODULE="${BROKERAGE_ABM_JULIA_MODULE:-julia/1.11.3}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
 TODAY="$(date +%Y-%m-%d)"
-TAG="${TB_TAG:-${TODAY}_${SHA}}"
+TAG="${BROKERAGE_ABM_TAG:-${TODAY}_${SHA}}"
 SWEEP_DIR="$DATA_ROOT/sweep/$TAG"
 LOGDIR="$SWEEP_DIR/logs"
 ENVFILE="$SWEEP_DIR/sweep.env"
@@ -75,11 +75,11 @@ case "$stage" in
     # Run on a compute node (never the login node), even though it is light.
     mkdir -p "$LOGDIR"
     srun --account="$ACCOUNT" --partition=cpu --time=00:10:00 \
-         --cpus-per-task=1 --mem=4G --job-name=tb_manifest \
+         --cpus-per-task=1 --mem=4G --job-name=brokerage_abm_manifest \
          bash -c "command -v module >/dev/null 2>&1 || source /usr/share/Modules/init/bash 2>/dev/null || true; \
                   module purge 2>/dev/null || true; module load $JULIA_MODULE; cd '$REPO'; \
-                  TB_SWEEP_DIR='$SWEEP_DIR' julia --project scripts/sweep/sweep_manifest.jl"
-    echo "TB_SWEEP_DIR=$SWEEP_DIR" > "$ENVFILE"
+                  BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --project scripts/sweep/sweep_manifest.jl"
+    echo "BROKERAGE_ABM_SWEEP_DIR=$SWEEP_DIR" > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;
 

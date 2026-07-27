@@ -1,13 +1,13 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: ActiveMatch, Agent, CachedNetworkMeasures, CalibrationConstants
-using TransientBrokerage: CurveGeometry, MatchingEnv, NNGradBuffers, PeriodAccumulators
-using TransientBrokerage: Q_OFFSET, effective_history_size
-using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
-using TransientBrokerage: has_current_match, init_neural_net, partner_mean
-using TransientBrokerage: record_agent_history!, record_broker_history!
-using TransientBrokerage: reset_accumulators!
-using TransientBrokerage: update_partner_mean!
+using BrokerageABM
+using BrokerageABM: ActiveMatch, Agent, CachedNetworkMeasures, CalibrationConstants
+using BrokerageABM: CurveGeometry, MatchingEnv, NNGradBuffers, PeriodAccumulators
+using BrokerageABM: Q_OFFSET, effective_history_size
+using BrokerageABM: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
+using BrokerageABM: has_current_match, init_neural_net, partner_mean
+using BrokerageABM: record_agent_history!, record_broker_history!
+using BrokerageABM: reset_accumulators!
+using BrokerageABM: update_partner_mean!
 using StableRNGs: StableRNG
 using LinearAlgebra: norm
 
@@ -24,13 +24,10 @@ using LinearAlgebra: norm
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
         @test p.network_measure_interval == 20
-        @test p.enable_principal == false
-        @test p.capture_min_error_obs == 100
-        @test p.capture_error_threshold == 0.50
     end
 
     @testset "public export surface keeps internals explicit" begin
-        exported = Set(names(TransientBrokerage))
+        exported = Set(names(BrokerageABM))
         expected_exports = Set([
             :ModelParams,
             :ModelState,
@@ -79,8 +76,6 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(eta=-0.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
-        @test_throws AssertionError default_params(capture_min_error_obs=-1)
-        @test_throws AssertionError default_params(capture_error_threshold=-0.1)
         @test_throws AssertionError default_params(T=10, T_burn=15)
     end
 
@@ -114,51 +109,34 @@ using LinearAlgebra: norm
     end
 
     @testset "ActiveMatch construction" begin
-        am = ActiveMatch(5, false, :self)
+        am = ActiveMatch(5, :self)
         @test am.partner_id == 5
-        @test am.is_principal == false
         @test am.channel == :self
     end
 
     @testset "reset_accumulators!" begin
         accum = PeriodAccumulators()
         accum.n_self_matches = 10
-        accum.n_broker_standard = 5
-        accum.n_broker_principal = 3
+        accum.n_broker_matches = 5
         push!(accum.q_self, 1.0, 2.0)
+        push!(accum.q_broker, 3.0, 4.0)
         accum.n_demanders = 7
         accum.n_outsourced = 2
         accum.outsourced_slots = 9
         accum.roster_size = 42
         accum.broker_access_size = 45
-        accum.broker_error_abs_sum = 4.0
-        accum.broker_error_count = 3
-        accum.broker_confidence_mae = 1.5
-        accum.captured_origin_count = 2
-        accum.captured_position_count = 4
-        accum.principal_rejected = 1
-        accum.capture_ready = true
-        accum.capture_scaled_mae = 0.2
 
         reset_accumulators!(accum)
 
         @test accum.n_self_matches == 0
-        @test accum.n_broker_standard == 0
-        @test accum.n_broker_principal == 0
+        @test accum.n_broker_matches == 0
         @test isempty(accum.q_self)
+        @test isempty(accum.q_broker)
         @test accum.n_demanders == 0
         @test accum.n_outsourced == 0
         @test accum.outsourced_slots == 0
         @test accum.roster_size == 0
         @test accum.broker_access_size == 0
-        @test accum.broker_error_abs_sum == 0.0
-        @test accum.broker_error_count == 0
-        @test isnan(accum.broker_confidence_mae)
-        @test accum.captured_origin_count == 0
-        @test accum.captured_position_count == 0
-        @test accum.principal_rejected == 0
-        @test !accum.capture_ready
-        @test isnan(accum.capture_scaled_mae)
     end
 
     @testset "Agent history recording and growth" begin
@@ -279,30 +257,30 @@ using LinearAlgebra: norm
         )
 
         @test !has_current_match(agent, 2)
-        push!(agent.active_matches, ActiveMatch(2, false, :self))
+        push!(agent.active_matches, ActiveMatch(2, :self))
         @test has_current_match(agent, 2)
         @test !has_current_match(agent, 3)
-        push!(agent.active_matches, ActiveMatch(3, false, :broker))
-        push!(agent.active_matches, ActiveMatch(4, false, :broker))
+        push!(agent.active_matches, ActiveMatch(3, :broker))
+        push!(agent.active_matches, ActiveMatch(4, :broker))
         @test length(agent.active_matches) == 3
     end
 
     @testset "Current-match workspace index" begin
         state = initialize_model(default_params(N=10, K=3, seed=101))
-        ws = TransientBrokerage.SimWorkspace()
+        ws = BrokerageABM.SimWorkspace()
         agents = state.agents
 
-        push!(agents[1].active_matches, ActiveMatch(2, false, :self))
-        TransientBrokerage.rebuild_current_match_index!(ws, agents)
+        push!(agents[1].active_matches, ActiveMatch(2, :self))
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
         @test has_current_match(ws, 1, 2)
         @test has_current_match(ws, 2, 1)
         @test !has_current_match(ws, 1, 3)
 
-        TransientBrokerage.mark_current_match!(ws, 2, 3)
+        BrokerageABM.mark_current_match!(ws, 2, 3)
         @test has_current_match(ws, 2, 3)
         @test has_current_match(ws, 3, 2)
 
-        TransientBrokerage.reset_current_match_index!(ws, length(agents))
+        BrokerageABM.reset_current_match_index!(ws, length(agents))
         @test !has_current_match(ws, 1, 2)
         @test !has_current_match(ws, 2, 3)
     end

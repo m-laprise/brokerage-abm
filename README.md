@@ -1,34 +1,45 @@
-# Transient Brokerage
+# ABM of Brokerage in Matching Markets
 
-Replication code for a dissertation chapter on transient brokerage that
-contains an agent-based model of a brokered matching market, with and without
-client capture by the broker.
+Simulation and replication code for an agent-based model of a brokered matching
+market. Agents can search through their own networks or outsource search to a
+broker that has broader access and learns from mediated matches.
 
-This repository contains everything needed to build the chapter's results from
-scratch: the model itself, the pipeline that generated the simulation data, and
-the pipeline that turns the data into the results section. By construction:
+This repository contains everything needed to build the study's results from
+scratch: the model, the simulation pipeline, and the reporting pipeline. The
+project follows two reproducibility requirements:
 
-1. **The data can be regenerated exactly** from this repository alone.
+1. **Simulation data can be regenerated exactly** from the recorded code,
+   parameters, seeds, and software environment.
 2. **No result is hard-coded.** Every number, figure, and caption value in the
    results section is computed from the data each time the section is built.
+
+## Data status
+
+No journal-submission simulation dataset has been generated under the current
+single-model version of the project. All simulation runs and derived artifacts
+will be generated after model development stabilizes.
+
+Previously generated local outputs may be used temporarily to exercise report
+and visualization pathways during the refactor. They will not be migrated into
+the new dataset or treated as journal results.
 
 ## What is in the repository
 
 | Path | Contents |
 |---|---|
-| `src/` | The model: matching, learning, networks, capture, simulation loop |
-| `test/` | Automated tests of the model (`julia --project -e 'using Pkg; Pkg.test()'`) |
+| `src/` | The model: matching, learning, networks, and the simulation loop |
+| `test/` | Automated tests of the model (`julia --project --threads=auto -e 'using Pkg; Pkg.test()'`) |
 | `scripts/sweep/` | Data generation: runs the model across all parameter settings on a compute cluster (staged via `submit.sh`) |
 | `scripts/paper/` | Results pipeline: computes the statistics, renders figures, assembles results section |
-| `scripts/diagnostics/` | Exploratory analyses, incl. the matching-function rank grid used by the figures |
+| `scripts/diagnostics/` | Exploratory analyses, including the matching-function rank grid used by the figures |
 | `paper/` | Results-section sources (prose, captions) and generated outputs (values, figures, TeX) |
 | `model_specifications.tex` | Model specifications |
 | `simulation_pseudocode.tex` | Simulation-loop pseudocode |
 
 ```
-src/ (model)  ->  scripts/sweep/ (925 simulation runs)  ->  saved dataset
-                                                                 |
-paper/results_section.tex  <-  scripts/paper/ (numbers, figures, TeX)
+src/ (model)  ->  scripts/sweep/ (simulation runs)  ->  saved dataset
+                                                              |
+paper/results_section.tex  <-  scripts/paper/ (statistics, figures, TeX)
 ```
 
 ## Software environment
@@ -39,32 +50,21 @@ version of every package and of all their dependencies, so the software stack
 can be rebuilt identically:
 
 ```bash
-julia --project -e 'using Pkg; Pkg.instantiate()'
+julia --project --threads=auto -e 'using Pkg; Pkg.instantiate()'
 ```
 
-The link between this environment and the data is verifiable: every simulation 
-run stored a fingerprint (SHA-256 hash) of the `Manifest.toml` it ran under, and 
-the committed `Manifest.toml` matches that fingerprint byte for byte
-(`ac0a668fd39a07cfd89bf7f88f2f9caf516a2addc81b06212a3b3591b9dfcab0`).
+Every generated run records the Git commit, Julia version, parameter values,
+random seed, run-manifest hash, and a SHA-256 fingerprint of `Manifest.toml`.
+This connects each result to the exact code and software environment that
+produced it.
 
-## The data
+## Generating simulation data
 
-Results derive from one **parameter sweep**: the model run repeatedly while
-its parameters are varied in a systematic design. The sweep
-(`2026-06-07_f424438`) covers 185 parameter settings, called *regimes* (91
-without capture, 94 with capture; each varies one parameter at a time or a pair
-of parameters on a grid). Every regime is simulated five times with different
-random seeds, for 925 runs of 200 simulated periods each, and every run saves
-its complete period-by-period metrics, not just summaries, so later analyses
-never need to re-simulate.
-
-The data are exactly regenerable from this repository alone. The sweep design is 
-fully specified in code (`scripts/sweep/sweep_config.jl`), randomness is 
-controlled (StableRNGs, seeds 1 to 5, so the same seed always yields the same 
-run), the software versions are pinned by the committed `Manifest.toml`, and the 
-model code at the current commit is identical to the code that generated the 
-data. Running the pipeline below reproduces the per-period metrics of every 
-regime and seed exactly.
+Results will derive from a parameter sweep that runs the model repeatedly while
+varying its parameters in a systematic design. The final sweep design and run
+count will be set after the remaining model changes are complete. Randomness is
+controlled with StableRNGs, and every run saves complete period-by-period
+metrics rather than only summaries.
 
 Each regime's saved file (`data.jld2`) holds the per-period metrics tables (one
 per seed), the exact parameter values used, the seed list, and its own
@@ -73,22 +73,20 @@ provenance record: the git commit of the code that ran, the Julia version, the
 holds `manifest.json` (the full design: every regime, parameter set, and seed),
 environment files, and per-task logs under `logs/`.
 
-## Regenerating the data
-
-Rebuilding the dataset means rerunning all 925 simulations on a compute cluster 
-running SLURM. The flow is staged so each step can be checked before the next:
+The sweep runs on a SLURM compute cluster. The flow is staged so each step can
+be checked before the next:
 
 ```bash
-./scripts/sweep/submit.sh resolve    # login node: download packages 
+./scripts/sweep/submit.sh resolve    # login node: download packages
 ./scripts/sweep/submit.sh setup      # compute: precompile the project once
 ./scripts/sweep/submit.sh manifest   # compute: write the run manifest + counts
-./scripts/sweep/submit.sh smoke      # run ONE simulation task, inspect its output
-./scripts/sweep/submit.sh compute    # the full 925-task simulation array
+./scripts/sweep/submit.sh smoke      # run one simulation task and inspect it
+./scripts/sweep/submit.sh compute    # run the full simulation array
 ./scripts/sweep/submit.sh plot       # aggregation jobs that write each regime's data.jld2
 ```
 
 The cluster account and the data destination are taken from the environment
-(`TB_ACCOUNT`, `TB_DATA_ROOT`). Per-task wall times are in the sweep's `logs/`.
+(`BROKERAGE_ABM_ACCOUNT`, `BROKERAGE_ABM_DATA_ROOT`). Per-task wall times are in the sweep's `logs/`.
 
 ## Reproducing the results section
 
@@ -99,21 +97,21 @@ from a clone, with no access to the dataset. Editing prose, captions, or figure
 styling therefore never requires the cluster:
 
 ```bash
-# on the cluster, with TB_SWEEP_DIR set:
-julia --project scripts/diagnostics/dgp_rank_grid.jl   # once: effective-rank grid
-julia --project scripts/paper/stats.jl                 # -> paper/values.tex (every quoted number)
-julia --project scripts/paper/figdata.jl               # -> paper/figdata.jld2 (figure inputs)
+# on the cluster, with BROKERAGE_ABM_SWEEP_DIR set:
+julia --project --threads=auto scripts/diagnostics/dgp_rank_grid.jl
+julia --project --threads=auto scripts/paper/stats.jl
+julia --project --threads=auto scripts/paper/figdata.jl
 # locally, from a clone, no data access needed:
-julia --project scripts/paper/figures.jl               # -> paper/figs/*.png (print resolution)
-julia scripts/paper/build_section.jl                   # -> paper/results_section.tex
+julia --project --threads=auto scripts/paper/figures.jl
+julia --project --threads=auto scripts/paper/build_section.jl
 ```
 
-The last step fails if any value referenced in the prose was not computed, if 
-any computed value goes unused, or if a figure file is missing, and it finishes 
-by compiling the section.
+The final step fails if any value referenced in the prose was not computed, if
+any computed value goes unused, or if a required figure file is missing. It
+then compiles the results section.
 
 The **Supplementary Material** (`paper/supplement.pdf`) reproduces the structural-
 advantage analyses with the broker's two other ego-network measures, Burt's
-constraint and effective size, in four figures. It is a separate, self-contained
-pipeline (`supp_figdata.jl` -> `supp_figures.jl` -> `build_supplement.jl`), so it
-and the results section regenerate independently; see `scripts/paper/README.md`.
+constraint and effective size. It is a separate, self-contained pipeline
+(`supp_figdata.jl` -> `supp_figures.jl` -> `build_supplement.jl`), so it and the
+results section regenerate independently; see `scripts/paper/README.md`.

@@ -8,7 +8,7 @@ approved model change. Prints the tail-mean metrics for the fixed
 Usage: julia --project --threads=auto scripts/diagnostics/refresh_regression_baseline.jl
 """
 
-using TransientBrokerage
+using BrokerageABM
 using DataFrames
 using Statistics: mean
 

@@ -12,9 +12,9 @@ Broker centrality and access fraction
 \end{ptitle}
 \begin{pcaption}{position}
 Left: broker betweenness centrality and access fraction over time at the
-no-capture baseline, as \pv{rollWin}-observation rolling ensemble means over
+baseline, as \pv{rollWin}-observation rolling ensemble means over
 seeds; betweenness is measured every \pv{betwInterval} periods. Right: one dot
-per one-at-a-time no-capture regime, each a late-window mean over that regime's
+per one-at-a-time regime, each a late-window mean over that regime's
 seeds. Time starts at $t=\pv{axisStart}$ (end of burn-in).
 \end{pcaption}
 
@@ -22,7 +22,7 @@ seeds. Time starts at $t=\pv{axisStart}$ (end of burn-in).
 Outcomes across the matching problem ($\rho\times\delta$)
 \end{ptitle}
 \begin{pcaption}{grid}
-Six outcomes across the $\rho\times\delta$ grid, no capture; one line per gain
+Six outcomes across the $\rho\times\delta$ grid; one line per gain
 $\delta$, one marker per regime, each a late-window mean over that regime's seeds.
 The rank-correlation gap is broker minus principals; the output gap, broker
 channel minus self-search.
@@ -34,27 +34,15 @@ Prediction and output gaps vs centrality and access
 \begin{pcaption}{advantage}
 Rank-correlation gap (broker minus principals) and output gap (broker channel
 minus self-search) against broker betweenness centrality and access fraction; one
-dot per no-capture regime, each a late-window mean over that regime's seeds.
-\end{pcaption}
-
-\begin{ptitle}{capture}
-Captured share of demand
-\end{ptitle}
-\begin{pcaption}{capture}
-Captured share of outsourced demand. First three panels: along the $\rho$, $f_r$,
-and $\eta$ sweeps, the black dot at each level is the across-seed mean of the late
-captured share and the small gray dots are the individual seeds (horizontally
-offset where they overlap). Last panel: the output gap (broker channel
-minus self-search) against the captured share, one dot per capture regime (all
-\pv{nCapture}), each a late mean over its seeds, colored by $f_r$.
+dot per regime, each a late-window mean over that regime's seeds.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}
-Baseline dynamics with and without capture
+Baseline market and network dynamics
 \end{ptitle}
 \begin{pcaption}{dynamics}
 Lines are \pv{rollWin}-observation rolling ensemble means over seeds at the
-baseline regime pair. In each panel, pale gray reproduces the corresponding series of the other
-row, so the two regimes can be compared directly. The capture row's last panel
-adds the captured share of total demand (dashed). Axes start at $t=\pv{axisStart}$.
+baseline regime. Broker betweenness is measured every
+\pv{betwInterval} periods; the other measures are recorded every period.
+Axes start at $t=\pv{axisStart}$.
 \end{pcaption}

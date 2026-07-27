@@ -1,6 +1,6 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: ActiveMatch, add_match_edge!, remove_agent_edges!
+using BrokerageABM
+using BrokerageABM: ActiveMatch, add_match_edge!, remove_agent_edges!
 using StableRNGs: StableRNG
 
 function set_constant_prediction!(nn, value::Float64)
@@ -27,9 +27,9 @@ end
         agents[1].partner_sum[3] = 7.0
         agents[1].partner_count[3] = 1
 
-        TransientBrokerage.rebuild_current_match_index!(ws, agents)
-        TransientBrokerage.reset_offer_book!(ws, p.N)
-        sent = TransientBrokerage.append_self_search_offers!(
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, p.N)
+        sent = BrokerageABM.append_self_search_offers!(
             ws,
             agents[1],
             2,
@@ -56,11 +56,11 @@ end
         add_match_edge!(G, 1, 2)
         agents[1].partner_sum[2] = 100.0
         agents[1].partner_count[2] = 1
-        push!(agents[2].active_matches, ActiveMatch(8, false, :self))
+        push!(agents[2].active_matches, ActiveMatch(8, :self))
 
-        TransientBrokerage.rebuild_current_match_index!(ws, agents)
-        TransientBrokerage.reset_offer_book!(ws, p.N)
-        sent = TransientBrokerage.append_self_search_offers!(
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, p.N)
+        sent = BrokerageABM.append_self_search_offers!(
             ws,
             agents[1],
             1,
@@ -81,7 +81,7 @@ end
         state = initialize_model(p)
         strangers = state.workspace.search.period_strangers
 
-        TransientBrokerage.sample_period_strangers!(
+        BrokerageABM.sample_period_strangers!(
             strangers, p.N, p.n_strangers, StableRNG(701)
         )
 
@@ -109,7 +109,7 @@ end
         expected_rng = StableRNG(901)
         pools = [
             copy(
-                TransientBrokerage.sample_period_strangers!(
+                BrokerageABM.sample_period_strangers!(
                     Int[], p.N, p.n_strangers, expected_rng
                 ),
             ) for _ in 1:2
@@ -118,7 +118,7 @@ end
             first(j for j in pools[idx] if j != demand_agent_ids[idx]) for idx in 1:2
         ]
 
-        TransientBrokerage.run_offer_market!(
+        BrokerageABM.run_offer_market!(
             demand_agent_ids,
             demand_channels,
             demand_counts,
@@ -130,8 +130,7 @@ end
             state.cal,
             StableRNG(901);
             ws=ws,
-            accepted_matches=TransientBrokerage.AcceptedMatch[],
-            accum=state.accum,
+            accepted_matches=BrokerageABM.AcceptedMatch[],
         )
 
         @test pools[1] != pools[2]
@@ -139,15 +138,15 @@ end
     end
 
     @testset "Offer book stores one unordered pair for reciprocal offers" begin
-        ws = TransientBrokerage.SimWorkspace()
+        ws = BrokerageABM.SimWorkspace()
         offer_book = ws.offer_book
-        TransientBrokerage.reset_offer_book!(offer_book, 5)
+        BrokerageABM.reset_offer_book!(offer_book, 5)
 
-        @test TransientBrokerage.add_offer!(offer_book, 1, 2, :self, 3.0)
-        @test TransientBrokerage.add_offer!(offer_book, 2, 1, :broker, 4.0)
-        @test !TransientBrokerage.add_offer!(offer_book, 1, 2, :self, 5.0)
-        @test TransientBrokerage.offer_ids(offer_book, 1, 2) == (1, 2)
-        @test TransientBrokerage.offer_at(offer_book, 1).predicted_value == 3.0
+        @test BrokerageABM.add_offer!(offer_book, 1, 2, :self, 3.0)
+        @test BrokerageABM.add_offer!(offer_book, 2, 1, :broker, 4.0)
+        @test !BrokerageABM.add_offer!(offer_book, 1, 2, :self, 5.0)
+        @test BrokerageABM.offer_ids(offer_book, 1, 2) == (1, 2)
+        @test BrokerageABM.offer_at(offer_book, 1).predicted_value == 3.0
         @test length(offer_book.offers) == 2
         @test offer_book.offer_pairs == [(1, 2)]
     end
@@ -161,9 +160,9 @@ end
         empty!(broker.roster)
         empty!(broker.current_clients)
         union!(broker.current_clients, [1, 2])
-        TransientBrokerage.reset_offer_book!(ws, p.N)
+        BrokerageABM.reset_offer_book!(ws, p.N)
 
-        sent = TransientBrokerage.append_broker_offers!(
+        sent = BrokerageABM.append_broker_offers!(
             ws, [1, 2], [:broker, :broker], [1, 1], state.agents, broker, p, -1e9
         )
 
@@ -184,9 +183,9 @@ end
         push!(broker.current_clients, 1)
         empty!(ws.search.period_strangers)
         push!(ws.search.period_strangers, 4)
-        TransientBrokerage.reset_offer_book!(ws, p.N)
+        BrokerageABM.reset_offer_book!(ws, p.N)
 
-        sent = TransientBrokerage.append_broker_offers!(
+        sent = BrokerageABM.append_broker_offers!(
             ws, [1], [:broker], [1], state.agents, broker, p, -1e9
         )
 

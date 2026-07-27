@@ -1,22 +1,22 @@
 """
-    explore_base_model.jl
+    explore_model.jl
 
-Run the base model (no capture) across parameter configurations that control
+Run the model across parameter configurations that control
 matching difficulty (rho, delta, s, eta) with multiple seeds per config.
 Produces per-config 5x4 dynamics panels, a network-statistics figure, and DGP
 visualization (matrix, SVD).
 
 Data is cached as JLD2; pass --rerun to force re-simulation.
 
-Usage: julia --project --threads=auto scripts/explore_base_model.jl
-       julia --project --threads=auto scripts/explore_base_model.jl --baseline
-       julia --project --threads=auto scripts/explore_base_model.jl --rerun
+Usage: julia --project --threads=auto scripts/explore_model.jl
+       julia --project --threads=auto scripts/explore_model.jl --baseline
+       julia --project --threads=auto scripts/explore_model.jl --rerun
 """
 
 Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --threads=auto"
 
-using TransientBrokerage
-using TransientBrokerage:
+using BrokerageABM
+using BrokerageABM:
     generate_matching_env, generate_curve_geometry, generate_agent_types
 using DataFrames: DataFrame
 using LinearAlgebra: svdvals
@@ -119,7 +119,7 @@ function plot_ensemble(
         akw...,
     )
     pm!(ax, mdf -> Float64.(mdf.n_self_matches); label="Self", color=COL_AGENT)
-    pm!(ax, mdf -> Float64.(mdf.n_broker_standard); label="Broker", color=COL_BROKER)
+    pm!(ax, mdf -> Float64.(mdf.n_broker_matches); label="Broker", color=COL_BROKER)
     axislegend(ax; position=:rt, LEG_KW...)
 
     ax = newax(
@@ -150,7 +150,7 @@ function plot_ensemble(
         ax,
         mdf -> Float64.(mdf.roster_size);
         label="Standing roster",
-        color=COL_BASE_REF,
+        color=COL_REFERENCE,
         linestyle=:dash,
     )
     axislegend(ax; position=:rb, LEG_KW...)
@@ -315,7 +315,7 @@ function plot_ensemble(
         xlabelsize=LABEL_FS,
     )
     pm!(ax, mdf -> mdf.q_self_mean; label="Self", color=COL_AGENT)
-    pm!(ax, mdf -> mdf.q_broker_standard_mean; label="Broker", color=COL_BROKER)
+    pm!(ax, mdf -> mdf.q_broker_mean; label="Broker", color=COL_BROKER)
     axislegend(ax; position=:rb, LEG_KW...)
 
     ax = newax(
@@ -332,7 +332,7 @@ function plot_ensemble(
     pm!(ax, mdf -> mdf.broker_reputation; label="Reputation", color=COL_REPUTATION)
     axislegend(ax; position=:rb, LEG_KW...)
 
-    # Row 5, col 4: empty in base model
+    # Row 5, col 4: intentionally empty
 
     # ── Burn-in lines ──
     for a in all_axes
@@ -395,12 +395,11 @@ function plot_network_stats(
         xlabelsize=LABEL_FS,
     )
     pm!(ax, mdf -> mdf.mean_degree; label="Mean", color=COL_DIAG)
-    pm!(ax, mdf -> mdf.median_degree; label="Median", color=COL_BASE_REF, linestyle=:dash)
+    pm!(ax, mdf -> mdf.median_degree; label="Median", color=COL_REFERENCE, linestyle=:dash)
     axislegend(ax; position=:lt, LEG_KW...)
 
     panels = [
-        (title="Min degree", field=:min_degree),
-        (title="Max degree", field=:max_degree),
+        (title="Min degree", field=:min_degree), (title="Max degree", field=:max_degree)
     ]
 
     for (col, panel) in enumerate(panels)
@@ -595,9 +594,7 @@ if BASELINE_ONLY
     configs = filter(c -> c.tag == "baseline", configs)
 end
 
-println(
-    "Base model exploration: $(length(configs)) configs, $N_SEEDS seeds, N=$N_SIM, T=$T"
-)
+println("Model exploration: $(length(configs)) configs, $N_SEEDS seeds, N=$N_SIM, T=$T")
 RERUN && println("  --rerun: forcing re-simulation")
 BASELINE_ONLY && println("  --baseline: running baseline only")
 println()

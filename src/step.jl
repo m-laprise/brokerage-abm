@@ -242,7 +242,7 @@ end
 
 Execute one complete period of the simulation and return the pre-turnover period
 metrics. Entry/exit turnover is processed after the returned metrics are
-captured.
+recorded.
 """
 function step_period!(state::ModelState)
     p = state.params
@@ -259,9 +259,6 @@ function step_period!(state::ModelState)
     accum = state.accum
 
     reset_accumulators!(accum)
-    accum.broker_confidence_mae =
-        broker.capture_confidence_ready ? broker.capture_confidence_mae : NaN
-    accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
 
     # ══════════════════════════════════════════════════════════════════════
     # Step 0: Current-period match reset
@@ -350,17 +347,16 @@ function step_period!(state::ModelState)
         rng;
         ws=ws,
         accepted_matches=ledger.accepted_matches,
-        accum=accum,
     )
     sync_broker_edges!(G, agents, broker)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Step 4: Learning and state updates
+    # Step 3: Learning and state updates
     # ══════════════════════════════════════════════════════════════════════
 
-    # 4.1: Histories already recorded during run_offer_market!
+    # 3.1: Histories already recorded during run_offer_market!
 
-    # 4.2: Satisfaction update
+    # 3.2: Satisfaction update
     update_satisfaction!(
         agents,
         accepted,
@@ -370,11 +366,10 @@ function step_period!(state::ModelState)
         cal,
         p;
         demander_sum=ledger.demander_q_sum,
-        broker_standard_count=ledger.broker_standard_count,
-        principal_payment=ledger.principal_payment,
+        broker_match_count=ledger.broker_match_count,
     )
 
-    # 4.3: Broker reputation
+    # 3.3: Broker reputation
     update_broker_reputation!(broker, agents, broker_clients)
 
     # Record accumulators
@@ -389,8 +384,6 @@ function step_period!(state::ModelState)
             elseif offer.channel == :broker
                 push!(accum.broker_predicted, offer.predicted_value)
                 push!(accum.broker_realized, m.q_realized)
-                accum.broker_error_abs_sum += abs(m.q_realized - offer.predicted_value)
-                accum.broker_error_count += 1
                 if offer.was_connected
                     accum.assessment_count += 1
                 else
@@ -402,12 +395,9 @@ function step_period!(state::ModelState)
         if m.channel == :self
             accum.n_self_matches += 1
             push!(accum.q_self, m.q_realized)
-        elseif m.is_principal
-            accum.n_broker_principal += 1
-            push!(accum.q_broker_principal, m.q_realized)
         else
-            accum.n_broker_standard += 1
-            push!(accum.q_broker_standard, m.q_realized)
+            accum.n_broker_matches += 1
+            push!(accum.q_broker, m.q_realized)
         end
     end
 
@@ -425,17 +415,13 @@ function step_period!(state::ModelState)
     end
     accum.max_counterparties = counterparty_counts[end]
 
-    update_capture_confidence_mae!(
-        broker, accum.broker_error_abs_sum, accum.broker_error_count, p.omega
-    )
-
     update_holdout_metrics!(state)
 
     accum.roster_size = length(broker.roster)
     accum.broker_access_size = broker_access_size(broker)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Step 5: Recording and measurement
+    # Step 4: Recording and measurement
     # ══════════════════════════════════════════════════════════════════════
     if state.period % p.network_measure_interval == 0
         update_cached_network_measures!(state)
@@ -452,7 +438,7 @@ function step_period!(state::ModelState)
     push!(broker.obs_period_marks, broker.history_count)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Step 6: Entry/exit
+    # Step 5: Entry/exit
     # ══════════════════════════════════════════════════════════════════════
     process_entry_exit!(state, rng)
     sync_broker_edges!(G, agents, broker)

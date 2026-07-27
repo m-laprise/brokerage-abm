@@ -6,25 +6,18 @@ Shared helpers for exploration scripts so they do not drift by copy-paste.
 
 using DataFrames: DataFrame
 using MultivariateStats: fit, predict, PCA
-using TransientBrokerage:
+using BrokerageABM:
     Q_OFFSET, default_params, match_signal, regime_gain, run_simulation
 
 """Run `n_seeds` simulations and return one metrics DataFrame per seed."""
 function run_ensemble(;
-    base_kwargs,
-    T::Int,
-    N::Int,
-    n_seeds::Int,
-    enable_principal::Bool=false,
-    return_final_agent_degrees::Bool=false,
+    base_kwargs, T::Int, N::Int, n_seeds::Int, return_final_agent_degrees::Bool=false
 )
     mdfs = Vector{DataFrame}(undef, n_seeds)
     final_agent_degrees =
         return_final_agent_degrees ? Vector{Vector{Int}}(undef, n_seeds) : nothing
     for s in 1:n_seeds
-        p = default_params(;
-            N=N, T=T, seed=s, enable_principal=enable_principal, base_kwargs...
-        )
+        p = default_params(; N=N, T=T, seed=s, base_kwargs...)
         state, mdf = run_simulation(p)
         mdf[!, :seed] .= s
         mdfs[s] = mdf

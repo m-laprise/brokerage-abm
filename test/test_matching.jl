@@ -1,9 +1,9 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: AcceptedMatch, OfferCredit, add_match_edge!
-using TransientBrokerage: has_current_match, outsourcing_decision, remove_agent_edges!
-using TransientBrokerage: update_broker_reputation!, update_partner_mean!
-using TransientBrokerage: update_satisfaction!
+using BrokerageABM
+using BrokerageABM: AcceptedMatch, OfferCredit, add_match_edge!
+using BrokerageABM: has_current_match, outsourcing_decision, remove_agent_edges!
+using BrokerageABM: update_broker_reputation!, update_partner_mean!
+using BrokerageABM: update_satisfaction!
 using Graphs: has_edge
 using StableRNGs: StableRNG
 
@@ -25,7 +25,7 @@ using StableRNGs: StableRNG
         agents[2].partner_sum[1] = 0.0
         agents[2].partner_count[1] = 1
 
-        accepted = TransientBrokerage.run_offer_market!(
+        accepted = BrokerageABM.run_offer_market!(
             [1],
             [:self],
             [1],
@@ -42,7 +42,7 @@ using StableRNGs: StableRNG
         @test isempty(accepted)
 
         agents[2].partner_sum[1] = 10.0
-        accepted = TransientBrokerage.run_offer_market!(
+        accepted = BrokerageABM.run_offer_market!(
             [1],
             [:self],
             [1],
@@ -67,23 +67,23 @@ using StableRNGs: StableRNG
         ws = state.workspace
         agents = state.agents
 
-        TransientBrokerage.rebuild_current_match_index!(ws, agents)
-        TransientBrokerage.reset_offer_book!(ws, state.params.N)
-        @test TransientBrokerage.add_offer!(ws, 1, 2, :self, 10.0)
-        @test TransientBrokerage.add_offer!(ws, 2, 1, :broker, 10.0)
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, state.params.N)
+        @test BrokerageABM.add_offer!(ws, 1, 2, :self, 10.0)
+        @test BrokerageABM.add_offer!(ws, 2, 1, :broker, 10.0)
 
         agents[1].partner_sum[2] = -10.0
         agents[1].partner_count[2] = 1
         agents[2].partner_sum[1] = -10.0
         agents[2].partner_count[1] = 1
 
-        accepted = TransientBrokerage.AcceptedMatch[]
+        accepted = BrokerageABM.AcceptedMatch[]
         match_output = ws.match_output
         if length(match_output.Ax_buf) != state.params.d
             match_output.Ax_buf = Vector{Float64}(undef, state.params.d)
             match_output.Bx_buf = Vector{Float64}(undef, state.params.d)
         end
-        TransientBrokerage.accept_offer_pair!(
+        BrokerageABM.accept_offer_pair!(
             accepted,
             1,
             2,
@@ -123,7 +123,7 @@ using StableRNGs: StableRNG
             agents[3].partner_count[i] = 1
         end
 
-        accepted = TransientBrokerage.run_offer_market!(
+        accepted = BrokerageABM.run_offer_market!(
             [1, 2],
             [:self, :self],
             [1, 1],
@@ -142,7 +142,7 @@ using StableRNGs: StableRNG
         @test Set(m.counterparty_id for m in accepted) == Set([3])
     end
 
-    @testset "Accepted standard matches create edges and update histories once" begin
+    @testset "Accepted matches create edges and update histories once" begin
         state = initialize_model(p)
         a1, a2 = state.agents[1], state.agents[2]
         h1_before = a1.history_count
@@ -154,7 +154,7 @@ using StableRNGs: StableRNG
         update_partner_mean!(a1, 2, 6.0)
         update_partner_mean!(a2, 1, 5.0)
 
-        accepted = TransientBrokerage.run_offer_market!(
+        accepted = BrokerageABM.run_offer_market!(
             [1],
             [:self],
             [1],
@@ -189,11 +189,8 @@ using StableRNGs: StableRNG
                 1,
                 2,
                 :broker,
-                false,
                 4.0,
                 4.0,
-                NaN,
-                NaN,
                 OfferCredit(1, 2, :self, 4.0, false),
                 OfferCredit(2, 1, :broker, 4.0, false),
             ),

@@ -3,7 +3,7 @@
 # pinned Julia, so the shared depot cache is warm and per-array-task startup is
 # amortized (Enzyme/CairoMakie are expensive to precompile). Run before the
 # compute array. Args: $1 = repo root.
-#SBATCH --job-name=tb_setup
+#SBATCH --job-name=brokerage_abm_setup
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -35,7 +35,7 @@ julia --project --threads="${SLURM_CPUS_PER_TASK:-8}" -e '
     Pkg.instantiate()
     Pkg.precompile()
     @info "precompiling package code"
-    using TransientBrokerage, CairoMakie, JLD2, DataFrames
+    using BrokerageABM, CairoMakie, JLD2, DataFrames
     @info "setup complete" julia=VERSION nthreads=Threads.nthreads()
 '
 echo "SETUP_OK"

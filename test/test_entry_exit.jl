@@ -1,7 +1,7 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: ActiveMatch, Q_OFFSET, add_match_edge!, enter_agent!
-using TransientBrokerage: exit_agent!, process_entry_exit!, remove_agent_edges!
+using BrokerageABM
+using BrokerageABM: ActiveMatch, Q_OFFSET, add_match_edge!, enter_agent!
+using BrokerageABM: exit_agent!, process_entry_exit!, remove_agent_edges!
 
 @testset "Entry/Exit" begin
     using Graphs: degree, has_edge, neighbors, nv
@@ -13,8 +13,8 @@ using TransientBrokerage: exit_agent!, process_entry_exit!, remove_agent_edges!
 
         empty!(state1.agents[target].active_matches)
         empty!(state1.agents[partner].active_matches)
-        push!(state1.agents[target].active_matches, ActiveMatch(partner, false, :self))
-        push!(state1.agents[partner].active_matches, ActiveMatch(target, false, :self))
+        push!(state1.agents[target].active_matches, ActiveMatch(partner, :self))
+        push!(state1.agents[partner].active_matches, ActiveMatch(target, :self))
         add_match_edge!(state1.G, target, partner)
 
         push!(state1.broker.roster, target)
@@ -47,7 +47,7 @@ using TransientBrokerage: exit_agent!, process_entry_exit!, remove_agent_edges!
         a.satisfaction_broker = 999.0
         a.tried_broker = true
         a.periods_alive = 100
-        push!(a.active_matches, ActiveMatch(2, false, :self))
+        push!(a.active_matches, ActiveMatch(2, :self))
 
         enter_agent!(state2, agent_id, rng)
         a = state2.agents[agent_id]

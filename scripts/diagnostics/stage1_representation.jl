@@ -17,7 +17,7 @@ Baselines on the SAME features:
     the gap (capacity-limited) or not (true representational gap).
 
 Sweeps δ (δ=0 ⇒ no gain ⇒ everything ~perfect; larger δ ⇒ more target mass in
-the discontinuous gain term). Headline metric is βg (gain recovery: 1=captured,
+the discontinuous gain term). Headline metric is βg (gain recovery: 1=recovered,
 0=ignored); gating failure also shows as opposite-signed per-regime bias.
 
 Usage: julia --project scripts/diagnostics/stage1_representation.jl

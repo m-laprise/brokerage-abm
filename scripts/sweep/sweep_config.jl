@@ -3,16 +3,16 @@
 
 Single source of truth for the parameter sweep.
 
-Defines the OAT axes (§2a), the kappa_max sub-sweep (§2c), the six phase-diagram
-pairs (§2b), the baseline, the seed list, and the storage layout (§4). Expands
+Defines the OAT axes, the phase-diagram pairs, the baseline, the seed list, and
+the storage layout. Expands
 all of that into:
 
-  * `build_cells()`   -> the ordered list of *cells* (param/value/model points),
+  * `build_cells()`   -> the ordered list of parameter cells,
   * `build_entries()` -> the ordered list of (cell, seed) *jobs* (one per array
                          task), each with a 0-based `index`,
   * `build_plot_jobs()` -> the ordered list of per-cell / per-pair plot jobs.
 
-This file is deliberately dependency-light (no TransientBrokerage, no CairoMakie,
+This file is deliberately dependency-light (no BrokerageABM, no CairoMakie,
 only `JLD2` + the `SHA`/`Dates` stdlibs) so it can be `include`d from the manifest
 generator, the per-task runner, and the plotting script alike. It also provides a
 minimal JSON emitter so `manifest.json` is a real, human/report-readable file
@@ -30,7 +30,7 @@ using Dates: Dates
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 1
+const SWEEP_SCHEMA_VERSION = 2
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -42,51 +42,46 @@ const SWEEP_T = 200
 const SWEEP_T_BURN = 30
 const SWEEP_SEEDS = collect(1:5)
 
-# OAT axis levels (§2a). `key` is the `default_params` keyword; `label` names the
-# output directory; `models` lists which models the axis is run under.
+# OAT axis levels. `key` is the `default_params` keyword and `label` names the
+# output directory.
 const RHO_VALS = [0.0, 0.5, 1.0]
 # The OAT rho axis is denser than the phase rho axis (extra 0.3, 0.7) for line-plot
 # resolution; phase grids keep RHO_VALS so their index-keyed cells are not disturbed.
 const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 1.0]
 const ETA_VALS = [0.01, 0.02, 0.03]
-const N_VALS   = [500, 1000, 1500]
-const R_VALS   = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
-const KAPPA_VALS = [0.40, 0.50, 0.65]       # capture_error_threshold, Model 1 only
+const N_VALS = [500, 1000, 1500]
+const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 
 # Matching complexity (delta = regime-gain strength, the operator behind the
 # fundamental information gap of §1e) and network density (k_G = initial degree).
 # The OAT levels bracket the baseline delta=0.5 / k_G=6; DELTA_VALS keeps that
 # midpoint for the rho x delta phase grid.
 const DELTA_OAT_VALS = [0.0, 0.75]
-const DELTA_VALS     = [0.0, 0.50, 0.75]
-const K_VALS         = [4, 12]
+const DELTA_VALS = [0.0, 0.50, 0.75]
+const K_VALS = [4, 12]
 
 const OAT_AXES = [
-    (label = "rho",              key = :rho,                     vals = RHO_OAT,  models = [:base, :capture]),
-    (label = "eta",              key = :eta,                     vals = ETA_VALS, models = [:base, :capture]),
-    (label = "N",                key = :N,                       vals = N_VALS,   models = [:base, :capture]),
-    (label = "reservation_frac", key = :reservation_frac,        vals = R_VALS,   models = [:base, :capture]),
-    # kappa_max affects Model 1 only -> capture-only, no base sibling (§2c).
-    (label = "kappa_max",        key = :capture_error_threshold, vals = KAPPA_VALS, models = [:capture]),
-    (label = "delta",            key = :delta, vals = DELTA_OAT_VALS, models = [:base, :capture]),
-    (label = "k",                key = :k,     vals = K_VALS,         models = [:base, :capture]),
+    (label="rho", key=:rho, vals=RHO_OAT),
+    (label="eta", key=:eta, vals=ETA_VALS),
+    (label="N", key=:N, vals=N_VALS),
+    (label="reservation_frac", key=:reservation_frac, vals=R_VALS),
+    (label="delta", key=:delta, vals=DELTA_OAT_VALS),
+    (label="k", key=:k, vals=K_VALS),
 ]
 
 # Phase-diagram pairs (§2b): all six pairwise combinations of {rho, eta, N, r},
-# axis levels reused from §2a, run under both models.
+# axis levels reused from the OAT design.
 const PHASE_PAIRS = [
-    (name = "rho_eta", xkey = :rho,              xvals = RHO_VALS, ykey = :eta,              yvals = ETA_VALS),
-    (name = "rho_N",   xkey = :rho,              xvals = RHO_VALS, ykey = :N,                yvals = N_VALS),
-    (name = "rho_r",   xkey = :rho,              xvals = RHO_VALS, ykey = :reservation_frac, yvals = R_VALS),
-    (name = "eta_r",   xkey = :eta,              xvals = ETA_VALS, ykey = :reservation_frac, yvals = R_VALS),
-    (name = "eta_N",   xkey = :eta,              xvals = ETA_VALS, ykey = :N,                yvals = N_VALS),
-    (name = "r_N",     xkey = :reservation_frac, xvals = R_VALS,   ykey = :N,                yvals = N_VALS),
-    (name = "rho_delta", xkey = :rho,            xvals = RHO_VALS, ykey = :delta,            yvals = DELTA_VALS),
+    (name="rho_eta", xkey=:rho, xvals=RHO_VALS, ykey=:eta, yvals=ETA_VALS),
+    (name="rho_N", xkey=:rho, xvals=RHO_VALS, ykey=:N, yvals=N_VALS),
+    (name="rho_r", xkey=:rho, xvals=RHO_VALS, ykey=:reservation_frac, yvals=R_VALS),
+    (name="eta_r", xkey=:eta, xvals=ETA_VALS, ykey=:reservation_frac, yvals=R_VALS),
+    (name="eta_N", xkey=:eta, xvals=ETA_VALS, ykey=:N, yvals=N_VALS),
+    (name="r_N", xkey=:reservation_frac, xvals=R_VALS, ykey=:N, yvals=N_VALS),
+    (name="rho_delta", xkey=:rho, xvals=RHO_VALS, ykey=:delta, yvals=DELTA_VALS),
 ]
 
-# The baseline cell, used as the dashed base reference for capture panels that
-# have no same-axis base sibling (the kappa_max cells, §2c).
-const BASELINE_BASE_RELDIR = "oat/rho=0.5/base"
+const BASELINE_RELDIR = "oat/rho=0.5"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Small helpers
@@ -96,11 +91,11 @@ const BASELINE_BASE_RELDIR = "oat/rho=0.5/base"
 fmt_val(v::Integer) = string(v)
 fmt_val(v::Real) = string(float(v))   # 0.0, 0.3, 0.04, 1.2 ...
 
-enable_principal_for(model::Symbol) = model === :capture
-
 """Directory (relative to the sweep root) holding a sweep root's data root."""
-sweep_dir() = get(ENV, "TB_SWEEP_DIR") do
-    error("TB_SWEEP_DIR is not set; the sbatch scripts / orchestrator must export it")
+function sweep_dir()
+    get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
+        error("BROKERAGE_ABM_SWEEP_DIR is not set; the sbatch scripts / orchestrator must export it")
+    end
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -111,39 +106,46 @@ end
     build_cells() -> Vector{Dict{Symbol,Any}}
 
 Ordered list of cells. OAT cells first (in `OAT_AXES` order), then phase cells
-(in `PHASE_PAIRS` order). A *cell* is a single (params, model) simulation point;
-each is run for every seed in `SWEEP_SEEDS`.
+(in `PHASE_PAIRS` order). Each cell is run for every seed in `SWEEP_SEEDS`.
 """
 function build_cells()
     cells = Dict{Symbol,Any}[]
 
     # OAT cells
-    for ax in OAT_AXES, model in ax.models, v in ax.vals
-        reldir = "oat/$(ax.label)=$(fmt_val(v))/$(model)"
-        push!(cells, Dict{Symbol,Any}(
-            :kind => "oat",
-            :model => string(model),
-            :axis => ax.label,
-            :key => string(ax.key),
-            :value => v,
-            :params => Dict{Symbol,Any}(ax.key => v),
-            :reldir => reldir,
-        ))
+    for ax in OAT_AXES, v in ax.vals
+        reldir = "oat/$(ax.label)=$(fmt_val(v))"
+        push!(
+            cells,
+            Dict{Symbol,Any}(
+                :kind => "oat",
+                :axis => ax.label,
+                :key => string(ax.key),
+                :value => v,
+                :params => Dict{Symbol,Any}(ax.key => v),
+                :reldir => reldir,
+            ),
+        )
     end
 
     # Phase cells
-    for pr in PHASE_PAIRS, model in (:base, :capture)
+    for pr in PHASE_PAIRS
         for (xi, xv) in enumerate(pr.xvals), (yi, yv) in enumerate(pr.yvals)
-            reldir = "phase/$(pr.name)/cells/$(xi - 1)_$(yi - 1)/$(model)"
-            push!(cells, Dict{Symbol,Any}(
-                :kind => "phase",
-                :model => string(model),
-                :pair => pr.name,
-                :xkey => string(pr.xkey), :xval => xv, :xi => xi,
-                :ykey => string(pr.ykey), :yval => yv, :yi => yi,
-                :params => Dict{Symbol,Any}(pr.xkey => xv, pr.ykey => yv),
-                :reldir => reldir,
-            ))
+            reldir = "phase/$(pr.name)/cells/$(xi - 1)_$(yi - 1)"
+            push!(
+                cells,
+                Dict{Symbol,Any}(
+                    :kind => "phase",
+                    :pair => pr.name,
+                    :xkey => string(pr.xkey),
+                    :xval => xv,
+                    :xi => xi,
+                    :ykey => string(pr.ykey),
+                    :yval => yv,
+                    :yi => yi,
+                    :params => Dict{Symbol,Any}(pr.xkey => xv, pr.ykey => yv),
+                    :reldir => reldir,
+                ),
+            )
         end
     end
 
@@ -163,7 +165,6 @@ function build_entries(cells)
         e = Dict{Symbol,Any}(
             :index => idx,
             :seed => s,
-            :model => c[:model],
             :kind => c[:kind],
             :reldir => c[:reldir],
             :params => c[:params],
@@ -182,7 +183,7 @@ end
     build_plot_jobs(cells) -> Vector{Dict{Symbol,Any}}
 
 One plot job per OAT cell (loads that cell's seed shards -> figures + data.jld2),
-then one plot job per (phase pair, model) (loads all its grid-point shards ->
+then one plot job per phase pair (loads all its grid-point shards ->
 per-grid-point data.jld2 + summary.jld2 + heatmaps). 0-based `index` = plot
 array task id.
 """
@@ -196,32 +197,29 @@ function build_plot_jobs(cells)
         job = Dict{Symbol,Any}(
             :index => idx,
             :kind => "oat_cell",
-            :model => c[:model],
             :reldir => c[:reldir],
             :axis => c[:axis],
             :value => c[:value],
         )
-        # base reference for capture dynamics panels
-        if c[:model] == "capture"
-            base_reldir = "oat/$(c[:axis])=$(fmt_val(c[:value]))/base"
-            # kappa_max is capture-only: fall back to the baseline base cell.
-            job[:base_ref_reldir] = c[:axis] == "kappa_max" ? BASELINE_BASE_RELDIR : base_reldir
-        end
         push!(jobs, job)
         idx += 1
     end
 
-    # Phase plot jobs (one per pair per model)
-    for pr in PHASE_PAIRS, model in ("base", "capture")
-        push!(jobs, Dict{Symbol,Any}(
-            :index => idx,
-            :kind => "phase_pair",
-            :model => model,
-            :pair => pr.name,
-            :xkey => string(pr.xkey), :xvals => collect(pr.xvals),
-            :ykey => string(pr.ykey), :yvals => collect(pr.yvals),
-            :reldir => "phase/$(pr.name)",
-        ))
+    # Phase plot jobs (one per pair)
+    for pr in PHASE_PAIRS
+        push!(
+            jobs,
+            Dict{Symbol,Any}(
+                :index => idx,
+                :kind => "phase_pair",
+                :pair => pr.name,
+                :xkey => string(pr.xkey),
+                :xvals => collect(pr.xvals),
+                :ykey => string(pr.ykey),
+                :yvals => collect(pr.yvals),
+                :reldir => "phase/$(pr.name)",
+            ),
+        )
         idx += 1
     end
 
@@ -232,8 +230,16 @@ end
 # Minimal JSON emitter (emit-only; enough for the manifest structure)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_json_escape(s::AbstractString) = replace(string(s),
-    '\\' => "\\\\", '"' => "\\\"", '\n' => "\\n", '\r' => "\\r", '\t' => "\\t")
+function _json_escape(s::AbstractString)
+    replace(
+        string(s),
+        '\\' => "\\\\",
+        '"' => "\\\"",
+        '\n' => "\\n",
+        '\r' => "\\r",
+        '\t' => "\\t",
+    )
+end
 
 to_json(io::IO, x::Nothing; indent::Int=0) = print(io, "null")
 to_json(io::IO, x::Bool; indent::Int=0) = print(io, x ? "true" : "false")

@@ -41,7 +41,9 @@ function type_second_moment(agent_types::Vector{Vector{Float64}})::Matrix{Float6
 end
 
 """Weighted matrix inner product tr(S M S N)."""
-weighted_matrix_inner(M::AbstractMatrix, N::AbstractMatrix, S::AbstractMatrix) = tr(S * M * S * N)
+function weighted_matrix_inner(M::AbstractMatrix, N::AbstractMatrix, S::AbstractMatrix)
+    tr(S * M * S * N)
+end
 
 """
     weighted_regime_overlap(A, B, agent_types) -> Float64
@@ -50,8 +52,9 @@ Normalized weighted overlap between payoff matrix A and regime operator B under
 the empirical type second moment S. Returns 0 when the two are orthogonal in
 the weighted metric.
 """
-function weighted_regime_overlap(A::AbstractMatrix, B::AbstractMatrix,
-                                 agent_types::Vector{Vector{Float64}})::Float64
+function weighted_regime_overlap(
+    A::AbstractMatrix, B::AbstractMatrix, agent_types::Vector{Vector{Float64}}
+)::Float64
     S = type_second_moment(agent_types)
     denom = sqrt(weighted_matrix_inner(A, A, S) * weighted_matrix_inner(B, B, S))
     denom <= 0.0 && return 0.0
@@ -66,9 +69,9 @@ A under the empirical second moment of realized types, then normalize the
 result to unit Frobenius norm. The sign of x_i' B x_j determines the latent
 regime, so only the orientation of B matters.
 """
-function construct_regime_operator(A::Matrix{Float64},
-                                   agent_types::Vector{Vector{Float64}},
-                                   rng::AbstractRNG)::Matrix{Float64}
+function construct_regime_operator(
+    A::Matrix{Float64}, agent_types::Vector{Vector{Float64}}, rng::AbstractRNG
+)::Matrix{Float64}
     d = size(A, 1)
     S = type_second_moment(agent_types)
     denom = weighted_matrix_inner(A, A, S)
@@ -104,11 +107,16 @@ Build the matching environment:
 - B = symmetric regime operator, orthogonalized against A under the empirical
   type second moment
 """
-function generate_matching_env(d::Int, rho::Float64, delta::Float64, sigma_eps::Float64,
-                                agent_types::Vector{Vector{Float64}},
-                                rng::AbstractRNG;
-                                sigma_x::Float64 = 0.5,
-                                curve_geo::CurveGeometry)::MatchingEnv
+function generate_matching_env(
+    d::Int,
+    rho::Float64,
+    delta::Float64,
+    sigma_eps::Float64,
+    agent_types::Vector{Vector{Float64}},
+    rng::AbstractRNG;
+    sigma_x::Float64=0.5,
+    curve_geo::CurveGeometry,
+)::MatchingEnv
     sigma_per_dim = sigma_x / sqrt(d)
 
     # Ideal type c: perturbation of a fresh random curve position per spec.
@@ -146,7 +154,9 @@ function regime_gain(xi::AbstractVector, xj::AbstractVector, env::MatchingEnv)::
 end
 
 """In-place `regime_gain` using pre-allocated buffer for Bx_j."""
-function regime_gain!(Bx_buf::Vector{Float64}, xi::AbstractVector, xj::AbstractVector, env::MatchingEnv)::Float64
+function regime_gain!(
+    Bx_buf::Vector{Float64}, xi::AbstractVector, xj::AbstractVector, env::MatchingEnv
+)::Float64
     mul!(Bx_buf, env.B, xj)
     bxj = dot(xi, Bx_buf)
     return 1.0 + env.delta * sign(bxj)
@@ -173,8 +183,13 @@ function match_signal(xi::AbstractVector, xj::AbstractVector, env::MatchingEnv):
 end
 
 """In-place `match_signal` using pre-allocated buffers for Ax_j and Bx_j."""
-function match_signal!(Ax_buf::Vector{Float64}, Bx_buf::Vector{Float64},
-                       xi::AbstractVector, xj::AbstractVector, env::MatchingEnv)::Float64
+function match_signal!(
+    Ax_buf::Vector{Float64},
+    Bx_buf::Vector{Float64},
+    xi::AbstractVector,
+    xj::AbstractVector,
+    env::MatchingEnv,
+)::Float64
     quality = env.rho * 0.5 * (dot(xi, env.c) + dot(xj, env.c))
     mul!(Ax_buf, env.A, xj)
     base_interaction = dot(xi, Ax_buf)
@@ -188,16 +203,24 @@ end
 
 Stochastic observable output: q = Q + f(x_i, x_j) + ε, where ε ~ N(0, σ_ε²).
 """
-function match_output(xi::AbstractVector, xj::AbstractVector,
-                      env::MatchingEnv, rng::AbstractRNG)::Float64
+function match_output(
+    xi::AbstractVector, xj::AbstractVector, env::MatchingEnv, rng::AbstractRNG
+)::Float64
     return Q_OFFSET + match_signal(xi, xj, env) + env.sigma_eps * randn(rng)
 end
 
 """In-place `match_output` using pre-allocated buffers."""
-function match_output!(Ax_buf::Vector{Float64}, Bx_buf::Vector{Float64},
-                       xi::AbstractVector, xj::AbstractVector,
-                       env::MatchingEnv, rng::AbstractRNG)::Float64
-    return Q_OFFSET + match_signal!(Ax_buf, Bx_buf, xi, xj, env) + env.sigma_eps * randn(rng)
+function match_output!(
+    Ax_buf::Vector{Float64},
+    Bx_buf::Vector{Float64},
+    xi::AbstractVector,
+    xj::AbstractVector,
+    env::MatchingEnv,
+    rng::AbstractRNG,
+)::Float64
+    return Q_OFFSET +
+           match_signal!(Ax_buf, Bx_buf, xi, xj, env) +
+           env.sigma_eps * randn(rng)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -208,14 +231,15 @@ end
     calibrate(env, agent_types, params, rng; n_samples=10_000) -> CalibrationConstants
 
 Monte Carlo calibration from random agent pairs. Returns q_cal (mean output),
-r, phi, c_s, and mad_f (mean absolute deviation of the signal f, the
-forecast-error scale used by the capture-readiness gate).
+r, phi, and c_s.
 """
-function calibrate(env::MatchingEnv,
-                   agent_types::Vector{Vector{Float64}},
-                   params::ModelParams,
-                   rng::AbstractRNG;
-                   n_samples::Int = 10_000)::CalibrationConstants
+function calibrate(
+    env::MatchingEnv,
+    agent_types::Vector{Vector{Float64}},
+    params::ModelParams,
+    rng::AbstractRNG;
+    n_samples::Int=10_000,
+)::CalibrationConstants
     n_agents = length(agent_types)
     d = env.d
     Ax_buf = Vector{Float64}(undef, d)
@@ -224,20 +248,15 @@ function calibrate(env::MatchingEnv,
     for k in 1:n_samples
         i = rand(rng, 1:n_agents)
         j = rand(rng, 1:n_agents)
-        samples[k] = Q_OFFSET + match_signal!(Ax_buf, Bx_buf, agent_types[i], agent_types[j], env)
+        samples[k] =
+            Q_OFFSET + match_signal!(Ax_buf, Bx_buf, agent_types[i], agent_types[j], env)
     end
     q_cal = sum(samples) / n_samples
-    # MAD of the signal: the constant Q_OFFSET drops out, so this is MAD(f).
-    mad_acc = 0.0
-    @inbounds for k in 1:n_samples
-        mad_acc += abs(samples[k] - q_cal)
-    end
-    mad_f = mad_acc / n_samples
     # r, phi, c_s are independent fractions of q_cal. Decoupling phi/c_s from the
     # reservation lets r be swept freely (including r >= q_cal) without the
     # frictions vanishing or turning negative.
     r = params.reservation_frac * q_cal
     phi = params.search_cost_rate * q_cal
     c_s = params.search_cost_rate * q_cal
-    return CalibrationConstants(q_cal, r, phi, c_s, mad_f)
+    return CalibrationConstants(q_cal, r, phi, c_s)
 end

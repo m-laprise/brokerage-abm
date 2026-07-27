@@ -26,7 +26,7 @@ Usage: julia --project scripts/diagnostics/stage3_endogenous_data.jl
 
 include("broker_learning_common.jl")
 
-using TransientBrokerage: initialize_model, step_period!
+using BrokerageABM: initialize_model, step_period!
 
 const SEED = 42
 const T = 200

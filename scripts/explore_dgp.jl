@@ -13,8 +13,8 @@ at a shared environment seed. Data is saved to JLD2 for later analysis.
 Usage: julia --project --threads=auto scripts/explore_dgp.jl
 """
 
-using TransientBrokerage
-using TransientBrokerage: generate_matching_env, generate_curve_geometry,
+using BrokerageABM
+using BrokerageABM: generate_matching_env, generate_curve_geometry,
                           generate_agent_types
 using CairoMakie
 using LinearAlgebra: svdvals, norm

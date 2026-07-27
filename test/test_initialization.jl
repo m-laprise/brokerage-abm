@@ -1,7 +1,7 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: CalibrationConstants, MatchingEnv
-using TransientBrokerage: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
+using BrokerageABM
+using BrokerageABM: CalibrationConstants, MatchingEnv
+using BrokerageABM: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using StableRNGs: StableRNG
 
 @testset "Initialization" begin
@@ -58,7 +58,7 @@ using StableRNGs: StableRNG
         @test minimum(eigvals(env.B)) < 0.0
         @test maximum(eigvals(env.B)) > 0.0
         types = [agent.type for agent in state.agents]
-        @test TransientBrokerage.weighted_regime_overlap(env.A, env.B, types) ≈ 0.0 atol=1e-12
+        @test BrokerageABM.weighted_regime_overlap(env.A, env.B, types) ≈ 0.0 atol=1e-12
         @test length(env.c) == d
         @test all(isfinite, env.c)
     end
@@ -74,7 +74,7 @@ using StableRNGs: StableRNG
 
     @testset "broker roster seeded correctly" begin
         roster = state.broker.roster
-        expected_size = TransientBrokerage.roster_target_size(N)
+        expected_size = BrokerageABM.roster_target_size(N)
         @test length(roster) == expected_size
         @test all(1 <= rid <= N for rid in roster)
         # Roster members have broker edge
@@ -143,7 +143,7 @@ using StableRNGs: StableRNG
     @testset "curve_point returns unit vectors" begin
         geo = state.curve_geo
         points = [
-            TransientBrokerage.curve_point(t, geo) for t in (0.0, 0.25, 0.5, 0.75, 1.0)
+            BrokerageABM.curve_point(t, geo) for t in (0.0, 0.25, 0.5, 0.75, 1.0)
         ]
         @test all(length(cp) == d for cp in points)
         @test all(isapprox(norm(cp), 1.0; atol=1e-10) for cp in points)
@@ -151,8 +151,8 @@ using StableRNGs: StableRNG
 
     @testset "generate_agent_types produces N unit vectors" begin
         rng = StableRNG(123)
-        geo = TransientBrokerage.generate_curve_geometry(d, p.s, rng)
-        types, inv = TransientBrokerage.generate_agent_types(N, geo, p.sigma_x, rng)
+        geo = BrokerageABM.generate_curve_geometry(d, p.s, rng)
+        types, inv = BrokerageABM.generate_agent_types(N, geo, p.sigma_x, rng)
         @test length(types) == N
         @test all(length(t) == d for t in types)
         @test all(isapprox(norm(t), 1.0; atol=1e-10) for t in types)
@@ -162,12 +162,12 @@ using StableRNGs: StableRNG
 
     @testset "sort_by_pc1 option produces sorted types" begin
         rng1 = StableRNG(7)
-        geo = TransientBrokerage.generate_curve_geometry(d, p.s, rng1)
-        types_unsorted, _ = TransientBrokerage.generate_agent_types(N, geo, p.sigma_x, rng1)
+        geo = BrokerageABM.generate_curve_geometry(d, p.s, rng1)
+        types_unsorted, _ = BrokerageABM.generate_agent_types(N, geo, p.sigma_x, rng1)
 
         rng2 = StableRNG(7)
-        geo2 = TransientBrokerage.generate_curve_geometry(d, p.s, rng2)
-        types_sorted, inv = TransientBrokerage.generate_agent_types(
+        geo2 = BrokerageABM.generate_curve_geometry(d, p.s, rng2)
+        types_sorted, inv = BrokerageABM.generate_agent_types(
             N, geo2, p.sigma_x, rng2; sort_by_pc1=true
         )
 

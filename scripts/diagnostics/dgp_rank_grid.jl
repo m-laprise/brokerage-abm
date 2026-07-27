@@ -13,8 +13,8 @@ Covers {0, 0.3, 0.5, 0.7, 1.0} x {0.0, 0.5, 0.75}, 3 seeds. Saves a Dict
 Usage: julia --project scripts/diagnostics/dgp_rank_grid.jl
 """
 
-using TransientBrokerage
-using TransientBrokerage: generate_matching_env, generate_curve_geometry, generate_agent_types
+using BrokerageABM
+using BrokerageABM: generate_matching_env, generate_curve_geometry, generate_agent_types
 using LinearAlgebra: svdvals
 using Statistics: mean
 using StableRNGs: StableRNG

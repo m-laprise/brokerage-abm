@@ -15,15 +15,15 @@ Idempotent: a task whose shard already exists with a matching git commit +
 schema version is skipped. Pass `--rerun` to force recompute.
 
 Usage:
-  TB_SWEEP_DIR=... SLURM_ARRAY_TASK_ID=<i> julia --project --threads=auto scripts/sweep/sweep_run.jl
-  TB_SWEEP_DIR=... julia --project --threads=auto scripts/sweep/sweep_run.jl <i>   # smoke test
+  BROKERAGE_ABM_SWEEP_DIR=... SLURM_ARRAY_TASK_ID=<i> julia --project --threads=auto scripts/sweep/sweep_run.jl
+  BROKERAGE_ABM_SWEEP_DIR=... julia --project --threads=auto scripts/sweep/sweep_run.jl <i>   # smoke test
 """
 
 Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --threads=auto"
 
 include(joinpath(@__DIR__, "sweep_config.jl"))
 
-using TransientBrokerage: default_params, run_simulation
+using BrokerageABM: default_params, run_simulation
 using DataFrames: DataFrame
 using JLD2: jldsave, jldopen
 
@@ -45,7 +45,8 @@ function shard_is_current(path, prov)
     isfile(path) || return false
     try
         jldopen(path, "r") do f
-            haskey(f, "schema_version") && f["schema_version"] == prov[:schema_version] || return false
+            haskey(f, "schema_version") && f["schema_version"] == prov[:schema_version] ||
+                return false
             haskey(f, "git_commit") && f["git_commit"] == prov[:git_commit] || return false
             return true
         end
@@ -64,29 +65,29 @@ function main()
     end
 
     id = task_id()
-    (0 <= id < length(entries)) || error("task id $id out of range 0..$(length(entries) - 1)")
+    (0 <= id < length(entries)) ||
+        error("task id $id out of range 0..$(length(entries) - 1)")
     e = entries[id + 1]
     @assert e[:index] == id "manifest index mismatch: entry $(e[:index]) != task $id"
 
     reldir = e[:reldir]
     seed = e[:seed]
-    model = Symbol(e[:model])
     outdir = joinpath(sweepdir, reldir)
     shard = joinpath(outdir, "seed_$(seed).jld2")
 
     if !RERUN && shard_is_current(shard, prov)
         println("SKIP  [$id] $reldir seed=$seed (shard up to date)")
-        return
+        return nothing
     end
 
     # ── Build params ─────────────────────────────────────────────────────────
     params = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in e[:params])
-    ep = enable_principal_for(model)
-    p = default_params(; seed=seed, T=SWEEP_T, T_burn=SWEEP_T_BURN, enable_principal=ep, params...)
+    p = default_params(; seed=seed, T=SWEEP_T, T_burn=SWEEP_T_BURN, params...)
 
-    println("RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
-            "r_frac=$(p.reservation_frac), kappa=$(p.capture_error_threshold), " *
-            "principal=$ep, threads=$(Threads.nthreads()))")
+    println(
+        "RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
+        "r_frac=$(p.reservation_frac), threads=$(Threads.nthreads()))",
+    )
 
     t0 = time()
     state, df = run_simulation(p)
@@ -97,12 +98,17 @@ function main()
 
     # Resolved config (provenance of the actual values used).
     config = Dict{String,Any}(
-        "kind" => e[:kind], "model" => string(model), "enable_principal" => ep,
-        "reldir" => reldir, "seed" => seed,
-        "N" => p.N, "T" => p.T, "T_burn" => p.T_burn,
-        "rho" => p.rho, "eta" => p.eta, "delta" => p.delta, "s" => p.s,
+        "kind" => e[:kind],
+        "reldir" => reldir,
+        "seed" => seed,
+        "N" => p.N,
+        "T" => p.T,
+        "T_burn" => p.T_burn,
+        "rho" => p.rho,
+        "eta" => p.eta,
+        "delta" => p.delta,
+        "s" => p.s,
         "reservation_frac" => p.reservation_frac,
-        "capture_error_threshold" => p.capture_error_threshold,
     )
     for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
         haskey(e, k) && (config[string(k)] = e[k])
@@ -110,20 +116,20 @@ function main()
 
     mkpath(outdir)
     tmp = shard * ".tmp"   # atomic-ish write: full file then rename
-    jldsave(tmp;
-        df = df,
-        final_agent_degrees = final_agent_degrees,
-        config = config,
-        seed = seed,
-        model = string(model),
-        kind = e[:kind],
-        reldir = reldir,
-        elapsed_s = elapsed,
-        git_commit = prov[:git_commit],
-        julia_version = prov[:julia_version],
-        pkg_manifest_hash = prov[:pkg_manifest_hash],
-        manifest_hash = prov[:manifest_hash],
-        schema_version = prov[:schema_version],
+    jldsave(
+        tmp;
+        df=df,
+        final_agent_degrees=final_agent_degrees,
+        config=config,
+        seed=seed,
+        kind=e[:kind],
+        reldir=reldir,
+        elapsed_s=elapsed,
+        git_commit=prov[:git_commit],
+        julia_version=prov[:julia_version],
+        pkg_manifest_hash=prov[:pkg_manifest_hash],
+        manifest_hash=prov[:manifest_hash],
+        schema_version=prov[:schema_version],
     )
     mv(tmp, shard; force=true)
     println("      wrote $shard")

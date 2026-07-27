@@ -23,20 +23,20 @@
 \DeclareUnicodeCharacter{00A7}{\S}
 \newcommand{\R}{\mathbb{R}}
 
-\title{Appendix B: Specifications for an ABM of Transient Brokerage in Matching Markets}
+\title{Specifications for an ABM of Brokerage in Matching Markets}
 \author{}
 \date{}
 
 \begin{document}
 \maketitle
 
-This appendix details the specifications of an agent-based model of brokered matching meant to formalize and demonstrate the theory of brokerage put forward in its companion chapter.
+This document specifies an agent-based model of brokered matching.
 
-The model is a discrete-time agent-based simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same monetary units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies. Capture takes the form of resource capture, where the broker becomes a principal.
+The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same monetary units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
 
-The base model specifies agents (§1), the matching problem (§2), how agents learn to predict match quality (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). There is no capture in the base model. Resource capture is specified in Part II (§9).
+The model specification covers agents (§1), the matching problem (§2), how agents learn to predict match quality (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
 
-\section{Part I. Base Model}\label{part-i.-base-model}
+\section{Part I. Model Specification}\label{part-i.-model-specification}
 
 \subsection{1. Agents and Time}\label{agents-and-time}
 
@@ -229,7 +229,7 @@ The broker learns only from mediated matches. It does not observe self-search ou
 
 Matches use a common reservation threshold and channel-specific cost accounting.
 
-At initialization, 10,000 random agent pairs define the calibration mean \(\bar{q}_{\text{cal}} = E[q]\). This calibration quantity scales \(r\), \(\phi\), and \(c_s\); the same draw also fixes the signal-dispersion scale \(\mathrm{MAD}_f = E\,|f - E[f]|\) used by the capture gate (§9a).
+At initialization, 10,000 random agent pairs define the calibration mean \(\bar{q}_{\text{cal}} = E[q]\). This calibration quantity scales \(r\), \(\phi\), and \(c_s\).
 
 \subsubsection{4a. Outside options}\label{a.-outside-options}
 
@@ -241,11 +241,11 @@ where \(\bar{q}_{\text{cal}}\) is the calibration mean and \(f_r\) is the reserv
 
 \subsubsection{4b. Participation constraints}\label{b.-participation-constraints}
 
-Demanders emit offers only above the reservation threshold. Self-search uses the demander evaluation \(\hat{q}_{i}(\mathbf{x}_j)>r\). Standard brokered search uses the broker pair prediction \(\hat{q}_b(\{i,j\})>r\). A one-sided offer is accepted only if the receiver's evaluation exceeds \(r\); reciprocal offers are accepted automatically (§6d).
+Demanders emit offers only above the reservation threshold. Self-search uses the demander evaluation \(\hat{q}_{i}(\mathbf{x}_j)>r\). Brokered search uses the broker pair prediction \(\hat{q}_b(\{i,j\})>r\). A one-sided offer is accepted only if the receiver's evaluation exceeds \(r\); reciprocal offers are accepted automatically (§6d).
 
 \subsubsection{4c. Search costs}\label{c.-search-costs}
 
-The self-search cost and standard broker fee share one calibrated level:
+The self-search cost and broker fee share one calibrated level:
 
 \[
 \phi = c_s = \lambda_c \cdot \bar{q}_{\text{cal}}.
@@ -273,7 +273,7 @@ The broker is added as a permanent node with no type vector. Broker-node edges a
 
 \subsubsection{5b. Match tie formation}\label{b.-match-tie-formation}
 
-Each realized standard match adds an undirected \(i\)-\(j\) edge if one does not already exist. Ties persist until either node exits.
+Each realized match adds an undirected \(i\)-\(j\) edge if one does not already exist. Ties persist until either node exits.
 
 \subsubsection{5c. Agent turnover}\label{c.-agent-turnover}
 
@@ -371,7 +371,7 @@ Satisfaction input \(\tilde{q}\)
 \bottomrule\noalign{}
 \endlastfoot
 Self-search & \(\dfrac{\sum q_{ij}}{d_i} - c_s\), summing over accepted directed offers made by \(i\) through self-search \\
-Standard brokered (base model) & \(\dfrac{\sum q_{ij} - \phi \cdot n_{i,\text{broker success}}}{d_i}\), summing over accepted directed offers made by \(i\) through the broker \\
+Brokered & \(\dfrac{\sum q_{ij} - \phi \cdot n_{i,\text{broker success}}}{d_i}\), summing over accepted directed offers made by \(i\) through the broker \\
 \end{longtable}
 }
 
@@ -492,118 +492,11 @@ Agent-node degree summaries & Mean, median, minimum, and maximum degree, excludi
 \end{longtable}
 }
 
-\section{Part II. Model Variant: Resource Capture}\label{part-ii.-model-variant-resource-capture}
+\section{Part II. Baseline Values and Reproducibility}\label{part-ii.-baseline-values-and-reproducibility}
 
-\subsection{9. Client Resource Capture}\label{client-resource-capture}
+\subsection{9. Baseline Values and Reproducibility}\label{baseline-values-and-reproducibility}
 
-In the capture variant, the broker can become principal by taking the risk to acquire opportunities brought by current clients, and trying to place them in its access set.
-
-\subsubsection{9a. Capture readiness}\label{a.-capture-readiness}
-
-Capture readiness is a gate on the broker's recent prediction error. At initialization, the calibration draw (§4) also defines the fixed scale \(\mathrm{MAD}_f = E\,|f - E[f]|\).
-
-The broker tracks \(\kappa_b^t\), an EWMA absolute prediction error for broker-controlled positions, using the same weight \(\omega\) as satisfaction tracking (§7a). Broker prediction-error cases are:
-
-\begin{itemize}
-\tightlist
-\item
-  Accepted standard broker offers and accepted principal positions contribute \(|\hat{q}_b(\{i,j\}) - q_{ij}|\).
-\item
-  Rejected principal positions contribute \(|\hat{q}_b(\{i,j\}) - 0|\).
-\end{itemize}
-
-Let \(e_b^t\) be the mean absolute prediction error over these cases in period \(t\), and let \(n_{\kappa,b}^t\) be the cumulative number of such cases. If period \(t\) has at least one case, then
-
-\[
-\kappa_b^t =
-\begin{cases}
-e_b^t, & n_{\kappa,b}^{t-1}=0,\\
-(1-\omega)\kappa_b^{t-1}+\omega e_b^t, & n_{\kappa,b}^{t-1}>0.
-\end{cases}
-\]
-
-Periods with no broker prediction-error cases leave \(\kappa_b^t\) and \(n_{\kappa,b}^t\) unchanged. Resource capture can operate in period \(t\) only if:
-
-\[
-n_{\kappa,b}^t \geq n_{\min}, \qquad
-\frac{\kappa_b^t}{\mathrm{MAD}_f} \leq \kappa_{\max} .
-\]
-
-Defaults are \(n_{\min} = 100\) and \(\kappa_{\max} = 0.50\).
-
-\subsubsection{9b. Acquisition and principal offers}\label{b.-acquisition-and-principal-offers}
-
-Let \(\mathcal{A}_b^t = \text{Roster}^t \cup D^t\) be broker access. For each current broker client \(i \in D^t\), capture is all-or-nothing over \(d_i\) positions.
-
-The acquisition price per captured position is
-
-\[
-p_i = \begin{cases}
-|\mathcal{H}_i^t|^{-1}\sum_{q \in \mathcal{H}_i^t} q, & |\mathcal{H}_i^t| > 0 \\
-\bar{q}_{\text{cal}}, & |\mathcal{H}_i^t| = 0 .
-\end{cases}
-\]
-
-Let \(\mathcal{J}_i^t\) be the top \(d_i\) distinct recipients \(j \in \mathcal{A}_b^t \setminus \{i\}\) by \(\hat{q}_b(\{i,j\})\), restricted to \(\hat{q}_b(\{i,j\}) > r\).
-
-A lot is feasible only if \(p_i \geq r\) and \(|\mathcal{J}_i^t| = d_i\). It is captured only if expected principal surplus exceeds forgone standard brokerage fees:
-
-\[
-\sum_{j \in \mathcal{J}_i^t} \hat{q}_b(\{i,j\}) - d_i p_i > d_i \phi.
-\]
-
-Here \(\phi\) is the standard broker fee (§4c). Feasible lots are processed in descending expected net gain. Before execution, \(\mathcal{J}_i^t\) is recomputed excluding already used pairs and captured clients; if \(|\mathcal{J}_i^t| < d_i\), the lot is skipped.
-
-When lot \(i\) is captured, the broker pays or guarantees \(d_i p_i\), sets \(i\)'s remaining standard broker demand to zero, and offers \(i\)'s features to each planned recipient \(j\). Recipient \(j\) accepts iff \(j\) evaluates \(i\) above the reservation threshold using the standard one-sided receiver rule.
-
-If \(j\) accepts, \(q_{ij}\) is realized, the broker receives \(q_{ij} - p_i\), and \((\mathbf{x}_i,\mathbf{x}_j,q_{ij})\) enters broker history. If \(j\) rejects, no output is realized and the broker receives \(-p_i\). Rejections count as zero-output principal cases for surplus, loss, and broker prediction-error measures, but not as broker training observations.
-
-\subsubsection{9c. Lock-in and market thinning}\label{c.-lock-in-and-market-thinning}
-
-Principal positions do not create direct \(i\)-\(j\) network ties. The origin client \(i\) does not observe the recipient's type. Recipient \(j\) observes realized output if it accepts, but cannot add \(i\) as a known tie or use \(q_{ij}\) as known direct history with \(i\). Neither agent receives a normal history observation or partner-mean update.
-
-Captured clients are removed from standard self-search, standard broker-offer candidate lists, and later same-period principal-recipient lists for the rest of the period.
-
-\subsubsection{9d. Satisfaction and period measures}\label{d.-satisfaction-and-period-measures}
-
-Captured clients update broker-channel satisfaction using the acquisition payment they receive. No broker fee is charged on captured positions. For broker client \(i\):
-
-\[
-\tilde{q}_{i,\text{broker}} =
-\frac{\sum q_{ij}^{\text{std}} + d_i^{\text{capture}} p_i - \phi n_{i,\text{broker std success}}}{d_i}.
-\]
-
-After broker prediction-error updates, capture-variant period measures also include:
-
-{
-\begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.4286}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5714}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Measure
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Definition
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Capture readiness & Whether the broker satisfies the gate in §9a. \\
-Broker prediction error & \(\kappa_b^t\) and \(\kappa_b^t/\mathrm{MAD}_f\). \\
-Capture volume and share & Captured clients, captured positions, and captured positions per outsourced requested position. \\
-Principal outcomes & Accepted and rejected principal positions, plus principal acceptance rate. \\
-Principal returns and prediction error & Mean principal surplus, loss rate, and principal RMSE between broker prediction and realized value. Rejected positions count as zero-output cases; RMSE is undefined below five captured positions. \\
-\end{longtable}
-}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\section{Part III. Baseline Values and Reproducibility}\label{part-iii.-baseline-values-and-reproducibility}
-
-\subsection{10. Baseline Values and Reproducibility}\label{baseline-values-and-reproducibility}
-
-\subsubsection{10a. Baseline parameter values}\label{a.-baseline-parameter-values}
+\subsubsection{9a. Baseline parameter values}\label{a.-baseline-parameter-values}
 
 The table lists baseline values only. Entries are arranged in two columns; each column follows the document order, with the run length listed first.
 
@@ -625,16 +518,15 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \(\delta\) & 0.5 & §2c & \(n_{\mathrm{strangers}}\) & 10 & §6a \\
 \(\sigma_\varepsilon\) & 0.10 & §2a & \(\alpha_R\) & 0.20 & §6b \\
 \(\eta_{\mathrm{lr}}\) & 0.01 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
-\(E_{\text{init}}\) & 200 & §3a & \(\omega\) & 0.2 & §7a, §9a \\
+\(E_{\text{init}}\) & 200 & §3a & \(\omega\) & 0.2 & §7a \\
 \(E_{\text{steps}}\) & 100 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
-\(W_p\) & 40 periods & §3a & \(n_{\min}\) & 100 & §9a \\
-\(M_{\text{train}}\) & 2000 & §3a & \(\kappa_{\max}\) & 0.50 & §9a \\
+\(W_p\) & 40 periods & §3a & \(M_{\text{train}}\) & 2000 & §3a \\
 \bottomrule
 \end{tabular}
 \end{center}
 }
 
-\subsubsection{10b. Reproducibility}\label{b.-reproducibility}
+\subsubsection{9b. Reproducibility}\label{b.-reproducibility}
 
 All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, and subsequent model events. Holdout samples are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
 

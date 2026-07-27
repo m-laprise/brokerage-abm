@@ -1,5 +1,5 @@
-% supplement.tex: standalone Supplementary Material for the transient-brokerage
-% chapter. Compiles on its own to supplement.pdf via scripts/paper/build_supplement.jl
+% supplement.tex: standalone Supplementary Material.
+% Compiles on its own to supplement.pdf via scripts/paper/build_supplement.jl
 % (or: pdflatex supplement.tex, run from this paper/ directory).
 %
 % The four supplementary figures reproduce the structural-advantage analyses of
@@ -52,7 +52,7 @@ effective size, both recomputed for the broker every \pv{suppMeasInterval} perio
 \centering
 \includegraphics[width=\linewidth]{supp_S1_grid_lines.png}
 \caption{Broker Burt constraint (left) and broker effective size (right) across the
-$\rho\times\delta$ grid, no capture; one line per gain $\delta$, one marker per
+$\rho\times\delta$ grid; one line per gain $\delta$, one marker per
 regime, each a late-window mean over that regime's seeds.}
 \label{fig:supp-grid}
 \end{figure}
@@ -61,9 +61,9 @@ regime, each a late-window mean over that regime's seeds.}
 \centering
 \includegraphics[width=\linewidth]{supp_S2_position.png}
 \caption{Broker Burt constraint (top) and broker effective size (bottom). Left: the
-measure over time at the no-capture baseline, as \pv{suppRollWin}-observation
+measure over time at the baseline, as \pv{suppRollWin}-observation
 rolling ensemble means over seeds, measured every \pv{suppMeasInterval} periods.
-Right: one dot per one-at-a-time no-capture regime, the measure against access
+Right: one dot per one-at-a-time regime, the measure against access
 fraction, each a late-window mean over that regime's seeds. Time starts at
 $t=\pv{suppAxisStart}$ (end of burn-in).}
 \label{fig:supp-position}
@@ -74,16 +74,16 @@ $t=\pv{suppAxisStart}$ (end of burn-in).}
 \includegraphics[width=\linewidth]{supp_S3_advantage.png}
 \caption{Rank-correlation gap (broker minus principals, top) and output gap (broker
 channel minus self-search, bottom) against broker Burt constraint (left) and broker
-effective size (right); one dot per no-capture regime, each a late-window mean over
+effective size (right); one dot per regime, each a late-window mean over
 that regime's seeds, colored by the matching parameter $\rho$.}
 \label{fig:supp-advantage}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\linewidth]{supp_S4_capture_dynamics.png}
+\includegraphics[width=0.9\linewidth]{supp_S4_network_dynamics.png}
 \caption{Broker Burt constraint (left) and broker effective size (right) over time at
-the baseline regime pair, no capture and capture, as \pv{suppRollWin}-observation
+the baseline regime, as \pv{suppRollWin}-observation
 rolling ensemble means over seeds, measured every \pv{suppMeasInterval} periods.
 Axes start at $t=\pv{suppAxisStart}$ (end of burn-in).}
 \label{fig:supp-dynamics}

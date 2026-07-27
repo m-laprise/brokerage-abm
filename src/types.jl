@@ -1,7 +1,7 @@
 """
     types.jl
 
-Agent types, model state, and supporting structs for the Transient Brokerage ABM (v0.2).
+Agent types, model state, and supporting structs for BrokerageABM v0.3.
 Unimodal matching market: N agents + 1 broker on a single network G.
 """
 
@@ -44,8 +44,15 @@ end
 function NNGradBuffers(nn::NeuralNet)
     h, d_in = size(nn.W1)
     return NNGradBuffers(
-        zeros(h, d_in), zeros(h), zeros(h), Ref(0.0),
-        Float64[], Float64[], Float64[], Float64[], Ref(0),
+        zeros(h, d_in),
+        zeros(h),
+        zeros(h),
+        Ref(0.0),
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Ref(0),
     )
 end
 
@@ -56,7 +63,6 @@ end
 """A single current-period relationship in an agent's match list."""
 struct ActiveMatch
     partner_id::Int
-    is_principal::Bool   # false = standard brokered or self-search; true = principal mode (Model 1)
     channel::Symbol      # :self or :broker
 end
 
@@ -187,11 +193,8 @@ struct AcceptedMatch
     demander_id::Int
     counterparty_id::Int
     channel::Symbol
-    is_principal::Bool
     q_realized::Float64
     q_predicted::Float64
-    ask::Float64
-    capture_qhat::Float64
     offer1::Union{OfferCredit,Nothing}
     offer2::Union{OfferCredit,Nothing}
 end
@@ -229,14 +232,6 @@ Base.@kwdef mutable struct Broker
     # Reputation
     last_reputation::Float64 = 0.0
     has_had_clients::Bool = false
-
-    # Capture confidence:
-    # - capture_confidence_mae: EWMA of recent broker-controlled exposure errors
-    # - capture_confidence_ready: whether live broker activity has initialized κ
-    # - capture_error_count: cumulative broker-controlled exposure errors
-    capture_confidence_mae::Float64 = 0.0
-    capture_confidence_ready::Bool = false
-    capture_error_count::Int = 0
 end
 
 """Number of valid history entries for the broker."""
@@ -297,9 +292,8 @@ end
 struct CalibrationConstants
     q_cal::Float64     # calibration reference E[q] (scales r, phi, c_s; not used for initialization)
     r::Float64         # outside option (0.60 * q_cal)
-    phi::Float64       # successful standard-placement fee
+    phi::Float64       # successful broker-placement fee
     c_s::Float64       # self-search cost per demanded relationship position
-    mad_f::Float64     # mean absolute deviation of the signal f; forecast-error scale for the capture gate
 end
 
 """Prediction quality metrics: R-squared, bias, and rank correlation."""
@@ -330,24 +324,11 @@ end
 Base.@kwdef mutable struct PeriodAccumulators
     # Match counts by channel
     n_self_matches::Int = 0
-    n_broker_standard::Int = 0
-    n_broker_principal::Int = 0
+    n_broker_matches::Int = 0
 
     # Realized output by channel
     q_self::Vector{Float64} = Float64[]
-    q_broker_standard::Vector{Float64} = Float64[]
-    q_broker_principal::Vector{Float64} = Float64[]
-
-    # Position-level acquisition exposures in Model 1.
-    # Rejected principal positions record realized value 0.
-    capture_realized::Vector{Float64} = Float64[]
-    capture_ask::Vector{Float64} = Float64[]
-    capture_qhat::Vector{Float64} = Float64[]
-    captured_origin_count::Int = 0
-    captured_position_count::Int = 0
-    principal_rejected::Int = 0
-    capture_ready::Bool = false
-    capture_scaled_mae::Float64 = NaN
+    q_broker::Vector{Float64} = Float64[]
 
     # Access vs assessment decomposition
     access_count::Int = 0       # counterparty was NOT a neighbor of demander
@@ -364,9 +345,6 @@ Base.@kwdef mutable struct PeriodAccumulators
     agent_realized::Vector{Float64} = Float64[]
     broker_predicted::Vector{Float64} = Float64[]
     broker_realized::Vector{Float64} = Float64[]
-    broker_error_abs_sum::Float64 = 0.0    # broker-controlled exposure errors for κ_b^t
-    broker_error_count::Int = 0
-    broker_confidence_mae::Float64 = NaN
 
     # Holdout: per-agent averaged over sampled agents (both agent and broker
     # evaluated on the same per-agent partner sets for comparability)
@@ -398,19 +376,9 @@ end
 """Zero all per-period fields while preserving vector capacity for reuse."""
 function reset_accumulators!(a::PeriodAccumulators)
     a.n_self_matches = 0
-    a.n_broker_standard = 0
-    a.n_broker_principal = 0
+    a.n_broker_matches = 0
     empty!(a.q_self)
-    empty!(a.q_broker_standard)
-    empty!(a.q_broker_principal)
-    empty!(a.capture_realized)
-    empty!(a.capture_ask)
-    empty!(a.capture_qhat)
-    a.captured_origin_count = 0
-    a.captured_position_count = 0
-    a.principal_rejected = 0
-    a.capture_ready = false
-    a.capture_scaled_mae = NaN
+    empty!(a.q_broker)
     a.access_count = 0
     a.assessment_count = 0
     a.n_demanders = 0
@@ -421,9 +389,6 @@ function reset_accumulators!(a::PeriodAccumulators)
     empty!(a.agent_realized)
     empty!(a.broker_predicted)
     empty!(a.broker_realized)
-    a.broker_error_abs_sum = 0.0
-    a.broker_error_count = 0
-    a.broker_confidence_mae = NaN
     a.agent_holdout_r2 = NaN
     a.agent_holdout_bias = NaN
     a.agent_holdout_rank = NaN
@@ -499,11 +464,6 @@ struct ModelParams
     eta::Float64                 # agent entry/exit rate (default 0.02)
     roster_churn::Float64        # standing-roster exogenous churn probability (default 0.02)
 
-    # Model 1
-    enable_principal::Bool       # resource capture mode (default false)
-    capture_min_error_obs::Int   # minimum broker-controlled errors before capture
-    capture_error_threshold::Float64  # max MAE / mad_f for capture (default 0.50)
-
     # Simulation
     network_measure_interval::Int # M (default 20)
     T::Int                       # total periods (default 200)
@@ -569,29 +529,16 @@ Base.@kwdef mutable struct OfferBook
     offer_pairs::Vector{Tuple{Int,Int}} = Tuple{Int,Int}[]
 end
 
-"""Reusable period ledger for demand, satisfaction, payment, and match buffers."""
+"""Reusable period ledger for demand, satisfaction, and match buffers."""
 Base.@kwdef mutable struct PeriodLedger
     demand_agent_ids::Vector{Int} = Int[]       # agents with demand
     demand_channels::Vector{Symbol} = Symbol[]  # channel per demander
     demand_counts::Vector{Int} = Int[]          # d_i per demander
     broker_clients_ws::Vector{Int} = Int[]
     demander_q_sum::Vector{Float64} = Float64[]   # realized output by demander id
-    broker_standard_count::Vector{Int} = Int[]    # successful standard broker matches by demander id
-    principal_payment::Vector{Float64} = Float64[] # capture payments by origin id
+    broker_match_count::Vector{Int} = Int[]       # successful broker matches by demander id
     accepted_matches::Vector{AcceptedMatch} = AcceptedMatch[]
     offer_remaining::Vector{Int} = Int[]
-end
-
-"""Reusable buffers for client-origin resource-capture planning."""
-Base.@kwdef mutable struct CaptureWorkspace
-    captured_origin_mask::Vector{Bool} = Bool[]
-    captured_origin_touched::Vector{Int} = Int[]
-    capture_candidate_lots::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
-    capture_candidate_counts::Vector{Int} = Int[]
-    capture_candidate_sums::Vector{Float64} = Float64[]
-    capture_asks::Vector{Float64} = Float64[]
-    capture_plan_recipients::Vector{Int} = Int[]
-    capture_plan_qhats::Vector{Float64} = Float64[]
 end
 
 """Reusable deterministic holdout-diagnostics buffers."""
@@ -624,7 +571,6 @@ Base.@kwdef mutable struct SimWorkspace
     broker_pairs::BrokerPairWorkspace = BrokerPairWorkspace()
     offer_book::OfferBook = OfferBook()
     ledger::PeriodLedger = PeriodLedger()
-    capture::CaptureWorkspace = CaptureWorkspace()
     holdout::HoldoutWorkspace = HoldoutWorkspace()
     match_output::MatchOutputWorkspace = MatchOutputWorkspace()
 end

@@ -22,10 +22,10 @@ while true; do
     data=$(find "$SWEEP_DIR" -name 'data.jld2' 2>/dev/null | wc -l)
     png=$(find "$SWEEP_DIR" -name '*.png' 2>/dev/null | wc -l)
 
-    run_R=$(squeue -u "$USER" -h -r -n tb_run  -t RUNNING 2>/dev/null | wc -l)
-    run_P=$(squeue -u "$USER" -h -r -n tb_run  -t PENDING 2>/dev/null | wc -l)
-    plt_R=$(squeue -u "$USER" -h -r -n tb_plot -t RUNNING 2>/dev/null | wc -l)
-    plt_P=$(squeue -u "$USER" -h -r -n tb_plot -t PENDING 2>/dev/null | wc -l)
+    run_R=$(squeue -u "$USER" -h -r -n brokerage_abm_run  -t RUNNING 2>/dev/null | wc -l)
+    run_P=$(squeue -u "$USER" -h -r -n brokerage_abm_run  -t PENDING 2>/dev/null | wc -l)
+    plt_R=$(squeue -u "$USER" -h -r -n brokerage_abm_plot -t RUNNING 2>/dev/null | wc -l)
+    plt_P=$(squeue -u "$USER" -h -r -n brokerage_abm_plot -t PENDING 2>/dev/null | wc -l)
 
     d=$(( shards - prev )); prev=$shards
     pct=0;  [ "${NRUNS:-0}" -gt 0 ] && pct=$(( shards * 100 / NRUNS ))

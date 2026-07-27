@@ -1,5 +1,5 @@
 using Test
-using TransientBrokerage
+using BrokerageABM
 
 # Regression baseline: verify that a fixed-seed simulation produces known-good
 # output values. Catches accidental changes to simulation dynamics or RNG stream.

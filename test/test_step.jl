@@ -1,6 +1,6 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: ActiveMatch
+using BrokerageABM
+using BrokerageABM: ActiveMatch
 using StableRNGs: StableRNG
 using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
@@ -14,23 +14,23 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Agent retraining schedule alternates by parity" begin
-        @test TransientBrokerage.agent_retrains_this_period(1, 1)
-        @test !TransientBrokerage.agent_retrains_this_period(2, 1)
-        @test !TransientBrokerage.agent_retrains_this_period(1, 2)
-        @test TransientBrokerage.agent_retrains_this_period(2, 2)
+        @test BrokerageABM.agent_retrains_this_period(1, 1)
+        @test !BrokerageABM.agent_retrains_this_period(2, 1)
+        @test !BrokerageABM.agent_retrains_this_period(1, 2)
+        @test BrokerageABM.agent_retrains_this_period(2, 2)
     end
 
     @testset "Current-period match ledger resets before demand generation" begin
         p = default_params(N=50, T=10, T_burn=2, seed=42)
         state = initialize_model(p)
-        push!(state.agents[1].active_matches, ActiveMatch(0, false, :self))
+        push!(state.agents[1].active_matches, ActiveMatch(0, :self))
         step_period!(state)
         @test all(am.partner_id != 0 for a in state.agents for am in a.active_matches)
     end
 
     @testset "Roster size stays fixed at the target" begin
         p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.0)
-        target = TransientBrokerage.roster_target_size(p.N)
+        target = BrokerageABM.roster_target_size(p.N)
         _, df = run_simulation(p)
         @test all(df.roster_size .== target)
     end
@@ -51,7 +51,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         client_id = first(i for i in 1:p.N if i ∉ state.broker.roster)
 
         push!(state.broker.current_clients, client_id)
-        TransientBrokerage.sync_broker_edges!(state.G, state.agents, state.broker)
+        BrokerageABM.sync_broker_edges!(state.G, state.agents, state.broker)
 
         @test has_edge(state.G, client_id, state.broker.node_id)
     end
@@ -65,7 +65,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         push!(state.broker.current_clients, roster_member)
         push!(state.broker.current_clients, outside_member)
 
-        @test TransientBrokerage.broker_access_size(state.broker) ==
+        @test BrokerageABM.broker_access_size(state.broker) ==
             length(state.broker.roster) + 1
     end
 
@@ -109,7 +109,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.95)
         state = initialize_model(p)
         metrics = step_period!(state)
-        post_turnover_degrees = TransientBrokerage.degree_summary(state)
+        post_turnover_degrees = BrokerageABM.degree_summary(state)
         collected_after_turnover = collect_period_metrics(state)
 
         @test metrics.mean_degree == state.accum.mean_degree
@@ -126,7 +126,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         final_state, df = run_simulation(
             default_params(N=50, T=2, T_burn=1, seed=42, eta=0.95)
         )
-        final_degrees = TransientBrokerage.degree_summary(final_state)
+        final_degrees = BrokerageABM.degree_summary(final_state)
         @test df.mean_degree[end] == final_state.accum.mean_degree
         @test (
             df.mean_degree[end] != final_degrees.mean_degree ||
@@ -174,7 +174,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         state_with_holdout = initialize_model(p)
         state_reference = initialize_model(p)
 
-        TransientBrokerage.update_holdout_metrics!(state_with_holdout)
+        BrokerageABM.update_holdout_metrics!(state_with_holdout)
 
         @test rand(state_with_holdout.rng) == rand(state_reference.rng)
     end

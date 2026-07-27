@@ -9,8 +9,8 @@ a function of data size, width, activation, learning rate, and training steps.
 
 using Random, Statistics, LinearAlgebra, Printf
 using StableRNGs: StableRNG
-using TransientBrokerage
-using TransientBrokerage: MatchingEnv, generate_matching_env, match_signal, Q_OFFSET,
+using BrokerageABM
+using BrokerageABM: MatchingEnv, generate_matching_env, match_signal, Q_OFFSET,
                           default_params, generate_curve_geometry, generate_agent_types,
                           broker_hidden_width, broker_pair_feature_dim,
                           fill_broker_pair_features!

@@ -10,8 +10,8 @@ Adapted from v0.1 plot_firm_curve_3d.jl for the unimodal agent model.
 Usage: julia --project scripts/plot_type_curve.jl
 """
 
-using TransientBrokerage
-using TransientBrokerage: generate_curve_geometry, curve_point
+using BrokerageABM
+using BrokerageABM: generate_curve_geometry, curve_point
 using CairoMakie
 using LinearAlgebra: norm
 using StableRNGs: StableRNG

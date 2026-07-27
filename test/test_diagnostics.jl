@@ -1,5 +1,5 @@
 using Test
-using TransientBrokerage
+using BrokerageABM
 
 @testset "Diagnostics" begin
     state = initialize_model(default_params(N=30, T=5, T_burn=1, seed=42))
@@ -19,12 +19,6 @@ using TransientBrokerage
         "broker_access_size",
         "broker_reputation",
         "broker_has_had_clients",
-        "capture_ready",
-        "capture_scaled_mae",
-        "captured_origin_count",
-        "captured_position_count",
-        "principal_accepted",
-        "principal_rejected",
         "mean_satisfaction_self",
         "mean_satisfaction_broker",
         "mean_periods_alive",
@@ -35,7 +29,6 @@ using TransientBrokerage
         "q_cal",
         "r",
         "phi",
-        "mad_f",
     ])
 
     @test Set(keys(summary)) == expected_keys
@@ -43,22 +36,16 @@ using TransientBrokerage
     @test summary["N"] == state.params.N
     @test summary["broker_roster_size"] == length(state.broker.roster)
     @test summary["broker_access_size"] ==
-        TransientBrokerage.broker_access_size(state.broker)
+        BrokerageABM.broker_access_size(state.broker)
     @test summary["n_on_roster"] == length(state.broker.roster)
     expected_types = Dict(
         "period" => Int,
         "broker_has_had_clients" => Bool,
-        "capture_ready" => Bool,
-        "captured_origin_count" => Int,
-        "captured_position_count" => Int,
-        "principal_accepted" => Int,
-        "principal_rejected" => Int,
         "median_counterparties" => Float64,
         "max_counterparties" => Int,
         "mean_satisfaction_self" => Float64,
         "mean_satisfaction_broker" => Float64,
         "betweenness" => Float64,
-        "mad_f" => Float64,
     )
     @test all(isa(summary[key], value_type) for (key, value_type) in expected_types)
 end

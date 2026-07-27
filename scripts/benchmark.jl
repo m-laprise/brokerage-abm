@@ -1,15 +1,15 @@
 """
     benchmark.jl
 
-Performance benchmarking and profiling for the v0.2 ABM.
+Performance benchmarking and profiling for BrokerageABM v0.3.
 Each benchmark sample uses fresh setup so mutating workloads do not decay into
 no-op timings across repetitions.
 
 Usage: julia --project --threads=auto scripts/benchmark.jl
 """
 
-using TransientBrokerage
-using TransientBrokerage: step_period!, train_agent_nn!, train_broker_nn!,
+using BrokerageABM
+using BrokerageABM: step_period!, train_agent_nn!, train_broker_nn!,
                           process_entry_exit!, update_cached_network_measures!,
                           predict_nn!, init_neural_net, NNGradBuffers,
                           train_step!, agent_hidden_width, broker_hidden_width,
@@ -50,7 +50,7 @@ function state_with_pending_broker_training(params::ModelParams; burnin::Int = 1
 end
 
 println("=" ^ 80)
-println("BENCHMARK: v0.2 ABM (post-calibration)")
+println("BENCHMARK: BrokerageABM v0.3 (post-calibration)")
 println("=" ^ 80)
 
 # ─────────────────────────────────────────────────────────────────────────────

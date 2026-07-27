@@ -2,6 +2,10 @@
 
 Backs the paper's results section.
 
+The currently committed derived data, values, and rendered figures are temporary
+single-model fixtures retained to validate this refactor. They are not journal
+results. Regenerate them from the new sweep after model development stabilizes.
+
 **No script hard-codes or handwrites any number or result.** Every emitted
 value (statistics, counts, figure data, display scales) is derived from the raw data
 or its config metadata at run time. Literal constants are limited to selection and
@@ -9,27 +13,27 @@ display conventions like window bounds or baseline parameter values.
 
 The pipeline has two tiers, so figures and prose iterate locally.
 
-Cluster tier (needs the sweep; set `TB_SWEEP_DIR` to its root; run on a compute
+Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR` to its root; run on a compute
 node, `srun --partition=cpu --mem=8G`):
 
-1. `julia --project scripts/paper/stats.jl`
+1. `julia --project --threads=auto scripts/paper/stats.jl`
    Computes every statistic quoted in the section and writes `paper/values.tex`
    (one `\pvDefine{key}{value}` per quoted number).
-2. `julia --project scripts/paper/figdata.jl`
+2. `julia --project --threads=auto scripts/paper/figdata.jl`
    Extracts the small figure-input dataset to `paper/figdata.jld2` (~260 KB):
-   the baseline-pair ensemble series and the per-regime late means each figure
+   the baseline ensemble series and the per-regime late means each figure
    consumes, plus the effective-rank grid (which itself comes from
    `scripts/diagnostics/dgp_rank_grid.jl`).
 
 Local tier (no data access; works from a clone of this repository):
 
-3. `julia --project scripts/paper/figures.jl`
-   Renders `paper/figs/fig1_*.png` ... `fig5_*.png` at print resolution,
+3. `julia --project --threads=auto scripts/paper/figures.jl`
+   Renders `paper/figs/fig1_*.png` ... `fig4_*.png` at print resolution,
    numbered in order of first citation in the prose, reading only
    `paper/figdata.jld2`; also writes `paper/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
    start).
-4. `julia scripts/paper/build_section.jl`
+4. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
@@ -71,21 +75,21 @@ self-contained pipeline**: it shares no inputs or outputs with the steps above, 
 the results section and the supplement are regenerated independently of each other.
 The same two tiers apply.
 
-Cluster tier (needs the sweep; set `TB_SWEEP_DIR`; run on a compute node):
+Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
 
-1. `julia --project scripts/paper/supp_figdata.jl`
+1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `paper/supp_figdata.jld2`:
-   the baseline-pair per-period constraint/effective-size series (no-capture and
-   capture), the one-at-a-time and grid late means, and the per-regime late means
-   S1-S4 consume. Standalone twin of `figdata.jl`; no hard-coded results.
+   the baseline per-period constraint/effective-size series, the one-at-a-time
+   and grid late means, and the per-regime late means S1-S4 consume. Standalone
+   twin of `figdata.jl`; no hard-coded results.
 
 Local tier (no data access; works from a clone):
 
-2. `julia --project scripts/paper/supp_figures.jl`
+2. `julia --project --threads=auto scripts/paper/supp_figures.jl`
    Renders `paper/supp_figs/supp_S1_*.png` ... `supp_S4_*.png` from
    `paper/supp_figdata.jld2` only, and writes `paper/supp_figmeta.tex` (the
    display conventions quoted in the captions). Standalone twin of `figures.jl`.
-3. `julia scripts/paper/build_supplement.jl`
+3. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex` (own preamble; captions quote
    display conventions only, via `\pv` keys resolved from `supp_figmeta.tex`, so
    no number is hand-written) to `paper/supplement.pdf`. Validates every `\pv`
@@ -96,7 +100,7 @@ redone for constraint and effective size: **S1** across the rho x delta grid (th
 structural panel of fig. 1); **S2** over time at baseline and against access
 fraction across regimes (fig. 2, without the access series on the time panels);
 **S3** the prediction/output gaps against each measure (fig. 3); **S4** the
-baseline time path, no-capture vs capture (the betweenness panel of fig. 5).
+baseline time path (the betweenness panel of fig. 4).
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 `supp_figdata.jld2`, `supp_figs/`, `supp_figmeta.tex`, and `supplement.pdf` are

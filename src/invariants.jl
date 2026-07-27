@@ -53,12 +53,10 @@ function verify_invariants(state::ModelState)
         end
     end
 
-    # ── Active match edges (non-principal matches should have an edge) ──
+    # ── Active match edges ──
     for i in 1:N
         for am in agents[i].active_matches
-            if !am.is_principal
-                @assert has_edge(G, i, am.partner_id) "Non-principal match ($i, $(am.partner_id)) but no edge in G"
-            end
+            @assert has_edge(G, i, am.partner_id) "Active match ($i, $(am.partner_id)) but no edge in G"
         end
     end
 

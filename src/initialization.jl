@@ -149,9 +149,6 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
         train_q=Vector{Float64}(undef, 128),
         last_reputation=0.0,     # set from seed data below
         has_had_clients=false,
-        capture_confidence_mae=0.0,
-        capture_confidence_ready=false,
-        capture_error_count=0,
     )
 
     # Seed roster with random agents

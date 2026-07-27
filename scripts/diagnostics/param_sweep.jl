@@ -15,7 +15,7 @@ Env overrides for a fast check: SWEEP_QUICK=1 (1 seed, 2 small cells), SWEEP_T, 
 """
 
 include(joinpath(@__DIR__, "broker_learning_common.jl"))
-using TransientBrokerage: run_simulation, default_params
+using BrokerageABM: run_simulation, default_params
 using DataFrames
 
 const QUICK = haskey(ENV, "SWEEP_QUICK")

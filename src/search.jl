@@ -126,7 +126,6 @@ function append_self_search_offers!(
     period_strangers::Vector{Int},
     r::Float64;
     current_match_index_ready::Bool=false,
-    captured_origin_mask::Union{Vector{Bool},Nothing}=nothing,
 )::Int
     demand_count <= 0 && return 0
     agent_id = agent.id
@@ -145,7 +144,6 @@ function append_self_search_offers!(
     @inbounds for nbr in neighbors(G, agent_id)
         nbr == broker_node && continue
         (nbr < 1 || nbr > N) && continue
-        !isnothing(captured_origin_mask) && captured_origin_mask[nbr] && continue
         nbr_mask[nbr] = true
         push!(nbr_marked, nbr)
         has_current_match(ws, agent_id, nbr) && continue
@@ -158,7 +156,6 @@ function append_self_search_offers!(
 
     @inbounds for j in period_strangers
         j == agent_id && continue
-        !isnothing(captured_origin_mask) && captured_origin_mask[j] && continue
         nbr_mask[j] && continue
         has_current_match(ws, agent_id, j) && continue
         q_hat = predict_nn!(agent.nn, agent.predict_buf, agents[j].type)
@@ -194,11 +191,7 @@ function append_self_search_offers!(
 end
 
 function collect_broker_access_ids!(
-    out::Vector{Int},
-    broker::Broker,
-    agents::Vector{Agent},
-    ws::SimWorkspace;
-    captured_origin_mask::Union{Vector{Bool},Nothing}=nothing,
+    out::Vector{Int}, broker::Broker, agents::Vector{Agent}, ws::SimWorkspace
 )::Int
     empty!(out)
     N = length(agents)
@@ -209,7 +202,6 @@ function collect_broker_access_ids!(
     for ids in (broker.roster, broker.current_clients)
         @inbounds for rid in ids
             (rid < 1 || rid > N) && continue
-            !isnothing(captured_origin_mask) && captured_origin_mask[rid] && continue
             access_seen[rid] && continue
             access_seen[rid] = true
             push!(access_touched, rid)
@@ -433,7 +425,6 @@ function append_broker_offers!(
     params::ModelParams,
     r::Float64;
     remaining_demand::Union{Vector{Int},Nothing}=nothing,
-    captured_origin_mask::Union{Vector{Bool},Nothing}=nothing,
 )::Int
     broker_pairs = ws.broker_pairs
     broker_demanders = broker_pairs.period_broker_demanders
@@ -448,7 +439,6 @@ function append_broker_offers!(
     @inbounds for idx in eachindex(demand_agent_ids)
         demand_channels[idx] == :broker || continue
         did = demand_agent_ids[idx]
-        !isnothing(captured_origin_mask) && captured_origin_mask[did] && continue
         isnothing(remaining_demand) || remaining[did] > 0 || continue
         push!(broker_demanders, did)
         isnothing(remaining_demand) && (remaining[did] = demand_counts[idx])
@@ -456,9 +446,7 @@ function append_broker_offers!(
     isempty(broker_demanders) && return 0
 
     broker_access = broker_pairs.period_broker_access_ids
-    collect_broker_access_ids!(
-        broker_access, broker, agents, ws; captured_origin_mask=captured_origin_mask
-    )
+    collect_broker_access_ids!(broker_access, broker, agents, ws)
     isempty(broker_access) && return 0
 
     pair_scores = prepare_broker_pair_scores!(

@@ -23,10 +23,10 @@ regression (regress predictions on the true components; the coefficient on
 This file only defines reusable pieces. Each stage script includes it.
 """
 
-using TransientBrokerage
-const TB = TransientBrokerage
+using BrokerageABM
+const ABM = BrokerageABM
 
-using TransientBrokerage:
+using BrokerageABM:
     generate_curve_geometry,
     generate_agent_types,
     generate_matching_env,
@@ -182,7 +182,7 @@ r2(pred, truth) = 1 - sum(abs2, pred .- truth) / sum(abs2, truth .- mean(truth))
 
 Regress predictions on `[1, quality, core, gain]`. A predictor that perfectly
 reproduces a component has coefficient ~1 on it. `bg` (the gain coefficient) is
-the headline: ~1 = gain captured, ~0 = gain ignored. `resid_frac_gain` is the
+the headline: ~1 = gain recovered, ~0 = gain ignored. `resid_frac_gain` is the
 fraction of the prediction-residual variance (pred - target) explained by gain,
 i.e. how much of the model's error is structured gain it failed to track.
 """
@@ -322,17 +322,17 @@ function train_nn_adam!(
 )
     h = size(nn.W1, 1)
     d_in = size(nn.W1, 2)
-    TB.ensure_nn_param_buffers!(grad, h, d_in)
+    ABM.ensure_nn_param_buffers!(grad, h, d_in)
     n = length(q)
     np = length(grad.dtheta)
     m = zeros(np)
     v = zeros(np)
     for t in 1:n_steps
-        TB.pack_nn_params!(grad.theta, nn)
+        ABM.pack_nn_params!(grad.theta, nn)
         gradient!(
-            TB.nn_loss_theta,
+            ABM.nn_loss_theta,
             grad.dtheta,
-            TB.NN_AD_BACKEND,
+            ABM.NN_AD_BACKEND,
             grad.theta,
             Constant(X),
             Constant(q),
@@ -350,7 +350,7 @@ function train_nn_adam!(
             v[i] = vi
             grad.dtheta[i] = (mi / bc1) / (sqrt(vi / bc2) + ϵ)
         end
-        TB.apply_nn_gradient!(nn, grad, lr)
+        ABM.apply_nn_gradient!(nn, grad, lr)
     end
     return nothing
 end

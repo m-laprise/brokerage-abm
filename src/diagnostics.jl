@@ -31,12 +31,6 @@ function diagnostic_summary(state::ModelState)::Dict{String,Any}
         "broker_access_size" => broker_access_size(broker),
         "broker_reputation" => broker.last_reputation,
         "broker_has_had_clients" => broker.has_had_clients,
-        "capture_ready" => state.accum.capture_ready,
-        "capture_scaled_mae" => state.accum.capture_scaled_mae,
-        "captured_origin_count" => state.accum.captured_origin_count,
-        "captured_position_count" => state.accum.captured_position_count,
-        "principal_accepted" => state.accum.n_broker_principal,
-        "principal_rejected" => state.accum.principal_rejected,
         "mean_satisfaction_self" => mean(a.satisfaction_self for a in agents),
         "mean_satisfaction_broker" => mean(a.satisfaction_broker for a in agents),
         "mean_periods_alive" => mean(a.periods_alive for a in agents),
@@ -47,6 +41,5 @@ function diagnostic_summary(state::ModelState)::Dict{String,Any}
         "q_cal" => state.cal.q_cal,
         "r" => state.cal.r,
         "phi" => state.cal.phi,
-        "mad_f" => state.cal.mad_f,
     )
 end

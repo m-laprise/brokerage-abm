@@ -1,4 +1,4 @@
-module TransientBrokerage
+module BrokerageABM
 
 using Graphs:
     SimpleGraph,
@@ -27,7 +27,6 @@ include("learning.jl")
 include("measures.jl")
 include("search.jl")
 include("matching.jl")
-include("capture.jl")
 include("initialization.jl")
 include("entry_exit.jl")
 include("step.jl")
@@ -36,8 +35,8 @@ include("diagnostics.jl")
 include("simulation.jl")
 
 # Public API. Lower-level model components remain accessible as
-# TransientBrokerage.<name> for tests, scripts, and advanced inspection, but are
-# intentionally not imported by `using TransientBrokerage`.
+# BrokerageABM.<name> for tests, scripts, and advanced inspection, but are
+# intentionally not imported by `using BrokerageABM`.
 export ModelParams, ModelState, PredictionQuality
 
 export default_params, validate_params

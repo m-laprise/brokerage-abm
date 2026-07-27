@@ -68,8 +68,8 @@ end
 """
     collect_period_metrics(state) -> NamedTuple
 
-Collect the current period's match, prediction, capture, satisfaction, and
-network metrics from the simulation state.
+Collect the current period's match, prediction, satisfaction, and network
+metrics from the simulation state.
 """
 function collect_period_metrics(state::ModelState)
     p = state.params
@@ -98,19 +98,6 @@ function collect_period_metrics(state::ModelState)
         sqrt(mean((a.broker_predicted .- a.broker_realized) .^ 2))
     end
 
-    # ── Capture outcome and decision quality (§12) ──
-    # Principal rejected positions are recorded with realized value 0.
-    n_capture = length(a.capture_realized)
-    capture_delta = n_capture == 0 ? Float64[] : a.capture_realized .- a.capture_ask
-    capture_surplus_mean = isempty(capture_delta) ? NaN : mean(capture_delta)
-    n_loss = count(<(0.0), capture_delta)
-    capture_loss_rate = n_capture == 0 ? NaN : n_loss / n_capture
-
-    # Capture decision quality: RMSE on the principal-mode subset.
-    # NaN when fewer than 5 acquired positions to keep the metric comparable to selected_r2.
-    capture_decision_rmse =
-        n_capture >= 5 ? sqrt(mean((a.capture_qhat .- a.capture_realized) .^ 2)) : NaN
-
     # Agent-level stats
     mean_sat_self = mean(ag.satisfaction_self for ag in agents)
     mean_sat_broker = mean(ag.satisfaction_broker for ag in agents)
@@ -120,13 +107,11 @@ function collect_period_metrics(state::ModelState)
         period=state.period,
         # Match counts
         n_self_matches=a.n_self_matches,
-        n_broker_standard=a.n_broker_standard,
-        n_broker_principal=a.n_broker_principal,
-        n_total_matches=(a.n_self_matches + a.n_broker_standard + a.n_broker_principal),
+        n_broker_matches=a.n_broker_matches,
+        n_total_matches=(a.n_self_matches + a.n_broker_matches),
         # Match quality
         q_self_mean=safe_mean(a.q_self),
-        q_broker_standard_mean=safe_mean(a.q_broker_standard),
-        q_broker_principal_mean=safe_mean(a.q_broker_principal),
+        q_broker_mean=safe_mean(a.q_broker),
         # Outsourcing
         n_demanders=a.n_demanders,
         n_outsourced=a.n_outsourced,
@@ -158,34 +143,11 @@ function collect_period_metrics(state::ModelState)
         broker_selected_r2=broker_sel.r_squared,
         broker_selected_rmse=broker_sel_rmse,
         broker_selected_bias=broker_sel.bias,
-        broker_confidence_mae=a.broker_confidence_mae,
-        capture_scaled_mae=a.capture_scaled_mae,
         # Broker state
         broker_reputation=broker.last_reputation,
         roster_size=a.roster_size,
         broker_access_size=a.broker_access_size,
         broker_history_size=broker.history_count,
-        # Capture metrics (Model 1)
-        capture_ready=a.capture_ready,
-        captured_origin_count=a.captured_origin_count,
-        captured_position_count=a.captured_position_count,
-        principal_accepted=a.n_broker_principal,
-        principal_rejected=a.principal_rejected,
-        principal_acceptance_rate=if a.captured_position_count > 0
-            a.n_broker_principal / a.captured_position_count
-        else
-            NaN
-        end,
-        principal_mode_share=if a.outsourced_slots > 0
-            a.captured_position_count / a.outsourced_slots
-        else
-            0.0
-        end,
-        # Capture outcome (§12i)
-        capture_surplus_mean=capture_surplus_mean,
-        capture_loss_rate=capture_loss_rate,
-        # Capture decision quality (§12i)
-        capture_decision_rmse=capture_decision_rmse,
         # Satisfaction
         mean_satisfaction_self=mean_sat_self,
         mean_satisfaction_broker=mean_sat_broker,

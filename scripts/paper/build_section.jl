@@ -35,8 +35,11 @@ isfile(CAPS) || fail("missing $CAPS (hand-edited caption source)")
 
 # sweep id: taken from the header stats.jl writes into values.tex, so the
 # provenance always names the data actually used
-sweepm = match(r"% sweep: (\S+)", read(VALS, String))
+valsrc = read(VALS, String)
+sweepm = match(r"% sweep: (\S+)", valsrc)
 SWEEP = isnothing(sweepm) ? "unknown" : sweepm[1]
+fixturem = match(r"% fixture: (.+)", valsrc)
+FIXTURE_NOTE = isnothing(fixturem) ? "" : "% Fixture status: $(fixturem[1]).\n"
 
 # parse definitions: data values (values.tex) + display conventions (figmeta.tex)
 defs = Dict{String,String}()
@@ -44,7 +47,8 @@ order = String[]
 for vfile in (VALS, FIGMETA), line in eachline(vfile)
     m = match(r"^\\pvDefine\{([^}]+)\}\{(.*)\}\s*$", line)
     isnothing(m) && continue
-    haskey(defs, m[1]) && fail("duplicate definition of pv key '$(m[1])' in $(basename(vfile))")
+    haskey(defs, m[1]) &&
+        fail("duplicate definition of pv key '$(m[1])' in $(basename(vfile))")
     defs[m[1]] = m[2]
     push!(order, m[1])
 end
@@ -73,9 +77,13 @@ for (cmd, defs_d, klen) in (("pvcaption", caps, 12), ("pvtitle", titles, 10))
     refs_c = Set(m[1] for m in eachmatch(Regex("\\\\$cmd\\{(\\w+)\\}"), src))
     undef_c = sort(collect(setdiff(refs_c, keys(defs_d))))
     unused_c = sort(collect(setdiff(keys(defs_d), refs_c)))
-    isempty(undef_c) || fail("\\$cmd references with no block in captions.tex: " * join(undef_c, ", "))
-    isempty(unused_c) || fail("captions.tex $cmd blocks never referenced: " * join(unused_c, ", "))
-    global src = replace(src, Regex("\\\\$cmd\\{(\\w+)\\}") => m -> defs_d[m[klen:end-1]])
+    isempty(undef_c) ||
+        fail("\\$cmd references with no block in captions.tex: " * join(undef_c, ", "))
+    isempty(unused_c) ||
+        fail("captions.tex $cmd blocks never referenced: " * join(unused_c, ", "))
+    global src = replace(
+        src, Regex("\\\\$cmd\\{(\\w+)\\}") => m -> defs_d[m[klen:(end - 1)]]
+    )
 end
 
 # cross-check references vs definitions
@@ -92,7 +100,7 @@ for f in figs
 end
 
 # flatten ("\pv{" is 4 characters, so the key is m[5:end-1])
-flat = replace(src, r"\\pv\{([^}]+)\}" => m -> defs[m[5:end-1]])
+flat = replace(src, r"\\pv\{([^}]+)\}" => m -> defs[m[5:(end - 1)]])
 occursin("\\pv{", flat) && fail("unflattened \\pv reference remains")
 
 gitrev = try
@@ -105,7 +113,7 @@ header = """
 % Built by scripts/paper/build_section.jl on $(Dates.format(now(), "yyyy-mm-dd HH:MM"))
 % from section_source.tex + captions.tex + values.tex + figmeta.tex;
 % sweep $SWEEP; repo commit $gitrev.
-% Every number was computed from the saved sweep data by scripts/paper/stats.jl.
+$(FIXTURE_NOTE)% Every number was computed from the saved sweep data by scripts/paper/stats.jl.
 """
 write(OUT, header * flat * "\n")
 println("wrote $OUT ($(length(refs)) values inlined, $(length(figs)) figures)")
@@ -114,7 +122,9 @@ println("wrote $OUT ($(length(refs)) values inlined, $(length(figs)) figures)")
 build = joinpath(PAPER, "_build")
 mkpath(build)
 wrapper = joinpath(build, "wrapper.tex")
-write(wrapper, """
+write(
+    wrapper,
+    """
 \\documentclass[11pt]{article}
 \\usepackage[letterpaper,margin=1in]{geometry}
 \\usepackage{amsmath,amssymb,graphicx,booktabs}
@@ -127,13 +137,19 @@ write(wrapper, """
 \\begin{document}
 \\input{../results_section.tex}
 \\end{document}
-""")
+""",
+)
 ok = true
 for pass in 1:2   # two passes for \\ref
     global ok
-    p = run(pipeline(Cmd(`pdflatex -interaction=nonstopmode -halt-on-error wrapper.tex`; dir=build);
-                     stdout=joinpath(build, "pdflatex.out"), stderr=joinpath(build, "pdflatex.out"));
-            wait=true)
+    p = run(
+        pipeline(
+            Cmd(`pdflatex -interaction=nonstopmode -halt-on-error wrapper.tex`; dir=build);
+            stdout=joinpath(build, "pdflatex.out"),
+            stderr=joinpath(build, "pdflatex.out"),
+        );
+        wait=true,
+    )
     ok &= success(p)
 end
 log = read(joinpath(build, "pdflatex.out"), String)
@@ -141,4 +157,6 @@ nerr = count("\n!", log)
 pages = match(r"Output written on wrapper\.pdf \((\d+) page", log)
 ok || fail("pdflatex failed; see paper/_build/pdflatex.out")
 nerr == 0 || fail("$nerr LaTeX errors; see paper/_build/pdflatex.out")
-println("compile check OK: $(isnothing(pages) ? "?" : pages[1]) pages, 0 errors (paper/_build/wrapper.pdf)")
+println(
+    "compile check OK: $(isnothing(pages) ? "?" : pages[1]) pages, 0 errors (paper/_build/wrapper.pdf)",
+)

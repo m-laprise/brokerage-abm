@@ -4,7 +4,7 @@
 Expand the §2 sweep specification into the full ordered list of (cell, seed)
 jobs and write the manifest. Run ONCE, before the compute array.
 
-Writes, under `TB_SWEEP_DIR`:
+Writes, under `BROKERAGE_ABM_SWEEP_DIR`:
   * `manifest.json`  — human/report-readable source of truth (spec, provenance,
                        every entry, every plot job).
   * `manifest.jld2`  — identical structure, read natively by sweep_run.jl /
@@ -15,7 +15,7 @@ Writes, under `TB_SWEEP_DIR`:
 Prints `NRUNS=<n>` and `NPLOT=<n>` on their own lines for the orchestrator.
 
 Usage:
-  TB_SWEEP_DIR=/path/to/sweep/<tag> julia --project scripts/sweep/sweep_manifest.jl
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep/<tag> julia --project scripts/sweep/sweep_manifest.jl
 """
 
 include(joinpath(@__DIR__, "sweep_config.jl"))
@@ -76,20 +76,32 @@ function main()
 
     # Spec block for the report agent (what was swept, at a glance).
     spec = Dict{Symbol,Any}(
-        :baseline => Dict(:rho => 0.5, :eta => 0.02, :N => 1000,
-                          :reservation_frac => 0.6, :T => SWEEP_T, :T_burn => SWEEP_T_BURN),
-        :oat_axes => [Dict(:label => a.label, :key => string(a.key),
-                           :vals => a.vals, :models => string.(a.models)) for a in OAT_AXES],
-        :phase_pairs => [Dict(:name => p.name, :xkey => string(p.xkey), :xvals => p.xvals,
-                              :ykey => string(p.ykey), :yvals => p.yvals) for p in PHASE_PAIRS],
+        :baseline => Dict(
+            :rho => 0.5,
+            :eta => 0.02,
+            :N => 1000,
+            :reservation_frac => 0.6,
+            :T => SWEEP_T,
+            :T_burn => SWEEP_T_BURN,
+        ),
+        :oat_axes => [
+            Dict(:label => a.label, :key => string(a.key), :vals => a.vals) for
+            a in OAT_AXES
+        ],
+        :phase_pairs => [
+            Dict(
+                :name => p.name,
+                :xkey => string(p.xkey),
+                :xvals => p.xvals,
+                :ykey => string(p.ykey),
+                :yvals => p.yvals,
+            ) for p in PHASE_PAIRS
+        ],
         :seeds => SWEEP_SEEDS,
     )
 
     manifest = Dict{Symbol,Any}(
-        :meta => meta,
-        :spec => spec,
-        :entries => entries,
-        :plot_jobs => plot_jobs,
+        :meta => meta, :spec => spec, :entries => entries, :plot_jobs => plot_jobs
     )
 
     # ── Write manifest.json (source of truth for humans / report) ────────────
@@ -114,19 +126,22 @@ function main()
     )
 
     # ── Write manifest.jld2 (native, read by run/plot) ───────────────────────
-    jldsave(joinpath(sweepdir, "manifest.jld2");
-        entries = entries,
-        plot_jobs = plot_jobs,
-        meta = meta,
-        spec = spec,
-        prov = prov,
-        manifest_hash = manifest_hash,
-        schema_version = SWEEP_SCHEMA_VERSION,
+    jldsave(
+        joinpath(sweepdir, "manifest.jld2");
+        entries=entries,
+        plot_jobs=plot_jobs,
+        meta=meta,
+        spec=spec,
+        prov=prov,
+        manifest_hash=manifest_hash,
+        schema_version=SWEEP_SCHEMA_VERSION,
     )
 
     # ── Report ───────────────────────────────────────────────────────────────
     println("Sweep manifest written to: $sweepdir")
-    println("  git commit:        $commit$(meta[:git_dirty] ? "  (DIRTY working tree)" : "")")
+    println(
+        "  git commit:        $commit$(meta[:git_dirty] ? "  (DIRTY working tree)" : "")"
+    )
     println("  julia version:     $(VERSION)")
     println("  Manifest.toml hash: $pkg_manifest_hash")
     println("  manifest.json hash: $manifest_hash")

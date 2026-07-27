@@ -1,8 +1,8 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: Q_OFFSET, calibrate, generate_matching_env
-using TransientBrokerage: match_output, match_output!, match_signal, match_signal!
-using TransientBrokerage: regime_gain, regime_gain!
+using BrokerageABM
+using BrokerageABM: Q_OFFSET, calibrate, generate_matching_env
+using BrokerageABM: match_output, match_output!, match_signal, match_signal!
+using BrokerageABM: regime_gain, regime_gain!
 using StableRNGs: StableRNG
 using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
 
@@ -22,7 +22,7 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         env_seed::Int=42,
         geo_seed::Int=11,
     )
-        geo = TransientBrokerage.generate_curve_geometry(d, d, StableRNG(geo_seed))
+        geo = BrokerageABM.generate_curve_geometry(d, d, StableRNG(geo_seed))
         return generate_matching_env(
             d, rho, delta, sigma_eps, types, StableRNG(env_seed); curve_geo=geo
         )
@@ -41,9 +41,9 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
 
     @testset "curve_geo path decouples c and A, while B depends on realized types" begin
         rng_geo = StableRNG(12)
-        geo = TransientBrokerage.generate_curve_geometry(d, d, rng_geo)
+        geo = BrokerageABM.generate_curve_geometry(d, d, rng_geo)
         rng_types = StableRNG(13)
-        types_1, _ = TransientBrokerage.generate_agent_types(50, geo, 0.5, rng_types)
+        types_1, _ = BrokerageABM.generate_agent_types(50, geo, 0.5, rng_types)
         types_2 = test_agent_types(d, 50, StableRNG(14))
 
         env_1 = generate_matching_env(
@@ -56,8 +56,8 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         @test env_1.c == env_2.c
         @test env_1.A == env_2.A
         @test env_1.B != env_2.B
-        @test TransientBrokerage.weighted_regime_overlap(env_1.A, env_1.B, types_1) ≈ 0.0 atol=1e-12
-        @test TransientBrokerage.weighted_regime_overlap(env_2.A, env_2.B, types_2) ≈ 0.0 atol=1e-12
+        @test BrokerageABM.weighted_regime_overlap(env_1.A, env_1.B, types_1) ≈ 0.0 atol=1e-12
+        @test BrokerageABM.weighted_regime_overlap(env_2.A, env_2.B, types_2) ≈ 0.0 atol=1e-12
     end
 
     @testset "A is SPD and B is weighted-orthogonalized" begin
@@ -68,7 +68,7 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         @test issymmetric(env.B)
         @test minimum(eigvals(env.B)) < 0.0
         @test maximum(eigvals(env.B)) > 0.0
-        @test TransientBrokerage.weighted_regime_overlap(env.A, env.B, types) ≈ 0.0 atol=1e-12
+        @test BrokerageABM.weighted_regime_overlap(env.A, env.B, types) ≈ 0.0 atol=1e-12
     end
 
     @testset "Matching function symmetry: f(x_i, x_j) == f(x_j, x_i)" begin
@@ -189,12 +189,10 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         @test cal.c_s ≈ p.search_cost_rate * cal.q_cal
         @test cal.c_s ≈ cal.phi
         # phi/c_s do not depend on the reservation: changing reservation_frac
-        # leaves them (and mad_f) unchanged.
+        # leaves them unchanged.
         cal_r2 = calibrate(env, types, default_params(reservation_frac=0.30), StableRNG(55))
         @test cal_r2.phi ≈ cal.phi
         @test cal_r2.c_s ≈ cal.c_s
-        @test cal_r2.mad_f ≈ cal.mad_f
-        @test cal.mad_f > 0.0
     end
 
     @testset "Shared-cost calibration responds to the common rate" begin

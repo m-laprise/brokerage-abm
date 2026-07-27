@@ -1,10 +1,10 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: Agent, NNGradBuffers, NeuralNet, agent_hidden_width
-using TransientBrokerage: compute_adaptive_steps
-using TransientBrokerage: init_neural_net, nn_loss, predict_nn!, predict_nn_batch!
-using TransientBrokerage: record_broker_history!
-using TransientBrokerage: train_agent_nn!, train_broker_nn!, train_nn!, train_step!
+using BrokerageABM
+using BrokerageABM: Agent, NNGradBuffers, NeuralNet, agent_hidden_width
+using BrokerageABM: compute_adaptive_steps
+using BrokerageABM: init_neural_net, nn_loss, predict_nn!, predict_nn_batch!
+using BrokerageABM: record_broker_history!
+using BrokerageABM: train_agent_nn!, train_broker_nn!, train_nn!, train_step!
 using StableRNGs: StableRNG
 using LinearAlgebra: normalize
 
@@ -99,7 +99,7 @@ using LinearAlgebra: normalize
         n_active = 20
         lr = 0.01
 
-        TransientBrokerage.train_nn_prefix!(
+        BrokerageABM.train_nn_prefix!(
             nn_prefix, grad_prefix, X_full, q_full, n_active, 5, lr
         )
         train_nn!(
@@ -125,10 +125,10 @@ using LinearAlgebra: normalize
         q_full = randn(rng, 32)
         n_active = 20
 
-        TransientBrokerage.train_nn_prefix!(nn, grad, X_full, q_full, n_active, 1, 0.01)
+        BrokerageABM.train_nn_prefix!(nn, grad, X_full, q_full, n_active, 1, 0.01)
         theta = grad.theta
         dtheta = grad.dtheta
-        TransientBrokerage.train_nn_prefix!(nn, grad, X_full, q_full, n_active, 1, 0.01)
+        BrokerageABM.train_nn_prefix!(nn, grad, X_full, q_full, n_active, 1, 0.01)
         @test grad.theta === theta
         @test grad.dtheta === dtheta
     end
@@ -235,7 +235,7 @@ using LinearAlgebra: normalize
         # Live agent training uses Adam; with no period marks the window spans the
         # full history, so the reference runs the same Adam over all observations.
         nref = agent.history_count
-        TransientBrokerage.train_nn_prefix_adam!(
+        BrokerageABM.train_nn_prefix_adam!(
             nn_ref,
             grad_ref,
             Matrix(history_X[:, 1:nref]),

@@ -56,8 +56,8 @@ function push_accepted_relationship!(
     broker_involved &&
         record_broker_history!(broker, agents[i].type, agents[j].type, q_realized)
     add_match_edge!(G, i, j)
-    push!(agents[i].active_matches, ActiveMatch(j, false, rel_channel))
-    push!(agents[j].active_matches, ActiveMatch(i, false, rel_channel))
+    push!(agents[i].active_matches, ActiveMatch(j, rel_channel))
+    push!(agents[j].active_matches, ActiveMatch(i, rel_channel))
     mark_current_match!(ws, i, j)
 
     agents[i].n_matches_any += 1
@@ -88,11 +88,8 @@ function push_accepted_relationship!(
             offer1.from_id,
             offer1.to_id,
             rel_channel,
-            false,
             q_realized,
             offer1.predicted_value,
-            NaN,
-            NaN,
             offer1_credit,
             offer2_credit,
         ),
@@ -158,8 +155,7 @@ end
 """
     run_offer_market!(...)
 
-Run the shared binding-offer market for current active demand. When principal
-mode is enabled, client-origin capture is executed before standard offers.
+Run the shared binding-offer market for current active demand.
 """
 function run_offer_market!(
     demand_agent_ids::Vector{Int},
@@ -174,7 +170,6 @@ function run_offer_market!(
     rng::AbstractRNG;
     ws::SimWorkspace,
     accepted_matches::Union{Vector{AcceptedMatch},Nothing}=nothing,
-    accum::Union{PeriodAccumulators,Nothing}=nothing,
 )
     accepted = isnothing(accepted_matches) ? AcceptedMatch[] : empty!(accepted_matches)
     isempty(demand_agent_ids) && return accepted
@@ -192,7 +187,6 @@ function run_offer_market!(
     rebuild_current_match_index!(ws, agents)
     offer_book = ws.offer_book
     reset_offer_book!(offer_book, N)
-    reset_principal_payments!(ws, N)
     search = ws.search
 
     ledger = ws.ledger
@@ -203,46 +197,6 @@ function run_offer_market!(
     fill!(remaining, 0)
     @inbounds for idx in eachindex(demand_agent_ids)
         remaining[demand_agent_ids[idx]] = demand_counts[idx]
-    end
-
-    captured_origin_mask = nothing
-    if params.enable_principal
-        isnothing(accum) && error("accum is required when enable_principal=true")
-        reset_capture_buffers!(ws, N)
-
-        broker_pairs = ws.broker_pairs
-        broker_demanders = broker_pairs.period_broker_demanders
-        empty!(broker_demanders)
-        @inbounds for idx in eachindex(demand_agent_ids)
-            demand_channels[idx] == :broker || continue
-            did = demand_agent_ids[idx]
-            remaining[did] > 0 || continue
-            push!(broker_demanders, did)
-        end
-
-        broker_access = broker_pairs.period_broker_access_ids
-        collect_broker_access_ids!(broker_access, broker, agents, ws)
-        execute_client_origin_capture!(
-            accepted,
-            ws,
-            broker_demanders,
-            broker_access,
-            remaining,
-            agents,
-            broker,
-            env,
-            G,
-            params,
-            cal,
-            rng,
-            accum;
-            Ax_buf=Ax_buf,
-            Bx_buf=Bx_buf,
-        )
-        captured_origin_mask = ws.capture.captured_origin_mask
-    elseif !isnothing(accum)
-        accum.capture_ready = false
-        accum.capture_scaled_mae = capture_scaled_mae(broker, cal)
     end
 
     @inbounds for idx in eachindex(demand_agent_ids)
@@ -260,7 +214,6 @@ function run_offer_market!(
             search.period_strangers,
             cal.r;
             current_match_index_ready=true,
-            captured_origin_mask=captured_origin_mask,
         )
     end
 
@@ -274,7 +227,6 @@ function run_offer_market!(
         params,
         cal.r;
         remaining_demand=remaining,
-        captured_origin_mask=captured_origin_mask,
     )
 
     @inbounds for (i, j) in offer_book.offer_pairs
@@ -303,17 +255,15 @@ end
 
 function credit_offer!(
     demander_sum::Vector{Float64},
-    broker_standard_count::Vector{Int},
+    broker_match_count::Vector{Int},
     offer_from::Int,
     offer_channel::Symbol,
     q_realized::Float64,
-    is_principal::Bool,
 )
     offer_from <= 0 && return nothing
-    is_principal && return nothing
     demander_sum[offer_from] += q_realized
     if offer_channel == :broker
-        broker_standard_count[offer_from] += 1
+        broker_match_count[offer_from] += 1
     end
     return nothing
 end
@@ -321,12 +271,10 @@ end
 """
     update_satisfaction!(agents, accepted_matches, demand_agent_ids, demand_channels,
                          demand_counts, cal, params; demander_sum=nothing,
-                         broker_standard_count=nothing, principal_payment=nothing)
+                         broker_match_count=nothing)
 
 Update only agents with active demand. Successful outcomes are credited to the
-directed active-search offer and the channel used to make that offer. Captured
-broker clients receive their principal payment without paying a standard broker
-fee.
+directed active-search offer and the channel used to make that offer.
 """
 function update_satisfaction!(
     agents::Vector{Agent},
@@ -337,8 +285,7 @@ function update_satisfaction!(
     cal::CalibrationConstants,
     params::ModelParams;
     demander_sum::Union{Vector{Float64},Nothing}=nothing,
-    broker_standard_count::Union{Vector{Int},Nothing}=nothing,
-    principal_payment::Union{Vector{Float64},Nothing}=nothing,
+    broker_match_count::Union{Vector{Int},Nothing}=nothing,
 )
     omega = params.omega
     n_agents = length(agents)
@@ -348,32 +295,22 @@ function update_satisfaction!(
     elseif length(demander_sum) != n_agents
         resize!(demander_sum, n_agents)
     end
-    if isnothing(broker_standard_count)
-        broker_standard_count = zeros(Int, n_agents)
-    elseif length(broker_standard_count) != n_agents
-        resize!(broker_standard_count, n_agents)
-    end
-    if isnothing(principal_payment)
-        principal_payment = zeros(Float64, n_agents)
-    elseif length(principal_payment) != n_agents
-        resize!(principal_payment, n_agents)
+    if isnothing(broker_match_count)
+        broker_match_count = zeros(Int, n_agents)
+    elseif length(broker_match_count) != n_agents
+        resize!(broker_match_count, n_agents)
     end
 
     @inbounds for agent_id in demand_agent_ids
         demander_sum[agent_id] = 0.0
-        broker_standard_count[agent_id] = 0
+        broker_match_count[agent_id] = 0
     end
 
     for m in accepted_matches
         for offer in (m.offer1, m.offer2)
             isnothing(offer) && continue
             credit_offer!(
-                demander_sum,
-                broker_standard_count,
-                offer.from_id,
-                offer.channel,
-                m.q_realized,
-                m.is_principal,
+                demander_sum, broker_match_count, offer.from_id, offer.channel, m.q_realized
             )
         end
     end
@@ -383,14 +320,14 @@ function update_satisfaction!(
         channel = demand_channels[idx]
         d_i = demand_counts[idx]
         agent = agents[agent_id]
-        total_q = demander_sum[agent_id] + principal_payment[agent_id]
+        total_q = demander_sum[agent_id]
 
         if channel == :self
             tilde_q = total_q / d_i - cal.c_s
             agent.satisfaction_self =
                 (1.0 - omega) * agent.satisfaction_self + omega * tilde_q
         else
-            broker_fee = cal.phi * broker_standard_count[agent_id]
+            broker_fee = cal.phi * broker_match_count[agent_id]
             tilde_q = (total_q - broker_fee) / d_i
             agent.satisfaction_broker =
                 (1.0 - omega) * agent.satisfaction_broker + omega * tilde_q

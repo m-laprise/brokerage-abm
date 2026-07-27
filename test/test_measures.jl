@@ -1,6 +1,6 @@
 using Test
-using TransientBrokerage
-using TransientBrokerage: update_cached_network_measures!
+using BrokerageABM
+using BrokerageABM: update_cached_network_measures!
 
 @testset "Measures" begin
     using Graphs: SimpleGraph, add_edge!, nv, path_graph, star_graph, cycle_graph
@@ -73,8 +73,8 @@ using TransientBrokerage: update_cached_network_measures!
         pred_ranks = zeros(length(pred))
         true_ranks = zeros(length(real))
 
-        TransientBrokerage.prepare_true_ranks!(real, length(real), true_order, true_ranks)
-        pq_prefix = TransientBrokerage.compute_prediction_quality_with_true_ranks!(
+        BrokerageABM.prepare_true_ranks!(real, length(real), true_order, true_ranks)
+        pq_prefix = BrokerageABM.compute_prediction_quality_with_true_ranks!(
             pred,
             real,
             length(pred);

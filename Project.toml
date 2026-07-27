@@ -1,6 +1,6 @@
-name = "TransientBrokerage"
+name = "BrokerageABM"
 uuid = "dd3a1956-5811-4648-b94e-a9aed0613a84"
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
