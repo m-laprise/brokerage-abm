@@ -223,7 +223,7 @@ end
         @test nv(state.G) == p.N + 1
         @test all(state.agents[i].id == i for i in 1:p.N)
         @test all(isapprox(norm(a.type), 1.0; atol=1e-10) for a in state.agents)
-        @test length(broker.roster) == BrokerageABM.roster_target_size(p.N)
+        @test length(broker.roster) == BrokerageABM.roster_target_size(p)
         @test all(has_edge(state.G, rid, broker.node_id) for rid in broker.roster)
 
         expected_history_counts = [
@@ -495,7 +495,7 @@ end
 
     @testset "Period update and metrics preserve ordering-sensitive invariants" begin
         state = micro_state()
-        target_roster = BrokerageABM.roster_target_size(state.params.N)
+        target_roster = BrokerageABM.roster_target_size(state.params)
         for i in 1:state.params.N
             state.agents[i].satisfaction_self = 10.0
             state.agents[i].satisfaction_broker = 0.0

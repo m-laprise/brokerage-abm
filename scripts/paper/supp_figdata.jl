@@ -28,8 +28,9 @@ Contents of supp_figdata.jld2 (single key "figdata", a Dict):
   oat_cells   late means per one-at-a-time regime: access,
               constraint, effsize (for the cross-regime scatter, S2 right)
   grid_cells  rho, delta, and the constraint/effsize late means per rho x delta
-              grid cell (plus the OAT rho refiners), for S1
-  regime_cells rho, constraint, effsize, rankgap, qgap per regime, for S3
+              grid coordinate, for S1
+  regime_cells rho, constraint, effsize, rankgap, qgap per effective realization,
+               for S3
   meta        sweep id, generation time, generating script
 
 Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/supp_figdata.jl
@@ -37,15 +38,19 @@ Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/supp_f
 
 using JLD2, DataFrames, Statistics, Dates
 
+include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUTFILE = normpath(joinpath(@__DIR__, "..", "..", "paper", "supp_figdata.jld2"))
-const LATE = (181, 200)   # late-window mean, the headline statistic (matches figdata.jl)
+const LATE_WIDTH = 20   # final-period window, the headline statistic (matches figdata.jl)
+const SWEEP = load_sweep_dataset(ROOT)
 
 # ── shared reducers (kept local so this extract does not depend on figdata.jl) ──
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
-tailmean(df, col) = nanmean(df[(df.period .>= LATE[1]) .& (df.period .<= LATE[2]), col])
+late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
+tailmean(df, col) = nanmean(df[late_mask(df), col])
 seedmean(mdfs, col) = nanmean([tailmean(d, col) for d in mdfs])
 function accessf(df)
     (
@@ -53,7 +58,7 @@ function accessf(df)
         [t[i] > 0 ? df.access_count[i] / t[i] : NaN for i in eachindex(t)]
     )
 end
-access_tail(df) = nanmean(accessf(df)[(df.period .>= LATE[1]) .& (df.period .<= LATE[2])])
+access_tail(df) = nanmean(accessf(df)[late_mask(df)])
 cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
 # broker-minus-self gaps, the y-axes of S3 (identical definitions to figdata.jl)
 qgap(m) = seedmean(m, :q_broker_mean) - seedmean(m, :q_self_mean)
@@ -62,11 +67,7 @@ rankgap(m) = seedmean(m, :broker_holdout_rank) - seedmean(m, :agent_holdout_rank
 function ens(mdfs, f)
     (per=mdfs[1].period; [nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)])
 end
-load_mdfs(rel) =
-    jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f
-        ;
-        f["mdfs"]
-    end
+load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
 
 fd = Dict{String,Any}()
 
@@ -83,32 +84,15 @@ fd["series"] = series(baseline)
 
 # ── one-at-a-time cells (S2 right scatter) ──
 # same regime list as figdata.jl's oat_cells, so the supplement scatter spans the
-# same regimes as the main-text Figure 2.
-cellspec = vcat(
-    ["oat/rho=$(r)" for r in (0.0, 0.3, 0.5, 0.7, 1.0)],
-    [
-        "oat/$a" for a in (
-            "eta=0.01",
-            "eta=0.02",
-            "eta=0.03",
-            "N=500",
-            "N=1000",
-            "N=1500",
-            "reservation_frac=0.4",
-            "reservation_frac=0.6",
-            "reservation_frac=0.9",
-            "reservation_frac=1.2",
-            "delta=0.0",
-            "delta=0.75",
-            "k=4",
-            "k=12",
-        )
-    ],
-)
+# same regimes as the main-text position analysis.
 fd["oat_cells"] = let out = Dict{String,Float64}[]
-    for rel in cellspec
-        isfile(joinpath(ROOT, rel, "data.jld2")) || continue
-        m = load_mdfs(rel)
+    seen = Set{String}()
+    for grid in SWEEP.grid_cells
+        grid[:kind] == "oat" || continue
+        result = SWEEP.result_by_rel[grid[:result_reldir]]
+        result.rel in seen && continue
+        push!(seen, result.rel)
+        m = result.mdfs
         a = cell_access(m);
         c = seedmean(m, :constraint);
         e = seedmean(m, :effective_size)
@@ -120,33 +104,17 @@ end
 
 # ── rho x delta grid cells + OAT rho refiners (S1) ──
 # identical cell set to figdata.jl's grid_cells, so the supplement S1 lines span
-# the same grid as the main-text Figure 1.
+# the same grid as the main-text matching-grid analysis.
 fd["grid_cells"] = let out = Dict{String,Any}[]
-    cellsdir = joinpath(ROOT, "phase", "rho_delta", "cells")
-    for d in sort(readdir(cellsdir))
-        p = joinpath(cellsdir, d, "data.jld2")
-        isfile(p) || continue
-        m, cfg = jldopen(p, "r") do f
-            ;
-            (f["mdfs"], f["config"])
-        end
+    for grid in SWEEP.grid_cells
+        get(grid, :pair, nothing) == "rho_delta" || continue
+        m = SWEEP.result_by_rel[grid[:result_reldir]].mdfs
+        cfg = grid[:resolved_params]
         push!(
             out,
             Dict(
-                "rho" => Float64(cfg["rho"]),
-                "delta" => Float64(cfg["delta"]),
-                "constraint" => seedmean(m, :constraint),
-                "effsize" => seedmean(m, :effective_size),
-            ),
-        )
-    end
-    for r in (0.3, 0.7)   # OAT rho cells refine the delta = 0.5 line
-        m = load_mdfs("oat/rho=$r")
-        push!(
-            out,
-            Dict(
-                "rho" => r,
-                "delta" => 0.5,
+                "rho" => Float64(cfg[:rho]),
+                "delta" => Float64(cfg[:delta]),
                 "constraint" => seedmean(m, :constraint),
                 "effsize" => seedmean(m, :effective_size),
             ),
@@ -155,14 +123,10 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
     out
 end
 
-# ── every regime (S3) ──
+# ── every effective realization (S3) ──
 fd["regime_cells"] = let out = Dict{String,Float64}[]
-    for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-        "data.jld2" in files || continue
-        m, cfg = jldopen(joinpath(root, "data.jld2"), "r") do f
-            ;
-            (f["mdfs"], f["config"])
-        end
+    for result in SWEEP.results
+        m, cfg = result.mdfs, result.cfg
         c = seedmean(m, :constraint);
         isnan(c) && continue
         push!(
@@ -182,6 +146,8 @@ end
 
 fd["meta"] = Dict(
     "sweep" => basename(ROOT),
+    "manifest_hash" => SWEEP.manifest_hash,
+    "schema_version" => SWEEP.schema_version,
     "generated" => string(now()),
     "source" => "scripts/paper/supp_figdata.jl",
 )
@@ -190,7 +156,7 @@ jldsave(OUTFILE; figdata=fd)
 println(
     "wrote $OUTFILE ($(round(filesize(OUTFILE) / 1024; digits=1)) KB; ",
     length(fd["regime_cells"]),
-    " regime cells, ",
+    " effective realizations, ",
     length(fd["oat_cells"]),
     " OAT cells, ",
     length(fd["grid_cells"]),

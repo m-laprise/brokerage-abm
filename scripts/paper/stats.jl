@@ -8,41 +8,38 @@ files and their config metadata at run time. Literal constants below are selecti
 conventions only (window bounds, baseline parameter values, display rounding).
 
 Conventions:
-  late mean  = time average over t in [181, 200] (headline statistic)
+  late mean  = time average over the final 20 periods (headline statistic)
   early mean = time average over t in [50, 70]
-  "across regimes" = unweighted mean over all saved cells
-  (each cell first averaged over its 5 seeds)
+  "across regimes" = unweighted mean over effective model realizations
+  (each realization first averaged over its 10 seeds)
 
 Usage: julia --project scripts/paper/stats.jl
 """
 
-using JLD2, DataFrames, Statistics, Printf, Dates
+using Statistics, Printf, Dates
+
+include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "paper", "values.tex"))
-const LATE = (181, 200)
+const LATE_WIDTH = 20
 const EARLY = (50, 70)
 const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere else)
 
 nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 winm(d, v, (lo, hi)) = nm(v[(d.period .>= lo) .& (d.period .<= hi)])
 cellw(m, f, w) = nm([winm(d, f(d), w) for d in m])     # seed mean of window means
-late(m, f) = cellw(m, f, LATE);
+late_window(m) = (maximum(m[1].period) - LATE_WIDTH + 1, maximum(m[1].period))
+late(m, f) = cellw(m, f, late_window(m));
 early(m, f) = cellw(m, f, EARLY)
 col(c) = d -> d[!, c]
-function ncor(x, y)
-    k = .!isnan.(x) .& .!isnan.(y)
-    sum(k) < 3 ? NaN : cor(x[k], y[k])
-end
-
 # display formats (rounding conventions, not results)
 f1(x) = @sprintf("%.1f", x)
 f2(x) = @sprintf("%.2f", x)
 fs2(x) = (x >= 0 ? "+" : "") * f2(x)                     # explicit sign for gaps/corrs
 fint(x) = string(round(Int, x))
-fcomma(x) = replace(fint(x), r"(?<=\d)(?=(\d{3})+$)" => ",")
 
 # derived per-period series
 function accessf(d)
@@ -54,28 +51,20 @@ end
 ogap(d) = d.q_broker_mean .- d.q_self_mean
 rankgap(d) = d.broker_holdout_rank .- d.agent_holdout_rank
 
-# ── load all cells ──
-struct Cell
-    ;
-    rel::String;
-    mdfs::Vector{DataFrame};
-    cfg::Dict;
-    seeds::Vector{Int};
-end
-cells = Cell[]
-for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-    "data.jld2" in files || continue
-    m, c, s = jldopen(joinpath(root, "data.jld2"), "r") do f
-        ;
-        (f["mdfs"], f["config"], f["seeds"])
-    end
-    push!(cells, Cell(replace(root, ROOT * "/" => ""), m, c, s))
-end
-B = cells
-cellat(rel) = first(c for c in cells if c.rel == rel)
+# ── load the complete set of effective model realizations ──
+const SWEEP = load_sweep_dataset(ROOT)
+const B = SWEEP.results
+cellat(rel) = grid_result(SWEEP, rel)
 BL = cellat(BASELINE_REL)
 oatb(ax, v) = cellat("oat/$ax=$v")
-pcell(i, j) = cellat("phase/rho_delta/cells/$(i)_$(j)")  # x=rho{0,0.5,1}, y=delta{0,0.5,0.75}
+function rdcell(rho, delta)
+    first(
+        grid_result(SWEEP, cell[:reldir]) for
+        cell in SWEEP.grid_cells if get(cell, :pair, nothing) == "rho_delta" &&
+            cell[:resolved_params][:rho] == rho &&
+            cell[:resolved_params][:delta] == delta
+    )
+end
 
 # ── emitted values, in order ──
 VALS = Pair{String,String}[]
@@ -83,7 +72,7 @@ pv(k, v) = (push!(VALS, k => v); println(rpad(k, 28), v); v)
 
 # counts
 pv("nRegimes", fint(length(B)))
-pv("nRuns", fint(sum(length(c.seeds) for c in cells)))
+pv("nRuns", fint(sum(length(c.seeds) for c in B)))
 
 # ── 5.1 ──
 pv("outBaselineLate", f2(late(BL.mdfs, col(:outsourcing_rate))))
@@ -99,7 +88,12 @@ ac_e = [early(c.mdfs, accessf) for c in B]
 pv("accessAcrossBaseLate", f2(nm(ac_l)))
 pv("accessAcrossBaseEarly", f2(nm(ac_e)))
 pv("brokerRankBaseline", f2(late(BL.mdfs, col(:broker_holdout_rank))))
-d0 = [late(c.mdfs, col(:broker_holdout_rank)) for c in B if c.cfg["delta"] == 0.0]
+d0 = [
+    late(c.mdfs, col(:broker_holdout_rank)) for c in unique_effective_results([
+        grid_result(SWEEP, cell[:reldir]) for cell in SWEEP.grid_cells if
+        get(cell, :pair, nothing) == "rho_delta" && cell[:resolved_params][:delta] == 0.0
+    ],)
+]
 pv("brokerRankD0Min", f2(minimum(d0)));
 pv("brokerRankD0Max", f2(maximum(d0)))
 pv("brokerR2Baseline", f2(late(BL.mdfs, col(:broker_holdout_r2))))
@@ -143,15 +137,15 @@ pv("accessRho1", f2(late(oatb("rho", "1.0").mdfs, accessf)))
 pv("betwDelta0", f2(late(oatb("delta", "0.0").mdfs, col(:betweenness))))
 pv("betwDelta05", f2(late(BL.mdfs, col(:betweenness))))
 pv("betwDelta075", f2(late(oatb("delta", "0.75").mdfs, col(:betweenness))))
-pv("brokerRankHardCorner", f2(late(pcell(0, 2).mdfs, col(:broker_holdout_rank))))
-pv("brokerR2Rho0D0", fs2(late(pcell(0, 0).mdfs, col(:broker_holdout_r2))))
-pv("brokerR2Rho0D05", f2(late(pcell(0, 1).mdfs, col(:broker_holdout_r2))))
-pv("brokerR2Rho0D075", f2(late(pcell(0, 2).mdfs, col(:broker_holdout_r2))))
-pv("r2GapHardCorner", f2(late(pcell(0, 2).mdfs, col(:r2_gap))))
+pv("brokerRankHardCorner", f2(late(rdcell(0.0, 0.75).mdfs, col(:broker_holdout_rank))))
+pv("brokerR2Rho0D0", fs2(late(rdcell(0.0, 0.0).mdfs, col(:broker_holdout_r2))))
+pv("brokerR2Rho0D05", f2(late(rdcell(0.0, 0.5).mdfs, col(:broker_holdout_r2))))
+pv("brokerR2Rho0D075", f2(late(rdcell(0.0, 0.75).mdfs, col(:broker_holdout_r2))))
+pv("r2GapHardCorner", f2(late(rdcell(0.0, 0.75).mdfs, col(:r2_gap))))
 pv("ogapRho0OAT", fs2(late(oatb("rho", "0.0").mdfs, ogap)))
 pv("ogapRho1OAT", fs2(late(oatb("rho", "1.0").mdfs, ogap)))
-pv("rankGapRho0D0", f2(late(pcell(0, 0).mdfs, rankgap)))
-pv("rankGapRho0D075", f2(late(pcell(0, 2).mdfs, rankgap)))
+pv("rankGapRho0D0", f2(late(rdcell(0.0, 0.0).mdfs, rankgap)))
+pv("rankGapRho0D075", f2(late(rdcell(0.0, 0.75).mdfs, rankgap)))
 
 # ── 5.3 ──
 pv("degBaselineEarly", f1(early(BL.mdfs, col(:mean_degree))))
@@ -165,10 +159,20 @@ pv("degFallsN", fint(count(dd .< 0)))
 e1 = cellat("oat/eta=0.01")
 pv("betwEta001Early", f2(early(e1.mdfs, col(:betweenness))))
 pv("betwEta001Late", f2(late(e1.mdfs, col(:betweenness))))
-# rho groups: symmetric composition across levels = the rho-family cells only
-# (the OAT rho cell plus the rho-paired phase-grid cells at that level)
-rhofam(c) = startswith(c.rel, "oat/rho=") || startswith(c.rel, "phase/rho_")
-rhocells(rv) = [c for c in B if c.cfg["rho"] == rv && rhofam(c)]
+# Rho groups use common support across rho levels. The rho x delta grid is
+# excluded because delta is not an effective dimension at rho=1.
+function rhofam(c)
+    startswith(c.rel, "oat/rho=") || any(
+        startswith(c.rel, "phase/$pair/cells/") for pair in ("rho_eta", "rho_N", "rho_r")
+    )
+end
+function rhocells(rv)
+    unique_effective_results([
+        result for cell in SWEEP.grid_cells for
+        result in (grid_result(SWEEP, cell[:reldir]),) if
+        result.cfg["rho"] == rv && rhofam(result)
+    ],)
+end
 grp(rv, f) = nm([f(c) for c in rhocells(rv)])
 let ns = [length(rhocells(v)) for v in (0.0, 0.5, 1.0)]
     allequal(ns) || error("rho groups have unequal sizes: $ns")
@@ -205,7 +209,16 @@ open(OUTTEX, "w") do io
         "% values.tex: generated by scripts/paper/stats.jl on ",
         Dates.format(now(), "yyyy-mm-dd HH:MM"),
     )
-    println(io, "% sweep: ", basename(ROOT), "   cells: ", length(B))
+    println(
+        io,
+        "% sweep: ",
+        basename(ROOT),
+        "   effective realizations: ",
+        length(B),
+        "   grid coordinates: ",
+        length(SWEEP.grid_cells),
+    )
+    println(io, "% manifest: ", SWEEP.manifest_hash)
     println(io, "% Do not edit by hand; every value is computed from the saved sweep data.")
     println(
         io,

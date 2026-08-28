@@ -9,25 +9,46 @@
 
 All results in this section are computed from a single parameter sweep of the
 simulated market. In the baseline regime,
-$N=1{,}000$ agents interact for $T=200$ periods with matching-function parameters
+$N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
 $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
-and initial network degree $k_G=6$; the first 30 periods of each run are treated as
-burn-in. Around this baseline, I vary one parameter at a time
-($\rho\in\{0,0.3,0.5,0.7,1\}$, $\eta\in\{0.01,0.02,0.03\}$,
+initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
+self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
+run are treated as burn-in. Around this baseline, I vary one parameter at a time
+($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
-$\delta\in\{0,0.75\}$, and $k_G\in\{4,12\}$) and I sweep seven two-parameter
+$\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
+$\alpha_R\in\{0.1,0.2,0.4\}$, and
+$n_{\mathrm{strangers}}\in\{0,10,50\}$) and I sweep eight two-parameter
 grids: the six pairwise combinations of $\{\rho,\eta,N,f_r\}$ and the
-$\rho\times\delta$ grid (on the grids, $\rho$ takes the three levels $\{0,0.5,1\}$
-and $\delta$ the levels $\{0,0.5,0.75\}$; the remaining axes reuse their
-one-at-a-time levels). The design comprises \pv{nRegimes} regimes, each
-simulated under five independent seeds
+$\rho\times\delta$ grid over their full one-at-a-time levels, plus a focused
+$\rho\times f_r$ refinement over
+$\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
+$\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
+$\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
+one-at-a-time levels. The design comprises \pv{nRegimes} unique model
+realizations, each simulated under ten independent seeds
 (\pv{nRuns} runs in total). Reported statistics are
 ensemble means over seeds, summarized by time averages over fixed windows within a
-run: late means over the final 20 periods ($t\in[181,200]$), used for all reported
+run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
 levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
 within-run drift. Full parameter values are given in Appendix~A~\S10, and every
 statistic and figure as well as this results section containing them are
 reproducible from the saved sweep.
+
+Figure~\ref{fig:dynamics} establishes the baseline dynamics before the
+cross-regime comparisons. Matching activity remains stable at roughly the same
+number of matches per agent, while the agent network gradually thins. Over the
+same periods, broker betweenness centrality and outsourcing rise, while the
+share of brokered matches that provides access declines. The baseline therefore
+combines sustained market activity with increasing reliance on the broker and a
+stronger structural position for the broker.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
+\caption{\textbf{\pvtitle{dynamics}.} \pvcaption{dynamics}}
+\label{fig:dynamics}
+\end{figure}
 
 \subsection{The broker primarily provides assessment, not access}
 
@@ -50,7 +71,7 @@ baseline and across regimes.
 \centering\small
 \caption{\textbf{Broker use, access, and assessment quality.} Baseline and
 across-regime summaries for the model. Early and late are ensemble
-means over seeds averaged over $t\in[50,70]$ and $t\in[181,200]$; the
+means over seeds averaged over $t\in[50,70]$ and $t\in[481,500]$; the
 across-regime column reports the median late mean across the \pv{nRegimes}
 regimes.}
 \label{tab:baseline-measures}
@@ -167,7 +188,7 @@ of the performance gap.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig1_grid_lines.png}
+\includegraphics[width=\linewidth]{figs/fig2_grid_lines.png}
 \caption{\textbf{\pvtitle{grid}.} \pvcaption{grid}}
 \label{fig:grid}
 \end{figure}
@@ -186,13 +207,6 @@ why is the structural advantage not self-liquidating, even at low turnover (at
 $\eta=0.01$, betweenness centrality still rises from \pv{betwEta001Early} to
 \pv{betwEta001Late})?
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig4_dynamics.png}
-\caption{\textbf{\pvtitle{dynamics}.} \pvcaption{dynamics}}
-\label{fig:dynamics}
-\end{figure}
-
 The answer comes from the fact that structural position is endogenous, produced by
 which agents form ties and which agents go to the broker. A brokered match adds a
 new agent-to-agent tie, after which the broker no longer lies on the pair's
@@ -203,7 +217,7 @@ rare and falling over time (Fig.~\ref{fig:position}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig2_position_work.png}
+\includegraphics[width=\linewidth]{figs/fig3_position_work.png}
 \caption{\textbf{\pvtitle{position}.} \pvcaption{position}}
 \label{fig:position}
 \end{figure}
@@ -219,7 +233,7 @@ late mean of
 \pv{betwRho1Group} across $\rho=1$ regimes, against \pv{betwBaselineLate} at
 baseline) and stalls rather than rises. The access share still declines within
 runs, and the network still thins in \pv{rhoOneThinN} of \pv{rhoOneN} such
-regimes (the five exceptions above to the co-movement between agent degree and
+regimes (the exceptions above to the co-movement between agent degree and
 broker centrality are of this type). Only
 in the pure-quality regime with the highest reservation threshold ($f_r=1.2$) does
 mean agent degree rise over time. Identifying regimes in which brokered
@@ -242,7 +256,7 @@ access, self-liquidation of the structural advantage need not arise.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\linewidth]{figs/fig3_advantage.png}
+\includegraphics[width=0.92\linewidth]{figs/fig4_advantage.png}
 \caption{\textbf{\pvtitle{advantage}.} \pvcaption{advantage}}
 \label{fig:advantage}
 \end{figure}
@@ -265,7 +279,8 @@ matches are worth the most.
 \caption{\textbf{Matching-problem composition and structural advantage.}
 Regime-group means at the three $\rho$ levels in the model, using
 late means. Each group pools the \pv{rhoGroupN} regimes of the $\rho$ family at
-that level: the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells.
+that level on common support: the one-at-a-time $\rho$ regime and the
+$\rho\times\eta$, $\rho\times N$, and $\rho\times f_r$ grid realizations.
 Output gap is broker-channel realized output minus self-search realized output.}
 \label{tab:rhogroups}
 \begin{tabular}{lccccc}

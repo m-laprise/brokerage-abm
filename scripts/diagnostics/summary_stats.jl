@@ -7,7 +7,9 @@ is run. All summaries use the same early and late windows as the paper pipeline.
 Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/diagnostics/summary_stats.jl
 """
 
-using JLD2, DataFrames, Statistics
+using Statistics
+
+include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
@@ -17,7 +19,7 @@ nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 r2(x) = round(x; digits=2)
 win(m, c, lo, hi) = nm([nm(d[(d.period .>= lo) .& (d.period .<= hi), c]) for d in m])
 early(m, c) = win(m, c, 50, 70)
-late(m, c) = win(m, c, 181, 200)
+late(m, c) = nm([nm(d[d.period .>= maximum(d.period) - 19, c]) for d in m])
 function accfrac(s)
     nm([
         (t=s.access_count[i] + s.assessment_count[i]; t > 0 ? s.access_count[i] / t : NaN)
@@ -25,24 +27,12 @@ function accfrac(s)
     ])
 end
 accwin(m, lo, hi) = nm([accfrac(d[(d.period .>= lo) .& (d.period .<= hi), :]) for d in m])
-acctail(m) = accwin(m, 181, 200)
+acctail(m) = nm([accfrac(d[d.period .>= maximum(d.period) - 19, :]) for d in m])
 
-struct Cell
-    rel::String
-    mdfs::Vector{DataFrame}
-    cfg::Dict
-end
-
-cells = Cell[]
-for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-    "data.jld2" in files || continue
-    m, c = jldopen(joinpath(root, "data.jld2"), "r") do f
-        f["mdfs"], f["config"]
-    end
-    push!(cells, Cell(replace(root, ROOT * "/" => ""), m, c))
-end
-println("cells: $(length(cells))")
-cellat(rel) = first(c for c in cells if c.rel == rel)
+const SWEEP = load_sweep_dataset(ROOT)
+const cells = SWEEP.results
+println("effective realizations: $(length(cells))")
+cellat(rel) = grid_result(SWEEP, rel)
 BL = cellat("oat/rho=0.5")
 
 agg(f) = nm([f(c.mdfs) for c in cells])
@@ -54,7 +44,7 @@ qedge(m) = 100 * qgap(m) / late(m, :q_self_mean)
 
 sec("OVERVIEW / OUTSOURCING")
 println("baseline outsourcing (late mean): ", r2(out(BL.mdfs)))
-println("range across cells: ", r2.(rng(out)))
+println("range across effective realizations: ", r2.(rng(out)))
 println(
     "baseline early->late: ",
     r2(early(BL.mdfs, :outsourcing_rate)),
@@ -62,14 +52,14 @@ println(
     r2(late(BL.mdfs, :outsourcing_rate)),
 )
 println(
-    "cells early->late (means): ",
+    "effective realizations early->late (means): ",
     r2(agg(m -> early(m, :outsourcing_rate))),
     " -> ",
     r2(agg(m -> late(m, :outsourcing_rate))),
 )
 println(
     "outsourcing vs eta: ",
-    [(e, r2(out(cellat("oat/eta=$e").mdfs))) for e in (0.01, 0.02, 0.03)],
+    [(e, r2(out(cellat("oat/eta=$e").mdfs))) for e in (0.0, 0.01, 0.02, 0.03)],
 )
 println(
     "outsourcing vs reservation: ",
@@ -77,22 +67,24 @@ println(
 )
 println(
     "outsourcing vs rho: ",
-    [(r, r2(out(cellat("oat/rho=$r").mdfs))) for r in (0.0, 0.3, 0.5, 0.7, 1.0)],
+    [(r, r2(out(cellat("oat/rho=$r").mdfs))) for r in (0.0, 0.3, 0.5, 0.7, 0.85, 1.0)],
 )
 println(
     "access fraction vs rho: ",
-    [(r, r2(acctail(cellat("oat/rho=$r").mdfs))) for r in (0.0, 0.3, 0.5, 0.7, 1.0)],
+    [(r, r2(acctail(cellat("oat/rho=$r").mdfs))) for r in (0.0, 0.3, 0.5, 0.7, 0.85, 1.0)],
 )
-println("output gap mean over cells: ", r2(agg(qgap)), "  range: ", r2.(rng(qgap)))
+println(
+    "output gap mean over effective realizations: ",
+    r2(agg(qgap)),
+    "  range: ",
+    r2.(rng(qgap)),
+)
 println(
     "output edge % vs eta: ",
-    [(e, round(Int, qedge(cellat("oat/eta=$e").mdfs))) for e in (0.01, 0.02, 0.03)],
+    [(e, round(Int, qedge(cellat("oat/eta=$e").mdfs))) for e in (0.0, 0.01, 0.02, 0.03)],
 )
 
 sec("RHO x DELTA GRID")
-summary = jldopen(joinpath(ROOT, "phase/rho_delta/summary.jld2"), "r") do f
-    (xv=f["xvals"], yv=f["yvals"])
-end
 metrics = [
     ("betweenness", m -> late(m, :betweenness)),
     ("access", acctail),
@@ -104,8 +96,14 @@ metrics = [
     ("qGap", qgap),
     ("outsrc", out),
 ]
-for (xi, rho) in enumerate(summary.xv), (yi, delta) in enumerate(summary.yv)
-    m = cellat("phase/rho_delta/cells/$(xi - 1)_$(yi - 1)").mdfs
+rho_delta_cells = sort(
+    [cell for cell in SWEEP.grid_cells if get(cell, :pair, nothing) == "rho_delta"];
+    by=cell -> (cell[:xi], cell[:yi]),
+)
+for grid in rho_delta_cells
+    rho = grid[:resolved_params][:rho]
+    delta = grid[:resolved_params][:delta]
+    m = grid_result(SWEEP, grid[:reldir]).mdfs
     print("rho=$rho delta=$delta: ")
     for (name, f) in metrics
         print("$name=", r2(f(m)), " ")
@@ -130,7 +128,7 @@ for (name, col) in (
     ("betweenness", :betweenness),
 )
     println(
-        "$name, cells early->late: ",
+        "$name, effective realizations early->late: ",
         r2(agg(m -> early(m, col))),
         " -> ",
         r2(agg(m -> late(m, col))),
@@ -138,15 +136,18 @@ for (name, col) in (
 end
 
 sec("ACCESS FRACTION")
-println("late mean across cells: ", r2(agg(acctail)), "  range: ", r2.(rng(acctail)))
 println(
-    "baseline early->late: ",
-    r2(accwin(BL.mdfs, 50, 70)),
-    " -> ",
-    r2(accwin(BL.mdfs, 181, 200)),
+    "late mean across effective realizations: ",
+    r2(agg(acctail)),
+    "  range: ",
+    r2.(rng(acctail)),
 )
-increasing = [c.rel for c in cells if accwin(c.mdfs, 181, 200) > accwin(c.mdfs, 50, 70)]
-println("cells where access increases: $(length(increasing))/$(length(cells))")
+println("baseline early->late: ", r2(accwin(BL.mdfs, 50, 70)), " -> ", r2(acctail(BL.mdfs)))
+increasing = [c.rel for c in cells if acctail(c.mdfs) > accwin(c.mdfs, 50, 70)]
+println(
+    "effective realizations where access increases: " *
+    "$(length(increasing))/$(length(cells))",
+)
 
 function pearson(x, y)
     (

@@ -25,7 +25,7 @@ function refresh_broker_roster!(state::ModelState)
     broker = state.broker
     rng = state.rng
     N = p.N
-    target_size = roster_target_size(N)
+    target_size = roster_target_size(p)
 
     if p.roster_churn > 0.0 && !isempty(broker.roster)
         for rid in collect(broker.roster)

@@ -1,9 +1,9 @@
 #!/bin/bash
-# Compute array: one task per (cell, seed). The job array IS the multi-node
+# Compute array: one task per unique (condition, seed). The job array IS the multi-node
 # parallelism (each task is an independent single-node process; SLURM packs
 # tasks onto free cores). Submit with the array range + throttle + log paths on
 # the command line, e.g.:
-#   sbatch --array=0-454%100 \
+#   sbatch --array=0-789%200 \
 #          --output=$LOGDIR/%A_%a.out --error=$LOGDIR/%A_%a.err \
 #          slurm_sweep.sh <repo_root> <sweep_dir>
 # Args: $1 = repo root, $2 = sweep dir (exported as BROKERAGE_ABM_SWEEP_DIR).
@@ -13,7 +13,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
-#SBATCH --time=03:00:00
+#SBATCH --time=06:00:00
 set -euo pipefail
 
 REPO="${1:?usage: slurm_sweep.sh <repo_root> <sweep_dir>}"
@@ -29,4 +29,9 @@ export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;zn
 cd "$REPO"
 echo "task=${SLURM_ARRAY_TASK_ID} host=$(hostname) cpus=${SLURM_CPUS_PER_TASK} sweep=$BROKERAGE_ABM_SWEEP_DIR"
 
-julia --project --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_run.jl
+run_args=()
+if [[ "${BROKERAGE_ABM_RERUN:-0}" == "1" ]]; then
+    run_args+=(--rerun)
+fi
+
+julia --project --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_run.jl "${run_args[@]}"

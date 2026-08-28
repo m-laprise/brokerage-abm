@@ -21,9 +21,11 @@ using LinearAlgebra: norm
         @test p.p_demand == 0.50
         @test p.omega == 0.20
         @test p.search_cost_rate == 0.05
+        @test p.roster_frac == 0.20
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
         @test p.network_measure_interval == 20
+        @test p.T == 500
     end
 
     @testset "public export surface keeps internals explicit" begin
@@ -53,11 +55,12 @@ using LinearAlgebra: norm
     end
 
     @testset "default_params with overrides" begin
-        p = default_params(; seed=99, N=200, K=10, delta=0.75)
+        p = default_params(; seed=99, N=200, K=10, delta=0.75, roster_frac=0.40)
         @test p.seed == 99
         @test p.N == 200
         @test p.K == 10
         @test p.delta == 0.75
+        @test p.roster_frac == 0.40
     end
 
     @testset "default_params rejects unknown kwargs" begin
@@ -74,6 +77,8 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(search_cost_rate=-0.01)
         @test_throws AssertionError default_params(search_cost_rate=1.01)
         @test_throws AssertionError default_params(eta=-0.1)
+        @test_throws AssertionError default_params(roster_frac=-0.1)
+        @test_throws AssertionError default_params(roster_frac=1.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
         @test_throws AssertionError default_params(T=10, T_burn=15)

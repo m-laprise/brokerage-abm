@@ -403,7 +403,7 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
 \State Initialize $\mathcal H_b^0$, $\Theta_b^0$, and $\mathrm{rep}_b^0$.
 \State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with
-$|\mathrm{Roster}^0|=\lceil0.2N\rceil$; add broker edges $(i,N+1)$ for all roster members.
+$|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all roster members.
 \For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
     \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and
     $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update
@@ -462,6 +462,7 @@ $U_{\mathrm{broker}}$ & scalar & Broker-channel score. \\
 \begin{localvartable}{\procPeriodUpdate}
 $K$ & integer & Active-demand bound. \\
 $p_{\mathrm{demand}}$ & scalar & Per-position demand probability. \\
+$\alpha_R$ & scalar & Standing broker roster share. \\
 $p_{\mathrm{roster}}$ & scalar & Roster-churn probability. \\
 $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
 \diag{$\Delta_{\mathrm{net}}$} & \diag{integer} & \diag{Network-measure interval.} \\
@@ -475,7 +476,7 @@ $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
 \Ensure Updated state $S^t$ and accepted records $\mathcal R^t$.
 \State Clear accumulators, set $M_i^t\gets\emptyset$ for all $i$, and set $D^t\gets\emptyset$.
 \State Refresh roster: remove each roster member with probability
-$p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil0.2N\rceil$.
+$p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$.
 \State $\EG^t\gets
 (\EG^t\setminus\{\{i,N+1\}:i\in[N]\})
 \cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\}$.

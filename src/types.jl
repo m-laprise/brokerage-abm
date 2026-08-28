@@ -460,13 +460,14 @@ struct ModelParams
     train_steps::Int             # min update steps per period; floor of the adaptive schedule (default 100)
 
     # Search
+    roster_frac::Float64         # standing broker roster share (default 0.20)
     n_strangers::Int             # period-level stranger pool size (default 10)
     eta::Float64                 # agent entry/exit rate (default 0.02)
     roster_churn::Float64        # standing-roster exogenous churn probability (default 0.02)
 
     # Simulation
     network_measure_interval::Int # M (default 20)
-    T::Int                       # total periods (default 200)
+    T::Int                       # total periods (default 500)
     T_burn::Int                  # burn-in periods (default 30)
     seed::Int                    # RNG seed
 end

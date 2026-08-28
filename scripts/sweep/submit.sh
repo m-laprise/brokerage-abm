@@ -15,9 +15,12 @@
 # resolve, package download) happens in `resolve` on the login node; only the
 # compute-heavy precompile/simulation run under sbatch/srun.
 #
-# Cluster settings come from the environment (BROKERAGE_ABM_ACCOUNT, BROKERAGE_ABM_DATA_ROOT); --time=03:00:00 maps
-# to the `short` QOS. Override via env: BROKERAGE_ABM_DATA_ROOT, BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array
-# %K, default 100), BROKERAGE_ABM_PLOT_THROTTLE (default 24), BROKERAGE_ABM_TIME (compute walltime).
+# Cluster settings come from the environment (BROKERAGE_ABM_ACCOUNT,
+# BROKERAGE_ABM_DATA_ROOT). Override via env: BROKERAGE_ABM_DATA_ROOT,
+# BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array %K, default 200),
+# BROKERAGE_ABM_CPUS (CPUs and Julia threads per simulation, default 2),
+# BROKERAGE_ABM_PLOT_THROTTLE (default 24), and BROKERAGE_ABM_TIME (compute
+# walltime, default 6 hours for the 500-period design).
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -27,8 +30,9 @@ REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DATA_ROOT="${BROKERAGE_ABM_DATA_ROOT:?set BROKERAGE_ABM_DATA_ROOT to the directory that will hold the sweep data}"
 ACCOUNT="${BROKERAGE_ABM_ACCOUNT:?set BROKERAGE_ABM_ACCOUNT to your SLURM account}"
 THROTTLE="${BROKERAGE_ABM_THROTTLE:-200}"
+COMPUTE_CPUS="${BROKERAGE_ABM_CPUS:-2}"
 PLOT_THROTTLE="${BROKERAGE_ABM_PLOT_THROTTLE:-24}"
-COMPUTE_TIME="${BROKERAGE_ABM_TIME:-03:00:00}"
+COMPUTE_TIME="${BROKERAGE_ABM_TIME:-06:00:00}"
 JULIA_MODULE="${BROKERAGE_ABM_JULIA_MODULE:-julia/1.11.3}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
@@ -78,7 +82,7 @@ case "$stage" in
          --cpus-per-task=1 --mem=4G --job-name=brokerage_abm_manifest \
          bash -c "command -v module >/dev/null 2>&1 || source /usr/share/Modules/init/bash 2>/dev/null || true; \
                   module purge 2>/dev/null || true; module load $JULIA_MODULE; cd '$REPO'; \
-                  BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --project scripts/sweep/sweep_manifest.jl"
+                  BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --project --threads=auto scripts/sweep/sweep_manifest.jl"
     echo "BROKERAGE_ABM_SWEEP_DIR=$SWEEP_DIR" > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;
@@ -86,10 +90,11 @@ case "$stage" in
   smoke)
     idx="${2:-0}"
     mkdir -p "$LOGDIR"
-    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" --array="${idx}-${idx}" \
+    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" \
+        --cpus-per-task="$COMPUTE_CPUS" --array="${idx}-${idx}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
         "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
-    echo "smoke job submitted: $jid (task $idx)"
+    echo "smoke job submitted: $jid (task $idx, ${COMPUTE_CPUS} CPUs)"
     echo "  watch: tail -f $LOGDIR/${jid}_${idx}.out"
     ;;
 
@@ -97,11 +102,12 @@ case "$stage" in
     [ -f "$SWEEP_DIR/counts.env" ] || { echo "run ./submit.sh manifest first"; exit 1; }
     source "$SWEEP_DIR/counts.env"
     jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" \
+        --cpus-per-task="$COMPUTE_CPUS" \
         --array="0-$((NRUNS - 1))%${THROTTLE}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
         "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
     echo "COMPUTE_JOBID=$jid" >> "$ENVFILE"
-    echo "compute array submitted: $jid  (0-$((NRUNS - 1))%${THROTTLE}, ${NRUNS} tasks)"
+    echo "compute array submitted: $jid  (0-$((NRUNS - 1))%${THROTTLE}, ${NRUNS} tasks, ${COMPUTE_CPUS} CPUs/task)"
     ;;
 
   plot)

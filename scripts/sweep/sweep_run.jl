@@ -1,5 +1,5 @@
 """
-    sweep_run.jl  (one array task = one (cell, seed))
+    sweep_run.jl  (one array task = one unique (condition, seed))
 
 Map `\$SLURM_ARRAY_TASK_ID` -> entry in `manifest.jld2` -> `default_params(...)`
 -> `run_simulation` -> write the per-seed shard. Lean by design: no CairoMakie,
@@ -27,6 +27,8 @@ using BrokerageABM: default_params, run_simulation
 using DataFrames: DataFrame
 using JLD2: jldsave, jldopen
 
+include(joinpath(@__DIR__, "shard_validation.jl"))
+
 const RERUN = "--rerun" in ARGS
 
 function task_id()
@@ -38,21 +40,6 @@ function task_id()
         return parse(Int, a)
     end
     error("no task id: set SLURM_ARRAY_TASK_ID or pass it as an argument")
-end
-
-"""True if a usable shard already exists for this entry (same commit + schema)."""
-function shard_is_current(path, prov)
-    isfile(path) || return false
-    try
-        jldopen(path, "r") do f
-            haskey(f, "schema_version") && f["schema_version"] == prov[:schema_version] ||
-                return false
-            haskey(f, "git_commit") && f["git_commit"] == prov[:git_commit] || return false
-            return true
-        end
-    catch
-        return false   # corrupt / partial shard -> recompute
-    end
 end
 
 function main()
@@ -81,7 +68,7 @@ function main()
     end
 
     # ── Build params ─────────────────────────────────────────────────────────
-    params = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in e[:params])
+    params = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in e[:resolved_params])
     p = default_params(; seed=seed, T=SWEEP_T, T_burn=SWEEP_T_BURN, params...)
 
     println(
@@ -100,6 +87,8 @@ function main()
     config = Dict{String,Any}(
         "kind" => e[:kind],
         "reldir" => reldir,
+        "result_reldir" => reldir,
+        "condition_index" => e[:condition_index],
         "seed" => seed,
         "N" => p.N,
         "T" => p.T,
@@ -107,6 +96,9 @@ function main()
         "rho" => p.rho,
         "eta" => p.eta,
         "delta" => p.delta,
+        "k" => p.k,
+        "roster_frac" => p.roster_frac,
+        "n_strangers" => p.n_strangers,
         "s" => p.s,
         "reservation_frac" => p.reservation_frac,
     )
@@ -135,4 +127,4 @@ function main()
     println("      wrote $shard")
 end
 
-main()
+abspath(PROGRAM_FILE) == abspath(@__FILE__) && main()

@@ -1,17 +1,18 @@
 """
     scripts/paper/figures.jl
 
-Figures for the paper's results section, numbered in order of first citation in
-the prose. Reads ONLY paper/figdata.jld2 (the small derived dataset written by
+Figure assets for the paper's results section. TeX figure numbers follow their
+placement in `paper/section_source.tex`; the asset filenames remain stable.
+Reads ONLY paper/figdata.jld2 (the small derived dataset written by
 scripts/paper/figdata.jl on the cluster), so figures render locally with no
 access to the sweep. CairoMakie only; no simulation; no hard-coded results
 (literal constants are display conventions only). Outputs print-resolution PNGs
 to paper/figs/ and the display-convention keys to paper/figmeta.tex.
 
-  fig1_grid_lines     six outcomes across the rho x delta grid, lines per delta
-  fig2_position_work  betweenness & access over time at baseline + cross-regime scatter
-  fig3_advantage      structural measures vs informational/output gaps
-  fig4_dynamics       baseline market and network dynamics
+  fig1_dynamics       baseline dynamics
+  fig2_grid_lines     six outcomes across the rho x delta grid, lines per delta
+  fig3_position_work  betweenness & access over time at baseline + cross-regime scatter
+  fig4_advantage      structural measures vs informational/output gaps
 
 Usage: julia --project scripts/paper/figures.jl
 """
@@ -34,20 +35,30 @@ const RHO_COLORS = Dict(
     0.3 => :mediumaquamarine,
     0.5 => :goldenrod,
     0.7 => :darkorange,
+    0.85 => :orangered,
     1.0 => :firebrick,
 )
-const DELTA_COLORS = Dict(0.0 => :steelblue, 0.5 => :goldenrod, 0.75 => :firebrick)
+const DELTA_COLORS = Dict(
+    0.0 => :steelblue,
+    0.25 => :cadetblue,
+    0.5 => :goldenrod,
+    0.75 => :darkorange,
+    1.0 => :firebrick,
+)
 
 const FD = JLD2.load(normpath(joinpath(@__DIR__, "..", "..", "paper", "figdata.jld2")))["figdata"]
 const PER = FD["period"]
 const SER = FD["series"]
+const TEND = maximum(PER)
+const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
+const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
 const ADV_MARKER_SIZE = 10
 function savefig(fname, fig)
     (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
 end
 
-# ── Figure 2: betweenness & access over time at baseline + cross-regime scatter ──
-function fig2_position_work()
+# ── Position: betweenness & access over time at baseline + cross-regime scatter ──
+function fig3_position_work()
     fig = Figure(; size=(1180, 470))
     # left: broker betweenness and access fraction over time at baseline
     axa = Axis(
@@ -59,7 +70,7 @@ function fig2_position_work()
         ylabelsize=LABEL_FS,
         xticklabelsize=TICK_FS,
         yticklabelsize=TICK_FS,
-        limits=((TSTART, 201), (0, 1.0)),
+        limits=((TSTART, TEND + 1), (0, 1.0)),
     )
     mi = [i for i in eachindex(PER) if PER[i] % BETWINT == 0]
     bw = rolling_mean(SER["betweenness"][mi], ROLLW)   # measured every BETWINT periods
@@ -93,11 +104,11 @@ function fig2_position_work()
     )
     scatter!(axc, ay, bx; color=:black, markersize=13)
     colgap!(fig.layout, 14)
-    savefig("fig2_position_work.png", fig)
+    savefig("fig3_position_work.png", fig)
 end
 
-# ── Figure 1: six outcomes vs rho across the grid, one line per delta (rho = 1 included) ──
-function fig1_grid_lines()
+# ── Matching grid: six outcomes vs rho, one line per delta (rho = 1 included) ──
+function fig2_grid_lines()
     gcells = FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gcells]))
     cells = Dict((c["rho"], c["delta"]) => c["outcomes"] for c in gcells)
@@ -114,7 +125,7 @@ function fig1_grid_lines()
             fig[rr, cc];
             title=ttl,
             xlabel=rr == 2 ? "ρ (complementarity vs quality)" : "",
-            xticks=[0, 0.3, 0.5, 0.7, 1],
+            xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
             xticklabelsize=TICK_FS,
@@ -139,11 +150,11 @@ function fig1_grid_lines()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("fig1_grid_lines.png", fig)
+    savefig("fig2_grid_lines.png", fig)
 end
 
-# ── Figure 3: structural measures vs informational/output gaps (4 panels) ──
-function fig3_advantage()
+# ── Advantage: structural measures vs informational/output gaps (4 panels) ──
+function fig4_advantage()
     bc = FD["regime_cells"]
     rho = [c["rho"] for c in bc]
     bw = [c["betw"] for c in bc];
@@ -189,11 +200,11 @@ function fig3_advantage()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("fig3_advantage.png", fig)
+    savefig("fig4_advantage.png", fig)
 end
 
-# ── Figure 4: baseline dynamics ──
-function fig4_dynamics()
+# ── Baseline dynamics, placed first in the results section ──
+function fig1_dynamics()
     # ensemble mean, ROLLW-rolling over the full series; display trimming is axis-only
     ot(key) = (PER, rolling_mean(SER[key], ROLLW))
     function otb()    # betweenness: rolling over the BETWINT-period measurements
@@ -220,12 +231,12 @@ function fig4_dynamics()
         fig[row, cols];
         title=ttl,
         xlabel=row == 2 ? "period" : "",
-        xticks=50:50:200,
+        xticks=TIME_TICKS,
         titlesize=T4,
         xlabelsize=L4,
         xticklabelsize=K4,
         yticklabelsize=K4,
-        limits=((TSTART, 201), ylim),
+        limits=((TSTART, TEND + 1), ylim),
     )
     # a `label` keyword is only passed when a label is requested: a plot with
     # label="" would still register a (blank) legend entry
@@ -258,14 +269,14 @@ function fig4_dynamics()
     end
     colgap!(fig.layout, 12)
     rowgap!(fig.layout, 12)
-    savefig("fig4_dynamics.png", fig)
+    savefig("fig1_dynamics.png", fig)
 end
 
 for (name, f) in (
-    ("fig1", fig1_grid_lines),
-    ("fig2", fig2_position_work),
-    ("fig3", fig3_advantage),
-    ("fig4", fig4_dynamics),
+    ("fig1", fig1_dynamics),
+    ("fig2", fig2_grid_lines),
+    ("fig3", fig3_position_work),
+    ("fig4", fig4_advantage),
 )
     try
         f()

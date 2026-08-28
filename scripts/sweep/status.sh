@@ -3,7 +3,7 @@
 #   bash status.sh <sweep_dir>
 set -u
 SWEEP_DIR="${1:?usage: status.sh <sweep_dir>}"
-NRUNS=0; NPLOT=0; COMPUTE_JOBID=""; PLOT_JOBID=""
+NCONDITIONS=0; NGRIDCELLS=0; NRUNS=0; NPLOT=0; COMPUTE_JOBID=""; PLOT_JOBID=""
 # shellcheck disable=SC1090
 [ -f "$SWEEP_DIR/counts.env" ] && source "$SWEEP_DIR/counts.env"
 # shellcheck disable=SC1090
@@ -13,7 +13,8 @@ echo "time: $(date '+%F %T')"
 shards=$(find "$SWEEP_DIR/oat" "$SWEEP_DIR/phase" -name 'seed_*.jld2' 2>/dev/null | wc -l)
 data=$(find "$SWEEP_DIR" -name 'data.jld2' 2>/dev/null | wc -l)
 png=$(find "$SWEEP_DIR" -name '*.png' 2>/dev/null | wc -l)
-echo "progress: ${shards}/${NRUNS} shards | ${data} data.jld2 | ${png} png"
+echo "design: ${NCONDITIONS} effective realizations, ${NGRIDCELLS} grid coordinates"
+echo "progress: ${shards}/${NRUNS} realization-seed shards | ${data} data.jld2 | ${png} png"
 
 echo "queue (this user, name/state):"
 squeue -u "$USER" -h -r -o "%j|%T" 2>/dev/null | sort | uniq -c | sed 's/^/  /'

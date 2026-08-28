@@ -30,8 +30,18 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
     @testset "Roster size stays fixed at the target" begin
         p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.0)
-        target = BrokerageABM.roster_target_size(p.N)
+        target = BrokerageABM.roster_target_size(p)
         _, df = run_simulation(p)
+        @test all(df.roster_size .== target)
+    end
+
+    @testset "Roster size follows the configured share" begin
+        p = default_params(
+            N=50, T=10, T_burn=2, seed=43, eta=0.0, roster_frac=0.40
+        )
+        target = BrokerageABM.roster_target_size(p)
+        _, df = run_simulation(p)
+        @test target == 20
         @test all(df.roster_size .== target)
     end
 

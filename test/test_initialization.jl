@@ -74,11 +74,18 @@ using StableRNGs: StableRNG
 
     @testset "broker roster seeded correctly" begin
         roster = state.broker.roster
-        expected_size = BrokerageABM.roster_target_size(N)
+        expected_size = BrokerageABM.roster_target_size(state.params)
         @test length(roster) == expected_size
         @test all(1 <= rid <= N for rid in roster)
         # Roster members have broker edge
         @test all(has_edge(state.G, rid, state.broker.node_id) for rid in roster)
+    end
+
+    @testset "broker roster share controls target size" begin
+        p = default_params(N=50, roster_frac=0.40, seed=18)
+        local_state = initialize_model(p)
+        @test BrokerageABM.roster_target_size(p) == 20
+        @test length(local_state.broker.roster) == 20
     end
 
     @testset "broker history seeded" begin

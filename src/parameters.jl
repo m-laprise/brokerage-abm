@@ -15,16 +15,16 @@ const Q_OFFSET = 1.0
 # placements.
 const SEARCH_COST_RATE_BASE = 0.05
 
-# Fixed roster target share: broker maintains this fraction of the population
-# on its standing roster.
-const ROSTER_TARGET_FRAC = 0.20
-
 """
-    roster_target_size(N::Int) -> Int
+    roster_target_size(N::Int, roster_frac::Real) -> Int
 
-Fixed target roster size implied by the standing broker roster share.
+Target roster size implied by the standing broker roster share.
 """
-roster_target_size(N::Int) = min(N, ceil(Int, ROSTER_TARGET_FRAC * N))
+roster_target_size(N::Int, roster_frac::Real) =
+    min(N, ceil(Int, Float64(roster_frac) * N))
+
+"""Target roster size for a model parameterization."""
+roster_target_size(p::ModelParams) = roster_target_size(p.N, p.roster_frac)
 
 """Broker hidden width implied by type dimensionality."""
 broker_hidden_width(d::Int)::Int = max(1, 8 * d)
@@ -69,12 +69,13 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :train_max_obs => 2000,
         :train_steps => 100,
         # Search
+        :roster_frac => 0.20,
         :n_strangers => 10,
         :eta => 0.02,
         :roster_churn => 0.02,
         # Simulation
         :network_measure_interval => 20,
-        :T => 200,
+        :T => 500,
         :T_burn => 30,
         :seed => seed,
     )
@@ -102,6 +103,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:train_window_periods],
         defaults[:train_max_obs],
         defaults[:train_steps],
+        defaults[:roster_frac],
         defaults[:n_strangers],
         defaults[:eta],
         defaults[:roster_churn],
@@ -156,6 +158,7 @@ function validate_params(p::ModelParams)
     @assert broker_hidden_width(p) >= 1 "broker hidden width must be >= 1"
 
     # Search
+    @assert 0.0 <= p.roster_frac <= 1.0 "roster_frac must be in [0, 1], got $(p.roster_frac)"
     @assert p.n_strangers >= 0 "n_strangers must be >= 0, got $(p.n_strangers)"
     @assert 0.0 <= p.eta < 1.0 "eta must be in [0, 1), got $(p.eta)"
     @assert 0.0 <= p.roster_churn <= 1.0 "roster_churn must be in [0, 1], got $(p.roster_churn)"

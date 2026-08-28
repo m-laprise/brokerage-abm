@@ -70,7 +70,7 @@ function verify_invariants(state::ModelState)
     @assert 0 <= broker.history_count <= size(broker.history_Xi, 2) "Broker: history_count=$(broker.history_count) > capacity"
 
     # ── Broker roster and client-overlay consistency ──
-    target_size = roster_target_size(N)
+    target_size = roster_target_size(p)
     @assert length(broker.roster) <= target_size "Broker roster size $(length(broker.roster)) exceeds target $target_size"
     for rid in broker.roster
         @assert 1 <= rid <= N "Broker roster contains invalid id $rid"

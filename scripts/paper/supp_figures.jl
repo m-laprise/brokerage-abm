@@ -14,14 +14,14 @@ reproduce the same analyses with the broker's two other ego-network measures,
 Burt's aggregate constraint and Burt's effective size:
 
   S1  constraint and effective size across the rho x delta grid, line per delta
-      (the structural panel of Figure 1, for each alternative measure)
+      (the matching-grid structural panel, for each alternative measure)
   S2  each measure over time at baseline (left) and against access fraction
-      across regimes (right); constraint top, effective size bottom (Figure 2,
-      without the access-fraction series on the time panels)
+      across regimes (right); constraint top, effective size bottom (the
+      position analysis, without the access-fraction time series)
   S3  rank-correlation gap and output gap against each measure, colored by rho
-      (Figure 3, with constraint and effective size in place of betweenness)
-  S4  each measure over time at baseline (the betweenness panel of Figure 4,
-      one panel per measure)
+      (the advantage analysis, with the alternative measures in place of betweenness)
+  S4  each measure over time at baseline (the betweenness panel of the
+      baseline-dynamics figure, one panel per measure)
 
 Like betweenness, both measures are recomputed only every network_measure_interval
 (20) periods, so the time panels (S2 left, S4) plot the measurement periods.
@@ -47,9 +47,16 @@ const RHO_COLORS = Dict(
     0.3 => :mediumaquamarine,
     0.5 => :goldenrod,
     0.7 => :darkorange,
+    0.85 => :orangered,
     1.0 => :firebrick,
 )
-const DELTA_COLORS = Dict(0.0 => :steelblue, 0.5 => :goldenrod, 0.75 => :firebrick)
+const DELTA_COLORS = Dict(
+    0.0 => :steelblue,
+    0.25 => :cadetblue,
+    0.5 => :goldenrod,
+    0.75 => :darkorange,
+    1.0 => :firebrick,
+)
 # the two alternative structural measures, with the keys used in the extract and
 # the labels printed on the panels
 const CONSTR = ("constraint", "Broker Burt constraint")
@@ -62,6 +69,9 @@ const FD = JLD2.load(
 )["figdata"]
 const PER = FD["period"]
 const SER = FD["series"]
+const TEND = maximum(PER)
+const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
+const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
 const MARKER_SIZE = 10
 function savefig(fname, fig)
     (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
@@ -94,7 +104,7 @@ function supp_S1_grid_lines()
             title=lab,
             xlabel="ρ (complementarity vs quality)",
             ylabel=ci == 1 ? "late-window mean" : "",
-            xticks=[0, 0.3, 0.5, 0.7, 1],
+            xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
             ylabelsize=LABEL_FS,
@@ -140,7 +150,8 @@ function supp_S2_position()
             ylabelsize=LABEL_FS,
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
-            limits=((TSTART, 201), ywin((x, y))),
+            xticks=TIME_TICKS,
+            limits=((TSTART, TEND + 1), ywin((x, y))),
         )
         scatterlines!(axl, x, y; color=COL_GAP, linewidth=2.2, markersize=6)
         # right: across regimes, access fraction (x) vs the measure (y)
@@ -226,8 +237,8 @@ function supp_S4_network_dynamics()
             ylabelsize=LABEL_FS,
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
-            xticks=50:50:200,
-            limits=((TSTART, 201), ywin((x, y))),
+            xticks=TIME_TICKS,
+            limits=((TSTART, TEND + 1), ywin((x, y))),
         )
         scatterlines!(ax, x, y; color=COL_GAP, linewidth=2.2, markersize=6)
     end

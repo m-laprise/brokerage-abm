@@ -2,7 +2,7 @@
     scripts/paper/figdata.jl
 
 Cluster-side extract for the figure pipeline. Reads the full sweep (BROKERAGE_ABM_SWEEP_DIR)
-plus the initialization-only DGP rank grid and writes paper/figdata.jld2: the
+    and writes paper/figdata.jld2: the
 small derived dataset from which scripts/paper/figures.jl renders every figure,
 locally, with no access to the sweep. No hard-coded results: every stored value
 is computed from the saved sweep data at run time.
@@ -17,9 +17,8 @@ Contents of figdata.jld2 (single key "figdata", a Dict):
                  (matches per agent, both sides), outsourcing
   oat_cells      late means per one-at-a-time regime: betw, access, qgap
   grid_cells     rho, delta, and the nine named outcome late means per rho x delta
-                 grid cell (plus the OAT rho = 0.3, 0.7 refiners)
-  regime_cells   rho, delta, betw, access, rankgap, qgap per regime
-  r90            effective-rank grid (rho, delta) => r90
+                 grid coordinate
+  regime_cells   rho, delta, betw, access, rankgap, qgap per effective realization
   meta           sweep id, generation time, generating script
 
 Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/figdata.jl
@@ -27,14 +26,18 @@ Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/figdat
 
 using JLD2, DataFrames, Statistics, Dates
 
+include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUTFILE = normpath(joinpath(@__DIR__, "..", "..", "paper", "figdata.jld2"))
-const LATE = (181, 200)   # late-window mean, the headline statistic
+const LATE_WIDTH = 20   # final-period window, the headline statistic
+const SWEEP = load_sweep_dataset(ROOT)
 
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
-tailmean(df, col) = nanmean(df[(df.period .>= LATE[1]) .& (df.period .<= LATE[2]), col])
+late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
+tailmean(df, col) = nanmean(df[late_mask(df), col])
 function seedstat(mdfs, col)
     (
         vs=filter(!isnan, [tailmean(d, col) for d in mdfs]);
@@ -47,18 +50,10 @@ function accessf(df)
         [t[i] > 0 ? df.access_count[i] / t[i] : NaN for i in eachindex(t)]
     )
 end
-access_tail(df) = nanmean(accessf(df)[(df.period .>= LATE[1]) .& (df.period .<= LATE[2])])
+access_tail(df) = nanmean(accessf(df)[late_mask(df)])
 cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
-load_mdfs(rel) =
-    jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f
-        ;
-        f["mdfs"]
-    end
-load_cfg(rel) =
-    jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f
-        ;
-        f["config"]
-    end
+load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
+load_cfg(rel) = grid_result(SWEEP, rel).cfg
 qgap(m) = seedstat(m, :q_broker_mean)[1] - seedstat(m, :q_self_mean)[1]
 rankgap(m) = seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1]
 function ens(mdfs, f)
@@ -101,31 +96,14 @@ end
 fd["series"] = series(baseline, N)
 
 # ── one-at-a-time cells (figure 1 scatter) ──
-cellspec = vcat(
-    ["oat/rho=$(r)" for r in (0.0, 0.3, 0.5, 0.7, 1.0)],
-    [
-        "oat/$a" for a in (
-            "eta=0.01",
-            "eta=0.02",
-            "eta=0.03",
-            "N=500",
-            "N=1000",
-            "N=1500",
-            "reservation_frac=0.4",
-            "reservation_frac=0.6",
-            "reservation_frac=0.9",
-            "reservation_frac=1.2",
-            "delta=0.0",
-            "delta=0.75",
-            "k=4",
-            "k=12",
-        )
-    ],
-)
 fd["oat_cells"] = let out = Dict{String,Float64}[]
-    for rel in cellspec
-        isfile(joinpath(ROOT, rel, "data.jld2")) || continue
-        m = load_mdfs(rel)
+    seen = Set{String}()
+    for grid in SWEEP.grid_cells
+        grid[:kind] == "oat" || continue
+        result = SWEEP.result_by_rel[grid[:result_reldir]]
+        result.rel in seen && continue
+        push!(seen, result.rel)
+        m = result.mdfs
         b = seedstat(m, :betweenness)[1];
         a = cell_access(m)
         (isnan(b) || isnan(a)) && continue
@@ -136,44 +114,26 @@ end
 
 # ── rho x delta grid cells + OAT rho refiners (figures 2 and 3) ──
 fd["grid_cells"] = let out = Dict{String,Any}[]
-    cellsdir = joinpath(ROOT, "phase", "rho_delta", "cells")
-    for d in sort(readdir(cellsdir))
-        p = joinpath(cellsdir, d, "data.jld2")
-        isfile(p) || continue
-        m, cfg = jldopen(p, "r") do f
-            ;
-            (f["mdfs"], f["config"])
-        end
+    for grid in SWEEP.grid_cells
+        get(grid, :pair, nothing) == "rho_delta" || continue
+        m = SWEEP.result_by_rel[grid[:result_reldir]].mdfs
+        cfg = grid[:resolved_params]
         push!(
             out,
             Dict(
-                "rho" => Float64(cfg["rho"]),
-                "delta" => Float64(cfg["delta"]),
+                "rho" => Float64(cfg[:rho]),
+                "delta" => Float64(cfg[:delta]),
                 "outcomes" => outcomes(m),
-            ),
-        )
-    end
-    for r in (0.3, 0.7)   # OAT rho cells refine the delta = 0.5 line
-        push!(
-            out,
-            Dict(
-                "rho" => r,
-                "delta" => 0.5,
-                "outcomes" => outcomes(load_mdfs("oat/rho=$r")),
             ),
         )
     end
     out
 end
 
-# ── every regime (figure 3) ──
+# ── every effective realization (figure 3) ──
 fd["regime_cells"] = let out = Dict{String,Float64}[]
-    for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-        "data.jld2" in files || continue
-        m, cfg = jldopen(joinpath(root, "data.jld2"), "r") do f
-            ;
-            (f["mdfs"], f["config"])
-        end
+    for result in SWEEP.results
+        m, cfg = result.mdfs, result.cfg
         b = seedstat(m, :betweenness)[1];
         isnan(b) && continue
         push!(
@@ -191,13 +151,10 @@ fd["regime_cells"] = let out = Dict{String,Float64}[]
     out
 end
 
-# ── effective-rank grid (axis/size/color scales) ──
-fd["r90"] = JLD2.load(
-    joinpath(@__DIR__, "..", "diagnostics", "_results", "dgp_rank_grid.jld2")
-)["r90"]
-
 fd["meta"] = Dict(
     "sweep" => basename(ROOT),
+    "manifest_hash" => SWEEP.manifest_hash,
+    "schema_version" => SWEEP.schema_version,
     "generated" => string(now()),
     "source" => "scripts/paper/figdata.jl",
 )
@@ -206,5 +163,5 @@ jldsave(OUTFILE; figdata=fd)
 println(
     "wrote $OUTFILE ($(round(filesize(OUTFILE) / 1024; digits=1)) KB; ",
     length(fd["regime_cells"]),
-    " regime cells)",
+    " effective realizations)",
 )

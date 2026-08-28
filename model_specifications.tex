@@ -20,7 +20,9 @@
 \setcounter{secnumdepth}{0}
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\DeclareUnicodeCharacter{00A7}{\S}
+\ifdefined\DeclareUnicodeCharacter
+  \DeclareUnicodeCharacter{00A7}{\S}
+\fi
 \newcommand{\R}{\mathbb{R}}
 
 \title{Specifications for an ABM of Brokerage in Matching Markets}
@@ -40,7 +42,7 @@ The model specification covers agents (§1), the matching problem (§2), how age
 
 \subsection{1. Agents and Time}\label{agents-and-time}
 
-The model runs for \(T\) discrete periods (default 200). It has \(N\) agents (default 1000), a single broker, and an undirected network \(G\) over the agents and broker.
+The model runs for \(T\) discrete periods (default 500). It has \(N\) agents (default 1000), a single broker, and an undirected network \(G\) over the agents and broker.
 
 Each agent \(i\) is characterized by:
 
@@ -305,11 +307,11 @@ The broker maintains a \textbf{roster} of agents it can propose as counterpartie
 
 Current clients expand broker access for the period but do not become standing roster members.
 
-\textbf{Initialization.} The roster is seeded with a fixed target size
+\textbf{Initialization.} The roster is seeded with a target size
 
-\[R^* = \lceil \alpha_R N \rceil, \qquad \alpha_R = 0.20,\]
+\[R^* = \lceil \alpha_R N \rceil,\]
 
-by drawing \(R^*\) agents uniformly at random (default 200 at \(N = 1000\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at 100 observed ties.
+where the broker roster share \(\alpha_R\) defaults to 0.20. The model draws \(R^*\) agents uniformly at random (default 200 at \(N = 1000\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at 100 observed ties.
 
 \textbf{Roster refresh.} At the start of each period, each roster member independently exits with probability \(p_{\text{roster}}\) (default \(0.02\)). If \(\widetilde{\text{Roster}}^t\) is the post-churn roster,
 
@@ -508,7 +510,7 @@ The table lists baseline values only. Entries are arranged in two columns; each 
 \toprule
 Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \midrule
-\(T\) & 200 & §1 & \(f_r\) & 0.60 & §4a \\
+\(T\) & 500 & §1 & \(f_r\) & 0.60 & §4a \\
 \(N\) & 1000 & §1 & \(\lambda_c\) & 0.05 & §4c \\
 \(d\) & 8 & §1 & \(k_G\) & 6 & §5a \\
 \(d_\gamma\) & 8 & §1 & \(p_{\text{rewire}}\) & 0.1 & §5a \\

@@ -21,14 +21,14 @@ node, `srun --partition=cpu --mem=8G`):
    (one `\pvDefine{key}{value}` per quoted number).
 2. `julia --project --threads=auto scripts/paper/figdata.jl`
    Extracts the small figure-input dataset to `paper/figdata.jld2` (~260 KB):
-   the baseline ensemble series and the per-regime late means each figure
-   consumes, plus the effective-rank grid (which itself comes from
-   `scripts/diagnostics/dgp_rank_grid.jl`).
+   the baseline ensemble series and the per-realization late means each figure
+   consumes.
 
 Local tier (no data access; works from a clone of this repository):
 
 3. `julia --project --threads=auto scripts/paper/figures.jl`
-   Renders `paper/figs/fig1_*.png` ... `fig4_*.png` at print resolution,
+   Renders the four results assets, `fig1_*.png` through `fig4_*.png`, at print
+   resolution,
    numbered in order of first citation in the prose, reading only
    `paper/figdata.jld2`; also writes `paper/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
@@ -80,7 +80,7 @@ Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute n
 1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `paper/supp_figdata.jld2`:
    the baseline per-period constraint/effective-size series, the one-at-a-time
-   and grid late means, and the per-regime late means S1-S4 consume. Standalone
+   and grid late means, and the per-realization late means S1-S4 consume. Standalone
    twin of `figdata.jl`; no hard-coded results.
 
 Local tier (no data access; works from a clone):
@@ -95,12 +95,11 @@ Local tier (no data access; works from a clone):
    no number is hand-written) to `paper/supplement.pdf`. Validates every `\pv`
    reference and figure path first. Needs only stock Julia and `pdflatex`.
 
-The four figures, each the structural-advantage analysis of a main-text figure
-redone for constraint and effective size: **S1** across the rho x delta grid (the
-structural panel of fig. 1); **S2** over time at baseline and against access
-fraction across regimes (fig. 2, without the access series on the time panels);
-**S3** the prediction/output gaps against each measure (fig. 3); **S4** the
-baseline time path (the betweenness panel of fig. 4).
+The four figures each redo a main-text structural-advantage analysis for
+constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
+the baseline time path and the relationship with access across regimes; **S3**
+shows the prediction and output gaps against each measure; **S4** reproduces the
+betweenness panel of the baseline-dynamics figure.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 `supp_figdata.jld2`, `supp_figs/`, `supp_figmeta.tex`, and `supplement.pdf` are

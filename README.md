@@ -61,16 +61,23 @@ produced it.
 ## Generating simulation data
 
 Results will derive from a parameter sweep that runs the model repeatedly while
-varying its parameters in a systematic design. The final sweep design and run
-count will be set after the remaining model changes are complete. Randomness is
+varying its parameters in a systematic design. Every run covers 500 periods. The
+design has 149 OAT and phase-grid coordinates, which reference 89 effective
+model realizations. Each realization is simulated under 10 independent seeds,
+for 890 runs. Grid coordinates that represent the same realization reference
+the same canonical result shards, including the $\rho=1$ coordinates where
+$\delta$ is inactive by construction. Grid-reference multiplicity has no
+scientific weight. No realization-seed combination is simulated twice. Randomness is
 controlled with StableRNGs, and every run saves complete period-by-period
 metrics rather than only summaries.
 
-Each regime's saved file (`data.jld2`) holds the per-period metrics tables (one
-per seed), the exact parameter values used, the seed list, and its own
+Each grid coordinate's saved file (`data.jld2`) holds the per-period metrics
+tables (one per seed), its requested grid parameters, the exact realized
+parameters, the seed list, the canonical result path it references, and its
 provenance record: the git commit of the code that ran, the Julia version, the
 `Manifest.toml` fingerprint, and the hash of the run manifest. The sweep root
-holds `manifest.json` (the full design: every regime, parameter set, and seed),
+holds `manifest.json` (the full grid design, effective-realization mapping, and
+unique realization-seed jobs),
 environment files, and per-task logs under `logs/`.
 
 The sweep runs on a SLURM compute cluster. The flow is staged so each step can
@@ -85,8 +92,16 @@ be checked before the next:
 ./scripts/sweep/submit.sh plot       # aggregation jobs that write each regime's data.jld2
 ```
 
+The manifest stage refuses a dirty Git worktree because a commit hash cannot
+reconstruct uncommitted code. `BROKERAGE_ABM_ALLOW_DIRTY=1` is available only
+for non-reporting smoke tests. Existing shards are reused only when their Git,
+Julia, package-manifest, sweep-manifest, and schema provenance all match.
+
 The cluster account and the data destination are taken from the environment
-(`BROKERAGE_ABM_ACCOUNT`, `BROKERAGE_ABM_DATA_ROOT`). Per-task wall times are in the sweep's `logs/`.
+(`BROKERAGE_ABM_ACCOUNT`, `BROKERAGE_ABM_DATA_ROOT`). Simulation tasks request
+2 CPUs by default, and Julia uses exactly that many threads. Set
+`BROKERAGE_ABM_CPUS` to override the allocation for smoke tests or the full
+array. Per-task wall times are in the sweep's `logs/`.
 
 ## Reproducing the results section
 
@@ -98,7 +113,6 @@ styling therefore never requires the cluster:
 
 ```bash
 # on the cluster, with BROKERAGE_ABM_SWEEP_DIR set:
-julia --project --threads=auto scripts/diagnostics/dgp_rank_grid.jl
 julia --project --threads=auto scripts/paper/stats.jl
 julia --project --threads=auto scripts/paper/figdata.jl
 # locally, from a clone, no data access needed:

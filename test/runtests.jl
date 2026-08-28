@@ -16,4 +16,6 @@ using Test
     include("test_step.jl")
     include("test_integration.jl")
     include("test_regression_baseline.jl")
+    include("test_sweep_config.jl")
+    include("test_sweep_artifacts.jl")
 end

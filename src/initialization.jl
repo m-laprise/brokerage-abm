@@ -124,7 +124,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
 
     # ── Broker setup ──
     broker_node = N + 1
-    n_roster_seed = roster_target_size(N)
+    n_roster_seed = roster_target_size(p)
 
     # Initialize broker NN
     d_broker = broker_pair_feature_dim(d)

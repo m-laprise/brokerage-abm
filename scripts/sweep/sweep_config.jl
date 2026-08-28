@@ -4,33 +4,28 @@
 Single source of truth for the parameter sweep.
 
 Defines the OAT axes, the phase-diagram pairs, the baseline, the seed list, and
-the storage layout. Expands
-all of that into:
+the storage layout. Grid coordinates that resolve to the same effective model
+realization share one canonical result directory. Expands all of that into:
 
-  * `build_cells()`   -> the ordered list of parameter cells,
-  * `build_entries()` -> the ordered list of (cell, seed) *jobs* (one per array
+  * `build_cells()`   -> ordered grid coordinates with canonical result references,
+  * `build_entries()` -> ordered unique (condition, seed) *jobs* (one per array
                          task), each with a 0-based `index`,
   * `build_plot_jobs()` -> the ordered list of per-cell / per-pair plot jobs.
 
-This file is deliberately dependency-light (no BrokerageABM, no CairoMakie,
-only `JLD2` + the `SHA`/`Dates` stdlibs) so it can be `include`d from the manifest
-generator, the per-task runner, and the plotting script alike. It also provides a
-minimal JSON emitter so `manifest.json` is a real, human/report-readable file
-without adding a JSON package to the project. The machine-read mirror is
-`manifest.jld2`, written from the identical in-memory structure so the two cannot
-drift.
+This file has no package dependencies, so it can be `include`d from the manifest
+generator, the per-task runner, the plotting script, and the isolated test
+environment alike. It also provides a minimal JSON emitter so `manifest.json` is
+a real, human/report-readable file without adding a JSON package to the project.
+The machine-read mirror is `manifest.jld2`, written from the identical in-memory
+structure so the two cannot drift.
 """
-
-using JLD2: jldsave, jldopen
-using SHA: sha256
-using Dates: Dates
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Versioning
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 2
+const SWEEP_SCHEMA_VERSION = 5
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -38,47 +33,81 @@ const SWEEP_SCHEMA_VERSION = 2
 
 # Baseline simulation knobs applied to every cell (others come from
 # `default_params`). T/T_burn are fixed across the whole sweep.
-const SWEEP_T = 200
+const SWEEP_T = 500
 const SWEEP_T_BURN = 30
-const SWEEP_SEEDS = collect(1:5)
+const SWEEP_SEEDS = collect(1:10)
+
+# Full baseline over every parameter that appears on a sweep axis. A grid
+# coordinate's identity is its resolved tuple over these keys, not merely its local
+# override dictionary. This is what allows, for example, `oat/eta=0.02` and
+# `oat/rho=0.5` to share the same realized baseline results.
+const SWEEP_BASELINE = (
+    rho=0.5,
+    eta=0.02,
+    N=1000,
+    reservation_frac=0.60,
+    delta=0.50,
+    k=6,
+    roster_frac=0.20,
+    n_strangers=10,
+)
+const SWEEP_KEYS = keys(SWEEP_BASELINE)
 
 # OAT axis levels. `key` is the `default_params` keyword and `label` names the
 # output directory.
-const RHO_VALS = [0.0, 0.5, 1.0]
-# The OAT rho axis is denser than the phase rho axis (extra 0.3, 0.7) for line-plot
-# resolution; phase grids keep RHO_VALS so their index-keyed cells are not disturbed.
-const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 1.0]
-const ETA_VALS = [0.01, 0.02, 0.03]
+const RHO_CORE_VALS = [0.0, 0.5, 1.0]
+const RHO_EXTENDED_VALS = [0.0, 0.5, 0.85, 1.0]
+# The OAT rho axis includes the extra 0.3, 0.7, and 0.85 levels for line-plot
+# resolution. The rho x delta grid uses the full OAT axis.
+const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 0.85, 1.0]
+const ETA_VALS = [0.0, 0.01, 0.02, 0.03]
 const N_VALS = [500, 1000, 1500]
 const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 
 # Matching complexity (delta = regime-gain strength, the operator behind the
 # fundamental information gap of §1e) and network density (k_G = initial degree).
-# The OAT levels bracket the baseline delta=0.5 / k_G=6; DELTA_VALS keeps that
-# midpoint for the rho x delta phase grid.
-const DELTA_OAT_VALS = [0.0, 0.75]
-const DELTA_VALS = [0.0, 0.50, 0.75]
+# The matching-problem grid uses the same six rho levels as the OAT sweep and
+# five delta levels over its full allowed range. At rho=1, delta drops out of
+# match output exactly; those grid coordinates therefore share one realized result.
+const DELTA_VALS = [0.0, 0.25, 0.50, 0.75, 1.0]
 const K_VALS = [4, 12]
+const ROSTER_FRAC_VALS = [0.10, 0.20, 0.40]
+const N_STRANGERS_VALS = [0, 10, 50]
+
+# Focused refinement around the only old-fixture corner where the agent network
+# densified. This grid is intentionally local rather than a global refinement of
+# rho and the reservation threshold.
+const RHO_R_CORNER_VALS = [0.70, 0.85, 1.0]
+const R_CORNER_VALS = [0.90, 1.05, 1.20]
 
 const OAT_AXES = [
     (label="rho", key=:rho, vals=RHO_OAT),
     (label="eta", key=:eta, vals=ETA_VALS),
     (label="N", key=:N, vals=N_VALS),
     (label="reservation_frac", key=:reservation_frac, vals=R_VALS),
-    (label="delta", key=:delta, vals=DELTA_OAT_VALS),
+    (label="delta", key=:delta, vals=DELTA_VALS),
     (label="k", key=:k, vals=K_VALS),
+    (label="roster_frac", key=:roster_frac, vals=ROSTER_FRAC_VALS),
+    (label="n_strangers", key=:n_strangers, vals=N_STRANGERS_VALS),
 ]
 
-# Phase-diagram pairs (§2b): all six pairwise combinations of {rho, eta, N, r},
-# axis levels reused from the OAT design.
+# Phase-diagram pairs (§2b): the first six are all pairwise combinations of
+# {rho, eta, N, r}; the last two are targeted refinements.
 const PHASE_PAIRS = [
-    (name="rho_eta", xkey=:rho, xvals=RHO_VALS, ykey=:eta, yvals=ETA_VALS),
-    (name="rho_N", xkey=:rho, xvals=RHO_VALS, ykey=:N, yvals=N_VALS),
-    (name="rho_r", xkey=:rho, xvals=RHO_VALS, ykey=:reservation_frac, yvals=R_VALS),
+    (name="rho_eta", xkey=:rho, xvals=RHO_EXTENDED_VALS, ykey=:eta, yvals=ETA_VALS),
+    (name="rho_N", xkey=:rho, xvals=RHO_EXTENDED_VALS, ykey=:N, yvals=N_VALS),
+    (name="rho_r", xkey=:rho, xvals=RHO_CORE_VALS, ykey=:reservation_frac, yvals=R_VALS),
     (name="eta_r", xkey=:eta, xvals=ETA_VALS, ykey=:reservation_frac, yvals=R_VALS),
     (name="eta_N", xkey=:eta, xvals=ETA_VALS, ykey=:N, yvals=N_VALS),
     (name="r_N", xkey=:reservation_frac, xvals=R_VALS, ykey=:N, yvals=N_VALS),
-    (name="rho_delta", xkey=:rho, xvals=RHO_VALS, ykey=:delta, yvals=DELTA_VALS),
+    (name="rho_delta", xkey=:rho, xvals=RHO_OAT, ykey=:delta, yvals=DELTA_VALS),
+    (
+        name="rho_r_corner",
+        xkey=:rho,
+        xvals=RHO_R_CORNER_VALS,
+        ykey=:reservation_frac,
+        yvals=R_CORNER_VALS,
+    ),
 ]
 
 const BASELINE_RELDIR = "oat/rho=0.5"
@@ -91,10 +120,57 @@ const BASELINE_RELDIR = "oat/rho=0.5"
 fmt_val(v::Integer) = string(v)
 fmt_val(v::Real) = string(float(v))   # 0.0, 0.3, 0.04, 1.2 ...
 
+"""Full resolved sweep-axis parameter dictionary for provenance and tests."""
+function resolved_sweep_params(params::AbstractDict)
+    Dict{Symbol,Any}(key => get(params, key, SWEEP_BASELINE[key]) for key in SWEEP_KEYS)
+end
+
+"""
+Full model-realization key after applying a cell's local overrides.
+
+When `rho == 1`, the interaction component is multiplied by zero, so `delta`
+cannot affect any model event. Canonicalizing it prevents redundant simulations
+while grid coordinates retain their requested `delta` metadata.
+"""
+function condition_key(params::AbstractDict)
+    resolved = resolved_sweep_params(params)
+    resolved[:rho] == 1.0 && (resolved[:delta] = SWEEP_BASELINE.delta)
+    return Tuple(resolved[key] for key in SWEEP_KEYS)
+end
+
+"""
+Annotate grid coordinates with the first result directory realizing each condition.
+
+The first occurrence owns the simulation shards. Later occurrences retain their
+grid output paths but point `:result_reldir` to that canonical directory.
+"""
+function link_result_cells!(cells)
+    first_result = Dict{Tuple,String}()
+    result_index = Dict{Tuple,Int}()
+    for (grid_index, cell) in enumerate(cells)
+        key = condition_key(cell[:params])
+        if !haskey(first_result, key)
+            first_result[key] = cell[:reldir]
+            result_index[key] = length(result_index)
+        end
+        cell[:grid_index] = grid_index - 1
+        cell[:condition_index] = result_index[key]
+        cell[:result_reldir] = first_result[key]
+        cell[:is_canonical] = cell[:reldir] == cell[:result_reldir]
+        cell[:resolved_params] = resolved_sweep_params(cell[:params])
+    end
+    return cells
+end
+
+"""Canonical grid coordinates, one for each effective model realization."""
+result_cells(cells) = filter(cell -> cell[:is_canonical], cells)
+
 """Directory (relative to the sweep root) holding a sweep root's data root."""
 function sweep_dir()
     get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
-        error("BROKERAGE_ABM_SWEEP_DIR is not set; the sbatch scripts / orchestrator must export it")
+        error(
+            "BROKERAGE_ABM_SWEEP_DIR is not set; the sbatch scripts / orchestrator must export it",
+        )
     end
 end
 
@@ -105,8 +181,9 @@ end
 """
     build_cells() -> Vector{Dict{Symbol,Any}}
 
-Ordered list of cells. OAT cells first (in `OAT_AXES` order), then phase cells
-(in `PHASE_PAIRS` order). Each cell is run for every seed in `SWEEP_SEEDS`.
+Ordered list of grid coordinates. OAT coordinates come first (in `OAT_AXES` order), then
+phase cells (in `PHASE_PAIRS` order). Each cell points to the canonical result
+directory for its model realization.
 """
 function build_cells()
     cells = Dict{Symbol,Any}[]
@@ -149,25 +226,28 @@ function build_cells()
         end
     end
 
-    return cells
+    return link_result_cells!(cells)
 end
 
 """
     build_entries(cells) -> Vector{Dict{Symbol,Any}}
 
-Expand cells into (cell, seed) jobs with a 0-based `index`. This is the array:
-`NRUNS = length(entries)`, submitted as `--array=0-(NRUNS-1)`.
+Expand only canonical result cells into (condition, seed) jobs with a 0-based
+`index`. This is the array: `NRUNS = length(entries)`, submitted as
+`--array=0-(NRUNS-1)`.
 """
 function build_entries(cells)
     entries = Dict{Symbol,Any}[]
     idx = 0
-    for c in cells, s in SWEEP_SEEDS
+    for c in result_cells(cells), s in SWEEP_SEEDS
         e = Dict{Symbol,Any}(
             :index => idx,
             :seed => s,
             :kind => c[:kind],
-            :reldir => c[:reldir],
+            :condition_index => c[:condition_index],
+            :reldir => c[:result_reldir],
             :params => c[:params],
+            :resolved_params => c[:resolved_params],
         )
         # carry axis/pair metadata through for provenance
         for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
@@ -182,10 +262,10 @@ end
 """
     build_plot_jobs(cells) -> Vector{Dict{Symbol,Any}}
 
-One plot job per OAT cell (loads that cell's seed shards -> figures + data.jld2),
-then one plot job per phase pair (loads all its grid-point shards ->
-per-grid-point data.jld2 + summary.jld2 + heatmaps). 0-based `index` = plot
-array task id.
+One plot job per OAT grid coordinate (loads its referenced result shards -> figures
+and data.jld2), then one plot job per phase pair (loads referenced result shards
+for all grid points -> per-grid-point data.jld2 + summary.jld2 + heatmaps).
+0-based `index` = plot array task id.
 """
 function build_plot_jobs(cells)
     jobs = Dict{Symbol,Any}[]
@@ -198,7 +278,11 @@ function build_plot_jobs(cells)
             :index => idx,
             :kind => "oat_cell",
             :reldir => c[:reldir],
+            :result_reldir => c[:result_reldir],
+            :condition_index => c[:condition_index],
+            :resolved_params => c[:resolved_params],
             :axis => c[:axis],
+            :key => c[:key],
             :value => c[:value],
         )
         push!(jobs, job)
@@ -207,6 +291,21 @@ function build_plot_jobs(cells)
 
     # Phase plot jobs (one per pair)
     for pr in PHASE_PAIRS
+        refs = [
+            Dict{Symbol,Any}(
+                :reldir => c[:reldir],
+                :result_reldir => c[:result_reldir],
+                :condition_index => c[:condition_index],
+                :resolved_params => c[:resolved_params],
+                :pair => c[:pair],
+                :xkey => c[:xkey],
+                :xval => c[:xval],
+                :xi => c[:xi],
+                :ykey => c[:ykey],
+                :yval => c[:yval],
+                :yi => c[:yi],
+            ) for c in cells if c[:kind] == "phase" && c[:pair] == pr.name
+        ]
         push!(
             jobs,
             Dict{Symbol,Any}(
@@ -218,6 +317,7 @@ function build_plot_jobs(cells)
                 :ykey => string(pr.ykey),
                 :yvals => collect(pr.yvals),
                 :reldir => "phase/$(pr.name)",
+                :cell_refs => refs,
             ),
         )
         idx += 1

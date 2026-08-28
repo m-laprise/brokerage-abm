@@ -11,34 +11,39 @@ include(joinpath(@__DIR__, "..", "figure_style.jl"))
 using JLD2
 using Statistics: mean, std
 
+include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUT = joinpath(ROOT, "report")
+const SWEEP = load_sweep_dataset(ROOT)
 const RHO_COLORS = Dict(
     0.0 => :seagreen,
     0.3 => :mediumaquamarine,
     0.5 => :goldenrod,
     0.7 => :darkorange,
+    0.85 => :orangered,
     1.0 => :firebrick,
 )
-const DELTA_COLORS = Dict(0.0 => :steelblue, 0.5 => :goldenrod, 0.75 => :firebrick)
+const DELTA_COLORS = Dict(
+    0.0 => :steelblue,
+    0.25 => :cadetblue,
+    0.5 => :goldenrod,
+    0.75 => :darkorange,
+    1.0 => :firebrick,
+)
 
 mkpath(OUT)
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
-tailmean(df, col) = nanmean(df[(df.period .>= 181) .& (df.period .<= 200), col])
+late_mask(df) = df.period .>= maximum(df.period) - 19
+tailmean(df, col) = nanmean(df[late_mask(df), col])
 function seedstat(mdfs, col)
     (vs=filter(!isnan, [tailmean(d, col) for d in mdfs]); (mean(vs), std(vs)))
 end
-load_mdfs(rel) =
-    jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f
-        f["mdfs"]
-    end
-load_cfg(rel) =
-    jldopen(joinpath(ROOT, rel, "data.jld2"), "r") do f
-        f["config"]
-    end
-access_tail(df) = nanmean(access_fraction(df)[(df.period .>= 181) .& (df.period .<= 200)])
+load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
+load_cfg(rel) = grid_result(SWEEP, rel).cfg
+access_tail(df) = nanmean(access_fraction(df)[late_mask(df)])
 cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
 function period_ens(mdfs, f)
     (
@@ -69,16 +74,13 @@ const OUTCOMES = [
 ]
 
 function grid_cells(; drop_rho_one::Bool)
-    summary = jldopen(joinpath(ROOT, "phase/rho_delta/summary.jld2"), "r") do f
-        (xv=f["xvals"], yv=f["yvals"])
-    end
     cells = Dict{Tuple{Float64,Float64},Vector{DataFrame}}()
-    for (xi, rho) in enumerate(summary.xv), (yi, delta) in enumerate(summary.yv)
+    for grid in SWEEP.grid_cells
+        get(grid, :pair, nothing) == "rho_delta" || continue
+        rho = Float64(grid[:resolved_params][:rho])
+        delta = Float64(grid[:resolved_params][:delta])
         drop_rho_one && rho == 1.0 && continue
-        cells[(rho, delta)] = load_mdfs("phase/rho_delta/cells/$(xi - 1)_$(yi - 1)")
-    end
-    for rho in (0.3, 0.7)
-        cells[(rho, 0.5)] = load_mdfs("oat/rho=$rho")
+        cells[(rho, delta)] = SWEEP.result_by_rel[grid[:result_reldir]].mdfs
     end
     return cells
 end
@@ -107,7 +109,7 @@ function fig1_grid_lines()
             fig[row, col];
             title=title,
             xlabel=row == 3 ? "ρ (channel mix)" : "",
-            xticks=[0, 0.3, 0.5, 0.7],
+            xticks=[0, 0.3, 0.5, 0.7, 0.85],
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
             xticklabelsize=TICK_FS,
@@ -168,7 +170,7 @@ function fig1_rank_lines()
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
         )
-        for delta in (0.0, 0.5, 0.75)
+        for delta in sort(unique(point[3] for point in points))
             group = sort(
                 [(rank, metric(mdfs)) for (rank, _, d, mdfs) in points if d == delta];
                 by=first,
@@ -193,6 +195,7 @@ end
 
 function fig2_position_work()
     mdfs = load_mdfs("oat/rho=0.5")
+    period_end = maximum(mdfs[1].period)
     fig = Figure(; size=(1150, 860))
     Label(
         fig[0, 1:2],
@@ -206,7 +209,7 @@ function fig2_position_work()
         title="Betweenness over time",
         xlabel="period",
         ylabel="broker betweenness",
-        limits=((30, 201), (0, nothing)),
+        limits=((30, period_end + 1), (0, nothing)),
     )
     per, betweenness = period_ens(mdfs, d -> d.betweenness)
     measured = [i for i in eachindex(per) if per[i] % 20 == 0]
@@ -223,39 +226,20 @@ function fig2_position_work()
         title="Access fraction over time",
         xlabel="period",
         ylabel="access fraction",
-        limits=((30, 201), (0, nothing)),
+        limits=((30, period_end + 1), (0, nothing)),
     )
     pa, access = period_ens(mdfs, access_fraction)
     lines!(axb, pa, rolling_mean(access, 5); color=COL_ACCESS, linewidth=2.2)
 
-    cellrels = vcat(
-        ["oat/rho=$rho" for rho in (0.0, 0.3, 0.5, 0.7, 1.0)],
-        [
-            "oat/$axis" for axis in (
-                "eta=0.01",
-                "eta=0.02",
-                "eta=0.03",
-                "N=500",
-                "N=1000",
-                "N=1500",
-                "reservation_frac=0.4",
-                "reservation_frac=0.6",
-                "reservation_frac=0.9",
-                "reservation_frac=1.2",
-                "delta=0.0",
-                "delta=0.75",
-                "k=4",
-                "k=12",
-            )
-        ],
-    )
     betw, access_means, ranks = Float64[], Float64[], Float64[]
-    for rel in cellrels
-        isfile(joinpath(ROOT, rel, "data.jld2")) || continue
-        cell = load_mdfs(rel)
-        cfg = load_cfg(rel)
-        push!(betw, seedstat(cell, :betweenness)[1])
-        push!(access_means, cell_access(cell))
+    oat_results = unique_effective_results([
+        grid_result(SWEEP, grid[:reldir]) for
+        grid in SWEEP.grid_cells if grid[:kind] == "oat"
+    ],)
+    for result in oat_results
+        push!(betw, seedstat(result.mdfs, :betweenness)[1])
+        push!(access_means, cell_access(result.mdfs))
+        cfg = result.cfg
         push!(ranks, r90(cfg["rho"], cfg["delta"]))
     end
     axc = Axis(
@@ -278,15 +262,7 @@ function fig2_position_work()
 end
 
 function regime_cells()
-    out = NamedTuple[]
-    for sub in ("oat", "phase"), (root, _, files) in walkdir(joinpath(ROOT, sub))
-        "data.jld2" in files || continue
-        mdfs, cfg = jldopen(joinpath(root, "data.jld2"), "r") do f
-            f["mdfs"], f["config"]
-        end
-        push!(out, (mdfs=mdfs, cfg=cfg))
-    end
-    return out
+    return [(mdfs=result.mdfs, cfg=result.cfg) for result in SWEEP.results]
 end
 
 function fig3_advantage()
@@ -325,6 +301,7 @@ end
 function fig4_dynamics()
     mdfs = load_mdfs("oat/rho=0.5")
     N = load_cfg("oat/rho=0.5")["N"]
+    period_end = maximum(mdfs[1].period)
     smooth(f) = (
         per=mdfs[1].period;
         (
@@ -334,12 +311,11 @@ function fig4_dynamics()
             ),
         )
     )
-    smooth_betweenness() = (
-        per,
-        raw=period_ens(mdfs, d -> d.betweenness);
-        measured=[i for i in eachindex(per) if per[i] % 20 == 0];
-        (per[measured], rolling_mean(raw[measured], 5)),
-    )
+    function smooth_betweenness()
+        per, raw = period_ens(mdfs, d -> d.betweenness)
+        measured = [i for i in eachindex(per) if per[i] % 20 == 0]
+        return per[measured], rolling_mean(raw[measured], 5)
+    end
     series = (
         smooth(d -> 2 .* d.n_total_matches ./ N),
         smooth(d -> d.mean_degree),
@@ -358,7 +334,10 @@ function fig4_dynamics()
     )
     for col in 1:5
         ax = Axis(
-            fig[1, col]; title=titles[col], xlabel="period", limits=((30, 201), nothing)
+            fig[1, col];
+            title=titles[col],
+            xlabel="period",
+            limits=((30, period_end + 1), nothing),
         )
         if col == 2
             lines!(ax, series[2]...; color=COL_AGENT, linewidth=2.2, label="mean")

@@ -25,7 +25,7 @@ function nanmean_or_nan(v)
     return n == 0 ? NaN : total / n
 end
 
-println("Running quick diagnostic (T=200, default params)...")
+println("Running quick diagnostic (T=500, default params)...")
 @time state, df = run_simulation(default_params())
 
 periods = df.period

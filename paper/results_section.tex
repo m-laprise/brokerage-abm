@@ -1,7 +1,7 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-07-27 10:36
+% Built by scripts/paper/build_section.jl on 2026-08-27 23:21
 % from section_source.tex + captions.tex + values.tex + figmeta.tex;
-% sweep 2026-06-07_f424438; repo commit cc53878.
+% sweep 2026-06-07_f424438; repo commit 71b37f7.
 % Fixture status: temporary single-model subset retained only to validate the reporting pipeline.
 % Every number was computed from the saved sweep data by scripts/paper/stats.jl.
 
@@ -9,25 +9,50 @@
 
 All results in this section are computed from a single parameter sweep of the
 simulated market. In the baseline regime,
-$N=1{,}000$ agents interact for $T=200$ periods with matching-function parameters
+$N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
 $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
-and initial network degree $k_G=6$; the first 30 periods of each run are treated as
-burn-in. Around this baseline, I vary one parameter at a time
-($\rho\in\{0,0.3,0.5,0.7,1\}$, $\eta\in\{0.01,0.02,0.03\}$,
+initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
+self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
+run are treated as burn-in. Around this baseline, I vary one parameter at a time
+($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
-$\delta\in\{0,0.75\}$, and $k_G\in\{4,12\}$) and I sweep seven two-parameter
+$\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
+$\alpha_R\in\{0.1,0.2,0.4\}$, and
+$n_{\mathrm{strangers}}\in\{0,10,50\}$) and I sweep eight two-parameter
 grids: the six pairwise combinations of $\{\rho,\eta,N,f_r\}$ and the
-$\rho\times\delta$ grid (on the grids, $\rho$ takes the three levels $\{0,0.5,1\}$
-and $\delta$ the levels $\{0,0.5,0.75\}$; the remaining axes reuse their
-one-at-a-time levels). The design comprises 91 regimes, each
-simulated under five independent seeds
+$\rho\times\delta$ grid over their full one-at-a-time levels, plus a focused
+$\rho\times f_r$ refinement over
+$\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
+$\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
+$\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
+one-at-a-time levels. The design comprises 91 unique model
+realizations, each simulated under ten independent seeds
 (455 runs in total). Reported statistics are
 ensemble means over seeds, summarized by time averages over fixed windows within a
-run: late means over the final 20 periods ($t\in[181,200]$), used for all reported
+run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
 levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
 within-run drift. Full parameter values are given in Appendix~A~\S10, and every
 statistic and figure as well as this results section containing them are
 reproducible from the saved sweep.
+
+Figure~\ref{fig:dynamics} establishes the baseline dynamics before the
+cross-regime comparisons. Matching activity remains stable at roughly the same
+number of matches per agent, while the agent network gradually thins. Over the
+same periods, broker betweenness centrality and outsourcing rise, while the
+share of brokered matches that provides access declines. The baseline therefore
+combines sustained market activity with increasing reliance on the broker and a
+stronger structural position for the broker.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
+\caption{\textbf{Baseline dynamics.} Panels show matches per agent, mean and median agent-network degree, broker
+betweenness centrality, access fraction, and outsourcing rate. Lines are
+5-observation rolling ensemble means over seeds in the baseline
+regime. Broker betweenness is measured every 20 periods; the
+other measures are recorded every period. Axes start at $t=30$.}
+\label{fig:dynamics}
+\end{figure}
 
 \subsection{The broker primarily provides assessment, not access}
 
@@ -50,7 +75,7 @@ baseline and across regimes.
 \centering\small
 \caption{\textbf{Broker use, access, and assessment quality.} Baseline and
 across-regime summaries for the model. Early and late are ensemble
-means over seeds averaged over $t\in[50,70]$ and $t\in[181,200]$; the
+means over seeds averaged over $t\in[50,70]$ and $t\in[481,500]$; the
 across-regime column reports the median late mean across the 91
 regimes.}
 \label{tab:baseline-measures}
@@ -167,7 +192,7 @@ of the performance gap.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig1_grid_lines.png}
+\includegraphics[width=\linewidth]{figs/fig2_grid_lines.png}
 \caption{\textbf{Outcomes across the matching problem ($\rho\times\delta$).} Six outcomes across the $\rho\times\delta$ grid; one line per gain
 $\delta$, one marker per regime, each a late-window mean over that regime's seeds.
 The rank-correlation gap is broker minus principals; the output gap, broker
@@ -189,16 +214,6 @@ why is the structural advantage not self-liquidating, even at low turnover (at
 $\eta=0.01$, betweenness centrality still rises from 0.45 to
 0.62)?
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig4_dynamics.png}
-\caption{\textbf{Baseline market and network dynamics.} Lines are 5-observation rolling ensemble means over seeds at the
-baseline regime. Broker betweenness is measured every
-20 periods; the other measures are recorded every period.
-Axes start at $t=30$.}
-\label{fig:dynamics}
-\end{figure}
-
 The answer comes from the fact that structural position is endogenous, produced by
 which agents form ties and which agents go to the broker. A brokered match adds a
 new agent-to-agent tie, after which the broker no longer lies on the pair's
@@ -209,7 +224,7 @@ rare and falling over time (Fig.~\ref{fig:position}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig2_position_work.png}
+\includegraphics[width=\linewidth]{figs/fig3_position_work.png}
 \caption{\textbf{Broker centrality and access fraction.} Left: broker betweenness centrality and access fraction over time at the
 baseline, as 5-observation rolling ensemble means over
 seeds; betweenness is measured every 20 periods. Right: one dot
@@ -229,7 +244,7 @@ late mean of
 0.13 across $\rho=1$ regimes, against 0.73 at
 baseline) and stalls rather than rises. The access share still declines within
 runs, and the network still thins in 13 of 14 such
-regimes (the five exceptions above to the co-movement between agent degree and
+regimes (the exceptions above to the co-movement between agent degree and
 broker centrality are of this type). Only
 in the pure-quality regime with the highest reservation threshold ($f_r=1.2$) does
 mean agent degree rise over time. Identifying regimes in which brokered
@@ -252,7 +267,7 @@ access, self-liquidation of the structural advantage need not arise.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\linewidth]{figs/fig3_advantage.png}
+\includegraphics[width=0.92\linewidth]{figs/fig4_advantage.png}
 \caption{\textbf{Prediction and output gaps vs centrality and access.} Rank-correlation gap (broker minus principals) and output gap (broker channel
 minus self-search) against broker betweenness centrality and access fraction; one
 dot per regime, each a late-window mean over that regime's seeds.}
@@ -277,7 +292,8 @@ matches are worth the most.
 \caption{\textbf{Matching-problem composition and structural advantage.}
 Regime-group means at the three $\rho$ levels in the model, using
 late means. Each group pools the 14 regimes of the $\rho$ family at
-that level: the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells.
+that level on common support: the one-at-a-time $\rho$ regime and the
+$\rho\times\eta$, $\rho\times N$, and $\rho\times f_r$ grid realizations.
 Output gap is broker-channel realized output minus self-search realized output.}
 \label{tab:rhogroups}
 \begin{tabular}{lccccc}

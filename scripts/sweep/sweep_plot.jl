@@ -7,7 +7,7 @@ does NOT re-simulate. Modeled on the exploration scripts (which run their own
 sims in one pass); the figure functions here are adapted to consume saved shards.
 
 Plot-job kinds (from `manifest.jld2` `plot_jobs`):
-  * "oat_cell"   — one OAT cell: aggregate its 5 seed shards -> data.jld2,
+  * "oat_cell"   — one OAT cell: aggregate its 10 referenced seed shards -> data.jld2,
                    seed-banded dynamics panel + extended network-stats figure.
   * "phase_pair" — one pair: aggregate every grid point's shards ->
                    per-grid-point data.jld2 + tail-averaged summary.jld2 +
@@ -33,12 +33,14 @@ using DataFrames: DataFrame
 using Statistics: mean
 using JLD2: jldsave, jldopen
 
+include(joinpath(@__DIR__, "shard_validation.jl"))
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Shard loading
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Load all seed shards in `celldir`. Returns (mdfs, final_degs, config, prov, seeds)."""
-function load_cell(celldir)
+"""Load all current seed shards in `celldir`."""
+function load_cell(celldir, expected_provenance)
     mdfs = DataFrame[]
     final_degs = Vector{Int}[]
     seeds = Int[]
@@ -47,6 +49,10 @@ function load_cell(celldir)
     for s in SWEEP_SEEDS
         path = joinpath(celldir, "seed_$(s).jld2")
         isfile(path) || continue
+        if !shard_is_current(path, expected_provenance)
+            @warn "ignoring shard with stale or mixed provenance" path
+            continue
+        end
         try
             jldopen(path, "r") do f
                 push!(mdfs, f["df"])
@@ -70,15 +76,63 @@ function load_cell(celldir)
     return (mdfs=mdfs, final_degs=final_degs, config=config, prov=prov, seeds=seeds)
 end
 
-"""Write the aggregate data.jld2 bundling the raw per-seed DataFrames (§4)."""
-function write_cell_data(celldir, cell)
+"""Return whether every planned seed shard exists with current provenance."""
+function shards_complete(celldir, expected_provenance)
+    all(
+        seed ->
+            shard_is_current(joinpath(celldir, "seed_$(seed).jld2"), expected_provenance),
+        SWEEP_SEEDS,
+    )
+end
+
+const GRID_METADATA_KEYS = (
+    :axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi
+)
+
+"""Seed-independent configuration of the canonical realized result."""
+function realized_config(config)
+    cfg = Dict{String,Any}(string(k) => v for (k, v) in config)
+    pop!(cfg, "seed", nothing)
+    for key in GRID_METADATA_KEYS
+        pop!(cfg, string(key), nothing)
+    end
+    return cfg
+end
+
+"""Grid-coordinate metadata paired with the canonical realized-result config."""
+function grid_config(config, grid)
+    cfg = realized_config(config)
+    cfg["kind"] = haskey(grid, :pair) ? "phase" : "oat"
+    cfg["reldir"] = grid[:reldir]
+    cfg["result_reldir"] = grid[:result_reldir]
+    cfg["condition_index"] = grid[:condition_index]
+    for (key, value) in grid[:resolved_params]
+        cfg[string(key)] = value
+    end
+    for key in GRID_METADATA_KEYS
+        haskey(grid, key) && (cfg[string(key)] = grid[key])
+    end
+    return cfg
+end
+
+"""Write a grid-coordinate aggregate that references one canonical result set."""
+function write_cell_data(celldir, cell, grid)
+    mkpath(celldir)
+    realized = realized_config(cell.config)
     jldsave(
         joinpath(celldir, "data.jld2");
         mdfs=cell.mdfs,
         final_agent_degrees=cell.final_degs,
         seeds=cell.seeds,
-        config=cell.config,
+        config=grid_config(cell.config, grid),
+        realized_config=realized,
+        requested_params=Dict(
+            string(key) => value for (key, value) in grid[:resolved_params]
+        ),
         provenance=cell.prov,
+        grid_reldir=grid[:reldir],
+        result_reldir=grid[:result_reldir],
+        condition_index=grid[:condition_index],
         schema_version=SWEEP_SCHEMA_VERSION,
     )
 end
@@ -556,23 +610,30 @@ const HEATMAPS = [
 # Job dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
-function do_oat_cell(sweepdir, job)
+function do_oat_cell(sweepdir, job, expected_provenance)
     celldir = joinpath(sweepdir, job[:reldir])
+    resultdir = joinpath(sweepdir, job[:result_reldir])
     # Idempotent: skip cells whose figures already exist (BROKERAGE_ABM_REPLOT=1 forces a rebuild).
     primary = joinpath(celldir, "dynamics.png")
+    aggregate = joinpath(celldir, "data.jld2")
     if get(ENV, "BROKERAGE_ABM_REPLOT", "0") == "0" &&
+        shards_complete(resultdir, expected_provenance) &&
+        aggregate_is_current(aggregate, expected_provenance) &&
         isfile(primary) &&
         isfile(joinpath(celldir, "network_stats.png"))
         println("SKIP plot (figures exist): $(job[:reldir])")
         return nothing
     end
-    cell = load_cell(celldir)
+    cell = load_cell(resultdir, expected_provenance)
     if isempty(cell.mdfs)
-        @warn "no shards found for OAT cell; skipping" celldir
+        @warn "no referenced shards found for OAT cell; skipping" celldir resultdir
         return nothing
     end
-    println("OAT cell $(job[:reldir])  ($(length(cell.seeds)) seeds: $(cell.seeds))")
-    write_cell_data(celldir, cell)
+    println(
+        "OAT cell $(job[:reldir]) -> $(job[:result_reldir])  " *
+        "($(length(cell.seeds)) seeds: $(cell.seeds))",
+    )
+    write_cell_data(celldir, cell, job)
 
     label = "$(job[:axis])=$(job[:value])"
     plot_network_stats(
@@ -582,10 +643,18 @@ function do_oat_cell(sweepdir, job)
     plot_dynamics(cell.mdfs, label, joinpath(celldir, "dynamics.png"))
 end
 
-function do_phase_pair(sweepdir, job)
+function do_phase_pair(sweepdir, job, expected_provenance)
     pairdir = joinpath(sweepdir, job[:reldir])
     # Idempotent: skip pairs whose summary already exists (BROKERAGE_ABM_REPLOT=1 forces a rebuild).
-    if get(ENV, "BROKERAGE_ABM_REPLOT", "0") == "0" && isfile(joinpath(pairdir, "summary.jld2"))
+    summary_path = joinpath(pairdir, "summary.jld2")
+    referenced_results = unique(ref[:result_reldir] for ref in job[:cell_refs])
+    all_shards_complete = all(
+        rel -> shards_complete(joinpath(sweepdir, rel), expected_provenance),
+        referenced_results,
+    )
+    if get(ENV, "BROKERAGE_ABM_REPLOT", "0") == "0" &&
+        all_shards_complete &&
+        aggregate_is_current(summary_path, expected_provenance)
         println("SKIP plot (summary exists): $(job[:pair])")
         return nothing
     end
@@ -597,11 +666,13 @@ function do_phase_pair(sweepdir, job)
     nfound = 0
 
     for xi in 1:nx, yi in 1:ny
-        celldir = joinpath(pairdir, "cells", "$(xi - 1)_$(yi - 1)")
-        cell = load_cell(celldir)
+        ref = only(r for r in job[:cell_refs] if r[:xi] == xi && r[:yi] == yi)
+        celldir = joinpath(sweepdir, ref[:reldir])
+        resultdir = joinpath(sweepdir, ref[:result_reldir])
+        cell = load_cell(resultdir, expected_provenance)
         isempty(cell.mdfs) && continue
         nfound += 1
-        write_cell_data(celldir, cell)              # raw per-seed at every grid point (§4)
+        write_cell_data(celldir, cell, ref)         # grid view of canonical shards (§4)
         results[xi, yi] = steady_state_metrics(cell.mdfs, SWEEP_T_BURN)
     end
     println("phase $(job[:pair]): $nfound/$(nx * ny) grid points with data")
@@ -622,6 +693,8 @@ function do_phase_pair(sweepdir, job)
         xvals=xvals,
         ykey=job[:ykey],
         yvals=yvals,
+        cell_refs=job[:cell_refs],
+        provenance=Dict(string(key) => value for (key, value) in expected_provenance),
         T_burn=SWEEP_T_BURN,
         schema_version=SWEEP_SCHEMA_VERSION,
     )
@@ -647,9 +720,9 @@ function main()
     sweepdir = sweep_dir()
     manifest = joinpath(sweepdir, "manifest.jld2")
     isfile(manifest) || error("manifest not found: $manifest")
-    plot_jobs = jldopen(manifest, "r") do f
+    plot_jobs, provenance = jldopen(manifest, "r") do f
         ;
-        f["plot_jobs"];
+        (f["plot_jobs"], f["prov"])
     end
 
     id = if haskey(ENV, "SLURM_ARRAY_TASK_ID")
@@ -662,13 +735,13 @@ function main()
     job = plot_jobs[id + 1]
 
     if job[:kind] == "oat_cell"
-        do_oat_cell(sweepdir, job)
+        do_oat_cell(sweepdir, job, provenance)
     elseif job[:kind] == "phase_pair"
-        do_phase_pair(sweepdir, job)
+        do_phase_pair(sweepdir, job, provenance)
     else
         error("unknown plot job kind: $(job[:kind])")
     end
     println("plot job [$id] done.")
 end
 
-main()
+abspath(PROGRAM_FILE) == abspath(@__FILE__) && main()
