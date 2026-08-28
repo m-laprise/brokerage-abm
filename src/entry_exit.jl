@@ -81,7 +81,9 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     empty!(agent.active_matches)
     agent.history_count = 0
     agent.n_new_obs = 0
-    empty!(agent.obs_period_marks)   # fresh entrant starts a new period-window history
+    empty!(agent.obs_period_marks)
+    # The entrant's empty initialization history is its period-0 boundary.
+    push!(agent.obs_period_marks, 0)
 
     # Re-initialize neural network
     agent.nn = init_neural_net(d, agent_hidden_width(p), rng)

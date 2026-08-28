@@ -147,10 +147,14 @@ function append_self_search_offers!(
         nbr_mask[nbr] = true
         push!(nbr_marked, nbr)
         has_current_match(ws, agent_id, nbr) && continue
-        mean_q = partner_mean(agent, nbr)
-        if !isnan(mean_q) && mean_q > r
+        q_eval = if agent.partner_count[nbr] > 0
+            partner_mean(agent, nbr)
+        else
+            predict_nn!(agent.nn, agent.predict_buf, agents[nbr].type)
+        end
+        if q_eval > r
             push!(candidate_ids, nbr)
-            push!(candidate_vals, mean_q)
+            push!(candidate_vals, q_eval)
         end
     end
 

@@ -167,13 +167,13 @@ function collect_period_metrics(state::ModelState)
 end
 
 """
-    run_simulation(params; verify=false, sort_by_pc1=false) -> (ModelState, DataFrame)
+    run_simulation(params; verify=false) -> (ModelState, DataFrame)
 
 Initialize the model and run for `params.T` periods. Returns the final state and
 the per-period metrics DataFrame.
 """
-function run_simulation(params::ModelParams; verify::Bool=false, sort_by_pc1::Bool=false)
-    state = initialize_model(params; sort_by_pc1=sort_by_pc1)
+function run_simulation(params::ModelParams; verify::Bool=false)
+    state = initialize_model(params)
     rows = NamedTuple[]
     sizehint!(rows, params.T)
 

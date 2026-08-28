@@ -43,7 +43,7 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         rng_geo = StableRNG(12)
         geo = BrokerageABM.generate_curve_geometry(d, d, rng_geo)
         rng_types = StableRNG(13)
-        types_1, _ = BrokerageABM.generate_agent_types(50, geo, 0.5, rng_types)
+        types_1 = BrokerageABM.generate_agent_types(50, geo, 0.5, rng_types)
         types_2 = test_agent_types(d, 50, StableRNG(14))
 
         env_1 = generate_matching_env(

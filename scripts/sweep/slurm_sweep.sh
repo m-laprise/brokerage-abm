@@ -22,6 +22,7 @@ export BROKERAGE_ABM_SWEEP_DIR="${2:?usage: slurm_sweep.sh <repo_root> <sweep_di
 module purge
 module load julia/1.11.3
 export OMP_NUM_THREADS=1   # Julia threads handle the only intra-task parallelism
+export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
 # Must match slurm_setup.sh exactly so every task loads the one multiversioned
 # precompile cache (no per-node recompiles / lock races across the mixed CPUs).
 export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
@@ -34,4 +35,5 @@ if [[ "${BROKERAGE_ABM_RERUN:-0}" == "1" ]]; then
     run_args+=(--rerun)
 fi
 
-julia --project --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_run.jl "${run_args[@]}"
+julia --compiled-modules=strict --pkgimages=existing --project \
+    --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_run.jl "${run_args[@]}"

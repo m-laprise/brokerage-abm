@@ -6,7 +6,6 @@ and neural network initial training.
 """
 
 using LinearAlgebra: norm, normalize, dot
-using MultivariateStats: fit, PCA, predict
 using Random: AbstractRNG
 using Graphs: add_vertex!, neighbors
 using StableRNGs: StableRNG
@@ -42,16 +41,15 @@ function curve_point(t::Float64, geo::CurveGeometry)::Vector{Float64}
 end
 
 """
-    generate_agent_types(N, geo, sigma_x, rng; sort_by_pc1=false) -> (types, inv_order)
+    generate_agent_types(N, geo, sigma_x, rng) -> types
 
 Draw N agent types at random curve positions with noise, projected to the unit sphere.
-When sort_by_pc1=true, types are sorted by first principal component for
-type-assortative Watts-Strogatz ordering. When false (default), types are in random
-order, producing a non-assortative initial network.
+Types remain in draw order, so their placement in the initial Watts-Strogatz graph
+is not assortative by construction.
 """
 function generate_agent_types(
-    N::Int, geo::CurveGeometry, sigma_x::Float64, rng::AbstractRNG; sort_by_pc1::Bool=false
-)::Tuple{Vector{Vector{Float64}},Vector{Int}}
+    N::Int, geo::CurveGeometry, sigma_x::Float64, rng::AbstractRNG
+)::Vector{Vector{Float64}}
     d = geo.d
     sigma_per_dim = sigma_x / sqrt(d)
 
@@ -65,19 +63,7 @@ function generate_agent_types(
         types[i] = n > 1e-12 ? noisy ./ n : noisy
     end
 
-    if sort_by_pc1
-        # Sort by first principal component
-        type_matrix = hcat(types...)  # d x N
-        pca_model = fit(PCA, type_matrix; maxoutdim=1)
-        pc1 = predict(pca_model, type_matrix)[1, :]
-        sort_order = sortperm(pc1)
-        sorted_types = types[sort_order]
-        inv_order = invperm(sort_order)
-        return (sorted_types, inv_order)
-    else
-        # Random ordering (no type assortativity in initial network)
-        return (types, collect(1:N))
-    end
+    return types
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +84,7 @@ Complete model initialization following `simulation_pseudocode.tex` (`Initialize
 8. State variables (satisfaction, reputation)
 9. Neural network initial training (E_init steps)
 """
-function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelState
+function initialize_model(params::ModelParams)::ModelState
     rng = StableRNG(params.seed)
     p = params
     d = p.d
@@ -106,18 +92,18 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
 
     # ── Agent types ──
     geo = generate_curve_geometry(d, p.s, rng)
-    sorted_types, _ = generate_agent_types(N, geo, p.sigma_x, rng; sort_by_pc1=sort_by_pc1)
+    agent_types = generate_agent_types(N, geo, p.sigma_x, rng)
 
     # ── Ideal type c ──
     # (perturbation of a random curve position)
 
     # ── Matching environment (A, B, c) ──
     env = generate_matching_env(
-        d, p.rho, p.delta, p.sigma_eps, sorted_types, rng; sigma_x=p.sigma_x, curve_geo=geo
+        d, p.rho, p.delta, p.sigma_eps, agent_types, rng; sigma_x=p.sigma_x, curve_geo=geo
     )
 
     # ── Calibration ──
-    cal = calibrate(env, sorted_types, p, rng)
+    cal = calibrate(env, agent_types, p, rng)
 
     # ── Network ──
     G = build_network(N, p.k, p.p_rewire, rng)
@@ -137,8 +123,8 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
         node_id=broker_node,
         roster=Set{Int}(),
         current_clients=Set{Int}(),
-        history_Xi=Matrix{Float64}(undef, d, 64),
-        history_Xj=Matrix{Float64}(undef, d, 64),
+        history_party1_types=Matrix{Float64}(undef, d, 64),
+        history_party2_types=Matrix{Float64}(undef, d, 64),
         history_q=Vector{Float64}(undef, 64),
         history_count=0,
         nn=broker_nn,
@@ -168,7 +154,7 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
         nn = init_neural_net(d, h_agent, rng)
         agents[i] = Agent(;
             id=i,
-            type=sorted_types[i],
+            type=agent_types[i],
             active_matches=ActiveMatch[],
             history_X=Matrix{Float64}(undef, d, initial_hist_cap),
             history_q=Vector{Float64}(undef, initial_hist_cap),
@@ -252,13 +238,17 @@ function initialize_model(params::ModelParams; sort_by_pc1::Bool=false)::ModelSt
     )
 
     # ── Initial neural network training ──
-    # No period marks recorded yet, so the window spans the full seed history.
+    # Initialization is period 0. Its cumulative history boundary lets rolling
+    # windows exclude seed observations once W_p completed simulation periods
+    # are available.
     for agent in agents
+        push!(agent.obs_period_marks, agent.history_count)
         if agent.history_count > 0
             agent.n_new_obs = agent.history_count  # treat all seed data as new
             train_agent_nn!(agent, p)
         end
     end
+    push!(broker.obs_period_marks, broker.history_count)
     if broker.history_count > 0
         broker.n_new_obs = broker.history_count
         train_broker_nn!(broker, p)

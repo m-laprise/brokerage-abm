@@ -3,7 +3,7 @@
 
 Recompute the pinned values for `test/test_regression_baseline.jl` after an
 approved model change. Prints the tail-mean metrics for the fixed
-(N=50, T=20, T_burn=5, seed=42) run; copy them into the test with an update note.
+(N=50, T=20, seed=42) run; copy them into the test with an update note.
 
 Usage: julia --project --threads=auto scripts/diagnostics/refresh_regression_baseline.jl
 """
@@ -12,7 +12,7 @@ using BrokerageABM
 using DataFrames
 using Statistics: mean
 
-p = default_params(N=50, T=20, T_burn=5, seed=42)
+p = default_params(N=50, T=20, seed=42)
 _, df = run_simulation(p)
 tail = df[df.period .> 5, :]
 nz(c) = mean(filter(!isnan, tail[!, c]))

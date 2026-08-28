@@ -13,7 +13,7 @@ end
 
 @testset "Search" begin
     @testset "Self-search offers rank known neighbors by value" begin
-        p = default_params(N=20, T=5, T_burn=1, n_strangers=0, seed=7)
+        p = default_params(N=20, T=5, n_strangers=0, seed=7)
         state = initialize_model(p)
         agents = state.agents
         G = state.G
@@ -45,8 +45,40 @@ end
         @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] == [(2, 9.0), (3, 7.0)]
     end
 
+    @testset "Self-search predicts for unobserved graph neighbors" begin
+        p = default_params(N=20, T=5, n_strangers=0, seed=8)
+        state = initialize_model(p)
+        agents = state.agents
+        G = state.G
+        ws = state.workspace
+
+        remove_agent_edges!(G, 1)
+        add_match_edge!(G, 1, 2)
+        agents[1].partner_sum[2] = 0.0
+        agents[1].partner_count[2] = 0
+        set_constant_prediction!(agents[1].nn, state.cal.r + 1.0)
+
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, p.N)
+        sent = BrokerageABM.append_self_search_offers!(
+            ws,
+            agents[1],
+            1,
+            agents,
+            G,
+            state.broker.node_id,
+            Int[],
+            state.cal.r;
+            current_match_index_ready=true,
+        )
+
+        @test sent == 1
+        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] ==
+            [(2, state.cal.r + 1.0)]
+    end
+
     @testset "Self-search no longer filters candidates by K capacity" begin
-        p = default_params(N=20, T=5, T_burn=1, K=1, n_strangers=0, seed=11)
+        p = default_params(N=20, T=5, K=1, n_strangers=0, seed=11)
         state = initialize_model(p)
         agents = state.agents
         G = state.G
@@ -77,7 +109,7 @@ end
     end
 
     @testset "Period stranger pool has fixed default size" begin
-        p = default_params(N=80, T=5, T_burn=1, seed=13)
+        p = default_params(N=80, T=5, seed=13)
         state = initialize_model(p)
         strangers = state.workspace.search.period_strangers
 
@@ -92,7 +124,7 @@ end
     end
 
     @testset "Self-search demanders draw independent stranger pools" begin
-        p = default_params(N=20, T=5, T_burn=1, K=1, n_strangers=3, seed=19)
+        p = default_params(N=20, T=5, K=1, n_strangers=3, seed=19)
         state = initialize_model(p)
         agents = state.agents
         G = state.G
@@ -152,7 +184,7 @@ end
     end
 
     @testset "Broker offers use per-client quota-bounded ranking" begin
-        p = default_params(N=20, T=5, T_burn=1, K=1, seed=17)
+        p = default_params(N=20, T=5, K=1, seed=17)
         state = initialize_model(p)
         broker = state.broker
         ws = state.workspace
@@ -173,7 +205,7 @@ end
     end
 
     @testset "Broker offers do not use period strangers as access" begin
-        p = default_params(N=20, T=5, T_burn=1, K=1, seed=19)
+        p = default_params(N=20, T=5, K=1, seed=19)
         state = initialize_model(p)
         broker = state.broker
         ws = state.workspace

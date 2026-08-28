@@ -83,7 +83,7 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Experience history} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}\): (demander type, counterparty type, realized match output) triples from mediated matches (§3c).
+  \textbf{Experience history} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}\): (party 1 type, party 2 type, realized match output) triples from mediated matches (§3c). The party labels have no directional meaning because the broker's pair features are symmetric.
 \item
   \textbf{Roster} \(\text{Roster}^t\): the broker's standing access base (§6b).
 \item
@@ -115,7 +115,13 @@ where \(\rho \in [0,1]\) mixes general quality (§2b) and interaction (§2c).
 
 \(\mathbf{c}\) is an ideal type vector. Each agent's general-quality score is \(\mathbf{x}_i^\top\mathbf{c}\).
 
-A pair contributes the average score \(\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c})\) to \(f\). The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the agent type curve.
+A pair contributes the average score \(\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c})\) to \(f\). The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the agent type curve:
+
+\[u_c\sim\operatorname{Unif}[0,1],\qquad
+\boldsymbol{\epsilon}_c\sim\mathcal N\!\left(\mathbf 0,\frac{\sigma_x^2}{d}\mathbf I_d\right),\qquad
+\mathbf c=\mathbf x(u_c)+\boldsymbol{\epsilon}_c.\]
+
+Unlike agent types, \(\mathbf c\) is not re-normalized after the perturbation.
 
 \subsubsection{2c. Match-specific interaction}\label{c.-match-specific-interaction}
 
@@ -177,7 +183,7 @@ Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_
 
 \subsection{3. Learning}\label{learning}
 
-Before searching for matches, agents and the broker update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker retrains once per period. Agents retrain every other period.
+Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to retrain every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model retrains only when its history is nonempty and it has received new observations since its previous training call.
 
 \subsubsection{3a. Architecture and fitting}\label{a.-architecture-and-fitting}
 
@@ -187,15 +193,15 @@ Both agents and the broker use the same architecture: a fully-connected network 
 
 where \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Agents receive raw partner type vectors, the broker receives pairs of them.
 
-\textbf{Training rule.} Network weights minimize MSE with the Adam optimizer (learning rate \(\eta_{\mathrm{lr}}\), default 0.01) on the current training window. No explicit weight regularization is applied. At \(t = 0\), each network starts from random weights, with output bias \(b_2=Q\) (§2a), all other weights using He initialization, and \(E_{\text{init}}\) gradient steps (default 200) on its seed history.
+\textbf{Training rule.} Network weights minimize MSE with the Adam optimizer (learning rate \(\eta_{\mathrm{lr}}\), default 0.01) on the current training window. No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\text{init}}\) gradient steps (default 200) on their seed histories.
 
-Subsequent updates warm-start from the previous weights. The number of gradient steps adapts to the ratio of new observations to total history:
+Subsequent updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
 \[E_t = \max\!\left(E_{\text{steps}}, \; \left\lceil E_{\text{init}} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right)\]
 
-where \(n_{\text{new}}\) is the number of observations added this period, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps}}\) (default 100) is the minimum per-period step count. Agents and the broker use the same schedule.
+where \(n_{\text{new}}\) is the number of observations added since that model's previous training call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps}}\) (default 100) is the minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents train on an alternating schedule. Agents and the broker use the same step-count rule.
 
-Each training period uses observations from the most recent \(W_p = 40\) periods. If the window exceeds \(M_{\text{train}} = 2000\) observations, it keeps evenly spaced observations across the window.
+Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A training call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, training deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the training sample, not the stored history or the period window.
 
 \subsubsection{\texorpdfstring{3b. Agent \(i\)'s model}{3b. Agent i's model}}\label{b.-agent-is-model}
 
@@ -293,7 +299,7 @@ where \(K\) is the maximum number of active demands the agent can initiate in th
 
 Agent \(i\)'s self-search candidate pool has two components:
 
-\textbf{Known neighbors.} Direct network neighbors in \(G\) have at least one previously observed match with \(i\). For each such neighbor \(j\), the agent uses \(\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}\), where \(n_{ij}\) is the number of times \(i\) and \(j\) have matched. Initial histories seed one observation for every graph neighbor, so initial direct ties are known neighbors from period 1.
+\textbf{Neighbors.} For a direct network neighbor \(j\) with prior pair-specific experience, agent \(i\) uses \(\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}\), where \(n_{ij}\) is the number of times \(i\) and \(j\) have matched. If the graph edge exists but \(n_{ij}=0\), the agent instead uses \(\hat q_i(\mathbf x_j)\). Initial histories seed one observation for every initial graph edge. Unobserved neighbor edges arise after turnover because entrants attach structurally before matching.
 
 \textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) agents uniformly without replacement, where \(n_{\mathrm{strangers}} = 10\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
 
@@ -466,7 +472,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation is Spearman's \(\rho_S\) between predicted and realized output. \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\).
+Rank correlation is Spearman's \(\rho_S\) between predicted and realized output. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Holdout summaries use common valid-agent support for all four measures: an agent-level holdout set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
 
 \subsubsection{Other measures}\label{other-measures}
 

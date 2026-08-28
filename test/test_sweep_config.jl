@@ -101,7 +101,7 @@ end
 
 @testset "rho=1 effective realization is delta-invariant" begin
     common = (
-        N=30, k=4, T=3, T_burn=0, E_init=1, train_steps=1, eta=0.0, rho=1.0, seed=90210
+        N=30, k=4, T=3, E_init=1, train_steps=1, eta=0.0, rho=1.0, seed=90210
     )
     state_zero, metrics_zero = run_simulation(default_params(; common..., delta=0.0))
     state_one, metrics_one = run_simulation(default_params(; common..., delta=1.0))

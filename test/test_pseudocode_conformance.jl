@@ -106,6 +106,8 @@ function configure_micro_state!(state)
         empty!(agent.active_matches)
         agent.history_count = 0
         agent.n_new_obs = 0
+        empty!(agent.obs_period_marks)
+        push!(agent.obs_period_marks, 0)
         fill!(agent.partner_sum, 0.0)
         fill!(agent.partner_count, 0)
         agent.satisfaction_self = 2.0
@@ -119,6 +121,8 @@ function configure_micro_state!(state)
     broker = state.broker
     broker.history_count = 0
     broker.n_new_obs = 0
+    empty!(broker.obs_period_marks)
+    push!(broker.obs_period_marks, 0)
     broker.last_reputation = 1.0
     broker.has_had_clients = false
     pseudocode_constant_prediction!(broker.nn, 0.0)
@@ -143,7 +147,6 @@ function micro_state(; seed::Int=314)
         E_init=1,
         network_measure_interval=1,
         T=3,
-        T_burn=1,
         seed=seed,
     )
     return configure_micro_state!(initialize_model(p))
@@ -212,7 +215,6 @@ end
             n_strangers=0,
             E_init=1,
             T=3,
-            T_burn=1,
             seed=501,
         )
         state = initialize_model(p)

@@ -22,10 +22,12 @@ export BROKERAGE_ABM_SWEEP_DIR="${2:?usage: slurm_plot.sh <repo_root> <sweep_dir
 module purge
 module load julia/1.11.3
 export OMP_NUM_THREADS=1
+export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
 # Match slurm_setup.sh / slurm_sweep.sh so plot jobs share the multiversioned cache.
 export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
 
 cd "$REPO"
 echo "plot task=${SLURM_ARRAY_TASK_ID} host=$(hostname) cpus=${SLURM_CPUS_PER_TASK} sweep=$BROKERAGE_ABM_SWEEP_DIR"
 
-julia --project --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_plot.jl
+julia --compiled-modules=strict --pkgimages=existing --project \
+    --threads="${SLURM_CPUS_PER_TASK:-2}" scripts/sweep/sweep_plot.jl

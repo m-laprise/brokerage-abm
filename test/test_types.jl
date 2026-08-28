@@ -66,6 +66,7 @@ using LinearAlgebra: norm
     @testset "default_params rejects unknown kwargs" begin
         @test_throws ErrorException default_params(; bogus_param=42)
         @test_throws ErrorException default_params(; tau=1)
+        @test_throws ErrorException default_params(; T_burn=30)
     end
 
     @testset "validate_params catches invalid values" begin
@@ -81,7 +82,6 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(roster_frac=1.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
-        @test_throws AssertionError default_params(T=10, T_burn=15)
     end
 
     @testset "NeuralNet and NNGradBuffers" begin
@@ -90,7 +90,9 @@ using LinearAlgebra: norm
         @test size(nn.W1) == (16, 8)
         @test length(nn.b1) == 16
         @test length(nn.w2) == 16
-        @test nn.b2 == Q_OFFSET  # b2 initialized to population-mean prior
+        @test all(iszero, nn.b1)
+        @test all(iszero, nn.w2)
+        @test nn.b2 == Q_OFFSET
 
         grad = NNGradBuffers(nn)
         @test size(grad.dW1) == (16, 8)
@@ -190,30 +192,32 @@ using LinearAlgebra: norm
         broker = state.broker
         d = p.d
 
-        broker.history_Xi = Matrix{Float64}(undef, d, 2)
-        broker.history_Xj = Matrix{Float64}(undef, d, 2)
+        broker.history_party1_types = Matrix{Float64}(undef, d, 2)
+        broker.history_party2_types = Matrix{Float64}(undef, d, 2)
         broker.history_q = Vector{Float64}(undef, 2)
         broker.train_X = Matrix{Float64}(undef, broker_pair_feature_dim(d), 4)
         broker.train_q = Vector{Float64}(undef, 4)
         broker.history_count = 0
         broker.n_new_obs = 0
 
-        xi1 = randn(rng, d);
-        xj1 = randn(rng, d)
-        xi2 = randn(rng, d);
-        xj2 = randn(rng, d)
-        xi3 = randn(rng, d);
-        xj3 = randn(rng, d)
-        record_broker_history!(broker, xi1, xj1, 1.0)
-        record_broker_history!(broker, xi2, xj2, 2.0)
-        record_broker_history!(broker, xi3, xj3, 3.0)  # triggers growth
+        party1_type1 = randn(rng, d)
+        party2_type1 = randn(rng, d)
+        party1_type2 = randn(rng, d)
+        party2_type2 = randn(rng, d)
+        party1_type3 = randn(rng, d)
+        party2_type3 = randn(rng, d)
+        record_broker_history!(broker, party1_type1, party2_type1, 1.0)
+        record_broker_history!(broker, party1_type2, party2_type2, 2.0)
+        record_broker_history!(broker, party1_type3, party2_type3, 3.0)  # triggers growth
 
         @test broker.history_count == 3
         @test broker.n_new_obs == 3
-        @test size(broker.history_Xi, 2) >= 3
-        @test size(broker.history_Xj, 2) >= 3
+        @test size(broker.history_party1_types, 2) >= 3
+        @test size(broker.history_party2_types, 2) >= 3
         @test size(broker.train_X, 1) == broker_pair_feature_dim(d)
         @test size(broker.train_X, 2) >= 3
+        @test broker.history_party1_types[:, 3] == party1_type3
+        @test broker.history_party2_types[:, 3] == party2_type3
         @test broker.history_q[3] == 3.0
     end
 

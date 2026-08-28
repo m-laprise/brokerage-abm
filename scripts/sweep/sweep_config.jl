@@ -32,7 +32,8 @@ const SWEEP_SCHEMA_VERSION = 5
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Baseline simulation knobs applied to every cell (others come from
-# `default_params`). T/T_burn are fixed across the whole sweep.
+# `default_params`). Simulation length and the analysis burn-in are fixed across
+# the whole sweep, but only T is a model parameter.
 const SWEEP_T = 500
 const SWEEP_T_BURN = 30
 const SWEEP_SEEDS = collect(1:10)

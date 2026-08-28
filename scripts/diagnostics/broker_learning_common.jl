@@ -73,7 +73,7 @@ function make_env(;
 )
     rng = StableRNG(seed)
     geo = generate_curve_geometry(d, s, rng)
-    pool, _ = generate_agent_types(n_pool, geo, sigma_x, rng)
+    pool = generate_agent_types(n_pool, geo, sigma_x, rng)
     env = generate_matching_env(
         d, rho, delta, sigma_eps, pool, rng; sigma_x=sigma_x, curve_geo=geo
     )

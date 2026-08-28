@@ -69,7 +69,7 @@ function main()
 
     # ── Build params ─────────────────────────────────────────────────────────
     params = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in e[:resolved_params])
-    p = default_params(; seed=seed, T=SWEEP_T, T_burn=SWEEP_T_BURN, params...)
+    p = default_params(; seed=seed, T=SWEEP_T, params...)
 
     println(
         "RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
@@ -92,7 +92,7 @@ function main()
         "seed" => seed,
         "N" => p.N,
         "T" => p.T,
-        "T_burn" => p.T_burn,
+        "T_burn" => SWEEP_T_BURN,
         "rho" => p.rho,
         "eta" => p.eta,
         "delta" => p.delta,

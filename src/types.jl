@@ -84,8 +84,8 @@ Base.@kwdef mutable struct Agent
     history_q::Vector{Float64}               # realized outputs, matching columns of history_X
     history_count::Int = 0                   # total observations recorded
 
-    # Cumulative history_count at the end of each period alive; defines the
-    # period-based training window (see learning.jl period_training_window).
+    # Cumulative history_count at the end of initialization (period 0) and each
+    # later period alive; defines the period-based training window.
     obs_period_marks::Vector{Int} = Int[]
 
     # Neural network and prediction buffer
@@ -210,13 +210,13 @@ Base.@kwdef mutable struct Broker
     current_clients::Set{Int} = Set{Int}()    # agents outsourcing in the current period
 
     # Experience history: d x capacity matrices (column-major, doubling growth)
-    history_Xi::Matrix{Float64}               # demander types
-    history_Xj::Matrix{Float64}               # counterparty types
+    history_party1_types::Matrix{Float64}
+    history_party2_types::Matrix{Float64}
     history_q::Vector{Float64}                # realized outputs
     history_count::Int = 0
 
-    # Cumulative history_count at the end of each period (period-based training
-    # window; see Agent.obs_period_marks).
+    # Cumulative history_count at the end of initialization (period 0) and each
+    # later period (period-based training window; see Agent.obs_period_marks).
     obs_period_marks::Vector{Int} = Int[]
 
     # Neural network
@@ -237,25 +237,28 @@ end
 """Number of valid history entries for the broker."""
 effective_history_size(broker::Broker) = broker.history_count
 
-"""Record a brokered observation to the broker's history, growing buffers if needed."""
+"""Record two party types and output in the broker's symmetric match history."""
 function record_broker_history!(
-    broker::Broker, xi::AbstractVector{Float64}, xj::AbstractVector{Float64}, q::Float64
+    broker::Broker,
+    party1_type::AbstractVector{Float64},
+    party2_type::AbstractVector{Float64},
+    q::Float64,
 )
     broker.history_count += 1
     broker.n_new_obs += 1
     n = broker.history_count
-    cap = size(broker.history_Xi, 2)
+    cap = size(broker.history_party1_types, 2)
 
     # Grow buffers if needed
     if n > cap
-        d = size(broker.history_Xi, 1)
+        d = size(broker.history_party1_types, 1)
         new_cap = max(2 * cap, 32)
-        new_Xi = Matrix{Float64}(undef, d, new_cap)
-        new_Xi[:, 1:cap] .= broker.history_Xi
-        broker.history_Xi = new_Xi
-        new_Xj = Matrix{Float64}(undef, d, new_cap)
-        new_Xj[:, 1:cap] .= broker.history_Xj
-        broker.history_Xj = new_Xj
+        new_party1_types = Matrix{Float64}(undef, d, new_cap)
+        new_party1_types[:, 1:cap] .= broker.history_party1_types
+        broker.history_party1_types = new_party1_types
+        new_party2_types = Matrix{Float64}(undef, d, new_cap)
+        new_party2_types[:, 1:cap] .= broker.history_party2_types
+        broker.history_party2_types = new_party2_types
         resize!(broker.history_q, new_cap)
 
         # Also grow broker feature training buffers
@@ -266,8 +269,8 @@ function record_broker_history!(
         resize!(broker.train_q, new_train_cap)
     end
 
-    broker.history_Xi[:, n] .= xi
-    broker.history_Xj[:, n] .= xj
+    broker.history_party1_types[:, n] .= party1_type
+    broker.history_party2_types[:, n] .= party2_type
     broker.history_q[n] = q
     return nothing
 end
@@ -468,7 +471,6 @@ struct ModelParams
     # Simulation
     network_measure_interval::Int # M (default 20)
     T::Int                       # total periods (default 500)
-    T_burn::Int                  # burn-in periods (default 30)
     seed::Int                    # RNG seed
 end
 

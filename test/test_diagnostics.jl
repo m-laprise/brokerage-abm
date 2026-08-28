@@ -2,7 +2,7 @@ using Test
 using BrokerageABM
 
 @testset "Diagnostics" begin
-    state = initialize_model(default_params(N=30, T=5, T_burn=1, seed=42))
+    state = initialize_model(default_params(N=30, T=5, seed=42))
     step_period!(state)
     summary = diagnostic_summary(state)
 

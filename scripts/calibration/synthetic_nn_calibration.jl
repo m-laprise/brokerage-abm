@@ -116,7 +116,7 @@ function eval_config(; n_train, n_test=5000, h, activation, lr, lambda_wd,
     # Build env and types
     p = default_params(seed=seed)
     geo = generate_curve_geometry(d, p.s, rng)
-    types, _ = generate_agent_types(p.N, geo, p.sigma_x, rng)
+    types = generate_agent_types(p.N, geo, p.sigma_x, rng)
     env = generate_matching_env(d, p.rho, p.delta, p.sigma_eps, types, rng;
                                 sigma_x=p.sigma_x, curve_geo=geo)
 

@@ -3,6 +3,7 @@ using BrokerageABM
 using BrokerageABM: Agent, NNGradBuffers, NeuralNet, agent_hidden_width
 using BrokerageABM: compute_adaptive_steps
 using BrokerageABM: init_neural_net, nn_loss, predict_nn!, predict_nn_batch!
+using BrokerageABM: period_training_window, windowed_index
 using BrokerageABM: record_broker_history!
 using BrokerageABM: train_agent_nn!, train_broker_nn!, train_nn!, train_step!
 using StableRNGs: StableRNG
@@ -16,6 +17,35 @@ using LinearAlgebra: normalize
         z = randn(rng, 8)
         y = predict_nn!(nn, buf, z)
         @test isfinite(y)
+    end
+
+    @testset "untrained network has a constant Q prior" begin
+        rng = StableRNG(41)
+        nn = init_neural_net(8, 16, rng)
+        buf = zeros(16)
+        X = randn(rng, 8, 12)
+
+        @test all(iszero, nn.w2)
+        @test [predict_nn!(nn, buf, X[:, j]) for j in axes(X, 2)] ==
+            fill(BrokerageABM.Q_OFFSET, size(X, 2))
+    end
+
+    @testset "period-zero boundary leaves only completed simulation periods" begin
+        # Seed history has columns 1:3. Periods 1 and 2 add columns 4:5 and 6:7.
+        start_idx, window, count = period_training_window([3, 5, 7], 7, 2, 20)
+        @test (start_idx, window, count) == (4, 4, 4)
+
+        # Before W_p completed periods exist, period 0 remains in the window.
+        @test period_training_window([3, 5], 5, 2, 20) == (1, 5, 5)
+
+        # The observation cap changes the training sample, not the window boundary.
+        @test period_training_window([3, 5, 7], 7, 2, 2) == (4, 4, 2)
+
+        # Capped sampling always includes the newest observation.
+        @test [windowed_index(4, 4, 2, k) for k in 0:1] == [4, 7]
+        @test [windowed_index(4, 4, 3, k) for k in 0:2] == [4, 5, 7]
+        @test windowed_index(4, 4, 1, 0) == 7
+        @test [windowed_index(4, 4, 4, k) for k in 0:3] == collect(4:7)
     end
 
     @testset "predict_nn! is deterministic" begin

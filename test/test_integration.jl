@@ -5,7 +5,7 @@ using BrokerageABM
     using DataFrames: nrow
 
     @testset "Simulation is deterministic and internally coherent" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state, df1 = run_simulation(p)
         _, df2 = run_simulation(p)
 
@@ -24,7 +24,7 @@ using BrokerageABM
     @testset "Representative parameter variants complete" begin
         variants = [(K=20,), (K=2,), (rho=0.0,)]
         results = map(variants) do kwargs
-            p = default_params(N=50, T=10, T_burn=2, seed=42; kwargs...)
+            p = default_params(N=50, T=10, seed=42; kwargs...)
             _, df = run_simulation(p)
             df
         end

@@ -66,8 +66,14 @@ function verify_invariants(state::ModelState)
         @assert 0 <= a.history_count <= size(a.history_X, 2) "Agent $i: history_count=$(a.history_count) > capacity=$(size(a.history_X, 2))"
         @assert a.history_count <= length(a.history_q) "Agent $i: history_count exceeds history_q length"
         @assert a.n_new_obs >= 0 "Agent $i: negative n_new_obs=$(a.n_new_obs)"
+        @assert length(a.obs_period_marks) == a.periods_alive + 1 "Agent $i: period marks do not include exactly one period-0 boundary plus one boundary per period alive"
+        @assert issorted(a.obs_period_marks) "Agent $i: period marks are not cumulative"
+        @assert last(a.obs_period_marks) <= a.history_count "Agent $i: period mark exceeds history count"
     end
-    @assert 0 <= broker.history_count <= size(broker.history_Xi, 2) "Broker: history_count=$(broker.history_count) > capacity"
+    @assert 0 <= broker.history_count <= size(broker.history_party1_types, 2) "Broker: history_count=$(broker.history_count) > capacity"
+    @assert length(broker.obs_period_marks) == state.period + 1 "Broker period marks do not include period 0 through the current period"
+    @assert issorted(broker.obs_period_marks) "Broker period marks are not cumulative"
+    @assert last(broker.obs_period_marks) == broker.history_count "Broker's latest period mark must equal history count"
 
     # ── Broker roster and client-overlay consistency ──
     target_size = roster_target_size(p)

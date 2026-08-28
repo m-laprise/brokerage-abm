@@ -661,7 +661,7 @@ for (idx, c) in enumerate(configs)
     p = default_params(; N=N_SIM, seed=42, c.kwargs...)
     rng = StableRNG(p.seed)
     geo = generate_curve_geometry(p.d, p.s, rng)
-    types, _ = generate_agent_types(p.N, geo, p.sigma_x, rng)
+    types = generate_agent_types(p.N, geo, p.sigma_x, rng)
     env = generate_matching_env(
         p.d, p.rho, p.delta, p.sigma_eps, types, rng; sigma_x=p.sigma_x, curve_geo=geo
     )

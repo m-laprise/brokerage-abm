@@ -6,7 +6,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
 @testset "Step and Simulation" begin
     @testset "step_period! advances period counter" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state = initialize_model(p)
         @test state.period == 0
         step_period!(state)
@@ -21,7 +21,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Current-period match ledger resets before demand generation" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state = initialize_model(p)
         push!(state.agents[1].active_matches, ActiveMatch(0, :self))
         step_period!(state)
@@ -29,7 +29,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Roster size stays fixed at the target" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.0)
+        p = default_params(N=50, T=10, seed=42, eta=0.0)
         target = BrokerageABM.roster_target_size(p)
         _, df = run_simulation(p)
         @test all(df.roster_size .== target)
@@ -37,7 +37,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
     @testset "Roster size follows the configured share" begin
         p = default_params(
-            N=50, T=10, T_burn=2, seed=43, eta=0.0, roster_frac=0.40
+            N=50, T=10, seed=43, eta=0.0, roster_frac=0.40
         )
         target = BrokerageABM.roster_target_size(p)
         _, df = run_simulation(p)
@@ -46,7 +46,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Roster composition changes under churn" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.0, roster_churn=0.5)
+        p = default_params(N=50, T=10, seed=42, eta=0.0, roster_churn=0.5)
         state = initialize_model(p)
         roster_before = copy(state.broker.roster)
         for _ in 1:3
@@ -56,7 +56,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Current broker clients receive broker edges" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state = initialize_model(p)
         client_id = first(i for i in 1:p.N if i ∉ state.broker.roster)
 
@@ -67,7 +67,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Broker access size uses the hybrid union without double counting" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state = initialize_model(p)
         roster_member = first(state.broker.roster)
         outside_member = first(i for i in 1:p.N if i ∉ state.broker.roster)
@@ -80,7 +80,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "collect_period_metrics returns valid NamedTuple" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42)
+        p = default_params(N=50, T=10, seed=42)
         state = initialize_model(p)
         metrics = step_period!(state)
         @test metrics.period == 1
@@ -97,7 +97,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "collect_period_metrics reports agent-only degree summaries from G" begin
-        p = default_params(N=51, T=10, T_burn=2, seed=42, eta=0.0)
+        p = default_params(N=51, T=10, seed=42, eta=0.0)
         state = initialize_model(p)
         metrics = step_period!(state)
 
@@ -116,7 +116,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "step_period! returns pre-turnover measurements" begin
-        p = default_params(N=50, T=10, T_burn=2, seed=42, eta=0.95)
+        p = default_params(N=50, T=10, seed=42, eta=0.95)
         state = initialize_model(p)
         metrics = step_period!(state)
         post_turnover_degrees = BrokerageABM.degree_summary(state)
@@ -134,7 +134,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         )
 
         final_state, df = run_simulation(
-            default_params(N=50, T=2, T_burn=1, seed=42, eta=0.95)
+            default_params(N=50, T=2, seed=42, eta=0.95)
         )
         final_degrees = BrokerageABM.degree_summary(final_state)
         @test df.mean_degree[end] == final_state.accum.mean_degree
@@ -145,7 +145,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "degree quantile diagnostics exclude the broker node" begin
-        p = default_params(N=10, T=2, T_burn=1, seed=42)
+        p = default_params(N=10, T=2, seed=42)
         state = initialize_model(p)
         G = SimpleGraph(p.N + 1)
         broker_node = state.broker.node_id
@@ -168,7 +168,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Holdout metrics are populated after stepping" begin
-        p = default_params(N=80, T=10, T_burn=2, seed=42, eta=0.0)
+        p = default_params(N=80, T=10, seed=42, eta=0.0)
         state = initialize_model(p)
         for _ in 1:3
             step_period!(state)
@@ -180,7 +180,7 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
     end
 
     @testset "Holdout diagnostics do not consume the simulation RNG" begin
-        p = default_params(N=80, T=10, T_burn=2, seed=42, eta=0.0)
+        p = default_params(N=80, T=10, seed=42, eta=0.0)
         state_with_holdout = initialize_model(p)
         state_reference = initialize_model(p)
 

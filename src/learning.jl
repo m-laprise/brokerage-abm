@@ -2,8 +2,9 @@
     learning.jl
 
 Neural network prediction models for agents and broker.
-One-hidden-layer ReLU networks trained by vanilla full-batch gradient descent.
-Gradients are computed through DifferentiationInterface with Enzyme.
+The live model trains one-hidden-layer ReLU networks with full-batch Adam.
+Vanilla-gradient helpers are retained for gradient tests. Gradients are computed
+through DifferentiationInterface with Enzyme.
 
 Agent: input x_j (d features), with width derived from d.
 Broker: symmetric additive and bilinear pair features, with width derived from d.
@@ -123,12 +124,11 @@ end
 """
     init_neural_net(d_in, h, rng; b2_init=Q_OFFSET) -> NeuralNet
 
-Initialize a one-hidden-layer ReLU network with Kaiming (He) initialization.
-The output bias `b2` is initialized to `b2_init` (default `Q_OFFSET`) so that an
-untrained network outputs approximately the population mean match quality,
-rather than zero. This avoids a large negative-bias artifact for fresh entrants
-whose NN has not yet been trained, without changing the behavior of mature NNs
-(the first training step on any data shifts `b2` to its fitted value).
+Initialize a one-hidden-layer ReLU network with He-initialized hidden weights,
+zero hidden bias, zero output weights, and output bias `b2_init` (default
+`Q_OFFSET`). The untrained network therefore returns exactly `b2_init` for every
+input. This gives fresh entrants a neutral constant prior until they acquire
+training data. Subsequent training updates every parameter.
 """
 function init_neural_net(
     d_in::Int, h::Int, rng::AbstractRNG; b2_init::Float64=Q_OFFSET
@@ -137,9 +137,7 @@ function init_neural_net(
     scale_1 = sqrt(2.0 / d_in)
     W1 = scale_1 .* randn(rng, h, d_in)
     b1 = zeros(h)
-    # Output layer: Xavier scale
-    scale_2 = sqrt(1.0 / h)
-    w2 = scale_2 .* randn(rng, h)
+    w2 = zeros(h)
     b2 = b2_init
     return NeuralNet(W1, b1, w2, b2)
 end
@@ -583,14 +581,19 @@ const AGENT_TRAIN_BUFFER_FLOOR = 128
 """
     period_training_window(marks, n, window_periods, max_obs) -> (start_idx, window, count)
 
-Resolve the period horizon to history columns. `marks[k]` is the cumulative
-`history_count` at the end of the learner's k-th period, so the most recent
-`window_periods` periods span the `window`-wide block `start_idx:n` (start is index
-1 if fewer periods exist). `count = min(window, max_obs)` observations are taken
-from that block, evenly spaced via `windowed_index` — using the full budget exactly
-when the window exceeds the cap, and every observation otherwise.
+Resolve the period horizon to history columns. `marks[1]` is the cumulative
+history count at the end of initialization (period 0), and later entries are the
+counts at the ends of simulation periods 1, 2, and so on. The most recent
+`window_periods` simulation periods span the `window`-wide block `start_idx:n`.
+Before that many periods exist, initialization remains in the window. `count =
+min(window, max_obs)` observations are taken from the block, evenly spaced via
+`windowed_index`, using the full cap when necessary and every observation
+otherwise. A capped sample includes both window endpoints when `count >= 2` and
+the newest observation when `count == 1`.
 """
-function period_training_window(marks::Vector{Int}, n::Int, window_periods::Int, max_obs::Int)
+function period_training_window(
+    marks::Vector{Int}, n::Int, window_periods::Int, max_obs::Int
+)
     P = length(marks)
     start_idx = P <= window_periods ? 1 : min(marks[P - window_periods] + 1, n)
     window = n - start_idx + 1
@@ -601,12 +604,14 @@ end
 """
     windowed_index(start_idx, window, count, k) -> Int
 
-0-based `k`-th source column when taking `count` observations evenly spaced across
-the `window`-wide block beginning at `start_idx`. Integer arithmetic, no
-allocation; reduces to consecutive indices when `count == window`.
+0-based `k`-th source column when taking `count` observations evenly across the
+`window`-wide block beginning at `start_idx`. A multi-observation sample includes
+the oldest and newest columns. A one-observation sample uses the newest column.
+Integer arithmetic, no allocation; reduces to consecutive indices when
+`count == window`.
 """
 @inline windowed_index(start_idx::Int, window::Int, count::Int, k::Int)::Int =
-    start_idx + (k * window) ÷ count
+    count == 1 ? start_idx + window - 1 : start_idx + (k * (window - 1)) ÷ (count - 1)
 
 """
     ensure_agent_train_buffers!(agent, d, n, max_obs)
@@ -637,7 +642,9 @@ function train_agent_nn_impl!(agent::Agent, params::ModelParams)
 
     # Step count is set by the new-data ratio over full history (independent of the
     # window/cap), settling to the params.train_steps floor once history dominates.
-    n_steps = compute_adaptive_steps(params.E_init, agent.n_new_obs, n; min_steps=params.train_steps)
+    n_steps = compute_adaptive_steps(
+        params.E_init, agent.n_new_obs, n; min_steps=params.train_steps
+    )
     agent.n_new_obs = 0
 
     d = params.d
@@ -706,14 +713,21 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
         j = windowed_index(start_idx, window, count, k)
         col = k + 1
         fill_broker_pair_features!(
-            broker.train_X, col, broker.history_Xi, j, broker.history_Xj, j
+            broker.train_X,
+            col,
+            broker.history_party1_types,
+            j,
+            broker.history_party2_types,
+            j,
         )
         broker.train_q[col] = broker.history_q[j]
     end
 
     # Step count is set by the new-data ratio over full history (independent of the
     # window/cap), settling to the params.train_steps floor once history dominates.
-    n_steps = compute_adaptive_steps(params.E_init, broker.n_new_obs, n; min_steps=params.train_steps)
+    n_steps = compute_adaptive_steps(
+        params.E_init, broker.n_new_obs, n; min_steps=params.train_steps
+    )
     broker.n_new_obs = 0
 
     train_nn_prefix_adam!(

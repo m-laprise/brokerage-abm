@@ -76,7 +76,6 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Simulation
         :network_measure_interval => 20,
         :T => 500,
-        :T_burn => 30,
         :seed => seed,
     )
     for (kw, v) in kwargs
@@ -109,7 +108,6 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:roster_churn],
         defaults[:network_measure_interval],
         defaults[:T],
-        defaults[:T_burn],
         defaults[:seed],
     )
     validate_params(p)
@@ -166,8 +164,6 @@ function validate_params(p::ModelParams)
     # Simulation
     @assert p.network_measure_interval >= 1 "network_measure_interval must be >= 1"
     @assert p.T >= 1 "T must be >= 1, got $(p.T)"
-    @assert p.T_burn >= 0 "T_burn must be >= 0, got $(p.T_burn)"
-    @assert p.T_burn < p.T "T_burn must be < T, got T_burn=$(p.T_burn), T=$(p.T)"
 
     return nothing
 end

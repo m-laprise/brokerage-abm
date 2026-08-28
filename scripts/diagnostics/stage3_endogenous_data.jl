@@ -15,7 +15,8 @@ the interaction signal in two ways:
      broker rarely sees the contrast that distinguishes the two gain regimes,
      so the gating term is unidentifiable from its data alone.
 
-We run the real ABM, snapshot the broker's recorded history (history_Xi/Xj/q),
+We run the real ABM, snapshot the broker's recorded history (party 1 types,
+party 2 types, and output),
 and (a) characterize that sample vs a uniform pool draw, and (b) train a broker
 net on the endogenous history vs an equal-sized uniform sample under identical
 optimization, comparing gain recovery (βg). If uniform ≫ endogenous, the deficit
@@ -41,12 +42,12 @@ function effective_rank(M::Matrix{Float64})
     return s^2 / sum(abs2, λ)
 end
 
-"""Snapshot the broker's endogenous history as (Xi, Xj, q) up to history_count."""
+"""Snapshot the broker's endogenous history as (party1, party2, q)."""
 function broker_history_snapshot(state)
     b = state.broker
     n = b.history_count
-    Xi = b.history_Xi[:, 1:n]
-    Xj = b.history_Xj[:, 1:n]
+    Xi = b.history_party1_types[:, 1:n]
+    Xj = b.history_party2_types[:, 1:n]
     q = b.history_q[1:n]
     return Matrix(Xi), Matrix(Xj), Vector(q)
 end

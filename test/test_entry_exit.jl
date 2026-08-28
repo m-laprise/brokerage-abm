@@ -54,6 +54,7 @@ using BrokerageABM: exit_agent!, process_entry_exit!, remove_agent_edges!
 
         @test a.history_count == 0
         @test a.n_new_obs == 0
+        @test a.obs_period_marks == [0]
         @test isfinite(a.satisfaction_self)     # set from neighbors' satisfaction
         @test isfinite(a.satisfaction_broker)  # set to broker reputation (market prior)
         @test a.tried_broker == false
@@ -91,11 +92,12 @@ using BrokerageABM: exit_agent!, process_entry_exit!, remove_agent_edges!
         state5 = initialize_model(default_params(N=20, seed=55))
         enter_agent!(state5, 1, state5.rng)
         @test state5.agents[1].nn.b2 == Q_OFFSET
+        @test all(iszero, state5.agents[1].nn.w2)
         @test all(isfinite, state5.agents[1].nn.W1)
     end
 
     @testset "process_entry_exit! conserves population count" begin
-        p2 = default_params(N=100, T=1, T_burn=0, seed=42, eta=0.20)
+        p2 = default_params(N=100, T=1, seed=42, eta=0.20)
         state6 = initialize_model(p2)
         n_before = length(state6.agents)
         process_entry_exit!(state6, state6.rng)
@@ -104,7 +106,7 @@ using BrokerageABM: exit_agent!, process_entry_exit!, remove_agent_edges!
     end
 
     @testset "process_entry_exit! turnover rate approximates eta" begin
-        p3 = default_params(N=200, T=1, T_burn=0, seed=42, eta=0.10)
+        p3 = default_params(N=200, T=1, seed=42, eta=0.10)
         state7 = initialize_model(p3)
         old_types = [copy(a.type) for a in state7.agents]
         process_entry_exit!(state7, state7.rng)
@@ -114,7 +116,7 @@ using BrokerageABM: exit_agent!, process_entry_exit!, remove_agent_edges!
     end
 
     @testset "process_entry_exit! with eta=0 is a no-op" begin
-        p4 = default_params(N=50, T=1, T_burn=0, seed=42, eta=0.0)
+        p4 = default_params(N=50, T=1, seed=42, eta=0.0)
         state8 = initialize_model(p4)
         old_types = [copy(a.type) for a in state8.agents]
         process_entry_exit!(state8, state8.rng)

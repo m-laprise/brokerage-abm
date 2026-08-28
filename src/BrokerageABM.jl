@@ -15,7 +15,6 @@ using StableRNGs: StableRNG
 using LinearAlgebra: dot, norm, mul!, normalize
 using Random: AbstractRNG, shuffle!
 using Statistics: var, mean
-using MultivariateStats: fit, predict, PCA
 using DataFrames: DataFrame
 using Distributions: Binomial
 

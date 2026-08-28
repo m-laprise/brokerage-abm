@@ -156,6 +156,9 @@ $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\
 $\mathcal H_b^t=(X_{b,1}^t,X_{b,2}^t,y_b^t,n_b^t)$ & $X_{b,1}^t,X_{b,2}^t\in\R^{d\times n_b^t}$, $y_b^t\in\R^{n_b^t}$ & Broker history; observation $\ell$ stores the two party types and output $y_{b\ell}^t$. \\
 $\Theta_i^t$ & NN parameters & Agent $i$ MLP weights. \\
 $\Theta_b^t$ & NN parameters & Broker MLP weights. \\
+$\mathcal O_i^t,\mathcal O_b^t$ & Adam states & Persistent optimizer moments and step counters. \\
+$\Delta_i^t,\Delta_b^t$ & nonnegative integers & Observations added since the learner's previous training call. \\
+$\mathbf p_i^t,\mathbf p_b^t$ & integer sequences & Cumulative history counts at the end of learner initialization (period 0) and each later completed period. \\
 $v_b^t(i,j)$ & scalar & Symmetric broker prediction for unordered pair $\{i,j\}$. \\
 $w_{j\leftarrow i}^t$ & scalar & Receiver acceptance score. \\
 $\bar q_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed empirical means. \\
@@ -174,20 +177,27 @@ $\mathrm{rep}_b^t$ & scalar & Broker reputation. \\
 $D_+^t$ & subset of $[N]$ & Broker clients with positive residual offer quota. \\
 $\mathcal D^t$ & list & Demand records $(i,z_i^t,d_i^t)$ with $d_i^t>0$. \\
 $\mathcal R^t$ & list & Accepted records $(i,j,z,q,\hat q,o_1,o_2)$. \\
+$\mathsf{rng}^t$ & RNG state & State of the simulation random-number stream. \\
 \bottomrule
 \end{longtable}
 \endgroup
 
 The mutable simulation state at the end of period $t$ is
 \[
-S^t=\Bigl(
-X^t,G^t,\gamma,
-\{ \mathcal H_i^t,\Theta_i^t,\bar q_{i\cdot}^t,C_{i\cdot}^t,
-s_i^t,\chi_i^t,M_i^t\}_{i=1}^N,
-\mathcal H_b^t,\Theta_b^t,\mathrm{Roster}^t,D^t,
-\mathrm{rep}_b^t
-\Bigr).
+S^t=\left(
+\begin{aligned}
+&\vartheta,\mathsf{rng}^t,\gamma,c,A,B,\bar q_{\mathrm{cal}},r,\phi,c_s,
+X^t,G^t,\\
+&\{ \mathcal H_i^t,\Theta_i^t,\mathcal O_i^t,\Delta_i^t,\mathbf p_i^t,
+\bar q_{i\cdot}^t,C_{i\cdot}^t,s_i^t,\chi_i^t,M_i^t\}_{i=1}^N,\\
+&\mathcal H_b^t,\Theta_b^t,\mathcal O_b^t,\Delta_b^t,\mathbf p_b^t,
+\mathrm{Roster}^t,D^t,\mathrm{rep}_b^t
+\end{aligned}
+\right).
 \]
+This tuple includes fixed realized model objects and all variables needed for
+later transitions. Implementation-only scratch buffers and diagnostic-only
+counters are omitted.
 
 The matching function is
 \[
@@ -207,8 +217,8 @@ g(x_i,x_j)=1+\delta\,\operatorname{sign}(x_i^\top Bx_j).
 \Ensure Final state $S^T$ and \diag{measure table $\mathcal M\in\R^{T\times m}$}.
 \State $S^0\gets\Call{\procInitialize}{\vartheta,\mathrm{seed}}$
 \For{$t=1,\ldots,T$}
-    \State $(S^t,\mathcal R^t)\gets\Call{\procPeriodUpdate}{S^{t-1},t,\vartheta}$
-    \State \diag{$\mathcal M_{t\cdot}\gets\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$}
+    \State $(S^t,\mathcal R^t,Y^t)\gets\Call{\procPeriodUpdate}{S^{t-1},t,\vartheta}$
+    \State \diag{$\mathcal M_{t\cdot}\gets Y^t$}
 \EndFor
 \State \Return $(S^T,\diag{\mathcal M})$
 \end{algorithmic}
@@ -249,10 +259,10 @@ $\psi_b$ & function & Symmetric broker pair-feature map. \\
 $\Xi_{\mathrm{tr}},y_{\mathrm{tr}}$ & $\R^{p_{\mathrm{in}}\times n}$, $\R^n$ & Generic training inputs and targets. \\
 $\mathcal L$ & scalar & Full-batch MSE objective. \\
 $e$ & integer & Update-step index. \\
-$(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $A_i,A_b$ are the agent/broker instances. \\
+$(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $\mathcal O_i,\mathcal O_b$ are the agent and broker instances. \\
 $\beta_1,\beta_2,\epsilon$ & scalars & Adam constants $(0.9,\,0.999,\,10^{-8})$. \\
 $n_i,n_b$ & integers & Current values of history lengths $n_i^t$ and $n_b^t$. \\
-$L_i,L_b$ & ordered index sets & Training-window indices: observations from the most recent $W_p$ periods, subsampled evenly to at most $M$. \\
+$L_i,L_b$ & ordered index sets & Training-window indices from the most recent $W_p$ completed simulation periods, with period 0 included only until $W_p$ later periods exist; subsampled evenly to at most $M$. \\
 $\Delta_i,\Delta_b$ & integers & New observations since last training call. \\
 $E_i,E_b$ & integers & Agent and broker update-step counts. \\
 $\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}}$ & $\R^{d\times |L_i|}$, $\R^{|L_i|}$ & Agent $i$ training view of $\mathcal H_i^t$. \\
@@ -289,19 +299,27 @@ their current-period values.
 \For{$i=1,\ldots,N$ in parallel}
     \State $n_i\gets n_i^t$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
-        \State $L_i\gets$ indices of $\mathcal H_i$ observations from the most recent $W_p$ periods; if $|L_i|>M$, keep $M$ spaced evenly across $L_i$.
+        \State Let $P_i\gets|\mathbf p_i|$ and
+        $b_i\gets0$ if $P_i\le W_p$, otherwise
+        $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$.
+        If $|L_i|>M$, keep $M$ spaced indices across $L_i$, including its first
+        and last indices (or only its last index when $M=1$).
         \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
         \State $E_i\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta_i/n_i\rceil\}$.
-        \State $(\Theta_i,A_i)\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},E_i,\eta_{\mathrm{lr}},A_i}$; $\Delta_i\gets0$.
+        \State $(\Theta_i,\mathcal O_i)\gets\Call{\procTrainNN}{\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},E_i,\eta_{\mathrm{lr}},\mathcal O_i}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
 \State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
 \If{$n_b>0$ and $\Delta_b>0$}
-    \State $L_b\gets$ indices of $\mathcal H_b$ observations from the most recent $W_p$ periods; if $|L_b|>M$, keep $M$ spaced evenly across $L_b$.
+    \State Let $P_b\gets|\mathbf p_b|$ and
+    $b_b\gets0$ if $P_b\le W_p$, otherwise
+    $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$.
+    If $|L_b|>M$, keep $M$ spaced indices across $L_b$, including its first and
+    last indices (or only its last index when $M=1$).
     \State $\Psi_{b,\mathrm{tr}}\gets\left[\psi_b\!\left((X_{b,1}^t)_{\cdot\ell},(X_{b,2}^t)_{\cdot\ell}\right)\right]_{\ell\in L_b}$.
     \State $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
     \State $E_b\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta_b/n_b\rceil\}$.
-    \State $(\Theta_b,A_b)\gets\Call{\procTrainNN}{\Theta_b,\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}},E_b,\eta_{\mathrm{lr}},A_b}$; $\Delta_b\gets0$.
+    \State $(\Theta_b,\mathcal O_b)\gets\Call{\procTrainNN}{\Theta_b,\Psi_{b,\mathrm{tr}},y_{b,\mathrm{tr}},E_b,\eta_{\mathrm{lr}},\mathcal O_b}$; $\Delta_b\gets0$.
 \EndIf
 \end{algorithmic}
 \end{breakablealgorithm}
@@ -352,7 +370,8 @@ $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachme
 $\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
 \State $x_i^t\gets(\gamma(u_i)+\epsilon_i)/\|\gamma(u_i)+\epsilon_i\|_2$.
 \State Reset $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ to zero observations, $\bar q_{i\cdot}^t$, $C_{i\cdot}^t$,
-$\chi_i^t$, and $M_i^t$; draw fresh agent MLP weights $\Theta_i^t$ with output bias $Q$.
+$\chi_i^t$, $M_i^t$, and $\Delta_i^t$. Draw $W_{1i}^t$ with He initialization and set
+$b_{1i}^t=0$, $w_{2i}^t=0$, $b_{2i}^t=Q$; reset $\mathcal O_i^t$ to zero.
 \If{$t=0$}
     \State $s_i^t\gets(0,0)$.
 \Else
@@ -372,6 +391,7 @@ $\chi_i^t$, and $M_i^t$; draw fresh agent MLP weights $\Theta_i^t$ with output b
     0, & \mathcal V_i^{\mathrm{ent}}=\emptyset.
     \end{cases}$
     \State $s_{i,\mathrm{broker}}^t\gets\mathrm{rep}_b^t$.
+    \State Set $\mathbf p_i^t\gets(0)$, treating entrant initialization as period 0 of its tenure.
 \EndIf
 \end{algorithmic}
 \end{breakablealgorithm}
@@ -388,7 +408,9 @@ $\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\ga
 \For{$i=1,\ldots,N$}
     \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
 \EndFor
-\State Draw ideal agent type $c$ as a noisy curve point.
+\State Draw $u_c\sim\mathrm{Unif}[0,1]$ and
+$\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set
+$c\gets\gamma(u_c)+\epsilon_c$ without re-normalizing.
 \State Draw $A_0\in\R^{d\times d}$ iid standard normal and set
 $A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
 \State $\Sigma_x\gets N^{-1}\sum_i x_i^0(x_i^0)^\top$.
@@ -401,7 +423,8 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \State Calibrate $(\bar q_{\mathrm{cal}},r,\phi,c_s)$.
 \State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and
 rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
-\State Initialize $\mathcal H_b^0$, $\Theta_b^0$, and $\mathrm{rep}_b^0$.
+\State Initialize $\mathcal H_b^0$ and set $W_{1b}^0$ using He initialization,
+$b_{1b}^0=0$, $w_{2b}^0=0$, $b_{2b}^0=Q$, $\mathcal O_b^0=0$, and $\mathrm{rep}_b^0=0$.
 \State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with
 $|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all roster members.
 \For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
@@ -421,13 +444,18 @@ $|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all
 \EndIf
 \State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and
 $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
+\State Set $\mathbf p_i^0\gets(n_i^0)$ for every agent and
+$\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set
+$\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
 \For{each $i$ with $n_i^0>0$}
-    \State $\Theta_i^0\gets\Call{\procTrainNN}{\Theta_i^0,\Xi_i^0,y_i^0,E_{\mathrm{init}},\eta_{\mathrm{lr}}}$.
+    \State $(\Theta_i^0,\mathcal O_i^0)\gets\Call{\procTrainNN}{\Theta_i^0,\Xi_i^0,y_i^0,E_{\mathrm{init}},\eta_{\mathrm{lr}},\mathcal O_i^0}$;
+    $\Delta_i^0\gets0$.
 \EndFor
 \If{$n_b^0>0$}
     \State $\Psi_{b,\mathrm{seed}}\gets\left[\psi_b\!\left((X_{b,1}^0)_{\cdot\ell},(X_{b,2}^0)_{\cdot\ell}\right)\right]_{\ell=1}^{n_b^0}$,
     $y_{b,\mathrm{seed}}\gets y_b^0$.
-    \State $\Theta_b^0\gets\Call{\procTrainNN}{\Theta_b^0,\Psi_{b,\mathrm{seed}},y_{b,\mathrm{seed}},E_{\mathrm{init}},\eta_{\mathrm{lr}}}$.
+    \State $(\Theta_b^0,\mathcal O_b^0)\gets\Call{\procTrainNN}{\Theta_b^0,\Psi_{b,\mathrm{seed}},y_{b,\mathrm{seed}},E_{\mathrm{init}},\eta_{\mathrm{lr}},\mathcal O_b^0}$;
+    $\Delta_b^0\gets0$.
 \EndIf
 \State \Return $S^0$.
 \end{algorithmic}
@@ -473,7 +501,8 @@ $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
 \label{alg:period}
 \begin{algorithmic}[1]
 \Require Previous state $S^{t-1}$, period $t$, parameters $\vartheta$.
-\Ensure Updated state $S^t$ and accepted records $\mathcal R^t$.
+\Ensure Updated state $S^t$, accepted records $\mathcal R^t$, and
+\diag{pre-turnover measure row $Y^t$}.
 \State Clear accumulators, set $M_i^t\gets\emptyset$ for all $i$, and set $D^t\gets\emptyset$.
 \State Refresh roster: remove each roster member with probability
 $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$.
@@ -507,6 +536,8 @@ $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$
     \State \diag{Recompute broker betweenness, Burt constraint, and effective size on the post-matching, pre-turnover graph $G^t$.}
 \EndIf
 \State \diag{$Y^t\gets\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ on the post-matching, pre-turnover state.}
+\State Append $n_i^t$ to $\mathbf p_i^t$ for every agent and append $n_b^t$ to
+$\mathbf p_b^t$, recording the end-of-period training-window boundaries.
 \For{$i=1,\ldots,N$}
     \If{agent $i$ exits with probability $\eta_{\mathrm{exit}}$}
         \State $\Call{\procInitializeAgent}{S^t,i,t,\vartheta}$.
@@ -547,17 +578,18 @@ The symmetric broker score is
 v_b^t(i,j)=\hat q_b^t\!\left(\psi_b(x_i^t,x_j^t)\right).
 \]
 Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node.
-The self-search proposal score is defined only for observed graph neighbors and
-the demander-specific stranger pool:
+The self-search proposal score is defined for every graph neighbor and for the
+non-neighbors in the demander-specific stranger pool:
 \[
 v_{i\to j}^{\mathrm{self},t}=
 \begin{cases}
 \bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
+\hat q_i^t(x_j^t), & j\in\mathcal N_G^t(i),\ C_{ij}^t=0,\\
 \hat q_i^t(x_j^t), & j\in U_i^t\setminus\mathcal N_G^t(i),\\
 \bot, & \text{otherwise}.
 \end{cases}
 \]
-Thus direct pair means dominate predictor extrapolations when pair-specific
+Thus direct pair means replace predictor extrapolations when pair-specific
 experience exists; $\bot$ denotes no valid self-search score. The receiver-side
 acceptance score for a one-sided offer is
 \[
@@ -601,7 +633,7 @@ remain unmatched if no acceptable offer is formed.
     \State Draw $U_i^t\subset[N]$ uniformly without replacement,
     $|U_i^t|=\min(n_{\mathrm{strangers}},N)$.
     \State $\mathcal U_i^{\mathrm{self}}\gets
-    \{j\in\mathcal N_G^t(i):C_{ij}^t>0\}
+    \mathcal N_G^t(i)
     \cup (U_i^t\setminus\mathcal N_G^t(i))$.
     \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t$.
     \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r}
@@ -656,7 +688,8 @@ $q_{ij}^t$ to $y_i$ and $y_j$; increment $n_i$ and $n_j$.
 \State Update $\bar q_{ij},C_{ij}$ and $\bar q_{ji},C_{ji}$.
 \State Add edge $(i,j)$ to $G^t$; add $j$ to $M_i^t$ and $i$ to $M_j^t$.
 \If{$z=\mathrm{broker}$ or $(o'\ne\emptyset$ and $o'.z=\mathrm{broker})$}
-    \State Append column $[x_i^t;x_j^t]$ to $\Xi_b$; append $q_{ij}^t$ to $y_b$; increment $n_b$.
+    \State Append the two party types $x_i^t$ and $x_j^t$ to
+    $X_{b,1}$ and $X_{b,2}$; append $q_{ij}^t$ to $y_b$; increment $n_b$.
     \State $z^\star\gets\mathrm{broker}$.
 \Else
     \State $z^\star\gets\mathrm{self}$.

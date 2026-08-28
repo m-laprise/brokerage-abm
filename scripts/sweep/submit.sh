@@ -19,8 +19,9 @@
 # BROKERAGE_ABM_DATA_ROOT). Override via env: BROKERAGE_ABM_DATA_ROOT,
 # BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array %K, default 200),
 # BROKERAGE_ABM_CPUS (CPUs and Julia threads per simulation, default 2),
-# BROKERAGE_ABM_PLOT_THROTTLE (default 24), and BROKERAGE_ABM_TIME (compute
-# walltime, default 6 hours for the 500-period design).
+# BROKERAGE_ABM_PLOT_THROTTLE (default 24), BROKERAGE_ABM_TIME (compute
+# walltime, default 6 hours for the 500-period design), JULIA_DEPOT_PATH, and
+# JULIA_CPU_TARGET.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -34,6 +35,8 @@ COMPUTE_CPUS="${BROKERAGE_ABM_CPUS:-2}"
 PLOT_THROTTLE="${BROKERAGE_ABM_PLOT_THROTTLE:-24}"
 COMPUTE_TIME="${BROKERAGE_ABM_TIME:-06:00:00}"
 JULIA_MODULE="${BROKERAGE_ABM_JULIA_MODULE:-julia/1.11.3}"
+export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
+export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
 TODAY="$(date +%Y-%m-%d)"
@@ -55,15 +58,27 @@ stage="${1:-help}"
 case "$stage" in
   resolve)
     # LOGIN-NODE network step (compute nodes have no internet): update the
-    # General registry, resolve a fresh Manifest (none is committed), and
-    # download every package into the depot. Network/IO only — the compute-heavy
-    # precompile is the `setup` stage.
+    # General registry, check Project/Manifest consistency, and download every
+    # pinned package into the shared depot. Manifest.toml is committed, so any
+    # resolver change is an error requiring local review. Network/IO only; the
+    # compute-heavy precompile is the `setup` stage.
     load_julia
     cd "$REPO"
     # JULIA_PKG_PRECOMPILE_AUTO=0: keep the compute-heavy precompile OUT of the
-    # login node — instantiate here only downloads; precompile is the `setup` job.
-    JULIA_PKG_PRECOMPILE_AUTO=0 julia --project -e 'using Pkg; Pkg.Registry.update(); Pkg.resolve(); Pkg.instantiate(); @info "resolved + downloaded" julia=VERSION'
-    echo "resolve + download complete; Manifest.toml written"
+    # login node. A fresh shared depot has no registry, so add General once.
+    JULIA_PKG_PRECOMPILE_AUTO=0 julia --project --threads=auto -e '
+        using Pkg
+        isempty(Pkg.Registry.reachable_registries()) && Pkg.Registry.add("General")
+        Pkg.Registry.update()
+        Pkg.resolve()
+        Pkg.instantiate()
+        @info "resolved + downloaded" julia=VERSION depot=DEPOT_PATH[1]
+    '
+    git diff --exit-code -- Project.toml Manifest.toml || {
+        echo "ERROR: resolve changed Project.toml or the committed Manifest.toml"
+        exit 1
+    }
+    echo "resolve + download complete; committed Manifest.toml unchanged"
     ;;
 
   setup)
@@ -82,7 +97,8 @@ case "$stage" in
          --cpus-per-task=1 --mem=4G --job-name=brokerage_abm_manifest \
          bash -c "command -v module >/dev/null 2>&1 || source /usr/share/Modules/init/bash 2>/dev/null || true; \
                   module purge 2>/dev/null || true; module load $JULIA_MODULE; cd '$REPO'; \
-                  BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --project --threads=auto scripts/sweep/sweep_manifest.jl"
+                  BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --compiled-modules=strict \
+                  --pkgimages=existing --project --threads=auto scripts/sweep/sweep_manifest.jl"
     echo "BROKERAGE_ABM_SWEEP_DIR=$SWEEP_DIR" > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;

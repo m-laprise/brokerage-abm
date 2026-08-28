@@ -8,11 +8,11 @@ using Graphs: has_edge
 using StableRNGs: StableRNG
 
 @testset "Match Formation and Outsourcing" begin
-    p = default_params(N=30, T=5, T_burn=1, K=3, seed=42)
+    p = default_params(N=30, T=5, K=3, seed=42)
 
     @testset "One-sided offers require receiver acceptance" begin
         state = initialize_model(
-            default_params(N=12, T=5, T_burn=1, n_strangers=0, seed=123)
+            default_params(N=12, T=5, n_strangers=0, seed=123)
         )
         agents = state.agents
         G = state.G
@@ -63,7 +63,7 @@ using StableRNGs: StableRNG
     end
 
     @testset "Reciprocal offers accept without receiver evaluation" begin
-        state = initialize_model(default_params(N=12, T=5, T_burn=1, seed=124))
+        state = initialize_model(default_params(N=12, T=5, seed=124))
         ws = state.workspace
         agents = state.agents
 
@@ -106,7 +106,7 @@ using StableRNGs: StableRNG
     end
 
     @testset "No receiver-side K cap rejects acceptable offers" begin
-        p_low_k = default_params(N=12, T=5, T_burn=1, K=1, n_strangers=0, seed=125)
+        p_low_k = default_params(N=12, T=5, K=1, n_strangers=0, seed=125)
         state = initialize_model(p_low_k)
         agents = state.agents
         G = state.G

@@ -1,8 +1,10 @@
 using Test
 using BrokerageABM
 
-# Regression baseline: verify that a fixed-seed simulation produces known-good
-# output values. Catches accidental changes to simulation dynamics or RNG stream.
+# Deterministic trajectory fingerprint: verify that a fixed-seed simulation
+# reproduces the approved output values. This catches accidental changes to
+# simulation dynamics or RNG consumption; it is not a scientific performance
+# benchmark.
 # Baseline refreshed on 2026-06-03 after approved learning and initialization
 # changes: symmetric broker pair features, hidden widths derived from d
 # including agent width 2d, DI/Enzyme gradients, full initial agent neighbor
@@ -20,33 +22,35 @@ using BrokerageABM
 # Baseline refreshed on 2026-06-07 after decoupling the frictions and reservation
 # from the surplus scale (phi = c_s = lambda_c * q_cal, r = reservation_frac *
 # q_cal) and setting lambda_c = 0.05 (5% commission).
+# Fingerprint refreshed on 2026-08-28 after approved initialization, rolling-window,
+# and unmatched-neighbor evaluation changes.
 @testset "Regression Baseline" begin
     using Statistics: mean
 
-    p = default_params(N=50, T=20, T_burn=5, seed=42)
+    p = default_params(N=50, T=20, seed=42)
     _, df = run_simulation(p)
     tail = df[df.period .> 5, :]
 
     # Match counts
-    @test mean(tail.n_total_matches) ≈ 96.66666666666667 atol=0.01
+    @test mean(tail.n_total_matches) ≈ 103.06666666666666 atol=0.01
 
     # Outsourcing rate
-    @test mean(tail.outsourcing_rate) ≈ 0.2700317189401856 atol=1e-4
+    @test mean(tail.outsourcing_rate) ≈ 0.19697642752303388 atol=1e-4
 
     # Prediction quality (per-agent averaged, hc>0 only)
     broker_r2 = mean(filter(!isnan, tail.broker_holdout_r2))
     agent_r2 = mean(filter(!isnan, tail.agent_holdout_r2))
-    @test broker_r2 ≈ -0.010606320711684596 atol=1e-4
-    @test agent_r2 ≈ 0.15569880930562482 atol=1e-4
+    @test broker_r2 ≈ -4.090637907921946 atol=1e-4
+    @test agent_r2 ≈ 0.2577698145787392 atol=1e-4
 
     # Match output
-    @test mean(filter(!isnan, tail.q_self_mean)) ≈ 1.5923663701412667 atol=1e-4
+    @test mean(filter(!isnan, tail.q_self_mean)) ≈ 1.4960575266840093 atol=1e-4
 
     # Counterparty concentration diagnostics
-    @test mean(tail.median_counterparties) ≈ 3.6666666666666665 atol=1e-4
-    @test maximum(tail.max_counterparties) == 12
+    @test mean(tail.median_counterparties) ≈ 3.9 atol=1e-4
+    @test maximum(tail.max_counterparties) == 11
 
     # Broker state at end
-    @test df.betweenness[end] ≈ 0.024247104191761647 atol=1e-6
+    @test df.betweenness[end] ≈ 0.02397485185127414 atol=1e-6
     @test df.roster_size[end] == 10
 end

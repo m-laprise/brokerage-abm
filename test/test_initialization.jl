@@ -96,6 +96,7 @@ using StableRNGs: StableRNG
         )
         @test state.broker.history_count == min(100, expected_broker_seed)
         @test state.broker.n_new_obs == 0  # training consumed them
+        @test state.broker.obs_period_marks == [state.broker.history_count]
     end
 
     @testset "agent histories seeded from all initial neighbors" begin
@@ -109,6 +110,7 @@ using StableRNGs: StableRNG
         )
         # n_new_obs was reset after initial training
         @test all(a.n_new_obs == 0 for a in state.agents)
+        @test all(a.obs_period_marks == [a.history_count] for a in state.agents)
     end
 
     @testset "neural networks initialized and trained" begin
@@ -159,30 +161,10 @@ using StableRNGs: StableRNG
     @testset "generate_agent_types produces N unit vectors" begin
         rng = StableRNG(123)
         geo = BrokerageABM.generate_curve_geometry(d, p.s, rng)
-        types, inv = BrokerageABM.generate_agent_types(N, geo, p.sigma_x, rng)
+        types = BrokerageABM.generate_agent_types(N, geo, p.sigma_x, rng)
         @test length(types) == N
         @test all(length(t) == d for t in types)
         @test all(isapprox(norm(t), 1.0; atol=1e-10) for t in types)
-        # Default sort_by_pc1=false: inv_order is identity
-        @test inv == collect(1:N)
-    end
-
-    @testset "sort_by_pc1 option produces sorted types" begin
-        rng1 = StableRNG(7)
-        geo = BrokerageABM.generate_curve_geometry(d, p.s, rng1)
-        types_unsorted, _ = BrokerageABM.generate_agent_types(N, geo, p.sigma_x, rng1)
-
-        rng2 = StableRNG(7)
-        geo2 = BrokerageABM.generate_curve_geometry(d, p.s, rng2)
-        types_sorted, inv = BrokerageABM.generate_agent_types(
-            N, geo2, p.sigma_x, rng2; sort_by_pc1=true
-        )
-
-        @test length(types_sorted) == N
-        # The sorted and unsorted should contain the same types (in different order)
-        @test Set(types_sorted) == Set(types_unsorted)
-        # inv_order should be a valid permutation
-        @test sort(inv) == collect(1:N)
     end
 
     @testset "deterministic initialization: same seed -> identical state" begin
