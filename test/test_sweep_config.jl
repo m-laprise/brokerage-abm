@@ -9,11 +9,13 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test SWEEP_SCHEMA_VERSION == 6
+    @test SWEEP_SCHEMA_VERSION == 7
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
     @test SWEEP_LEARNING_MODEL == :nn
+    @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
+    @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full
     @test ETA_VALS == [0.0, 0.001, 0.01, 0.02, 0.03]
     @test length(cells) == 161

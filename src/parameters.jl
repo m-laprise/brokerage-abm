@@ -63,7 +63,8 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         # Learning model. NN remains the default; Ridge parameters are ignored
         # unless learning_model=:ridge.
         :learning_model => :nn,
-        :ridge_lambda => 0.01,
+        :ridge_lambda_agent => 0.001,
+        :ridge_lambda_broker => 0.001,
         :ridge_broker_variant => :pair,
         # Neural network (Adam optimizer; lr 0.01 is the standard Adam scale and
         # the value validated in scripts/diagnostics for gain recovery)
@@ -102,7 +103,8 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:search_cost_rate],
         defaults[:reservation_frac],
         defaults[:learning_model],
-        defaults[:ridge_lambda],
+        defaults[:ridge_lambda_agent],
+        defaults[:ridge_lambda_broker],
         defaults[:ridge_broker_variant],
         defaults[:eta_lr],
         defaults[:E_init],
@@ -155,7 +157,8 @@ function validate_params(p::ModelParams)
 
     # Learning model
     @assert p.learning_model in (:nn, :ridge) "learning_model must be :nn or :ridge, got $(p.learning_model)"
-    @assert p.ridge_lambda > 0.0 "ridge_lambda must be > 0, got $(p.ridge_lambda)"
+    @assert p.ridge_lambda_agent > 0.0 "ridge_lambda_agent must be > 0, got $(p.ridge_lambda_agent)"
+    @assert p.ridge_lambda_broker > 0.0 "ridge_lambda_broker must be > 0, got $(p.ridge_lambda_broker)"
     @assert p.ridge_broker_variant in (:pair, :size_matched, :single_principal, :additive) "invalid ridge_broker_variant: $(p.ridge_broker_variant)"
 
     # Neural network

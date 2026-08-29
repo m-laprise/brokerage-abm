@@ -99,7 +99,8 @@ conditions, with 20 seeds generally and 50 at baseline:
 ```bash
 export BROKERAGE_ABM_LEARNING_MODEL=ridge
 export BROKERAGE_ABM_RIDGE_BROKER_VARIANT=pair
-export BROKERAGE_ABM_RIDGE_LAMBDA=<calibrated-value>
+export BROKERAGE_ABM_RIDGE_LAMBDA_AGENT=0.001
+export BROKERAGE_ABM_RIDGE_LAMBDA_BROKER=0.001
 export BROKERAGE_ABM_N_SEEDS=20
 export BROKERAGE_ABM_BASELINE_N_SEEDS=50
 ```
@@ -109,6 +110,16 @@ Each Ridge broker ablation is a separate sweep root. Set its broker variant to
 `BROKERAGE_ABM_SWEEP_SCOPE=rho_delta` to run only the baseline and the
 `rho` by `delta` grid. The manifest records the estimator, penalty, variant,
 scope, and both seed sets.
+
+An initial joint baseline calibration used `scripts/ridge/slurm_calibration.sh`
+to apply the same seven candidate penalties to agents and the broker. Ten fixed
+calibration seeds, separate from the reporting seeds, selected 0.001. The agent
+penalty is then calibrated separately with the broker penalty fixed at 0.001.
+`scripts/ridge/slurm_agent_calibration.sh` tests agent penalties 0.1, 0.3, and
+0.5 on those same ten seeds. `scripts/ridge/summarize_agent_calibration.jl`
+selects the penalty with the highest median late-period agent holdout rank
+correlation. Each summarizer saves run-level results, penalty-level summaries,
+the selected penalty, and the source commit.
 
 The manifest stage refuses a dirty Git worktree because a commit hash cannot
 reconstruct uncommitted code. `BROKERAGE_ABM_ALLOW_DIRTY=1` is available only

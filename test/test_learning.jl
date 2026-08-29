@@ -237,7 +237,7 @@ using Statistics: mean
         p = default_params(
             N=20,
             learning_model=:ridge,
-            ridge_lambda=0.03,
+            ridge_lambda_agent=0.03,
             train_window_periods=2,
             train_max_obs=3,
         )
@@ -255,7 +255,7 @@ using Statistics: mean
             Matrix(agent.history_X[:, selected]),
             Vector(agent.history_q[selected]),
             length(selected),
-            p.ridge_lambda,
+            p.ridge_lambda_agent,
         )
 
         train_agent_predictor!(agent, p)
@@ -266,6 +266,38 @@ using Statistics: mean
         @test (agent.ridge::RidgeModel).intercept ≈ reference.intercept
         @test agent.n_new_obs == 0
         @test predict_agent(agent, agent.type, p) == predict_ridge(agent.ridge, agent.type)
+    end
+
+    @testset "Ridge broker uses its own penalty" begin
+        p = default_params(
+            N=10,
+            d=2,
+            s=2,
+            k=2,
+            learning_model=:ridge,
+            ridge_lambda_agent=0.7,
+            ridge_lambda_broker=0.04,
+            ridge_broker_variant=:additive,
+        )
+        state = initialize_model(p)
+        broker = state.broker
+        broker.history_count = 3
+        broker.obs_period_marks = [3]
+        broker.n_new_obs = 3
+        broker.history_party1_types[:, 1:3] .= [1.0 2.0 3.0; 0.0 1.0 0.0]
+        broker.history_party2_types[:, 1:3] .= [0.5 1.0 0.0; 1.0 0.0 2.0]
+        broker.history_q[1:3] .= [0.4, 1.1, 0.8]
+
+        reference = RidgeModel(p.d, BrokerageABM.Q_OFFSET)
+        inputs = broker.history_party1_types[:, 1:3] .+ broker.history_party2_types[:, 1:3]
+        fit_ridge!(reference, inputs, broker.history_q, 3, p.ridge_lambda_broker)
+
+        train_broker_predictor!(broker, state.agents, p, StableRNG(501))
+
+        @test broker.train_X[:, 1:3] == inputs
+        @test (broker.ridge::RidgeModel).coefficients ≈ reference.coefficients
+        @test (broker.ridge::RidgeModel).intercept ≈ reference.intercept
+        @test broker.n_new_obs == 0
     end
 
     @testset "Broker Ridge variants implement their stated feature maps" begin

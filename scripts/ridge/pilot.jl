@@ -2,14 +2,15 @@
     pilot.jl
 
 Run one baseline simulation with paired Ridge learning and save the complete
-period table plus a compact early/late summary. This is a non-reporting pilot
-used before the first commit gate.
+period table plus a compact early/late summary. Pilot and calibration jobs use
+this common driver.
 
 Environment overrides:
-  BROKERAGE_ABM_RIDGE_LAMBDA     Ridge penalty (default 0.01)
-  BROKERAGE_ABM_RIDGE_PILOT_SEED seed (default 1)
-  BROKERAGE_ABM_RIDGE_PILOT_T    periods (default 500)
-  BROKERAGE_ABM_RIDGE_PILOT_DIR  output directory (required)
+  BROKERAGE_ABM_RIDGE_LAMBDA_AGENT  agent Ridge penalty (default 0.001)
+  BROKERAGE_ABM_RIDGE_LAMBDA_BROKER broker Ridge penalty (default 0.001)
+  BROKERAGE_ABM_RIDGE_PILOT_SEED    seed (default 1)
+  BROKERAGE_ABM_RIDGE_PILOT_T       periods (default 500)
+  BROKERAGE_ABM_RIDGE_PILOT_DIR     output directory (required)
 """
 
 Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --threads=auto"
@@ -20,7 +21,12 @@ using JLD2: jldsave
 using LinearAlgebra: norm
 using Statistics: mean, median, quantile
 
-const RIDGE_LAMBDA = parse(Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA", "0.01"))
+const RIDGE_LAMBDA_AGENT = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA_AGENT", "0.001")
+)
+const RIDGE_LAMBDA_BROKER = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA_BROKER", "0.001")
+)
 const PILOT_SEED = parse(Int, get(ENV, "BROKERAGE_ABM_RIDGE_PILOT_SEED", "1"))
 const PILOT_T = parse(Int, get(ENV, "BROKERAGE_ABM_RIDGE_PILOT_T", "500"))
 
@@ -49,7 +55,8 @@ end
 function main()
     params = default_params(;
         learning_model=:ridge,
-        ridge_lambda=RIDGE_LAMBDA,
+        ridge_lambda_agent=RIDGE_LAMBDA_AGENT,
+        ridge_lambda_broker=RIDGE_LAMBDA_BROKER,
         ridge_broker_variant=:pair,
         seed=PILOT_SEED,
         T=PILOT_T,
@@ -75,7 +82,8 @@ function main()
     config = Dict(
         "learning_model" => "ridge",
         "ridge_broker_variant" => "pair",
-        "ridge_lambda" => RIDGE_LAMBDA,
+        "ridge_lambda_agent" => RIDGE_LAMBDA_AGENT,
+        "ridge_lambda_broker" => RIDGE_LAMBDA_BROKER,
         "seed" => PILOT_SEED,
         "T" => PILOT_T,
         "N" => params.N,
@@ -83,7 +91,10 @@ function main()
 
     outdir = output_dir()
     mkpath(outdir)
-    output = joinpath(outdir, "paired_ridge_lambda=$(RIDGE_LAMBDA)_seed=$(PILOT_SEED).jld2")
+    output = joinpath(
+        outdir,
+        "paired_ridge_lambda_a=$(RIDGE_LAMBDA_AGENT)_lambda_b=$(RIDGE_LAMBDA_BROKER)_seed=$(PILOT_SEED).jld2",
+    )
     jldsave(
         output;
         df=df,

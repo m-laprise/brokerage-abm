@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 6
+const SWEEP_SCHEMA_VERSION = 7
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -41,13 +41,20 @@ const SWEEP_BASELINE_SEEDS = collect(
     1:parse(Int, get(ENV, "BROKERAGE_ABM_BASELINE_N_SEEDS", string(length(SWEEP_SEEDS))))
 )
 const SWEEP_LEARNING_MODEL = Symbol(get(ENV, "BROKERAGE_ABM_LEARNING_MODEL", "nn"))
-const SWEEP_RIDGE_LAMBDA = parse(Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA", "0.01"))
+const SWEEP_RIDGE_LAMBDA_AGENT = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA_AGENT", "0.001")
+)
+const SWEEP_RIDGE_LAMBDA_BROKER = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA_BROKER", "0.001")
+)
 const SWEEP_RIDGE_BROKER_VARIANT = Symbol(
     get(ENV, "BROKERAGE_ABM_RIDGE_BROKER_VARIANT", "pair")
 )
 const SWEEP_SCOPE = Symbol(get(ENV, "BROKERAGE_ABM_SWEEP_SCOPE", "full"))
 
 SWEEP_LEARNING_MODEL in (:nn, :ridge) || error("invalid sweep learning model")
+SWEEP_RIDGE_LAMBDA_AGENT > 0.0 || error("agent Ridge penalty must be positive")
+SWEEP_RIDGE_LAMBDA_BROKER > 0.0 || error("broker Ridge penalty must be positive")
 SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||
     error("invalid sweep Ridge broker variant")
 SWEEP_SCOPE in (:full, :rho_delta) || error("invalid sweep scope")

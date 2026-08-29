@@ -90,7 +90,8 @@ function main()
         :T => SWEEP_T,
         :T_burn => SWEEP_T_BURN,
         :learning_model => SWEEP_LEARNING_MODEL,
-        :ridge_lambda => SWEEP_RIDGE_LAMBDA,
+        :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
+        :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
         :scope => SWEEP_SCOPE,
     )
@@ -114,7 +115,8 @@ function main()
         :seeds => SWEEP_SEEDS,
         :baseline_seeds => SWEEP_BASELINE_SEEDS,
         :learning_model => SWEEP_LEARNING_MODEL,
-        :ridge_lambda => SWEEP_RIDGE_LAMBDA,
+        :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
+        :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
         :scope => SWEEP_SCOPE,
     )
@@ -183,7 +185,8 @@ function main()
     println("  manifest.json hash: $manifest_hash")
     println("  learning model:     $SWEEP_LEARNING_MODEL")
     println("  Ridge variant:      $SWEEP_RIDGE_BROKER_VARIANT")
-    println("  Ridge lambda:       $SWEEP_RIDGE_LAMBDA")
+    println("  agent Ridge lambda: $SWEEP_RIDGE_LAMBDA_AGENT")
+    println("  broker Ridge lambda: $SWEEP_RIDGE_LAMBDA_BROKER")
     println(
         "  seed counts:        $(length(SWEEP_SEEDS)) general, $(length(SWEEP_BASELINE_SEEDS)) baseline",
     )

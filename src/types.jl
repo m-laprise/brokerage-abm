@@ -499,7 +499,8 @@ struct ModelParams
 
     # Learning model
     learning_model::Symbol        # :nn (default) or :ridge
-    ridge_lambda::Float64         # common Ridge slope penalty
+    ridge_lambda_agent::Float64   # agent Ridge slope penalty (provisional default 0.001)
+    ridge_lambda_broker::Float64  # broker Ridge slope penalty (calibrated default 0.001)
     ridge_broker_variant::Symbol  # :pair, :size_matched, :single_principal, or :additive
 
     # Neural network

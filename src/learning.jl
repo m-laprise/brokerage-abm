@@ -818,7 +818,11 @@ function train_agent_ridge!(agent::Agent, params::ModelParams)
     count = prepare_agent_training!(agent, params)
     agent.n_new_obs = 0
     fit_ridge!(
-        agent.ridge::RidgeModel, agent.train_X, agent.train_q, count, params.ridge_lambda
+        agent.ridge::RidgeModel,
+        agent.train_X,
+        agent.train_q,
+        count,
+        params.ridge_lambda_agent,
     )
     return nothing
 end
@@ -992,7 +996,11 @@ function train_broker_ridge!(
     count <= 0 && return nothing
     broker.n_new_obs = 0
     fit_ridge!(
-        broker.ridge::RidgeModel, broker.train_X, broker.train_q, count, params.ridge_lambda
+        broker.ridge::RidgeModel,
+        broker.train_X,
+        broker.train_q,
+        count,
+        params.ridge_lambda_broker,
     )
     return nothing
 end

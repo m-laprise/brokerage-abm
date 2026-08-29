@@ -25,7 +25,8 @@ using LinearAlgebra: norm
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
         @test p.learning_model == :nn
-        @test p.ridge_lambda == 0.01
+        @test p.ridge_lambda_agent == 0.001
+        @test p.ridge_lambda_broker == 0.001
         @test p.ridge_broker_variant == :pair
         @test p.network_measure_interval == 20
         @test p.T == 500
@@ -86,7 +87,8 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
         @test_throws AssertionError default_params(learning_model=:linear)
-        @test_throws AssertionError default_params(ridge_lambda=0.0)
+        @test_throws AssertionError default_params(ridge_lambda_agent=0.0)
+        @test_throws AssertionError default_params(ridge_lambda_broker=0.0)
         @test_throws AssertionError default_params(ridge_broker_variant=:unknown)
     end
 

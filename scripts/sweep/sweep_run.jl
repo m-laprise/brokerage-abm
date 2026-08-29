@@ -73,7 +73,8 @@ function main()
         seed=seed,
         T=SWEEP_T,
         learning_model=SWEEP_LEARNING_MODEL,
-        ridge_lambda=SWEEP_RIDGE_LAMBDA,
+        ridge_lambda_agent=SWEEP_RIDGE_LAMBDA_AGENT,
+        ridge_lambda_broker=SWEEP_RIDGE_LAMBDA_BROKER,
         ridge_broker_variant=SWEEP_RIDGE_BROKER_VARIANT,
         params...,
     )
@@ -110,7 +111,8 @@ function main()
         "s" => p.s,
         "reservation_frac" => p.reservation_frac,
         "learning_model" => string(p.learning_model),
-        "ridge_lambda" => p.ridge_lambda,
+        "ridge_lambda_agent" => p.ridge_lambda_agent,
+        "ridge_lambda_broker" => p.ridge_lambda_broker,
         "ridge_broker_variant" => string(p.ridge_broker_variant),
     )
     for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
