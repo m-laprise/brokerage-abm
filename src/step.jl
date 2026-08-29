@@ -196,12 +196,11 @@ function update_holdout_metrics!(state::ModelState)
             q_true =
                 Q_OFFSET +
                 match_signal!(Ax_buf, Bx_buf, agents[i].type, agents[j].type, env)
-            agent_preds[partner_idx] = predict_nn!(
-                agents[i].nn, agents[i].predict_buf, agents[j].type
-            )
+            agent_preds[partner_idx] = predict_agent(agents[i], agents[j].type, p)
             agent_trues[partner_idx] = q_true
-            fill_broker_pair_features!(z_buf, agents[i].type, agents[j].type)
-            broker_preds[partner_idx] = predict_nn!(broker.nn, broker.predict_buf, z_buf)
+            broker_preds[partner_idx] = predict_broker!(
+                broker, z_buf, agents[i].type, agents[j].type, p
+            )
         end
 
         prepare_true_ranks!(agent_trues, n_partners, true_order, true_ranks)
@@ -332,11 +331,10 @@ function step_period!(state::ModelState)
     # Step 2: Candidate evaluation
     # ══════════════════════════════════════════════════════════════════════
 
-    # 2.1: Train neural networks (adaptive steps).
-    # Agents retrain on an alternating parity schedule so each agent updates
-    # every other period while still accumulating all new observations.
-    # Agent training copies the active window into contiguous scratch before
-    # gradient steps, avoiding SubArray BLAS overhead.
+    # 2.1: Fit the selected prediction models.
+    # Agents refit on an alternating parity schedule so each agent updates every
+    # other period while still accumulating all new observations. Both learning
+    # models use the same copied training window and observation cap.
     prev_blas = BLAS.get_num_threads()
     BLAS.set_num_threads(1)
     @threads for i in 1:N
@@ -344,11 +342,11 @@ function step_period!(state::ModelState)
         a.history_count > 0 &&
             a.n_new_obs > 0 &&
             agent_retrains_this_period(i, state.period) &&
-            train_agent_nn!(a, p)
+            train_agent_predictor!(a, p)
     end
     BLAS.set_num_threads(prev_blas)
     if broker.history_count > 0 && broker.n_new_obs > 0
-        train_broker_nn!(broker, p)
+        train_broker_predictor!(broker, agents, p, rng)
     end
 
     # 2.2: Shared active-demand offer market

@@ -24,6 +24,9 @@ using LinearAlgebra: norm
         @test p.roster_frac == 0.20
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
+        @test p.learning_model == :nn
+        @test p.ridge_lambda == 0.01
+        @test p.ridge_broker_variant == :pair
         @test p.network_measure_interval == 20
         @test p.T == 500
     end
@@ -82,6 +85,9 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(roster_frac=1.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
+        @test_throws AssertionError default_params(learning_model=:linear)
+        @test_throws AssertionError default_params(ridge_lambda=0.0)
+        @test_throws AssertionError default_params(ridge_broker_variant=:unknown)
     end
 
     @testset "NeuralNet and NNGradBuffers" begin
@@ -219,6 +225,25 @@ using LinearAlgebra: norm
         @test broker.history_party1_types[:, 3] == party1_type3
         @test broker.history_party2_types[:, 3] == party2_type3
         @test broker.history_q[3] == 3.0
+    end
+
+    @testset "single-principal endpoint is retained once per observation" begin
+        rng = StableRNG(124)
+        p = default_params(
+            N=20, seed=124, learning_model=:ridge, ridge_broker_variant=:single_principal
+        )
+        broker = initialize_model(p).broker
+        n_before = broker.history_count
+        party1 = fill(1.0, p.d)
+        party2 = fill(2.0, p.d)
+        record_broker_history!(broker, party1, party2, 3.0; rng=rng)
+
+        retained = broker.history_retained_party[n_before + 1]
+        @test retained in (UInt8(1), UInt8(2))
+        @test broker.history_retained_party[n_before + 1] == retained
+        count_before_failure = broker.history_count
+        @test_throws ErrorException record_broker_history!(broker, party1, party2, 4.0)
+        @test broker.history_count == count_before_failure
     end
 
     @testset "Partner mean tracking" begin

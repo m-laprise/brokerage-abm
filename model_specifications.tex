@@ -183,11 +183,11 @@ Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_
 
 \subsection{3. Learning}\label{learning}
 
-Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to retrain every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model retrains only when its history is nonempty and it has received new observations since its previous training call.
+Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to refit every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model refits only when its history is nonempty and it has received new observations since its previous fitting call. A parameter switch selects the prediction model. Neural-network learning is the default. Ridge regression is the alternate experiment.
 
-\subsubsection{3a. Architecture and fitting}\label{a.-architecture-and-fitting}
+\subsubsection{3a. Prediction models and fitting}\label{a.-architecture-and-fitting}
 
-Both agents and the broker use the same architecture: a fully-connected network with one hidden layer, ReLU activations, and a single linear output:
+In the default model, both agents and the broker use a fully-connected network with one hidden layer, ReLU activations, and a single linear output:
 
 \[\hat{q}(\mathbf{z}) = \mathbf{w}_2^\top \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1) + b_2\]
 
@@ -195,13 +195,23 @@ where \(\mathbf{z}\) is the input feature vector and the remaining symbols are n
 
 \textbf{Training rule.} Network weights minimize MSE with the Adam optimizer (learning rate \(\eta_{\mathrm{lr}}\), default 0.01) on the current training window. No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\text{init}}\) gradient steps (default 200) on their seed histories.
 
-Subsequent updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
+\textbf{Alternate Ridge rule.} In the Ridge experiment, agents and the broker instead use
+
+\[
+\hat q_i(\mathbf x_j)=\alpha_i+\boldsymbol\beta_i^\top\mathbf x_j,
+\qquad
+\hat q_b(\mathbf x_i,\mathbf x_j)=\alpha_b+\boldsymbol\gamma_b^\top\psi(\mathbf x_i,\mathbf x_j).
+\]
+
+Each fit minimizes mean squared error plus a common penalty \(\lambda_R\) times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\).
+
+Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
 \[E_t = \max\!\left(E_{\text{steps}}, \; \left\lceil E_{\text{init}} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right)\]
 
-where \(n_{\text{new}}\) is the number of observations added since that model's previous training call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps}}\) (default 100) is the minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents train on an alternating schedule. Agents and the broker use the same step-count rule.
+where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps}}\) (default 100) is the minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same NN step-count rule. Ridge is solved directly at each fitting call.
 
-Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A training call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, training deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the training sample, not the stored history or the period window.
+Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, fitting deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
 
 \subsubsection{\texorpdfstring{3b. Agent \(i\)'s model}{3b. Agent i's model}}\label{b.-agent-is-model}
 
@@ -232,6 +242,10 @@ The broker hidden width is \(h_B = 8d\), so the baseline uses 64 hidden units.
 Because \(\psi(\mathbf{x}_i,\mathbf{x}_j)=\psi(\mathbf{x}_j,\mathbf{x}_i)\), each observed unordered pair contributes one training row.
 
 The broker learns only from mediated matches. It does not observe self-search outcomes.
+
+\subsubsection{3d. Ridge broker ablations}\label{d.-ridge-broker-ablations}
+
+Three separate Ridge-only ablations change the broker while leaving every agent's local Ridge model unchanged. \textbf{Size-matched pooled history} uniformly samples the broker's windowed data without replacement, using the smaller of its available sample size and the nearest-integer median sample size among agents with nonempty histories, with half-integers rounded up. \textbf{Single-principal history} randomly retains one endpoint when each broker observation is recorded, fits \(g_b(\mathbf x)=\alpha_b+\boldsymbol\gamma_b^\top\mathbf x\), and scores a pair as \(g_b(\mathbf x_i)+g_b(\mathbf x_j)-\bar q_b\), where \(\bar q_b\) is the current fitting-sample output mean and defaults to \(Q\) before fitting. \textbf{Additive Ridge} uses \(\mathbf x_i+\mathbf x_j\) without bilinear features. All use the common \(\lambda_R\), period window, observation cap, and fitting cadence.
 
 \subsection{4. Match Economics}\label{match-economics}
 
@@ -507,6 +521,8 @@ Agent-node degree summaries & Mean, median, minimum, and maximum degree, excludi
 \subsubsection{9a. Baseline parameter values}\label{a.-baseline-parameter-values}
 
 The table lists baseline values only. Entries are arranged in two columns; each column follows the document order, with the run length listed first.
+
+The baseline learning function is NN. Ridge and its broker variants are alternate experiments (§3).
 
 {
 \begin{center}

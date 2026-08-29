@@ -86,8 +86,13 @@ function main()
         :n_conditions => nconditions,
         :n_grid_cells => length(cells),
         :seeds => SWEEP_SEEDS,
+        :baseline_seeds => SWEEP_BASELINE_SEEDS,
         :T => SWEEP_T,
         :T_burn => SWEEP_T_BURN,
+        :learning_model => SWEEP_LEARNING_MODEL,
+        :ridge_lambda => SWEEP_RIDGE_LAMBDA,
+        :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :scope => SWEEP_SCOPE,
     )
 
     # Spec block for the report agent (what was swept, at a glance).
@@ -107,6 +112,11 @@ function main()
             ) for p in PHASE_PAIRS
         ],
         :seeds => SWEEP_SEEDS,
+        :baseline_seeds => SWEEP_BASELINE_SEEDS,
+        :learning_model => SWEEP_LEARNING_MODEL,
+        :ridge_lambda => SWEEP_RIDGE_LAMBDA,
+        :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :scope => SWEEP_SCOPE,
     )
 
     manifest = Dict{Symbol,Any}(
@@ -130,7 +140,14 @@ function main()
     # Shell-sourceable counts for the orchestrator (submit.sh).
     write(
         joinpath(sweepdir, "counts.env"),
-        "NCONDITIONS=$nconditions\nNGRIDCELLS=$(length(cells))\nNRUNS=$nruns\nNPLOT=$nplot\n",
+        "NCONDITIONS=$nconditions\n" *
+        "NGRIDCELLS=$(length(cells))\n" *
+        "NRUNS=$nruns\n" *
+        "NPLOT=$nplot\n" *
+        "NSEEDS=$(length(SWEEP_SEEDS))\n" *
+        "NBASELINESEEDS=$(length(SWEEP_BASELINE_SEEDS))\n" *
+        "LEARNING_MODEL=$SWEEP_LEARNING_MODEL\n" *
+        "RIDGE_BROKER_VARIANT=$SWEEP_RIDGE_BROKER_VARIANT\n",
     )
 
     # Provenance copied verbatim into every shard for idempotency checks.
@@ -164,6 +181,12 @@ function main()
     println("  julia version:     $(VERSION)")
     println("  Manifest.toml hash: $pkg_manifest_hash")
     println("  manifest.json hash: $manifest_hash")
+    println("  learning model:     $SWEEP_LEARNING_MODEL")
+    println("  Ridge variant:      $SWEEP_RIDGE_BROKER_VARIANT")
+    println("  Ridge lambda:       $SWEEP_RIDGE_LAMBDA")
+    println(
+        "  seed counts:        $(length(SWEEP_SEEDS)) general, $(length(SWEEP_BASELINE_SEEDS)) baseline",
+    )
     println("  grid coordinates:  $(length(cells))")
     println("  effective results: $nconditions")
     println("NRUNS=$nruns")

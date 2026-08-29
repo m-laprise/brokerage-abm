@@ -67,6 +67,7 @@ end
                 :result_reldir => result_rel,
                 :condition_index => 0,
                 :resolved_params => resolved,
+                :seeds => [1, 2],
             ),
         ]
         meta = Dict{Symbol,Any}(

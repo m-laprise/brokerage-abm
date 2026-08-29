@@ -56,6 +56,28 @@ function NNGradBuffers(nn::NeuralNet)
     )
 end
 
+"""Linear Ridge predictor with reusable fitting buffers."""
+mutable struct RidgeModel
+    coefficients::Vector{Float64}
+    intercept::Float64
+    target_mean::Float64
+    gram::Matrix{Float64}
+    rhs::Vector{Float64}
+    feature_mean::Vector{Float64}
+end
+
+"""Create a zero-slope Ridge predictor with constant initial prediction `offset`."""
+function RidgeModel(n_features::Int, offset::Float64)
+    return RidgeModel(
+        zeros(n_features),
+        offset,
+        offset,
+        Matrix{Float64}(undef, n_features, n_features),
+        Vector{Float64}(undef, n_features),
+        Vector{Float64}(undef, n_features),
+    )
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Current-period match tracking
 # ─────────────────────────────────────────────────────────────────────────────
@@ -88,10 +110,11 @@ Base.@kwdef mutable struct Agent
     # later period alive; defines the period-based training window.
     obs_period_marks::Vector{Int} = Int[]
 
-    # Neural network and prediction buffer
+    # Alternative prediction models. Ridge is allocated only when selected.
     nn::NeuralNet
     nn_grad::NNGradBuffers                   # pre-allocated gradient buffers
     predict_buf::Vector{Float64}             # length agent_hidden_width(params)
+    ridge::Union{RidgeModel,Nothing} = nothing
     n_new_obs::Int = 0                       # observations since last training (for adaptive schedule)
     train_X::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # contiguous training scratch
     train_q::Vector{Float64} = Float64[]                     # matching q scratch
@@ -214,6 +237,10 @@ Base.@kwdef mutable struct Broker
     history_party2_types::Matrix{Float64}
     history_q::Vector{Float64}                # realized outputs
     history_count::Int = 0
+    # For the single-principal Ridge ablation, this records which endpoint was
+    # retained when each broker observation was first stored (1 or 2).
+    history_retained_party::Vector{UInt8} = UInt8[]
+    retain_one_party::Bool = false
 
     # Cumulative history_count at the end of initialization (period 0) and each
     # later period (period-based training window; see Agent.obs_period_marks).
@@ -223,11 +250,14 @@ Base.@kwdef mutable struct Broker
     nn::NeuralNet
     nn_grad::NNGradBuffers
     predict_buf::Vector{Float64}              # length broker_hidden_width(params)
+    ridge::Union{RidgeModel,Nothing} = nothing
     n_new_obs::Int = 0
 
     # Pre-allocated training matrix for symmetric broker pair features
     train_X::Matrix{Float64}
     train_q::Vector{Float64}
+    sample_indices::Vector{Int} = Int[]
+    agent_train_counts::Vector{Int} = Int[]
 
     # Reputation
     last_reputation::Float64 = 0.0
@@ -243,7 +273,15 @@ function record_broker_history!(
     party1_type::AbstractVector{Float64},
     party2_type::AbstractVector{Float64},
     q::Float64,
+    ;
+    rng::Union{AbstractRNG,Nothing}=nothing,
 )
+    retained_party = UInt8(0)
+    if broker.retain_one_party
+        isnothing(rng) && error("single-principal broker history requires an RNG")
+        retained_party = rand(rng, Bool) ? UInt8(1) : UInt8(2)
+    end
+
     broker.history_count += 1
     broker.n_new_obs += 1
     n = broker.history_count
@@ -260,6 +298,7 @@ function record_broker_history!(
         new_party2_types[:, 1:cap] .= broker.history_party2_types
         broker.history_party2_types = new_party2_types
         resize!(broker.history_q, new_cap)
+        broker.retain_one_party && resize!(broker.history_retained_party, new_cap)
 
         # Also grow broker feature training buffers
         new_train_cap = max(new_cap, 2 * size(broker.train_X, 2))
@@ -272,6 +311,9 @@ function record_broker_history!(
     broker.history_party1_types[:, n] .= party1_type
     broker.history_party2_types[:, n] .= party2_type
     broker.history_q[n] = q
+    if broker.retain_one_party
+        broker.history_retained_party[n] = retained_party
+    end
     return nothing
 end
 
@@ -454,6 +496,11 @@ struct ModelParams
     omega::Float64               # satisfaction recency weight (default 0.2)
     search_cost_rate::Float64    # shared friction rate: phi = c_s = search_cost_rate*q_cal (default 0.05)
     reservation_frac::Float64    # outside option as a fraction of q_cal: r = reservation_frac*q_cal (default 0.60; may exceed 1)
+
+    # Learning model
+    learning_model::Symbol        # :nn (default) or :ridge
+    ridge_lambda::Float64         # common Ridge slope penalty
+    ridge_broker_variant::Symbol  # :pair, :size_matched, :single_principal, or :additive
 
     # Neural network
     eta_lr::Float64              # Adam learning rate (default 0.01)

@@ -9,13 +9,17 @@ using Random: AbstractRNG
 using Graphs: has_edge, SimpleGraph
 
 function receiver_offer_value(
-    receiver_id::Int, sender_id::Int, agents::Vector{Agent}, G::SimpleGraph
+    receiver_id::Int,
+    sender_id::Int,
+    agents::Vector{Agent},
+    G::SimpleGraph;
+    params::Union{ModelParams,Nothing}=nothing,
 )::Float64
     receiver = agents[receiver_id]
     if has_edge(G, receiver_id, sender_id) && receiver.partner_count[sender_id] > 0
         return partner_mean(receiver, sender_id)
     end
-    return predict_nn!(receiver.nn, receiver.predict_buf, agents[sender_id].type)
+    return predict_agent(receiver, agents[sender_id].type, params)
 end
 
 @inline function has_broker_offer(
@@ -54,7 +58,7 @@ function push_accepted_relationship!(
     update_partner_mean!(agents[i], j, q_realized)
     update_partner_mean!(agents[j], i, q_realized)
     broker_involved &&
-        record_broker_history!(broker, agents[i].type, agents[j].type, q_realized)
+        record_broker_history!(broker, agents[i].type, agents[j].type, q_realized; rng=rng)
     add_match_edge!(G, i, j)
     push!(agents[i].active_matches, ActiveMatch(j, rel_channel))
     push!(agents[j].active_matches, ActiveMatch(i, rel_channel))
@@ -110,6 +114,7 @@ function accept_offer_pair!(
     Ax_buf::Vector{Float64},
     Bx_buf::Vector{Float64},
     ws::SimWorkspace,
+    params::Union{ModelParams,Nothing}=nothing,
 )
     has_current_match(ws, pair_i, pair_j) && return nothing
     offer_book = ws.offer_book
@@ -136,7 +141,8 @@ function accept_offer_pair!(
     end
 
     offer = @inbounds offer_book.offers[idx_ij != 0 ? idx_ij : idx_ji]
-    receiver_offer_value(offer.to_id, offer.from_id, agents, G) > cal.r || return nothing
+    receiver_offer_value(offer.to_id, offer.from_id, agents, G; params=params) > cal.r ||
+        return nothing
     return push_accepted_relationship!(
         accepted,
         offer,
@@ -214,6 +220,7 @@ function run_offer_market!(
             search.period_strangers,
             cal.r;
             rng=rng,
+            params=params,
             current_match_index_ready=true,
         )
     end
@@ -245,6 +252,7 @@ function run_offer_market!(
             Ax_buf=Ax_buf,
             Bx_buf=Bx_buf,
             ws=ws,
+            params=params,
         )
     end
 

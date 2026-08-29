@@ -69,11 +69,19 @@ function main()
 
     # ── Build params ─────────────────────────────────────────────────────────
     params = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in e[:resolved_params])
-    p = default_params(; seed=seed, T=SWEEP_T, params...)
+    p = default_params(;
+        seed=seed,
+        T=SWEEP_T,
+        learning_model=SWEEP_LEARNING_MODEL,
+        ridge_lambda=SWEEP_RIDGE_LAMBDA,
+        ridge_broker_variant=SWEEP_RIDGE_BROKER_VARIANT,
+        params...,
+    )
 
     println(
         "RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
-        "r_frac=$(p.reservation_frac), threads=$(Threads.nthreads()))",
+        "r_frac=$(p.reservation_frac), learner=$(p.learning_model), " *
+        "broker_variant=$(p.ridge_broker_variant), threads=$(Threads.nthreads()))",
     )
 
     t0 = time()
@@ -101,6 +109,9 @@ function main()
         "n_strangers" => p.n_strangers,
         "s" => p.s,
         "reservation_frac" => p.reservation_frac,
+        "learning_model" => string(p.learning_model),
+        "ridge_lambda" => p.ridge_lambda,
+        "ridge_broker_variant" => string(p.ridge_broker_variant),
     )
     for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
         haskey(e, k) && (config[string(k)] = e[k])

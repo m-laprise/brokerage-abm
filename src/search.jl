@@ -126,6 +126,7 @@ function append_self_search_offers!(
     period_strangers::Vector{Int},
     r::Float64;
     rng::AbstractRNG,
+    params::Union{ModelParams,Nothing}=nothing,
     current_match_index_ready::Bool=false,
 )::Int
     demand_count <= 0 && return 0
@@ -151,7 +152,7 @@ function append_self_search_offers!(
         q_eval = if agent.partner_count[nbr] > 0
             partner_mean(agent, nbr)
         else
-            predict_nn!(agent.nn, agent.predict_buf, agents[nbr].type)
+            predict_agent(agent, agents[nbr].type, params)
         end
         if q_eval > r
             push!(candidate_ids, nbr)
@@ -163,7 +164,7 @@ function append_self_search_offers!(
         j == agent_id && continue
         nbr_mask[j] && continue
         has_current_match(ws, agent_id, j) && continue
-        q_hat = predict_nn!(agent.nn, agent.predict_buf, agents[j].type)
+        q_hat = predict_agent(agent, agents[j].type, params)
         q_hat > r || continue
         push!(candidate_ids, j)
         push!(candidate_vals, q_hat)
@@ -280,14 +281,29 @@ function prepare_broker_pair_scores!(
     H_batch = broker_pairs.H_batch
     Y_batch = broker_pairs.Y_batch
 
-    @inbounds for pair_idx in 1:n_pairs
-        _, i, j = pair_scores[pair_idx]
-        xi = agents[i].type
-        xj = agents[j].type
-        fill_broker_pair_features!(Z_batch, pair_idx, xi, xj)
+    if params.learning_model == :nn
+        @inbounds for pair_idx in 1:n_pairs
+            _, i, j = pair_scores[pair_idx]
+            fill_broker_pair_features!(Z_batch, pair_idx, agents[i].type, agents[j].type)
+        end
+        predict_nn_batch!(broker.nn, H_batch, Y_batch, Z_batch, n_pred)
+    else
+        ridge = broker.ridge::RidgeModel
+        variant = params.ridge_broker_variant
+        @inbounds for pair_idx in 1:n_pairs
+            _, i, j = pair_scores[pair_idx]
+            if variant in (:pair, :size_matched)
+                fill_broker_pair_features!(
+                    Z_batch, pair_idx, agents[i].type, agents[j].type
+                )
+                Y_batch[pair_idx] = predict_ridge_column(ridge, Z_batch, pair_idx)
+            else
+                Y_batch[pair_idx] = predict_additive_ridge(
+                    ridge, agents[i].type, agents[j].type, variant == :single_principal
+                )
+            end
+        end
     end
-
-    predict_nn_batch!(broker.nn, H_batch, Y_batch, Z_batch, n_pred)
 
     @inbounds for pair_idx in 1:n_pairs
         _, i, j = pair_scores[pair_idx]

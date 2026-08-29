@@ -1,16 +1,17 @@
 """
     learning.jl
 
-Neural network prediction models for agents and broker.
-The live model trains one-hidden-layer ReLU networks with full-batch Adam.
-Vanilla-gradient helpers are retained for gradient tests. Gradients are computed
-through DifferentiationInterface with Enzyme.
+Prediction models for agents and broker. The default model trains one-hidden-layer
+ReLU networks with full-batch Adam. The alternate model fits Ridge regressions on
+the same histories, windows, and observation caps. Vanilla-gradient helpers are
+retained for gradient tests. Gradients are computed through
+DifferentiationInterface with Enzyme.
 
 Agent: input x_j (d features), with width derived from d.
 Broker: symmetric additive and bilinear pair features, with width derived from d.
 """
 
-using LinearAlgebra: mul!, dot, BLAS
+using LinearAlgebra: mul!, dot, BLAS, Symmetric, cholesky!, ldiv!
 using Random: AbstractRNG
 using DifferentiationInterface: AutoEnzyme, Constant, gradient!
 using Enzyme: Enzyme
@@ -200,6 +201,137 @@ function predict_nn_batch!(
         Y_out[j] += b2
     end
 
+    return nothing
+end
+
+"""Evaluate a fitted Ridge model without allocating."""
+@inline function predict_ridge(model::RidgeModel, z::AbstractVector{Float64})::Float64
+    return model.intercept + dot(model.coefficients, z)
+end
+
+@inline function predict_ridge_column(
+    model::RidgeModel, Z::AbstractMatrix{Float64}, col::Int
+)::Float64
+    score = model.intercept
+    @inbounds for row in eachindex(model.coefficients)
+        score += model.coefficients[row] * Z[row, col]
+    end
+    return score
+end
+
+@inline function predict_additive_ridge(
+    model::RidgeModel,
+    party1_type::AbstractVector{Float64},
+    party2_type::AbstractVector{Float64},
+    subtract_target_mean::Bool,
+)::Float64
+    score =
+        subtract_target_mean ? 2.0 * model.intercept - model.target_mean : model.intercept
+    @inbounds for k in eachindex(model.coefficients)
+        score += model.coefficients[k] * (party1_type[k] + party2_type[k])
+    end
+    return score
+end
+
+"""Evaluate an agent's selected prediction model."""
+@inline function predict_agent(
+    agent::Agent, partner_type::AbstractVector{Float64}, params::ModelParams
+)::Float64
+    if params.learning_model == :nn
+        return predict_nn!(agent.nn, agent.predict_buf, partner_type)
+    end
+    return predict_ridge(agent.ridge::RidgeModel, partner_type)
+end
+
+@inline predict_agent(agent::Agent, partner_type::AbstractVector{Float64}, ::Nothing) = predict_nn!(
+    agent.nn, agent.predict_buf, partner_type
+)
+
+"""Evaluate the broker's selected prediction model for an unordered pair."""
+function predict_broker!(
+    broker::Broker,
+    feature_buf::AbstractVector{Float64},
+    party1_type::AbstractVector{Float64},
+    party2_type::AbstractVector{Float64},
+    params::ModelParams,
+)::Float64
+    if params.learning_model == :nn
+        fill_broker_pair_features!(feature_buf, party1_type, party2_type)
+        return predict_nn!(broker.nn, broker.predict_buf, feature_buf)
+    end
+
+    ridge = broker.ridge::RidgeModel
+    variant = params.ridge_broker_variant
+    if variant in (:pair, :size_matched)
+        fill_broker_pair_features!(feature_buf, party1_type, party2_type)
+        return predict_ridge(ridge, feature_buf)
+    elseif variant == :additive
+        return predict_additive_ridge(ridge, party1_type, party2_type, false)
+    end
+
+    # The single-principal model g_b is fit to one randomly retained endpoint
+    # per broker observation. Pair scores combine both endpoint evaluations.
+    return predict_additive_ridge(ridge, party1_type, party2_type, true)
+end
+
+"""
+    fit_ridge!(model, X, y, n, lambda)
+
+Fit slopes to mean squared error plus `lambda * sum(abs2, slopes)`. The
+intercept is unpenalized. Inputs are used on their raw DGP scale.
+"""
+function fit_ridge!(
+    model::RidgeModel, X::Matrix{Float64}, y::Vector{Float64}, n::Int, lambda::Float64
+)
+    n > 0 || return nothing
+    p = length(model.coefficients)
+    @assert size(X, 1) == p
+    @assert n <= size(X, 2) && n <= length(y)
+
+    xbar = model.feature_mean
+    fill!(xbar, 0.0)
+    ybar = 0.0
+    @inbounds for obs in 1:n
+        ybar += y[obs]
+        for feature in 1:p
+            xbar[feature] += X[feature, obs]
+        end
+    end
+    inv_n = 1.0 / n
+    ybar *= inv_n
+    @inbounds for feature in 1:p
+        xbar[feature] *= inv_n
+    end
+
+    gram = model.gram
+    rhs = model.rhs
+    fill!(gram, 0.0)
+    fill!(rhs, 0.0)
+    @inbounds for obs in 1:n
+        yc = y[obs] - ybar
+        for col in 1:p
+            xc = X[col, obs] - xbar[col]
+            rhs[col] += xc * yc
+            for row in col:p
+                gram[row, col] += (X[row, obs] - xbar[row]) * xc
+            end
+        end
+    end
+    @inbounds for col in 1:p
+        rhs[col] *= inv_n
+        for row in col:p
+            value = gram[row, col] * inv_n
+            gram[row, col] = value
+            gram[col, row] = value
+        end
+        gram[col, col] += lambda
+    end
+
+    factor = cholesky!(Symmetric(gram, :L))
+    copyto!(model.coefficients, rhs)
+    ldiv!(factor, model.coefficients)
+    model.target_mean = ybar
+    model.intercept = ybar - dot(model.coefficients, xbar)
     return nothing
 end
 
@@ -630,23 +762,13 @@ function ensure_agent_train_buffers!(agent::Agent, d::Int, n::Int, max_obs::Int)
     return nothing
 end
 
-function train_agent_nn_impl!(agent::Agent, params::ModelParams)
+function prepare_agent_training!(agent::Agent, params::ModelParams)::Int
     n = agent.history_count
-    n <= 0 && return nothing
+    n <= 0 && return 0
 
-    # Period-based window: observations from the most recent train_window_periods
-    # periods, evenly subsampled to the compute cap when the window exceeds it.
     start_idx, window, count = period_training_window(
         agent.obs_period_marks, n, params.train_window_periods, params.train_max_obs
     )
-
-    # Step count is set by the new-data ratio over full history (independent of the
-    # window/cap), settling to the params.train_steps floor once history dominates.
-    n_steps = compute_adaptive_steps(
-        params.E_init, agent.n_new_obs, n; min_steps=params.train_steps
-    )
-    agent.n_new_obs = 0
-
     d = params.d
     ensure_agent_train_buffers!(agent, d, count, params.train_max_obs)
 
@@ -661,6 +783,17 @@ function train_agent_nn_impl!(agent::Agent, params::ModelParams)
         end
         train_q[col] = agent.history_q[j]
     end
+    return count
+end
+
+function train_agent_nn_impl!(agent::Agent, params::ModelParams)
+    n = agent.history_count
+    n <= 0 && return nothing
+    n_steps = compute_adaptive_steps(
+        params.E_init, agent.n_new_obs, n; min_steps=params.train_steps
+    )
+    count = prepare_agent_training!(agent, params)
+    agent.n_new_obs = 0
     train_nn_prefix_adam!(
         agent.nn, agent.nn_grad, agent.train_X, agent.train_q, count, n_steps, params.eta_lr
     )
@@ -679,6 +812,27 @@ function train_agent_nn!(agent::Agent, params::ModelParams)
     return nothing
 end
 
+"""Fit an agent's Ridge model on the same training sample used by the NN."""
+function train_agent_ridge!(agent::Agent, params::ModelParams)
+    agent.history_count <= 0 && return nothing
+    count = prepare_agent_training!(agent, params)
+    agent.n_new_obs = 0
+    fit_ridge!(
+        agent.ridge::RidgeModel, agent.train_X, agent.train_q, count, params.ridge_lambda
+    )
+    return nothing
+end
+
+"""Fit the agent's selected prediction model."""
+function train_agent_predictor!(agent::Agent, params::ModelParams)
+    if params.learning_model == :nn
+        train_agent_nn!(agent, params)
+    else
+        train_agent_ridge!(agent, params)
+    end
+    return nothing
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Broker training
 # ─────────────────────────────────────────────────────────────────────────────
@@ -692,36 +846,7 @@ Train the broker on symmetric pair features from the period-based window
 function train_broker_nn!(broker::Broker, params::ModelParams)
     n = broker.history_count
     n <= 0 && return nothing
-
-    d = params.d
-    d_broker = broker_pair_feature_dim(d)
-
-    # Period-based window, evenly subsampled to the cap when it exceeds it.
-    start_idx, window, count = period_training_window(
-        broker.obs_period_marks, n, params.train_window_periods, params.train_max_obs
-    )
-
-    # Ensure training buffers are large enough
-    if size(broker.train_X, 1) != d_broker || size(broker.train_X, 2) < count
-        new_cap = max(count, 2 * size(broker.train_X, 2), 128)
-        broker.train_X = Matrix{Float64}(undef, d_broker, new_cap)
-        resize!(broker.train_q, new_cap)
-    end
-
-    # Build symmetric-feature training data from the evenly-spaced window sample
-    @inbounds for k in 0:(count - 1)
-        j = windowed_index(start_idx, window, count, k)
-        col = k + 1
-        fill_broker_pair_features!(
-            broker.train_X,
-            col,
-            broker.history_party1_types,
-            j,
-            broker.history_party2_types,
-            j,
-        )
-        broker.train_q[col] = broker.history_q[j]
-    end
+    count = prepare_broker_training!(broker, nothing, params, nothing; variant=:pair)
 
     # Step count is set by the new-data ratio over full history (independent of the
     # window/cap), settling to the params.train_steps floor once history dominates.
@@ -739,5 +864,147 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
         n_steps,
         params.eta_lr,
     )
+    return nothing
+end
+
+function ensure_broker_train_buffers!(broker::Broker, n_features::Int, count::Int)
+    if size(broker.train_X, 1) != n_features || size(broker.train_X, 2) < count
+        current_cap = size(broker.train_X, 2)
+        new_cap = max(count, 2 * current_cap, 128)
+        broker.train_X = Matrix{Float64}(undef, n_features, new_cap)
+        resize!(broker.train_q, new_cap)
+    end
+    return nothing
+end
+
+function typical_agent_training_count!(
+    broker::Broker, agents::Vector{Agent}, params::ModelParams
+)::Int
+    counts = broker.agent_train_counts
+    empty!(counts)
+    @inbounds for agent in agents
+        n = agent.history_count
+        n <= 0 && continue
+        _, _, count = period_training_window(
+            agent.obs_period_marks, n, params.train_window_periods, params.train_max_obs
+        )
+        push!(counts, count)
+    end
+    isempty(counts) && return 0
+    sort!(counts)
+    m = length(counts)
+    return if isodd(m)
+        counts[(m + 1) ÷ 2]
+    else
+        round(Int, (counts[m ÷ 2] + counts[m ÷ 2 + 1]) / 2, RoundNearestTiesUp)
+    end
+end
+
+function choose_size_matched_indices!(
+    broker::Broker, available::Int, selected::Int, rng::AbstractRNG
+)
+    indices = broker.sample_indices
+    length(indices) < available && resize!(indices, available)
+    @inbounds for idx in 1:available
+        indices[idx] = idx
+    end
+    @inbounds for idx in 1:selected
+        swap_idx = rand(rng, idx:available)
+        indices[idx], indices[swap_idx] = indices[swap_idx], indices[idx]
+    end
+    return nothing
+end
+
+function fill_broker_training_column!(
+    broker::Broker, col::Int, history_idx::Int, variant::Symbol, d::Int
+)
+    if variant in (:pair, :size_matched)
+        fill_broker_pair_features!(
+            broker.train_X,
+            col,
+            broker.history_party1_types,
+            history_idx,
+            broker.history_party2_types,
+            history_idx,
+        )
+    elseif variant == :additive
+        @inbounds for row in 1:d
+            broker.train_X[row, col] =
+                broker.history_party1_types[row, history_idx] +
+                broker.history_party2_types[row, history_idx]
+        end
+    else
+        retained = broker.history_retained_party[history_idx]
+        @assert retained in (UInt8(1), UInt8(2))
+        source =
+            retained == UInt8(1) ? broker.history_party1_types : broker.history_party2_types
+        @inbounds for row in 1:d
+            broker.train_X[row, col] = source[row, history_idx]
+        end
+    end
+    broker.train_q[col] = broker.history_q[history_idx]
+    return nothing
+end
+
+function prepare_broker_training!(
+    broker::Broker,
+    agents::Union{Vector{Agent},Nothing},
+    params::ModelParams,
+    rng::Union{AbstractRNG,Nothing};
+    variant::Symbol=params.ridge_broker_variant,
+)::Int
+    n = broker.history_count
+    n <= 0 && return 0
+    start_idx, window, available = period_training_window(
+        broker.obs_period_marks, n, params.train_window_periods, params.train_max_obs
+    )
+    count = available
+    if variant == :size_matched
+        isnothing(rng) && error("size-matched broker training requires an RNG")
+        isnothing(agents) && error("size-matched broker training requires agents")
+        count = min(
+            available, typical_agent_training_count!(broker, agents::Vector{Agent}, params)
+        )
+        count <= 0 && return 0
+        choose_size_matched_indices!(broker, available, count, rng)
+    end
+
+    n_features = if variant in (:additive, :single_principal)
+        params.d
+    else
+        broker_pair_feature_dim(params.d)
+    end
+    ensure_broker_train_buffers!(broker, n_features, count)
+    @inbounds for col in 1:count
+        window_pos = variant == :size_matched ? broker.sample_indices[col] - 1 : col - 1
+        history_idx = windowed_index(start_idx, window, available, window_pos)
+        fill_broker_training_column!(broker, col, history_idx, variant, params.d)
+    end
+    return count
+end
+
+"""Fit the selected Ridge broker variant."""
+function train_broker_ridge!(
+    broker::Broker, agents::Vector{Agent}, params::ModelParams, rng::AbstractRNG
+)
+    broker.history_count <= 0 && return nothing
+    count = prepare_broker_training!(broker, agents, params, rng)
+    count <= 0 && return nothing
+    broker.n_new_obs = 0
+    fit_ridge!(
+        broker.ridge::RidgeModel, broker.train_X, broker.train_q, count, params.ridge_lambda
+    )
+    return nothing
+end
+
+"""Fit the broker's selected prediction model."""
+function train_broker_predictor!(
+    broker::Broker, agents::Vector{Agent}, params::ModelParams, rng::AbstractRNG
+)
+    if params.learning_model == :nn
+        train_broker_nn!(broker, params)
+    else
+        train_broker_ridge!(broker, agents, params, rng)
+    end
     return nothing
 end

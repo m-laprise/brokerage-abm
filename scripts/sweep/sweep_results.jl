@@ -68,7 +68,6 @@ function load_sweep_dataset(root::AbstractString)
             )
         end
 
-    expected_seeds = Int.(meta[:seeds])
     expected_periods = collect(1:Int(meta[:T]))
     length(conditions) == meta[:n_conditions] || error(
         "manifest condition count mismatch: $(length(conditions)) != $(meta[:n_conditions])",
@@ -79,6 +78,7 @@ function load_sweep_dataset(root::AbstractString)
 
     results = SweepResult[]
     for condition in sort(conditions; by=c -> c[:condition_index])
+        expected_seeds = Int.(condition[:seeds])
         rel = condition[:result_reldir]
         path = joinpath(root, rel, "data.jld2")
         isfile(path) || error("missing aggregate for effective realization: $rel")

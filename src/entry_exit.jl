@@ -89,6 +89,7 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     agent.nn = init_neural_net(d, agent_hidden_width(p), rng)
     agent.nn_grad = NNGradBuffers(agent.nn)
     fill!(agent.predict_buf, 0.0)
+    agent.ridge = p.learning_model == :ridge ? RidgeModel(d, Q_OFFSET) : nothing
 
     # Reset partner tracking
     fill!(agent.partner_sum, 0.0)

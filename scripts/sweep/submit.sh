@@ -20,8 +20,8 @@
 # BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array %K, default 200),
 # BROKERAGE_ABM_CPUS (CPUs and Julia threads per simulation, default 2),
 # BROKERAGE_ABM_PLOT_THROTTLE (default 24), BROKERAGE_ABM_TIME (compute
-# walltime, default 6 hours for the 500-period design), JULIA_DEPOT_PATH, and
-# JULIA_CPU_TARGET.
+# walltime, default 6 hours for the 500-period design), learning-model settings
+# documented in sweep_config.jl, JULIA_DEPOT_PATH, and JULIA_CPU_TARGET.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -37,10 +37,23 @@ COMPUTE_TIME="${BROKERAGE_ABM_TIME:-06:00:00}"
 JULIA_MODULE="${BROKERAGE_ABM_JULIA_MODULE:-julia/1.11.3}"
 export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
 export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
+export BROKERAGE_ABM_LEARNING_MODEL="${BROKERAGE_ABM_LEARNING_MODEL:-nn}"
+export BROKERAGE_ABM_RIDGE_LAMBDA="${BROKERAGE_ABM_RIDGE_LAMBDA:-0.01}"
+export BROKERAGE_ABM_RIDGE_BROKER_VARIANT="${BROKERAGE_ABM_RIDGE_BROKER_VARIANT:-pair}"
+export BROKERAGE_ABM_SWEEP_SCOPE="${BROKERAGE_ABM_SWEEP_SCOPE:-full}"
+export BROKERAGE_ABM_N_SEEDS="${BROKERAGE_ABM_N_SEEDS:-20}"
+export BROKERAGE_ABM_BASELINE_N_SEEDS="${BROKERAGE_ABM_BASELINE_N_SEEDS:-$BROKERAGE_ABM_N_SEEDS}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
 TODAY="$(date +%Y-%m-%d)"
-TAG="${BROKERAGE_ABM_TAG:-${TODAY}_${SHA}}"
+DEFAULT_TAG="${TODAY}_${SHA}"
+if [ "$BROKERAGE_ABM_LEARNING_MODEL" != "nn" ]; then
+    DEFAULT_TAG="${DEFAULT_TAG}_${BROKERAGE_ABM_LEARNING_MODEL}_${BROKERAGE_ABM_RIDGE_BROKER_VARIANT}_lambda${BROKERAGE_ABM_RIDGE_LAMBDA}"
+fi
+if [ "$BROKERAGE_ABM_SWEEP_SCOPE" != "full" ]; then
+    DEFAULT_TAG="${DEFAULT_TAG}_${BROKERAGE_ABM_SWEEP_SCOPE}"
+fi
+TAG="${BROKERAGE_ABM_TAG:-$DEFAULT_TAG}"
 SWEEP_DIR="$DATA_ROOT/sweep/$TAG"
 LOGDIR="$SWEEP_DIR/logs"
 ENVFILE="$SWEEP_DIR/sweep.env"
@@ -99,7 +112,15 @@ case "$stage" in
                   module purge 2>/dev/null || true; module load $JULIA_MODULE; cd '$REPO'; \
                   BROKERAGE_ABM_SWEEP_DIR='$SWEEP_DIR' julia --compiled-modules=strict \
                   --pkgimages=existing --project --threads=auto scripts/sweep/sweep_manifest.jl"
-    echo "BROKERAGE_ABM_SWEEP_DIR=$SWEEP_DIR" > "$ENVFILE"
+    {
+        echo "BROKERAGE_ABM_SWEEP_DIR=$SWEEP_DIR"
+        echo "BROKERAGE_ABM_LEARNING_MODEL=$BROKERAGE_ABM_LEARNING_MODEL"
+        echo "BROKERAGE_ABM_RIDGE_LAMBDA=$BROKERAGE_ABM_RIDGE_LAMBDA"
+        echo "BROKERAGE_ABM_RIDGE_BROKER_VARIANT=$BROKERAGE_ABM_RIDGE_BROKER_VARIANT"
+        echo "BROKERAGE_ABM_SWEEP_SCOPE=$BROKERAGE_ABM_SWEEP_SCOPE"
+        echo "BROKERAGE_ABM_N_SEEDS=$BROKERAGE_ABM_N_SEEDS"
+        echo "BROKERAGE_ABM_BASELINE_N_SEEDS=$BROKERAGE_ABM_BASELINE_N_SEEDS"
+    } > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;
 

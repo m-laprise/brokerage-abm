@@ -92,6 +92,24 @@ be checked before the next:
 ./scripts/sweep/submit.sh plot       # aggregation jobs that write each regime's data.jld2
 ```
 
+The default manifest uses NN learning, 20 seeds per effective condition, and
+the full grid. The paired-Ridge experiment uses the same 98 effective
+conditions, with 20 seeds generally and 50 at baseline:
+
+```bash
+export BROKERAGE_ABM_LEARNING_MODEL=ridge
+export BROKERAGE_ABM_RIDGE_BROKER_VARIANT=pair
+export BROKERAGE_ABM_RIDGE_LAMBDA=<calibrated-value>
+export BROKERAGE_ABM_N_SEEDS=20
+export BROKERAGE_ABM_BASELINE_N_SEEDS=50
+```
+
+Each Ridge broker ablation is a separate sweep root. Set its broker variant to
+`size_matched`, `single_principal`, or `additive`, and set
+`BROKERAGE_ABM_SWEEP_SCOPE=rho_delta` to run only the baseline and the
+`rho` by `delta` grid. The manifest records the estimator, penalty, variant,
+scope, and both seed sets.
+
 The manifest stage refuses a dirty Git worktree because a commit hash cannot
 reconstruct uncommitted code. `BROKERAGE_ABM_ALLOW_DIRTY=1` is available only
 for non-reporting smoke tests. Existing shards are reused only when their Git,

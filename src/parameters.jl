@@ -20,8 +20,7 @@ const SEARCH_COST_RATE_BASE = 0.05
 
 Target roster size implied by the standing broker roster share.
 """
-roster_target_size(N::Int, roster_frac::Real) =
-    min(N, ceil(Int, Float64(roster_frac) * N))
+roster_target_size(N::Int, roster_frac::Real) = min(N, ceil(Int, Float64(roster_frac) * N))
 
 """Target roster size for a model parameterization."""
 roster_target_size(p::ModelParams) = roster_target_size(p.N, p.roster_frac)
@@ -61,6 +60,11 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :omega => 0.2,
         :search_cost_rate => SEARCH_COST_RATE_BASE,
         :reservation_frac => 0.60,
+        # Learning model. NN remains the default; Ridge parameters are ignored
+        # unless learning_model=:ridge.
+        :learning_model => :nn,
+        :ridge_lambda => 0.01,
+        :ridge_broker_variant => :pair,
         # Neural network (Adam optimizer; lr 0.01 is the standard Adam scale and
         # the value validated in scripts/diagnostics for gain recovery)
         :eta_lr => 0.01,
@@ -97,6 +101,9 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:omega],
         defaults[:search_cost_rate],
         defaults[:reservation_frac],
+        defaults[:learning_model],
+        defaults[:ridge_lambda],
+        defaults[:ridge_broker_variant],
         defaults[:eta_lr],
         defaults[:E_init],
         defaults[:train_window_periods],
@@ -145,6 +152,11 @@ function validate_params(p::ModelParams)
     @assert 0.0 < p.omega < 1.0 "omega must be in (0, 1), got $(p.omega)"
     @assert 0.0 <= p.search_cost_rate <= 1.0 "search_cost_rate must be in [0, 1], got $(p.search_cost_rate)"
     @assert p.reservation_frac >= 0.0 "reservation_frac must be >= 0, got $(p.reservation_frac)"
+
+    # Learning model
+    @assert p.learning_model in (:nn, :ridge) "learning_model must be :nn or :ridge, got $(p.learning_model)"
+    @assert p.ridge_lambda > 0.0 "ridge_lambda must be > 0, got $(p.ridge_lambda)"
+    @assert p.ridge_broker_variant in (:pair, :size_matched, :single_principal, :additive) "invalid ridge_broker_variant: $(p.ridge_broker_variant)"
 
     # Neural network
     @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"

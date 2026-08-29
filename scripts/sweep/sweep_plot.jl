@@ -39,14 +39,14 @@ include(joinpath(@__DIR__, "shard_validation.jl"))
 # Shard loading
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Load all current seed shards in `celldir`."""
-function load_cell(celldir, expected_provenance)
+"""Load all planned current seed shards in `celldir`."""
+function load_cell(celldir, expected_provenance, expected_seeds)
     mdfs = DataFrame[]
     final_degs = Vector{Int}[]
     seeds = Int[]
     config = nothing
     prov = nothing
-    for s in SWEEP_SEEDS
+    for s in expected_seeds
         path = joinpath(celldir, "seed_$(s).jld2")
         isfile(path) || continue
         if !shard_is_current(path, expected_provenance)
@@ -77,11 +77,11 @@ function load_cell(celldir, expected_provenance)
 end
 
 """Return whether every planned seed shard exists with current provenance."""
-function shards_complete(celldir, expected_provenance)
+function shards_complete(celldir, expected_provenance, expected_seeds)
     all(
         seed ->
             shard_is_current(joinpath(celldir, "seed_$(seed).jld2"), expected_provenance),
-        SWEEP_SEEDS,
+        expected_seeds,
     )
 end
 
@@ -617,14 +617,14 @@ function do_oat_cell(sweepdir, job, expected_provenance)
     primary = joinpath(celldir, "dynamics.png")
     aggregate = joinpath(celldir, "data.jld2")
     if get(ENV, "BROKERAGE_ABM_REPLOT", "0") == "0" &&
-        shards_complete(resultdir, expected_provenance) &&
+        shards_complete(resultdir, expected_provenance, job[:seeds]) &&
         aggregate_is_current(aggregate, expected_provenance) &&
         isfile(primary) &&
         isfile(joinpath(celldir, "network_stats.png"))
         println("SKIP plot (figures exist): $(job[:reldir])")
         return nothing
     end
-    cell = load_cell(resultdir, expected_provenance)
+    cell = load_cell(resultdir, expected_provenance, job[:seeds])
     if isempty(cell.mdfs)
         @warn "no referenced shards found for OAT cell; skipping" celldir resultdir
         return nothing
@@ -647,11 +647,10 @@ function do_phase_pair(sweepdir, job, expected_provenance)
     pairdir = joinpath(sweepdir, job[:reldir])
     # Idempotent: skip pairs whose summary already exists (BROKERAGE_ABM_REPLOT=1 forces a rebuild).
     summary_path = joinpath(pairdir, "summary.jld2")
-    referenced_results = unique(ref[:result_reldir] for ref in job[:cell_refs])
-    all_shards_complete = all(
-        rel -> shards_complete(joinpath(sweepdir, rel), expected_provenance),
-        referenced_results,
-    )
+    referenced_results = Dict(ref[:result_reldir] => ref[:seeds] for ref in job[:cell_refs])
+    all_shards_complete = all(referenced_results) do (rel, seeds)
+        shards_complete(joinpath(sweepdir, rel), expected_provenance, seeds)
+    end
     if get(ENV, "BROKERAGE_ABM_REPLOT", "0") == "0" &&
         all_shards_complete &&
         aggregate_is_current(summary_path, expected_provenance)
@@ -669,7 +668,7 @@ function do_phase_pair(sweepdir, job, expected_provenance)
         ref = only(r for r in job[:cell_refs] if r[:xi] == xi && r[:yi] == yi)
         celldir = joinpath(sweepdir, ref[:reldir])
         resultdir = joinpath(sweepdir, ref[:result_reldir])
-        cell = load_cell(resultdir, expected_provenance)
+        cell = load_cell(resultdir, expected_provenance, ref[:seeds])
         isempty(cell.mdfs) && continue
         nfound += 1
         write_cell_data(celldir, cell, ref)         # grid view of canonical shards (§4)

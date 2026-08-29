@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 5
+const SWEEP_SCHEMA_VERSION = 6
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -36,7 +36,24 @@ const SWEEP_SCHEMA_VERSION = 5
 # the whole sweep, but only T is a model parameter.
 const SWEEP_T = 500
 const SWEEP_T_BURN = 30
-const SWEEP_SEEDS = collect(1:20)
+const SWEEP_SEEDS = collect(1:parse(Int, get(ENV, "BROKERAGE_ABM_N_SEEDS", "20")))
+const SWEEP_BASELINE_SEEDS = collect(
+    1:parse(Int, get(ENV, "BROKERAGE_ABM_BASELINE_N_SEEDS", string(length(SWEEP_SEEDS))))
+)
+const SWEEP_LEARNING_MODEL = Symbol(get(ENV, "BROKERAGE_ABM_LEARNING_MODEL", "nn"))
+const SWEEP_RIDGE_LAMBDA = parse(Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA", "0.01"))
+const SWEEP_RIDGE_BROKER_VARIANT = Symbol(
+    get(ENV, "BROKERAGE_ABM_RIDGE_BROKER_VARIANT", "pair")
+)
+const SWEEP_SCOPE = Symbol(get(ENV, "BROKERAGE_ABM_SWEEP_SCOPE", "full"))
+
+SWEEP_LEARNING_MODEL in (:nn, :ridge) || error("invalid sweep learning model")
+SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||
+    error("invalid sweep Ridge broker variant")
+SWEEP_SCOPE in (:full, :rho_delta) || error("invalid sweep scope")
+isempty(SWEEP_SEEDS) && error("sweep must include at least one seed")
+length(SWEEP_BASELINE_SEEDS) < length(SWEEP_SEEDS) &&
+    error("baseline seed set cannot be smaller than the general seed set")
 
 # Full baseline over every parameter that appears on a sweep axis. A grid
 # coordinate's identity is its resolved tuple over these keys, not merely its local
@@ -141,6 +158,12 @@ function condition_key(params::AbstractDict)
     return Tuple(resolved[key] for key in SWEEP_KEYS)
 end
 
+"""True when a resolved cell is the baseline effective realization."""
+is_baseline_condition(cell) = condition_key(cell[:params]) == Tuple(SWEEP_BASELINE)
+
+"""Planned seeds for an effective condition."""
+condition_seeds(cell) = is_baseline_condition(cell) ? SWEEP_BASELINE_SEEDS : SWEEP_SEEDS
+
 """
 Annotate grid coordinates with the first result directory realizing each condition.
 
@@ -161,6 +184,7 @@ function link_result_cells!(cells)
         cell[:result_reldir] = first_result[key]
         cell[:is_canonical] = cell[:reldir] == cell[:result_reldir]
         cell[:resolved_params] = resolved_sweep_params(cell[:params])
+        cell[:seeds] = condition_seeds(cell)
     end
     return cells
 end
@@ -190,6 +214,39 @@ directory for its model realization.
 """
 function build_cells()
     cells = Dict{Symbol,Any}[]
+
+    if SWEEP_SCOPE == :rho_delta
+        push!(
+            cells,
+            Dict{Symbol,Any}(
+                :kind => "oat",
+                :axis => "rho",
+                :key => "rho",
+                :value => SWEEP_BASELINE.rho,
+                :params => Dict{Symbol,Any}(),
+                :reldir => BASELINE_RELDIR,
+            ),
+        )
+        pr = only(pair for pair in PHASE_PAIRS if pair.name == "rho_delta")
+        for (xi, xv) in enumerate(pr.xvals), (yi, yv) in enumerate(pr.yvals)
+            push!(
+                cells,
+                Dict{Symbol,Any}(
+                    :kind => "phase",
+                    :pair => pr.name,
+                    :xkey => string(pr.xkey),
+                    :xval => xv,
+                    :xi => xi,
+                    :ykey => string(pr.ykey),
+                    :yval => yv,
+                    :yi => yi,
+                    :params => Dict{Symbol,Any}(pr.xkey => xv, pr.ykey => yv),
+                    :reldir => "phase/$(pr.name)/cells/$(xi - 1)_$(yi - 1)",
+                ),
+            )
+        end
+        return link_result_cells!(cells)
+    end
 
     # OAT cells
     for ax in OAT_AXES, v in ax.vals
@@ -242,22 +299,24 @@ Expand only canonical result cells into (condition, seed) jobs with a 0-based
 function build_entries(cells)
     entries = Dict{Symbol,Any}[]
     idx = 0
-    for c in result_cells(cells), s in SWEEP_SEEDS
-        e = Dict{Symbol,Any}(
-            :index => idx,
-            :seed => s,
-            :kind => c[:kind],
-            :condition_index => c[:condition_index],
-            :reldir => c[:result_reldir],
-            :params => c[:params],
-            :resolved_params => c[:resolved_params],
-        )
-        # carry axis/pair metadata through for provenance
-        for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
-            haskey(c, k) && (e[k] = c[k])
+    for c in result_cells(cells)
+        for s in c[:seeds]
+            e = Dict{Symbol,Any}(
+                :index => idx,
+                :seed => s,
+                :kind => c[:kind],
+                :condition_index => c[:condition_index],
+                :reldir => c[:result_reldir],
+                :params => c[:params],
+                :resolved_params => c[:resolved_params],
+            )
+            # carry axis/pair metadata through for provenance
+            for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
+                haskey(c, k) && (e[k] = c[k])
+            end
+            push!(entries, e)
+            idx += 1
         end
-        push!(entries, e)
-        idx += 1
     end
     return entries
 end
@@ -284,6 +343,7 @@ function build_plot_jobs(cells)
             :result_reldir => c[:result_reldir],
             :condition_index => c[:condition_index],
             :resolved_params => c[:resolved_params],
+            :seeds => c[:seeds],
             :axis => c[:axis],
             :key => c[:key],
             :value => c[:value],
@@ -300,6 +360,7 @@ function build_plot_jobs(cells)
                 :result_reldir => c[:result_reldir],
                 :condition_index => c[:condition_index],
                 :resolved_params => c[:resolved_params],
+                :seeds => c[:seeds],
                 :pair => c[:pair],
                 :xkey => c[:xkey],
                 :xval => c[:xval],
@@ -309,6 +370,7 @@ function build_plot_jobs(cells)
                 :yi => c[:yi],
             ) for c in cells if c[:kind] == "phase" && c[:pair] == pr.name
         ]
+        isempty(refs) && continue
         push!(
             jobs,
             Dict{Symbol,Any}(

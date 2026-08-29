@@ -82,7 +82,7 @@ Complete model initialization following `simulation_pseudocode.tex` (`Initialize
 6. Agent history seeding from all initial non-broker graph edges
 7. Broker history seeding from existing roster-roster graph edges
 8. State variables (satisfaction, reputation)
-9. Neural network initial training (E_init steps)
+9. Initial fitting of the selected prediction model
 """
 function initialize_model(params::ModelParams)::ModelState
     rng = StableRNG(params.seed)
@@ -127,9 +127,29 @@ function initialize_model(params::ModelParams)::ModelState
         history_party2_types=Matrix{Float64}(undef, d, 64),
         history_q=Vector{Float64}(undef, 64),
         history_count=0,
+        history_retained_party=(
+            if p.learning_model == :ridge && p.ridge_broker_variant == :single_principal
+                Vector{UInt8}(undef, 64)
+            else
+                UInt8[]
+            end
+        ),
+        retain_one_party=(
+            p.learning_model == :ridge && p.ridge_broker_variant == :single_principal
+        ),
         nn=broker_nn,
         nn_grad=broker_grad,
         predict_buf=zeros(h_broker),
+        ridge=(
+            if p.learning_model == :ridge
+                RidgeModel(
+                    p.ridge_broker_variant in (:additive, :single_principal) ? d : d_broker,
+                    Q_OFFSET,
+                )
+            else
+                nothing
+            end
+        ),
         n_new_obs=0,
         train_X=Matrix{Float64}(undef, d_broker, 128),
         train_q=Vector{Float64}(undef, 128),
@@ -162,6 +182,7 @@ function initialize_model(params::ModelParams)::ModelState
             nn=nn,
             nn_grad=NNGradBuffers(nn),
             predict_buf=zeros(h_agent),
+            ridge=(p.learning_model == :ridge ? RidgeModel(d, Q_OFFSET) : nothing),
             n_new_obs=0,
             train_X=Matrix{Float64}(undef, d, initial_train_cap),
             train_q=Vector{Float64}(undef, initial_train_cap),
@@ -201,7 +222,7 @@ function initialize_model(params::ModelParams)::ModelState
     n_broker_seed = min(100, length(roster_edge_indices))
     for idx in @view roster_edge_indices[1:n_broker_seed]
         record_broker_history!(
-            broker, agents[edge_i[idx]].type, agents[edge_j[idx]].type, edge_q[idx]
+            broker, agents[edge_i[idx]].type, agents[edge_j[idx]].type, edge_q[idx]; rng=rng
         )
     end
 
@@ -237,7 +258,7 @@ function initialize_model(params::ModelParams)::ModelState
         cached_network=CachedNetworkMeasures(),
     )
 
-    # ── Initial neural network training ──
+    # ── Initial predictor fitting ──
     # Initialization is period 0. Its cumulative history boundary lets rolling
     # windows exclude seed observations once W_p completed simulation periods
     # are available.
@@ -245,13 +266,13 @@ function initialize_model(params::ModelParams)::ModelState
         push!(agent.obs_period_marks, agent.history_count)
         if agent.history_count > 0
             agent.n_new_obs = agent.history_count  # treat all seed data as new
-            train_agent_nn!(agent, p)
+            train_agent_predictor!(agent, p)
         end
     end
     push!(broker.obs_period_marks, broker.history_count)
     if broker.history_count > 0
         broker.n_new_obs = broker.history_count
-        train_broker_nn!(broker, p)
+        train_broker_predictor!(broker, agents, p, rng)
     end
 
     return state
