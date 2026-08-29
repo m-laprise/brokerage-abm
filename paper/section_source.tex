@@ -14,7 +14,7 @@ $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.
 initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
 self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
 run are treated as burn-in. Around this baseline, I vary one parameter at a time
-($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.01,0.02,0.03\}$,
+($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
 $\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
 $\alpha_R\in\{0.1,0.2,0.4\}$, and
@@ -26,7 +26,7 @@ $\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
 $\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
 $\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
 one-at-a-time levels. The design comprises \pv{nRegimes} unique model
-realizations, each simulated under ten independent seeds
+realizations, each simulated under twenty independent seeds
 (\pv{nRuns} runs in total). Reported statistics are
 ensemble means over seeds, summarized by time averages over fixed windows within a
 run: late means over the final 20 periods ($t\in[481,500]$), used for all reported

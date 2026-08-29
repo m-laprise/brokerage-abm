@@ -62,9 +62,9 @@ produced it.
 
 Results will derive from a parameter sweep that runs the model repeatedly while
 varying its parameters in a systematic design. Every run covers 500 periods. The
-design has 149 OAT and phase-grid coordinates, which reference 89 effective
-model realizations. Each realization is simulated under 10 independent seeds,
-for 890 runs. Grid coordinates that represent the same realization reference
+design has 161 OAT and phase-grid coordinates, which reference 98 effective
+model realizations. Each realization is simulated under 20 independent seeds,
+for 1,960 runs. Grid coordinates that represent the same realization reference
 the same canonical result shards, including the $\rho=1$ coordinates where
 $\delta$ is inactive by construction. Grid-reference multiplicity has no
 scientific weight. No realization-seed combination is simulated twice. Randomness is

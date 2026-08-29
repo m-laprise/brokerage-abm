@@ -7,7 +7,7 @@ does NOT re-simulate. Modeled on the exploration scripts (which run their own
 sims in one pass); the figure functions here are adapted to consume saved shards.
 
 Plot-job kinds (from `manifest.jld2` `plot_jobs`):
-  * "oat_cell"   — one OAT cell: aggregate its 10 referenced seed shards -> data.jld2,
+  * "oat_cell"   — one OAT cell: aggregate its planned seed shards -> data.jld2,
                    seed-banded dynamics panel + extended network-stats figure.
   * "phase_pair" — one pair: aggregate every grid point's shards ->
                    per-grid-point data.jld2 + tail-averaged summary.jld2 +

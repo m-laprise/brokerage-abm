@@ -2,9 +2,9 @@
 
 Backs the paper's results section.
 
-The currently committed derived data, values, and rendered figures are temporary
-single-model fixtures retained to validate this refactor. They are not journal
-results. Regenerate them from the new sweep after model development stabilizes.
+Generated paper outputs are intentionally absent until the pipeline is regenerated
+from a complete reporting sweep. The former temporary single-model fixtures were
+removed because they were not scientific results.
 
 **No script hard-codes or handwrites any number or result.** Every emitted
 value (statistics, counts, figure data, display scales) is derived from the raw data

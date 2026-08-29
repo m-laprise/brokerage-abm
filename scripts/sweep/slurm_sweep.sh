@@ -3,7 +3,7 @@
 # parallelism (each task is an independent single-node process; SLURM packs
 # tasks onto free cores). Submit with the array range + throttle + log paths on
 # the command line, e.g.:
-#   sbatch --array=0-789%200 \
+#   sbatch --array=0-$((NRUNS - 1))%200 \
 #          --output=$LOGDIR/%A_%a.out --error=$LOGDIR/%A_%a.err \
 #          slurm_sweep.sh <repo_root> <sweep_dir>
 # Args: $1 = repo root, $2 = sweep dir (exported as BROKERAGE_ABM_SWEEP_DIR).

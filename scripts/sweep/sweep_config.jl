@@ -36,7 +36,7 @@ const SWEEP_SCHEMA_VERSION = 5
 # the whole sweep, but only T is a model parameter.
 const SWEEP_T = 500
 const SWEEP_T_BURN = 30
-const SWEEP_SEEDS = collect(1:10)
+const SWEEP_SEEDS = collect(1:20)
 
 # Full baseline over every parameter that appears on a sweep axis. A grid
 # coordinate's identity is its resolved tuple over these keys, not merely its local
@@ -61,7 +61,9 @@ const RHO_EXTENDED_VALS = [0.0, 0.5, 0.85, 1.0]
 # The OAT rho axis includes the extra 0.3, 0.7, and 0.85 levels for line-plot
 # resolution. The rho x delta grid uses the full OAT axis.
 const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 0.85, 1.0]
-const ETA_VALS = [0.0, 0.01, 0.02, 0.03]
+# The 0.001 level distinguishes limited positive turnover from the qualitatively
+# fixed population at zero; it is included in every grid that uses eta.
+const ETA_VALS = [0.0, 0.001, 0.01, 0.02, 0.03]
 const N_VALS = [500, 1000, 1500]
 const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 

@@ -59,7 +59,7 @@ println(
 )
 println(
     "outsourcing vs eta: ",
-    [(e, r2(out(cellat("oat/eta=$e").mdfs))) for e in (0.0, 0.01, 0.02, 0.03)],
+    [(e, r2(out(cellat("oat/eta=$e").mdfs))) for e in ETA_VALS],
 )
 println(
     "outsourcing vs reservation: ",
@@ -81,7 +81,7 @@ println(
 )
 println(
     "output edge % vs eta: ",
-    [(e, round(Int, qedge(cellat("oat/eta=$e").mdfs))) for e in (0.0, 0.01, 0.02, 0.03)],
+    [(e, round(Int, qedge(cellat("oat/eta=$e").mdfs))) for e in ETA_VALS],
 )
 
 sec("RHO x DELTA GRID")

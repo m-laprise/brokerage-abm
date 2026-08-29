@@ -11,18 +11,19 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
 
     @test SWEEP_SCHEMA_VERSION == 5
     @test SWEEP_T == 500
-    @test SWEEP_SEEDS == collect(1:10)
-    @test length(cells) == 149
-    @test count(c -> c[:kind] == "oat", cells) == 30
-    @test count(c -> c[:kind] == "phase", cells) == 119
+    @test SWEEP_SEEDS == collect(1:20)
+    @test ETA_VALS == [0.0, 0.001, 0.01, 0.02, 0.03]
+    @test length(cells) == 161
+    @test count(c -> c[:kind] == "oat", cells) == 31
+    @test count(c -> c[:kind] == "phase", cells) == 130
 
-    @test length(conditions) == 89
+    @test length(conditions) == 98
     @test length(
         unique(Tuple(c[:resolved_params][key] for key in SWEEP_KEYS) for c in cells)
-    ) == 93
-    @test length(unique(condition_key(c[:params]) for c in cells)) == 89
-    @test count(c -> !c[:is_canonical], cells) == 60
-    @test sort(unique(c[:condition_index] for c in cells)) == collect(0:88)
+    ) == 102
+    @test length(unique(condition_key(c[:params]) for c in cells)) == 98
+    @test count(c -> !c[:is_canonical], cells) == 63
+    @test sort(unique(c[:condition_index] for c in cells)) == collect(0:97)
     @test all(conditions) do cell
         p = default_params(; cell[:resolved_params]...)
         expected_delta = p.rho == 1.0 ? SWEEP_BASELINE.delta : p.delta
@@ -52,18 +53,18 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test length(baseline_cells) > 1
     @test all(c[:result_reldir] == BASELINE_RELDIR for c in baseline_cells)
 
-    @test length(entries) == 890
-    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 890
+    @test length(entries) == 1960
+    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 1960
     @test all(e[:seed] in SWEEP_SEEDS for e in entries)
     @test all(e[:reldir] in keys(canonical_by_dir) for e in entries)
 
-    @test length(plot_jobs) == 38
+    @test length(plot_jobs) == 39
     oat_jobs = filter(j -> j[:kind] == "oat_cell", plot_jobs)
-    @test length(oat_jobs) == 30
+    @test length(oat_jobs) == 31
     @test all(haskey(j, :key) for j in oat_jobs)
     phase_jobs = filter(j -> j[:kind] == "phase_pair", plot_jobs)
     @test length(phase_jobs) == 8
-    @test sum(length(j[:cell_refs]) for j in phase_jobs) == 119
+    @test sum(length(j[:cell_refs]) for j in phase_jobs) == 130
     @test all(
         ref[:result_reldir] in keys(canonical_by_dir) for job in phase_jobs for
         ref in job[:cell_refs]
@@ -78,9 +79,14 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test sort([r[:resolved_params][:delta] for r in rho_one_refs]) == DELTA_VALS
 
     rho_eta = only(j for j in phase_jobs if j[:pair] == "rho_eta")
+    eta_r = only(j for j in phase_jobs if j[:pair] == "eta_r")
+    eta_N = only(j for j in phase_jobs if j[:pair] == "eta_N")
     rho_N = only(j for j in phase_jobs if j[:pair] == "rho_N")
     rho_r = only(j for j in phase_jobs if j[:pair] == "rho_r")
     @test rho_eta[:xvals] == RHO_EXTENDED_VALS
+    @test rho_eta[:yvals] == ETA_VALS
+    @test eta_r[:xvals] == ETA_VALS
+    @test eta_N[:xvals] == ETA_VALS
     @test rho_N[:xvals] == RHO_EXTENDED_VALS
     @test rho_r[:xvals] == RHO_CORE_VALS
     @test 0.85 in [j[:value] for j in oat_jobs if j[:key] == "rho"]
@@ -95,7 +101,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
                 (cell[:kind] == "phase" && get(cell, :pair, "") in common_pairs)
             )
         end
-        @test length(unique(c[:condition_index] for c in refs)) == 9
+        @test length(unique(c[:condition_index] for c in refs)) == 10
     end
 end
 
