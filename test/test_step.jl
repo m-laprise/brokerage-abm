@@ -179,6 +179,46 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         @test isfinite(state.accum.broker_holdout_rmse)
     end
 
+    @testset "Constant holdout predictions produce independent random rankings" begin
+        p = default_params(N=80, T=10, seed=143, eta=0.0)
+        state_a = initialize_model(p)
+        state_b = initialize_model(p)
+
+        for state in (state_a, state_b)
+            for agent in state.agents
+                fill!(agent.nn.w2, 0.0)
+                agent.nn.b2 = 1.0
+            end
+            fill!(state.broker.nn.w2, 0.0)
+            state.broker.nn.b2 = 1.0
+            BrokerageABM.update_holdout_metrics!(state)
+        end
+
+        @test isfinite(state_a.accum.agent_holdout_rank)
+        @test isfinite(state_a.accum.broker_holdout_rank)
+        @test state_a.accum.agent_holdout_rank == state_b.accum.agent_holdout_rank
+        @test state_a.accum.broker_holdout_rank == state_b.accum.broker_holdout_rank
+        @test state_a.accum.agent_holdout_rank != state_a.accum.broker_holdout_rank
+    end
+
+    @testset "Selected-offer ties produce independent random rankings" begin
+        state = initialize_model(default_params(N=30, T=5, seed=144, eta=0.0))
+        state.period = 1
+        append!(state.accum.agent_predicted, fill(2.0, 6))
+        append!(state.accum.agent_realized, 1.0:6.0)
+        append!(state.accum.broker_predicted, fill(2.0, 6))
+        append!(state.accum.broker_realized, 1.0:6.0)
+
+        metrics = collect_period_metrics(state)
+        repeated = collect_period_metrics(state)
+
+        @test isfinite(metrics.agent_selected_rank)
+        @test isfinite(metrics.broker_selected_rank)
+        @test metrics.agent_selected_rank == repeated.agent_selected_rank
+        @test metrics.broker_selected_rank == repeated.broker_selected_rank
+        @test metrics.agent_selected_rank != metrics.broker_selected_rank
+    end
+
     @testset "Holdout diagnostics do not consume the simulation RNG" begin
         p = default_params(N=80, T=10, seed=42, eta=0.0)
         state_with_holdout = initialize_model(p)

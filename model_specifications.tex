@@ -303,7 +303,7 @@ Agent \(i\)'s self-search candidate pool has two components:
 
 \textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) agents uniformly without replacement, where \(n_{\mathrm{strangers}} = 10\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
 
-Agent \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\).
+Agent \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\). Equal evaluations are ordered uniformly at random, so an agent whose predictions are constant produces a random ranking rather than an undefined ordering.
 
 \subsubsection{6b. Broker roster and access}\label{b.-broker-roster-and-access}
 
@@ -327,7 +327,7 @@ then the broker samples without replacement from \(\{1,\ldots,N\}\setminus \wide
 
 \subsubsection{6c. Broker-mediated search}\label{c.-broker-mediated-search}
 
-For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match quality. For each broker-client demander \(i\), it keeps the highest-valued accessible counterparties above \(r\), up to \(i\)'s residual active broker demand. Directed broker offers are processed in the score order induced by the global pair ranking. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
+For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match quality. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
 
 \subsubsection{6d. Offer acceptance and match formation}\label{d.-offer-acceptance-and-match-formation}
 
@@ -472,7 +472,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation is Spearman's \(\rho_S\) between predicted and realized output. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Holdout summaries use common valid-agent support for all four measures: an agent-level holdout set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
+Rank correlation evaluates the strict ranking produced from predicted output. Candidates are ordered by predicted output, with each set of equal predictions ordered uniformly at random. Agent and broker tie-breaking draws are independent. Spearman's \(\rho_S\) is then computed between this produced ranking and the realized-output ranks; equal realized outputs retain their average ranks. The same rule is applied to each holdout candidate set and to the pooled accepted directed offers within each selected-offer channel. Thus a constant predictor produces a random ranking with expected rank correlation zero. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Holdout summaries use common valid-agent support for all four measures: an agent-level holdout set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
 
 \subsubsection{Other measures}\label{other-measures}
 
@@ -536,7 +536,7 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 
 \subsubsection{9b. Reproducibility}\label{b.-reproducibility}
 
-All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, and subsequent model events. Holdout samples are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
+All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, random ordering within market score ties, and subsequent model events. Holdout samples and their independent agent and broker tie-breaking draws are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
 
 \section{References}\label{references}
 

@@ -30,11 +30,12 @@ using Statistics: mean
 #   retraining, and broker/agent new-observation reset behavior.
 # - Self-search offers: known-neighbor partner means, stranger NN predictions,
 #   reservation thresholding, exclusion of self/current matches/broker,
-#   descending offer ranking, demand quotas, and reciprocal offer-book
+#   descending offer ranking with random score-tie ordering, demand quotas, and reciprocal offer-book
 #   deduplication.
 # - Broker offers: hybrid access set Roster union current_clients, exclusion of
 #   period strangers, unordered feasible pair construction, per-client
-#   quota-bounded broker predictions, two-direction offers for broker demanders,
+#   quota-bounded broker predictions, independent local and global score-tie
+#   ordering, two-direction offers for broker demanders,
 #   and quota decrement only when an offer is actually added.
 # - Acceptance/finalization: reciprocal acceptance, one-sided receiver
 #   thresholding, rejected-offer no-op behavior, bilateral history and partner
@@ -339,11 +340,15 @@ end
             state.broker.node_id,
             [1, 2, 5, 6, 7],
             state.cal.r;
+            rng=StableRNG(8801),
             current_match_index_ready=true,
         )
 
         @test sent == 2
-        @test [(o.to_id, o.predicted_value) for o in ws.offer_book.offers] == [(2, 3.0), (5, 2.5)]
+        @test (ws.offer_book.offers[1].to_id, ws.offer_book.offers[1].predicted_value) ==
+            (2, 3.0)
+        @test ws.offer_book.offers[2].to_id in (5, 6, 7)
+        @test ws.offer_book.offers[2].predicted_value == 2.5
         excluded = (1, 3, 4, state.broker.node_id)
         @test all(o -> !(o.to_id in excluded), ws.offer_book.offers)
 
@@ -382,6 +387,7 @@ end
             broker,
             state.params,
             0.5;
+            rng=StableRNG(8802),
             remaining_demand=remaining,
         )
 

@@ -494,8 +494,8 @@ Base.@kwdef mutable struct SearchWorkspace
     # Tracks which indices we set in nbr_mask this call, so we can clear only those.
     nbr_marked::Vector{Int} = Int[]
     period_strangers::Vector{Int} = Int[]
-    # Sorted greedy: pre-allocated (negated_val, flat_index) pairs, sorted in-place.
-    sort_pairs::Vector{Tuple{Float64,Int}} = Tuple{Float64,Int}[]
+    # Sorted greedy: (negated value, random tie key, flat index), sorted in-place.
+    sort_pairs::Vector{Tuple{Float64,Float64,Int}} = Tuple{Float64,Float64,Int}[]
 end
 
 """Reusable buffers for broker access deduplication, pair scoring, and batch prediction."""
@@ -510,13 +510,16 @@ Base.@kwdef mutable struct BrokerPairWorkspace
     period_broker_access_ids::Vector{Int} = Int[]
     broker_pair_scores::Vector{Tuple{Float64,Int,Int}} = Tuple{Float64,Int,Int}[]
     broker_top_counts::Vector{Int} = Int[]
-    broker_top_offers::Matrix{Tuple{Float64,Int,Int,Int,Int}} = Matrix{
-        Tuple{Float64,Int,Int,Int,Int}
+    # Offer-ranking tuples are (negated score, random tie key, unordered-pair
+    # endpoints, directed endpoints). Per-client and global rankings receive
+    # independent tie keys.
+    broker_top_offers::Matrix{Tuple{Float64,Float64,Int,Int,Int,Int}} = Matrix{
+        Tuple{Float64,Float64,Int,Int,Int,Int}
     }(
         undef, 0, 0
     )
-    broker_selected_offers::Vector{Tuple{Float64,Int,Int,Int,Int}} = Tuple{
-        Float64,Int,Int,Int,Int
+    broker_selected_offers::Vector{Tuple{Float64,Float64,Int,Int,Int,Int}} = Tuple{
+        Float64,Float64,Int,Int,Int,Int
     }[]
     broker_demander_mask::Vector{Bool} = Bool[]
     broker_demander_touched::Vector{Int} = Int[]

@@ -64,9 +64,11 @@ end
 
 @inline ensure_length!(v::Vector, n::Int) = (length(v) == n || resize!(v, n); v)
 
-function diagnostics_rng(seed::Int, period::Int)::StableRNG
+function diagnostics_rng(seed::Int, period::Int, stream::Unsigned=UInt64(0))::StableRNG
     seed_bits = UInt64(reinterpret(UInt, seed))
-    mixed = seed_bits ⊻ (UInt64(period) * 0x9e3779b97f4a7c15) ⊻ 0xbf58476d1ce4e5b9
+    mixed =
+        seed_bits ⊻ (UInt64(period) * 0x9e3779b97f4a7c15) ⊻
+        (UInt64(stream) * 0x94d049bb133111eb) ⊻ 0xbf58476d1ce4e5b9
     diag_seed = Int(mod(mixed, UInt64(typemax(Int32))) + 1)
     return StableRNG(diag_seed)
 end
@@ -79,11 +81,13 @@ function holdout_quality_components!(
     pred_order::Vector{Int},
     pred_ranks::Vector{Float64},
     true_ranks::Vector{Float64},
+    rng::AbstractRNG,
 )::Tuple{Bool,Float64,Float64,Float64,Float64}
     pq = compute_prediction_quality_with_true_ranks!(
         predicted,
         realized,
         n;
+        rng=rng,
         sigma_eps=sigma_eps,
         pred_order=pred_order,
         pred_ranks=pred_ranks,
@@ -203,7 +207,14 @@ function update_holdout_metrics!(state::ModelState)
         prepare_true_ranks!(agent_trues, n_partners, true_order, true_ranks)
 
         valid, r2, bias, rank, rmse = holdout_quality_components!(
-            agent_preds, agent_trues, n_partners, se, pred_order, pred_ranks, true_ranks
+            agent_preds,
+            agent_trues,
+            n_partners,
+            se,
+            pred_order,
+            pred_ranks,
+            true_ranks,
+            diag_rng,
         )
         if valid
             agent_r2_sum += r2
@@ -214,7 +225,14 @@ function update_holdout_metrics!(state::ModelState)
         end
 
         valid, r2, bias, rank, rmse = holdout_quality_components!(
-            broker_preds, agent_trues, n_partners, se, pred_order, pred_ranks, true_ranks
+            broker_preds,
+            agent_trues,
+            n_partners,
+            se,
+            pred_order,
+            pred_ranks,
+            true_ranks,
+            diag_rng,
         )
         if valid
             broker_r2_sum += r2

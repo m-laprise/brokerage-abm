@@ -1,6 +1,8 @@
 using Test
 using BrokerageABM
 using BrokerageABM: update_cached_network_measures!
+using StableRNGs: StableRNG
+using Statistics: mean
 
 @testset "Measures" begin
     using Graphs: SimpleGraph, add_edge!, nv, path_graph, star_graph, cycle_graph
@@ -10,7 +12,7 @@ using BrokerageABM: update_cached_network_measures!
     @testset "compute_prediction_quality: perfect prediction" begin
         pred = [1.0, 2.0, 3.0, 4.0, 5.0]
         real = [1.0, 2.0, 3.0, 4.0, 5.0]
-        pq = compute_prediction_quality(pred, real)
+        pq = compute_prediction_quality(pred, real, StableRNG(101))
         @test pq isa PredictionQuality
         @test pq.r_squared ≈ 1.0
         @test pq.bias ≈ 0.0
@@ -20,24 +22,47 @@ using BrokerageABM: update_cached_network_measures!
     @testset "compute_prediction_quality: constant prediction" begin
         pred = fill(3.0, 10)
         real = collect(1.0:10.0)
-        pq = compute_prediction_quality(pred, real)
+        pq = compute_prediction_quality(pred, real, StableRNG(102))
+        pq_repeat = compute_prediction_quality(pred, real, StableRNG(102))
+        random_ranks = [
+            compute_prediction_quality(pred, real, StableRNG(seed)).rank_corr for
+            seed in 1:200
+        ]
         @test pq.r_squared < 0.0  # worse than mean
         @test isapprox(pq.bias, 3.0 - 5.5; atol=0.01)
+        @test isfinite(pq.rank_corr)
+        @test pq.rank_corr == pq_repeat.rank_corr
+        @test abs(mean(random_ranks)) < 0.08
+        @test length(unique(random_ranks)) > 1
+    end
+
+    @testset "random strict ranks preserve prediction ordering" begin
+        predicted = [1.0, 2.0, 2.0, 4.0]
+        order = zeros(Int, 4)
+        ranks = zeros(4)
+        BrokerageABM.strict_random_ranks_prefix!(
+            ranks, order, predicted, length(predicted), StableRNG(202)
+        )
+
+        @test ranks[1] == 1.0
+        @test Set(ranks[2:3]) == Set([2.0, 3.0])
+        @test ranks[4] == 4.0
     end
 
     @testset "compute_prediction_quality: uses standard R² denominator" begin
         pred = fill(3.0, 5)
         real = collect(1.0:5.0)
-        pq = compute_prediction_quality(pred, real)
+        pq = compute_prediction_quality(pred, real, StableRNG(103))
         @test pq.r_squared ≈ 0.0
         @test pq.bias ≈ 0.0
-        @test isnan(pq.rank_corr)
+        @test isfinite(pq.rank_corr)
+        @test -1.0 <= pq.rank_corr <= 1.0
     end
 
     @testset "compute_prediction_quality: accepts views without copying" begin
         pred = collect(0.0:6.0)
         real = collect(1.0:7.0)
-        pq = compute_prediction_quality(@view(pred[2:6]), @view(real[2:6]))
+        pq = compute_prediction_quality(@view(pred[2:6]), @view(real[2:6]), StableRNG(104))
         @test pq.r_squared ≈ 0.5
         @test pq.bias ≈ -1.0
         @test pq.rank_corr ≈ 1.0
@@ -46,13 +71,13 @@ using BrokerageABM: update_cached_network_measures!
     @testset "compute_prediction_quality: perfect rank, wrong scale" begin
         pred = [10.0, 20.0, 30.0, 40.0, 50.0]
         real = [1.0, 2.0, 3.0, 4.0, 5.0]
-        pq = compute_prediction_quality(pred, real)
+        pq = compute_prediction_quality(pred, real, StableRNG(105))
         @test pq.rank_corr ≈ 1.0
         @test pq.r_squared < 1.0  # scale is off, MSE > 0
     end
 
     @testset "compute_prediction_quality: too few observations -> NaN" begin
-        pq = compute_prediction_quality([1.0, 2.0], [1.0, 2.0])
+        pq = compute_prediction_quality([1.0, 2.0], [1.0, 2.0], StableRNG(106))
         @test isnan(pq.r_squared)
         @test isnan(pq.bias)
         @test isnan(pq.rank_corr)
@@ -61,7 +86,7 @@ using BrokerageABM: update_cached_network_measures!
     @testset "compute_prediction_quality: low variance -> NaN" begin
         pred = [1.0, 1.0, 1.0, 1.0, 1.0]
         real = [1.0, 1.001, 1.0, 0.999, 1.0]  # variance < threshold
-        pq = compute_prediction_quality(pred, real)
+        pq = compute_prediction_quality(pred, real, StableRNG(107))
         @test isnan(pq.r_squared)
     end
 
@@ -78,12 +103,13 @@ using BrokerageABM: update_cached_network_measures!
             pred,
             real,
             length(pred);
+            rng=StableRNG(108),
             sigma_eps=0.10,
             pred_order=pred_order,
             pred_ranks=pred_ranks,
             true_ranks=true_ranks,
         )
-        pq_public = compute_prediction_quality(pred, real; sigma_eps=0.10)
+        pq_public = compute_prediction_quality(pred, real, StableRNG(108); sigma_eps=0.10)
 
         @test pq_prefix.r_squared ≈ pq_public.r_squared atol=1e-12
         @test pq_prefix.bias ≈ pq_public.bias atol=1e-12

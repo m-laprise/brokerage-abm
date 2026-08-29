@@ -213,6 +213,7 @@ function run_offer_market!(
             broker.node_id,
             search.period_strangers,
             cal.r;
+            rng=rng,
             current_match_index_ready=true,
         )
     end
@@ -226,6 +227,7 @@ function run_offer_market!(
         broker,
         params,
         cal.r;
+        rng=rng,
         remaining_demand=remaining,
     )
 

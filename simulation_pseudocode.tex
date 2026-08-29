@@ -567,6 +567,7 @@ $\mathcal I_i^{\mathrm{self}}$ & list & Self-search candidates sorted by score. 
 $\mathcal P_b^t$ & set & Feasible unordered broker-pair set. \\
 $\mathcal I_{b,i}$ & list & Accessible broker candidates for client $i$, sorted by $v_b^t$. \\
 $\mathcal B_b^t$ & list & Selected directed broker offers. \\
+$u_{i\to j}^{\mathrm{self}},u_{b,i\to j}^{\mathrm{local}},u_{b,i\to j}^{\mathrm{global}}$ & $[0,1]$ & Independent random secondary keys used only within equal-score rankings. \\
 $o,o',o_{ij},o_{ji}$ & offer records & Offer records; fields include $o.z$ and $o.\mathrm{from}$. \\
 $z^\star$ & channel & Accepted-record channel. \\
 $\alpha,\beta$ & indices & Ordered endpoints induced by one unordered broker pair. \\
@@ -636,8 +637,9 @@ remain unmatched if no acceptable offer is formed.
     \mathcal N_G^t(i)
     \cup (U_i^t\setminus\mathcal N_G^t(i))$.
     \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t$.
+    \State Draw independent $u_{i\to j}^{\mathrm{self}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
     \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r}
-    (-v_{i\to j}^{\mathrm{self},t})$.
+    (-v_{i\to j}^{\mathrm{self},t},u_{i\to j}^{\mathrm{self}})$.
     \For{the first $\min(\Omega_i,|\mathcal I_i^{\mathrm{self}}|)$ agents $j$ in $\mathcal I_i^{\mathrm{self}}$}
         \State $\Call{\procAddOffer}{O^t,\mathcal P_O^t,i,j,\mathrm{self},v_{i\to j}^{\mathrm{self},t}}$.
     \EndFor
@@ -647,12 +649,14 @@ remain unmatched if no acceptable offer is formed.
 \State $\mathcal P_b^t\gets\{\{i,j\}:i\ne j,\ (i\in D_+^t,j\in\Ab^t)\ \text{or}\ (j\in D_+^t,i\in\Ab^t)\}$.
 \State $\mathcal B_b^t\gets\emptyset$.
 \For{each $i\in D_+^t$}
-    \State $\mathcal I_{b,i}\gets\argsort_{j\in\Ab^t:\{i,j\}\in\mathcal P_b^t,\ v_b^t(i,j)>r}(-v_b^t(i,j))$.
+    \State Draw independent $u_{b,i\to j}^{\mathrm{local}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
+    \State $\mathcal I_{b,i}\gets\argsort_{j\in\Ab^t:\{i,j\}\in\mathcal P_b^t,\ v_b^t(i,j)>r}(-v_b^t(i,j),u_{b,i\to j}^{\mathrm{local}})$.
     \For{the first $\min(\Omega_i,|\mathcal I_{b,i}|)$ agents $j$ in $\mathcal I_{b,i}$}
         \State Append $(i,j,v_b^t(i,j))$ to $\mathcal B_b^t$.
     \EndFor
 \EndFor
-\State Sort $\mathcal B_b^t$ by descending $v_b^t$ with the deterministic unordered-pair tie key.
+\State Draw a new independent $u_{b,i\to j}^{\mathrm{global}}\sim\mathrm{Unif}(0,1)$ for each $(i,j,v)\in\mathcal B_b^t$.
+\State Sort $\mathcal B_b^t$ lexicographically by $(-v,u_{b,i\to j}^{\mathrm{global}})$.
 \For{each $(i,j,v)\in\mathcal B_b^t$}
     \If{$\Omega_i>0$}
         \State $\iota\gets\Call{\procAddOffer}{O^t,\mathcal P_O^t,i,j,\mathrm{broker},v}$.
@@ -735,6 +739,11 @@ selected-sample prediction quality, deterministic holdout prediction quality,
 broker access and assessment counts, satisfaction, reputation, roster size,
 broker access size, agent-node degree summaries excluding the broker node,
 and cached broker network measures. The measures themselves do not feed
-back into $S^{t+1}$.}
+back into $S^{t+1}$. For rank correlation, predicted values first produce a
+strict ranking: equal predictions are ordered uniformly at random, independently
+for the agent and broker, while equal realized outputs retain average ranks.
+Spearman correlation is computed only after this predicted ranking is formed.
+The same rule is used for each holdout candidate set and for pooled accepted
+directed offers within each selected-offer channel.}
 
 \end{document}

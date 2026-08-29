@@ -81,11 +81,12 @@ function collect_period_metrics(state::ModelState)
     # Prediction quality: holdout is per-agent averaged, computed in step.jl.
     # Selected-sample metrics are pooled over actual matches by channel.
     se = state.env.sigma_eps
+    selected_rank_rng = diagnostics_rng(p.seed, state.period, 0x4a8f3c21)
     agent_sel = compute_prediction_quality(
-        a.agent_predicted, a.agent_realized; sigma_eps=se
+        a.agent_predicted, a.agent_realized, selected_rank_rng; sigma_eps=se
     )
     broker_sel = compute_prediction_quality(
-        a.broker_predicted, a.broker_realized; sigma_eps=se
+        a.broker_predicted, a.broker_realized, selected_rank_rng; sigma_eps=se
     )
     agent_sel_rmse = if isempty(a.agent_predicted)
         NaN

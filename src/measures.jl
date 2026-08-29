@@ -11,7 +11,6 @@ for allocation-free neighbor iteration inside threaded BFS.
 """
 
 using Graphs: SimpleGraph, neighbors, nv, ne, has_edge
-using StatsBase: corspearman
 using Statistics: var, mean
 using Base.Threads: @threads, nthreads
 
@@ -20,19 +19,24 @@ using Base.Threads: @threads, nthreads
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    compute_prediction_quality(predicted, realized; sigma_eps=0.10) -> PredictionQuality
+    compute_prediction_quality(predicted, realized, rng; sigma_eps=0.10) -> PredictionQuality
 
 Compute standard R², bias, and Spearman rank correlation between predicted and
-realized values. R² uses the usual `1 - SSE / SST` definition, equivalently
-`1 - MSE / var(realized; corrected=false)`.
+realized values. Predicted values are first converted to a strict ranking, with
+ties ordered uniformly at random using `rng`; realized ties retain average ranks.
+R² uses the usual `1 - SSE / SST` definition, equivalently `1 - MSE /
+var(realized; corrected=false)`.
 
 Returns NaN for all metrics if fewer than 5 observations or if the population
 variance of realized values is below `sigma_eps^2 / 6` (too little signal to
 meaningfully evaluate R²).
 """
-function compute_prediction_quality(predicted::AbstractVector{<:Real},
-                                    realized::AbstractVector{<:Real};
-                                    sigma_eps::Float64 = 0.10)::PredictionQuality
+function compute_prediction_quality(
+    predicted::AbstractVector{<:Real},
+    realized::AbstractVector{<:Real},
+    rng::AbstractRNG;
+    sigma_eps::Float64=0.10,
+)::PredictionQuality
     n = length(predicted)
     n < 5 && return PredictionQuality(NaN, NaN, NaN)
     @assert n == length(realized)
@@ -50,14 +54,19 @@ function compute_prediction_quality(predicted::AbstractVector{<:Real},
     mse = sq_err_sum / n
     r_squared = 1.0 - mse / var_realized
     bias = err_sum / n
-    rank_corr = corspearman(predicted, realized)
+    pred_order = Vector{Int}(undef, n)
+    true_order = Vector{Int}(undef, n)
+    pred_ranks = Vector{Float64}(undef, n)
+    true_ranks = Vector{Float64}(undef, n)
+    prepare_true_ranks!(realized, n, true_order, true_ranks)
+    rank_corr = prefix_spearman_rank_corr!(
+        predicted, n, pred_order, pred_ranks, true_ranks, rng
+    )
 
     return PredictionQuality(r_squared, bias, rank_corr)
 end
 
-@inline function prefix_corr(x::Vector{Float64},
-                             y::Vector{Float64},
-                             n::Int)::Float64
+@inline function prefix_corr(x::Vector{Float64}, y::Vector{Float64}, n::Int)::Float64
     mean_x = 0.0
     mean_y = 0.0
     @inbounds for idx in 1:n
@@ -82,9 +91,9 @@ end
     return denom > 0.0 ? num / sqrt(denom) : NaN
 end
 
-@inline function sort_index_prefix!(order::Vector{Int},
-                                    values::Vector{Float64},
-                                    n::Int)
+@inline function sort_index_prefix!(
+    order::Vector{Int}, values::AbstractVector{<:Real}, n::Int
+)
     @inbounds for idx in 1:n
         order[idx] = idx
     end
@@ -101,10 +110,9 @@ end
     return nothing
 end
 
-@inline function tied_ranks_prefix!(ranks::Vector{Float64},
-                                    order::Vector{Int},
-                                    values::Vector{Float64},
-                                    n::Int)
+@inline function tied_ranks_prefix!(
+    ranks::Vector{Float64}, order::Vector{Int}, values::AbstractVector{<:Real}, n::Int
+)
     sort_index_prefix!(order, values, n)
 
     idx = 1
@@ -123,38 +131,73 @@ end
     return nothing
 end
 
-@inline function prepare_true_ranks!(realized::Vector{Float64},
-                                     n::Int,
-                                     order::Vector{Int},
-                                     ranks::Vector{Float64})
+@inline function prepare_true_ranks!(
+    realized::AbstractVector{<:Real}, n::Int, order::Vector{Int}, ranks::Vector{Float64}
+)
     tied_ranks_prefix!(ranks, order, realized, n)
     return nothing
 end
 
-@inline function prefix_spearman_rank_corr!(predicted::Vector{Float64},
-                                            n::Int,
-                                            pred_order::Vector{Int},
-                                            pred_ranks::Vector{Float64},
-                                            true_ranks::Vector{Float64})::Float64
-    tied_ranks_prefix!(pred_ranks, pred_order, predicted, n)
+@inline function strict_random_ranks_prefix!(
+    ranks::Vector{Float64},
+    order::Vector{Int},
+    values::AbstractVector{<:Real},
+    n::Int,
+    rng::AbstractRNG,
+)
+    sort_index_prefix!(order, values, n)
+
+    first_tie = 1
+    @inbounds while first_tie <= n
+        last_tie = first_tie
+        value = values[order[first_tie]]
+        while last_tie < n && values[order[last_tie + 1]] == value
+            last_tie += 1
+        end
+        for pos in last_tie:-1:(first_tie + 1)
+            swap_pos = rand(rng, first_tie:pos)
+            order[pos], order[swap_pos] = order[swap_pos], order[pos]
+        end
+        first_tie = last_tie + 1
+    end
+
+    @inbounds for rank in 1:n
+        ranks[order[rank]] = rank
+    end
+    return nothing
+end
+
+@inline function prefix_spearman_rank_corr!(
+    predicted::AbstractVector{<:Real},
+    n::Int,
+    pred_order::Vector{Int},
+    pred_ranks::Vector{Float64},
+    true_ranks::Vector{Float64},
+    rng::AbstractRNG,
+)::Float64
+    strict_random_ranks_prefix!(pred_ranks, pred_order, predicted, n, rng)
     return prefix_corr(pred_ranks, true_ranks, n)
 end
 
 """
     compute_prediction_quality_with_true_ranks!(predicted, realized, n;
+                                                rng,
                                                 sigma_eps, pred_order,
                                                 pred_ranks, true_ranks)
 
 Low-allocation prefix variant of `compute_prediction_quality` for repeated use on
 small fixed-length buffers where the realized ranks were already prepared.
 """
-function compute_prediction_quality_with_true_ranks!(predicted::Vector{Float64},
-                                                     realized::Vector{Float64},
-                                                     n::Int;
-                                                     sigma_eps::Float64 = 0.10,
-                                                     pred_order::Vector{Int},
-                                                     pred_ranks::Vector{Float64},
-                                                     true_ranks::Vector{Float64})::PredictionQuality
+function compute_prediction_quality_with_true_ranks!(
+    predicted::Vector{Float64},
+    realized::Vector{Float64},
+    n::Int;
+    rng::AbstractRNG,
+    sigma_eps::Float64=0.10,
+    pred_order::Vector{Int},
+    pred_ranks::Vector{Float64},
+    true_ranks::Vector{Float64},
+)::PredictionQuality
     n < 5 && return PredictionQuality(NaN, NaN, NaN)
 
     mean_realized = 0.0
@@ -181,7 +224,9 @@ function compute_prediction_quality_with_true_ranks!(predicted::Vector{Float64},
     mse = sq_err_sum / n
     r_squared = 1.0 - mse / var_realized
     bias = err_sum / n
-    rank_corr = prefix_spearman_rank_corr!(predicted, n, pred_order, pred_ranks, true_ranks)
+    rank_corr = prefix_spearman_rank_corr!(
+        predicted, n, pred_order, pred_ranks, true_ranks, rng
+    )
 
     return PredictionQuality(r_squared, bias, rank_corr)
 end

@@ -38,6 +38,7 @@ end
             state.broker.node_id,
             Int[],
             -1e9;
+            rng=StableRNG(7001),
             current_match_index_ready=true,
         )
 
@@ -69,6 +70,7 @@ end
             state.broker.node_id,
             Int[],
             state.cal.r;
+            rng=StableRNG(7002),
             current_match_index_ready=true,
         )
 
@@ -101,11 +103,62 @@ end
             state.broker.node_id,
             Int[],
             -1e9;
+            rng=StableRNG(7003),
             current_match_index_ready=true,
         )
 
         @test sent == 1
         @test ws.offer_book.offers[1].to_id == 2
+    end
+
+    @testset "Self-search randomly orders tied predictions" begin
+        p = default_params(N=20, T=5, n_strangers=0, seed=12)
+        state = initialize_model(p)
+        agents = state.agents
+        G = state.G
+        ws = state.workspace
+        candidate_ids = [2, 3, 4, 5]
+
+        remove_agent_edges!(G, 1)
+        for candidate_id in candidate_ids
+            add_match_edge!(G, 1, candidate_id)
+        end
+        set_constant_prediction!(agents[1].nn, state.cal.r + 1.0)
+
+        function tied_self_result(seed)
+            BrokerageABM.rebuild_current_match_index!(ws, agents)
+            BrokerageABM.reset_offer_book!(ws, p.N)
+            sent = BrokerageABM.append_self_search_offers!(
+                ws,
+                agents[1],
+                length(candidate_ids),
+                agents,
+                G,
+                state.broker.node_id,
+                Int[],
+                state.cal.r;
+                rng=StableRNG(seed),
+                current_match_index_ready=true,
+            )
+            return (
+                sent=sent,
+                order=[offer.to_id for offer in ws.offer_book.offers],
+            )
+        end
+
+        result_a = tied_self_result(7101)
+        result_b = tied_self_result(7102)
+        repeated_a = tied_self_result(7101)
+        order_a = result_a.order
+        order_b = result_b.order
+        @test all(
+            result.sent == length(candidate_ids)
+            for result in (result_a, result_b, repeated_a)
+        )
+        @test order_a == repeated_a.order
+        @test order_a != order_b
+        @test Set(order_a) == Set(candidate_ids)
+        @test Set(order_b) == Set(candidate_ids)
     end
 
     @testset "Period stranger pool has fixed default size" begin
@@ -139,16 +192,19 @@ end
         demand_channels = [:self, :self]
         demand_counts = [1, 1]
         expected_rng = StableRNG(901)
-        pools = [
-            copy(
+        pools = Vector{Vector{Int}}()
+        expected_targets = Int[]
+        for did in demand_agent_ids
+            pool = copy(
                 BrokerageABM.sample_period_strangers!(
                     Int[], p.N, p.n_strangers, expected_rng
                 ),
-            ) for _ in 1:2
-        ]
-        expected_targets = [
-            first(j for j in pools[idx] if j != demand_agent_ids[idx]) for idx in 1:2
-        ]
+            )
+            push!(pools, pool)
+            candidates = filter(!=(did), pool)
+            tie_keys = rand(expected_rng, length(candidates))
+            push!(expected_targets, candidates[argmin(tie_keys)])
+        end
 
         BrokerageABM.run_offer_market!(
             demand_agent_ids,
@@ -195,7 +251,15 @@ end
         BrokerageABM.reset_offer_book!(ws, p.N)
 
         sent = BrokerageABM.append_broker_offers!(
-            ws, [1, 2], [:broker, :broker], [1, 1], state.agents, broker, p, -1e9
+            ws,
+            [1, 2],
+            [:broker, :broker],
+            [1, 1],
+            state.agents,
+            broker,
+            p,
+            -1e9;
+            rng=StableRNG(7010),
         )
 
         @test sent == 2
@@ -218,10 +282,61 @@ end
         BrokerageABM.reset_offer_book!(ws, p.N)
 
         sent = BrokerageABM.append_broker_offers!(
-            ws, [1], [:broker], [1], state.agents, broker, p, -1e9
+            ws, [1], [:broker], [1], state.agents, broker, p, -1e9; rng=StableRNG(7011)
         )
 
         @test sent == 0
         @test isempty(ws.offer_book.offers)
+    end
+
+    @testset "Broker independently randomizes local and global score ties" begin
+        p = default_params(N=20, T=5, seed=23)
+        state = initialize_model(p)
+        broker = state.broker
+        ws = state.workspace
+        candidate_ids = collect(2:8)
+
+        empty!(broker.roster)
+        union!(broker.roster, candidate_ids)
+        empty!(broker.current_clients)
+        push!(broker.current_clients, 1)
+        set_constant_prediction!(broker.nn, state.cal.r + 1.0)
+
+        function tied_broker_result(seed, quota)
+            BrokerageABM.reset_offer_book!(ws, p.N)
+            sent = BrokerageABM.append_broker_offers!(
+                ws,
+                [1],
+                [:broker],
+                [quota],
+                state.agents,
+                broker,
+                p,
+                state.cal.r;
+                rng=StableRNG(seed),
+            )
+            return (
+                sent=sent,
+                order=[offer.to_id for offer in ws.offer_book.offers],
+            )
+        end
+
+        local_results = [tied_broker_result(seed, 1) for seed in 7201:7220]
+        global_a = tied_broker_result(7301, length(candidate_ids))
+        global_b = tied_broker_result(7302, length(candidate_ids))
+        repeated_a = tied_broker_result(7301, length(candidate_ids))
+        local_targets = only.(getproperty.(local_results, :order))
+
+        @test all(result.sent == 1 for result in local_results)
+        @test all(
+            result.sent == length(candidate_ids)
+            for result in (global_a, global_b, repeated_a)
+        )
+        @test length(unique(local_targets)) > 1
+        @test all(in(candidate_ids), local_targets)
+        @test global_a.order == repeated_a.order
+        @test global_a.order != global_b.order
+        @test Set(global_a.order) == Set(candidate_ids)
+        @test Set(global_b.order) == Set(candidate_ids)
     end
 end
