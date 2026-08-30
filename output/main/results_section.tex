@@ -1,0 +1,414 @@
+% results_section.tex: GENERATED, do not edit.
+% Built by scripts/paper/build_section.jl on 2026-08-30 10:52
+% from section_source.tex + captions.tex + values.tex + figmeta.tex;
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; repo commit d1db7c3.
+% Every number was computed from the saved sweep data by scripts/paper/stats.jl.
+
+\section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
+
+\subsection{Model and methods}
+
+To formalize and illustrate the theory developed in this article, this
+section describes an ABM of brokerage in a general matching market and
+presents the results of exploratory computational simulations. Their
+purpose is not to prove or disprove the theory, but to operationalize
+it, explore the dynamics it entails while providing concrete
+illustrations to the reader, and generate falsifiable propositions that
+future empirical work can use as hypotheses.
+
+The theory makes claims about trajectories and feedback among
+heterogeneous, boundedly informed actors interacting repeatedly, making
+the ABM a natural tool to make its mechanisms explicit and sharpen its
+propositions.
+
+The model is domain-agnostic and represents any market in which a broker
+facilitates pairwise matches and accumulates cross-market data from
+doing so. All agents use heuristic decision rules, and no agent is
+perfectly rational. One period equals one full update of the simulation
+loop; each period could be taken to represent one calendar month, one
+week, or one day, for instance, depending on the pace of the market that
+one wants to represent.
+
+Pseudo-code and complete specifications for the model are included as
+\textbf{Appendix A and B}, respectively, and the code base for the project,
+implemented in Julia, is publicly available at
+\texttt{https://github.com/m-laprise/transientbrokerage}. It includes the
+scripts needed to reproduce the experiments that generated the data
+analyzed in this section, extract every number mentioned, create the
+figures and tables, and generate the results section in its entirety.
+
+\emph{Setup}. Many principals and a single broker, connected through an
+undirected network, inhabit the market. Each period, a principal draws a
+demand for new pairwise matches. Principals seeking matches search on
+their own for counterparties (self-search channel) or outsource to the
+broker (broker channel). The decision is made by comparing a running
+satisfaction score for each channel; principals who have never used the
+broker rely on its reputation (average satisfaction of current clients).
+After each period, each agent exits with probability $\eta$ and is
+replaced by a fresh entrant.
+
+\emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
+fixed type, a vector of observable characteristics. A realized match
+between two principals yields an output equal to a fixed function of the
+two parties' types plus noise. The signal is unknown to everyone and
+must be learned. It has two parts, combined by a mixing weight $\rho$. The
+first is a general-quality term computed as the average of the two
+parties' quality scores, which depend on their type alone: a
+high-quality agent is high-quality for everyone. The second is a
+complementarity term that depends on the interaction of the two types:
+even two high-quality agents can make a bad match. At $\rho=1$ match value
+is pure general quality, at $\rho=0$ it is pure complementarity.
+
+\emph{Complexity of the matching problem} (Appendix B \S2c). A gain $\delta$
+sets how complex the prediction problem is by modulating the
+complementarity term up or down by a fixed amount depending on which of
+two regions of type-pair space a pair falls into, with the regions
+constructed to add structure to the problem. The effect is to raise the
+number of independent components needed to describe how match value
+varies across pairs. The gain $\delta$ acts only on the complementarity term
+and has no effect at $\rho=1$, where match value is pure general quality.
+
+\emph{Data collection and learning} (Appendix A \S3, algorithms 2 and 3;
+Appendix B \S3). Principals record their own match history, with the type
+of each partner and the realized output of the pairing, brokered or not.
+The broker records the matches it mediates, with the type of both
+parties and the realized outputs, across all clients. Principals and the
+broker each fit a small neural network to their data using gradient
+descent, to learn to predict match output. At every period for the
+broker, and every other period for the principals, agents train on
+observations from the recent past to update their prediction function.
+To respect the symmetry of the unordered pairs in its training data, the
+broker uses as input a symmetric feature vector built from the type
+vectors.
+
+\emph{Search and match formation} (Appendix B \S\S6--7). Self-search draws on
+known network neighbors and a small random pool of strangers; brokered
+search, on the broker's standing roster and current clients. Agents use
+their prediction functions to rank potential candidates and offers are
+made to the top ones. For known partners, principals use the mean of
+their past experiences with them as the predicted value. Offers above
+the reservation threshold are accepted. When a match is made, its output
+is realized and both parties form a direct tie. Ties persist until one
+of the agents exits.
+
+\emph{Economics} (Appendix B \S4). A match's realized output is its per-period
+value to each party. All quantities (reservation threshold, fees, search
+costs) are in common monetary units and are calibrated relative to the
+average match output over many random pairs. Every agent shares a
+reservation threshold (or outside option): offers are made or accepted
+only when predicted outputs exceed it. Self-search has a cost for each
+requested position whether filled or not, whereas the broker's fee is
+charged only on successful placements; both are an equal amount.
+Satisfaction scores net out costs or fees.
+
+These modeling choices are the formal counterpart of the theoretical
+claims made above. Decomposing match output into general-quality and
+complementarity separates the attributional channel from the relational
+one. A principal learns from its own one-sided history, while the broker
+learns from both sides of matches and pools across clients.
+
+\emph{Measurement} (Appendix B \S8). Diagnostic measures are recorded every
+period. In this article, structural position is measured as the broker's
+betweenness centrality in the graph, that is, the share of shortest
+paths between principals that run through the broker (Brandes 2001;
+Freeman 1977), as the standard \emph{whole-network} measure of brokerage
+potential. The results would be substantively similar if examining the
+ego-network measures of Burt's constraint and effective size (Borgatti
+1997; Burt 1992; Everett and Borgatti 2020); an alternative set of
+figures to that effect is included as Supplementary Material. The access
+fraction is the share of standard brokered matches in which the
+counterparty was not already tied to the demander. Prediction quality is
+measured on deterministic random-partner holdout samples evaluated
+against noiseless true output: Spearman rank correlation measures
+whether predictions order possible matches correctly, while $R^2$
+measures level accuracy; gaps subtract the principal value from the
+broker value.
+
+\emph{Results}. All results are computed from a parameter sweep of the
+simulated market. In the baseline regime,
+$N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
+$\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
+initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
+self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
+run are treated as burn-in. Around this baseline, I vary one parameter at a time
+($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
+$N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
+$\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
+$\alpha_R\in\{0.1,0.2,0.4\}$, and
+$n_{\mathrm{strangers}}\in\{0,10,50\}$) and I sweep eight two-parameter
+grids: the six pairwise combinations of $\{\rho,\eta,N,f_r\}$ and the
+$\rho\times\delta$ grid over their full one-at-a-time levels, plus a focused
+$\rho\times f_r$ refinement over
+$\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
+$\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
+$\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
+one-at-a-time levels. The design comprises 98 regimes, with
+20 independent seeds generally and
+50 at the baseline (1990 runs in total). Reported statistics are
+ensemble means over seeds, summarized by time averages over fixed windows within a
+run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
+levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
+within-run drift. Full parameter values are given in Appendix~B~\S10.
+
+\subsection{The broker primarily provides assessment, not access}
+
+Across the simulations, the broker is the dominant channel in the market.
+Principals route most demand to the broker rather than to self-search: the
+outsourcing rate as a share of demand is
+0.98 at the baseline (late mean, up from an early mean
+of 0.83), and it stays high across regimes (late
+means of 0.38 to 1.00). Principals prefer the broker because
+its matches are better. The realized value of broker-channel matches exceeds that
+of self-search matches in 84 of 98 regimes, with
+an output gap (broker mean realized output minus self-search mean realized output)
+averaging $+0.49$ across regimes (late means). This is the model's
+rendering of why relational work gets outsourced: the broker constructs better
+matches, on average, than clients do on their own. Table~\ref{tab:baseline-measures}
+collects these measures, and the assessment measures discussed below, at the
+baseline and across regimes.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
+\caption{\textbf{Baseline dynamics.} Lines are 5-observation rolling ensemble means over seeds at the
+baseline regime. Axes start at $t=30$.}
+\label{fig:dynamics}
+\end{figure}
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Broker use, access, and assessment quality.} Early and late are ensemble
+means over seeds averaged over $t\in[50,70]$ and $t\in[481,500]$; the
+across-regime column reports the median late mean across the 98
+regimes. Outsourcing rate is outsourced requested positions divided by all
+requested positions.}
+\label{tab:baseline-measures}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{2}{c}{Baseline} & Across regimes \\
+\cmidrule(lr){2-3}
+Measure & early & late & late, median \\
+\midrule
+\multicolumn{4}{l}{\emph{Market use and access}} \\
+\quad Outsourcing rate & $0.83$ & $0.98$ & $0.96$ \\
+\quad Output gap (broker $-$ self) & $+0.02$ & $+0.65$ & $+0.52$ \\
+\quad Access fraction & $0.21$ & $0.11$ & $0.11$ \\
+\addlinespace
+\multicolumn{4}{l}{\emph{Assessment quality}} \\
+\quad Broker holdout rank correlation & $0.84$ & $0.90$ & $0.90$ \\
+\quad Broker holdout $R^2$ & $0.23$ & $0.63$ & $0.40$ \\
+\quad Principal holdout rank correlation & $0.55$ & $0.50$ & $0.51$ \\
+\quad Principal holdout $R^2$ & $-1.99$ & $-3.16$ & $-3.32$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The broker constructs these better matches by providing assessment,
+not access. The access fraction (the share of brokered placements between two
+principals with no pre-existing tie) is low, with a late mean of
+0.11 across regimes (down from
+0.21 early), and it declines over time in
+all regimes. Most brokered matches connect
+principals who already knew each other; the broker's contribution is to identify
+which of them pair well, not to bridge gaps in the network.
+
+Moreover, the broker's assessment advantage comes from ranking candidates better,
+not from accurately predicting the output of potential matches. On a held-out
+sample of random partners (Appendix~A~\S8), the broker
+orders prospective pairings well (rank correlation of 0.90 with
+the true ordering at the baseline, late mean, and
+$0.86$ on average across regimes)
+but predicts output levels poorly (holdout $R^2$ of 0.63
+at baseline, $-2.66$ on average across regimes). Principals are
+weak on both, with a holdout rank correlation of 0.50 and a
+holdout $R^2$ of $-3.16$ (baseline, late means;
+$0.51$ and $-3.35$ on average across regimes). To pick the
+best matches, the broker's services rely on a good
+ordering of candidate pairings, even without an accurate appraisal of their
+absolute worth.
+
+Within the model, the broker acts not as an appraiser of general quality
+(cf.\ Li~1998), but as a
+matchmaker who knows which parties suit each other. Its value comes from the
+ranking of complementarities, and it holds even where clients can reach
+counterparties directly.
+
+\subsection{The nature of the matching problem shapes the broker's advantage}
+\label{sec:matching-shapes}
+
+Different markets present brokers with matching problems of different kinds. In
+this model, recall that $\rho$ sets the composition of the match output, from pure
+general quality to pure complementarity, while $\delta$ controls the complexity of
+the complementarity component.
+Interestingly, across regimes, the broker's structural position tracks $\rho$
+while its prediction edge tracks $\delta$, and the two need not move together.
+
+The structural measures vary with the composition $\rho$ and are nearly flat in the
+complexity $\delta$. Broker
+betweenness centrality is higher where matching is more complementarity-driven
+(0.85 at $\rho=0$ against 0.13 at $\rho=1$; late means along the
+one-at-a-time sweep, $\delta=0.5$), while at fixed $\rho=0.5$ it moves little with
+the complexity of the complementarity component (0.81, 0.83,
+0.83 at
+$\delta=0,0.5,0.75$). The access fraction moves the opposite way from the centrality
+(0.10 at $\rho=0$ against 0.17 at $\rho=1$). Under pure
+complementarity ($\rho=0$), the
+broker is more central but, in practice, bridges less: a larger share of its
+matches re-pair principals already tied to each other.
+
+Meanwhile, the prediction measures vary with the complexity of the complementarity
+component, $\delta$. Ordering is what the broker
+needs, and its rank correlation with realized output stays high across regimes
+(0.92 to 0.95 on the simplest problems,
+0.90 at baseline, falling to 0.50 at
+$\rho=0$, $\delta=0.75$; Fig.~\ref{fig:grid}), well above the principals'
+throughout (0.50 at baseline, $0.51$ on average
+across regimes). Performance at predicting the
+output behaves differently from ordering: the broker's holdout $R^2$ under pure
+complementarity ($\rho=0$) is
+$+0.80$ when the output is simple but strongly negative when it is
+complex ($-1.46$ at $\delta=0.5$ and $-28.01$ at
+$\delta=0.75$, late means), worse than predicting
+the average and, on the hardest complementarity problems, worse than the principals
+(an $R^2$ gap of $-24.34$ at $\rho=0$, $\delta=0.75$), despite
+the broker seeing both sides of every match and pooling across the market. Ranking
+which match is better withstands difficulty far better than predicting exactly how
+good it will be, and the broker's ordering edge, though it narrows on the hardest
+complementarity problems, is what persists across different kinds of matching
+problems.
+
+In terms of realized match quality across different matching problems, the broker
+produces better matches than self-search wherever matching is
+complementarity-focused, most of all where
+it is also complex (the output gap is $+1.18$ at $\rho=0$, $\delta=0.5$,
+against $+0.38$ at $\rho=1$; late means; Fig.~\ref{fig:grid}),
+consistent with the idea that the broker matters most where match value turns on
+complementarity. This follows neither structural nor prediction measures cleanly.
+The broker's realized output
+advantage is largest exactly in regimes where its ranking advantage over principals
+is smallest,
+in the hard complementarity regimes: at $\rho=0$ the rank-correlation gap is
+0.28 at $\delta=0$ and -0.06 at $\delta=0.75$ (grid,
+late means). This is likely because in practice, picking the correct winner more
+often is what really matters to realized outputs in this model, not the magnitude
+of the performance gap.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig2_grid_lines.png}
+\caption{\textbf{Outcomes across the matching problem ($\rho\times\delta$).} Six outcomes across the $\rho\times\delta$ grid; one line per gain
+$\delta$, one marker per regime, each a late-window mean over that regime's seeds.
+The rank-correlation gap is broker minus principals; the output gap, broker
+channel minus self-search.}
+\label{fig:grid}
+\end{figure}
+
+\subsection{Value is created through assessment, not access: some brokers become
+most central when they bridge the least}
+
+In almost all regimes, the broker's structural position strengthens over time while
+the agent network thins. At the baseline, mean agent degree falls
+(27.2 to 17.8, early to late means) and the
+broker's betweenness centrality rises (0.61 to
+0.83), and this co-movement holds in 79 of 98
+regimes (Fig.~\ref{fig:position}). Agent turnover removes ties about as
+fast as they appear, and the network does not densify: agent degree falls over time
+in 80 of 98 regimes. This raises a crucial question:
+why is the structural advantage not self-liquidating, even at low turnover (at
+$\eta=0.01$, betweenness centrality still rises from 0.46 to
+0.74)?
+
+The answer comes from the fact that structural position is endogenous, produced by
+which agents form ties and which agents go to the broker. The broker is tied to a
+rotating set of clients and roster members and lies on the shortest path between
+any two of them not directly connected. A brokered match adds a new
+agent-to-agent tie, after which the broker no longer lies on the pair's shortest
+path, only when the two were not already connected. Hence the broker's work
+densifies the network only when it
+provides access, not when it provides assessment, and across regimes access is
+rare and falling over time (Fig.~\ref{fig:position}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig3_position_work.png}
+\caption{\textbf{Broker centrality and access fraction.} Left: broker betweenness centrality and access fraction over time at the
+baseline, as 5-observation rolling ensemble means over
+seeds; centrality is measured every 20 periods. Right: one dot
+per one-at-a-time regime, each a late-window mean over that regime's
+seeds. Time starts at $t=30$ (end of burn-in).}
+\label{fig:position}
+\end{figure}
+
+The pure-quality regimes ($\rho=1$) come closest to escaping
+this logic: principals there match well on
+their own, outsourcing is somewhat lower (0.88 against
+0.92 at $\rho=0$, late means), and brokered matches are twice as
+often access (0.13 against 0.08). Yet, in these
+regimes, the broker's position does not really self-liquidate, as it never
+accumulates in the first place: broker centrality is far lower to begin with (a
+late mean of
+0.12 across $\rho=1$ regimes, against 0.83 at
+baseline) and stalls rather than rises. The access share still declines within
+runs, and the network still thins in 9 of 11 such
+regimes (the exceptions above to the co-movement between agent degree and
+broker centrality are of this type). Only
+in the pure-quality regime with the highest reservation threshold ($f_r=1.2$) does
+mean agent degree rise over time. Identifying regimes in which brokered
+access dominates and densification erodes the broker's position, if any, remains an
+open question.
+
+The broker's structural advantage across regimes, measured by
+betweenness centrality, is negatively correlated with the access fraction
+(Fig.~\ref{fig:advantage}): the broker is most central where it bridges
+least. Bridging opportunity and bridging behavior thus move in opposite directions
+across regimes, another counter-intuitive pattern in light of existing theory.
+Clients value the broker's assessment services and outsource in large numbers, and
+the broker's ties to its many clients are what make it central; its advantageous
+position, however, does not correlate with making more access matches. Because
+access is low throughout (a late mean of 0.11 across
+regimes, declining within runs), the densifying effect of the broker's
+work is weak and its
+structural advantage persists. Where brokering is assessment rather than
+access, self-liquidation of the structural advantage need not arise.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figs/fig4_advantage.png}
+\caption{\textbf{Prediction and output gaps vs centrality and access.} Rank-correlation gap (broker minus principals) and output gap (broker channel
+minus self-search) against broker betweenness centrality and access fraction; one
+dot per regime, each a late-window mean over that regime's seeds.}
+\label{fig:advantage}
+\end{figure}
+
+Across regimes (late means), the realized output gap is positively
+correlated with broker betweenness centrality, but negatively with the
+access fraction and the broker's holdout rank correlation
+(Fig.~\ref{fig:advantage}). This is particularly true along the dimension of
+changes in the matching problem. Complementarity-dominated regimes ($\rho=0$) are
+sparse
+and brokered-assessment-heavy: principals hold fewer ties, outsource more of their
+demand, and the broker is at once most central and most valuable, while providing
+the least access (Table~\ref{tab:rhogroups}; Fig.~\ref{fig:advantage}).
+Quality-dominated regimes ($\rho=1$)
+sit at the other end of each of these measures, with the baseline regime in
+between. Structural opportunity thus accumulates exactly where the broker's
+matches are worth the most.
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Matching-problem composition and structural advantage.}
+Regime-group means at the three $\rho$ levels in the model, using
+late means. Each group pools the 10 regimes of the $\rho$ family at
+that level: the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells.
+Output gap is broker-channel realized output minus self-search realized output.}
+\label{tab:rhogroups}
+\begin{tabular}{lccccc}
+\toprule
+ & Mean agent degree & Outsourcing rate & Broker betweenness & Access fraction & Output gap \\
+\midrule
+$\rho=0$   & 22.8  & 0.92  & 0.74  & 0.08  & $+0.87$ \\
+$\rho=0.5$ & 29.4 & 0.89 & 0.68 & 0.09 & $+0.46$ \\
+$\rho=1$   & 39.7  & 0.88  & 0.12  & 0.13  & $+0.23$ \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -67,7 +67,6 @@ end
                 :result_reldir => result_rel,
                 :condition_index => 0,
                 :resolved_params => resolved,
-                :seeds => [1, 2],
             ),
         ]
         meta = Dict{Symbol,Any}(
@@ -121,5 +120,17 @@ end
             schema_version=5,
         )
         @test_throws ErrorException load_sweep_dataset(root)
+
+        conditions[1][:seeds] = [1]
+        jldsave(
+            joinpath(root, "manifest.jld2");
+            cells=grid_cells,
+            conditions=conditions,
+            meta=meta,
+            manifest_hash=manifest_hash,
+            schema_version=schema_version,
+        )
+        override_sweep = load_sweep_dataset(root)
+        @test only(override_sweep.results).seeds == [1]
     end
 end

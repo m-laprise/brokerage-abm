@@ -3,7 +3,7 @@
 
 Cluster-side extract for the SUPPLEMENTARY figure pipeline. Standalone twin of
 scripts/paper/figdata.jl: it reads the full sweep (BROKERAGE_ABM_SWEEP_DIR) and writes
-paper/supp_figdata.jld2, the small derived dataset from which
+output/supplement/figdata.jld2, the small derived dataset from which
 scripts/paper/supp_figures.jl renders the supplement figures (S1-S4) locally,
 with no access to the sweep. This script shares no state with the results-section
 pipeline, so the two can be regenerated independently of each other.
@@ -43,9 +43,15 @@ include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
-const OUTFILE = normpath(joinpath(@__DIR__, "..", "..", "paper", "supp_figdata.jld2"))
+const OUTFILE = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2")
+)
 const LATE_WIDTH = 20   # final-period window, the headline statistic (matches figdata.jl)
 const SWEEP = load_sweep_dataset(ROOT)
+const BASELINE_REL = "oat/rho=0.5"
+length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
+all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP.results) ||
+    error("expected 20 seeds outside the baseline")
 
 # ── shared reducers (kept local so this extract does not depend on figdata.jl) ──
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
@@ -72,7 +78,7 @@ load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
 fd = Dict{String,Any}()
 
 # ── baseline per-period ensemble series (S2 left and S4) ──
-baseline = load_mdfs("oat/rho=0.5")
+baseline = load_mdfs(BASELINE_REL)
 fd["period"] = collect(baseline[1].period)
 function series(m)
     Dict{String,Vector{Float64}}(
@@ -148,10 +154,15 @@ fd["meta"] = Dict(
     "sweep" => basename(ROOT),
     "manifest_hash" => SWEEP.manifest_hash,
     "schema_version" => SWEEP.schema_version,
+    "n_runs" => sum(length(result.seeds) for result in SWEEP.results),
+    "baseline_n_seeds" => length(SWEEP.result_by_rel[BASELINE_REL].seeds),
+    "condition_seed_counts" =>
+        Dict(result.rel => length(result.seeds) for result in SWEEP.results),
     "generated" => string(now()),
     "source" => "scripts/paper/supp_figdata.jl",
 )
 
+mkpath(dirname(OUTFILE))
 jldsave(OUTFILE; figdata=fd)
 println(
     "wrote $OUTFILE ($(round(filesize(OUTFILE) / 1024; digits=1)) KB; ",

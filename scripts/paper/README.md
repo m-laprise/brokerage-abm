@@ -16,11 +16,15 @@ The pipeline has two tiers, so figures and prose iterate locally.
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR` to its root; run on a compute
 node, `srun --partition=cpu --mem=8G`):
 
+The reporting root must contain 20 seeds for every effective realization and
+50 seeds for the baseline, for 1,990 runs in total. The data extractors check
+this seed plan before writing outputs.
+
 1. `julia --project --threads=auto scripts/paper/stats.jl`
-   Computes every statistic quoted in the section and writes `paper/values.tex`
+   Computes every statistic quoted in the section and writes `output/main/values.tex`
    (one `\pvDefine{key}{value}` per quoted number).
 2. `julia --project --threads=auto scripts/paper/figdata.jl`
-   Extracts the small figure-input dataset to `paper/figdata.jld2` (~260 KB):
+   Extracts the small figure-input dataset to `output/main/figdata.jld2` (~260 KB):
    the baseline ensemble series and the per-realization late means each figure
    consumes.
 
@@ -30,17 +34,17 @@ Local tier (no data access; works from a clone of this repository):
    Renders the four results assets, `fig1_*.png` through `fig4_*.png`, at print
    resolution,
    numbered in order of first citation in the prose, reading only
-   `paper/figdata.jld2`; also writes `paper/figmeta.tex` (the display
+   `output/main/figdata.jld2`; also writes `output/main/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
    start).
 4. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
-   `paper/results_section.tex`, an `\input`-ready fragment with literal numbers
+   `output/main/results_section.tex`, an `\input`-ready fragment with literal numbers
    and a provenance header. Fails on any undefined or unused value, title, or
-   caption block, or missing figure, then compile-checks the fragment
-   (`paper/_build/wrapper.pdf`). Needs only stock Julia and `pdflatex`.
+   caption block, or missing figure, then compile-checks the fragment in a
+   temporary directory. Needs only stock Julia and `pdflatex`.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
 editing `figures.jl` and rerunning steps 3-4 locally. The cluster tier reruns
@@ -51,19 +55,43 @@ Word export (optional). To produce an editable `.docx` of the section — for
 co-authors or track-changes — convert the generated fragment with pandoc:
 
 ```
-pandoc paper/results_section.tex -f latex -o results_section.docx \
-  --resource-path=paper
+pandoc output/main/results_section.tex -f latex -o results_section.docx \
+  --resource-path=output/main
 ```
 
 Pandoc reads the flattened fragment directly: math becomes native Word equations,
-the `booktabs` tables become Word tables, and the figures in `paper/figs/` are
-embedded (hence `--resource-path=paper`). Run step 4 first — the `.docx` reflects
+the `booktabs` tables become Word tables, and the figures in `output/main/figs/` are
+embedded (hence `--resource-path=output/main`). Run step 4 first. The `.docx` reflects
 whatever is in `results_section.tex`. Needs only pandoc (>= 3), no LibreOffice.
 Document styling such as fonts can be set with a pandoc `--reference-doc`.
 
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
-(figure titles and captions). `values.tex`, `figdata.jld2`, `figs/`,
-`figmeta.tex`, and `results_section.tex` are generated and committed.
+(figure titles and captions). Generated artifacts are under `output/main/`.
+
+## Paired-Ridge figure supplement
+
+The paired-Ridge report reproduces the full content of Main Figures 1--4 with
+NN and paired Ridge in the same assets and shared axes. To create its compact
+Ridge input dataset on the cluster, point the general extractor at the paired
+Ridge sweep and a separate output file:
+
+```bash
+BROKERAGE_ABM_SWEEP_DIR=<paired-ridge-sweep> \
+BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2 \
+  julia --project --threads=auto scripts/paper/figdata.jl
+```
+
+Then render the four comparative figures and rebuild the reports locally:
+
+```bash
+julia --project --threads=auto scripts/ridge/paired_figures.jl
+julia --project --threads=auto scripts/ridge/build_reports.jl
+```
+
+The figure renderer validates that both datasets contain the same 98 effective
+realizations and the 20-seed general, 50-seed baseline reporting plan. Outputs
+are under `output/ridge/paired/figures/` and are embedded in the paired-Ridge
+report.
 
 ## Supplementary Material (alternative structural measures)
 
@@ -78,7 +106,7 @@ The same two tiers apply.
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
 
 1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
-   Extracts the supplement's figure-input dataset to `paper/supp_figdata.jld2`:
+   Extracts the supplement's figure-input dataset to `output/supplement/figdata.jld2`:
    the baseline per-period constraint/effective-size series, the one-at-a-time
    and grid late means, and the per-realization late means S1-S4 consume. Standalone
    twin of `figdata.jl`; no hard-coded results.
@@ -86,13 +114,14 @@ Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute n
 Local tier (no data access; works from a clone):
 
 2. `julia --project --threads=auto scripts/paper/supp_figures.jl`
-   Renders `paper/supp_figs/supp_S1_*.png` ... `supp_S4_*.png` from
-   `paper/supp_figdata.jld2` only, and writes `paper/supp_figmeta.tex` (the
+   Renders `output/supplement/figs/supp_S1_*.png` ... `supp_S4_*.png` from
+   `output/supplement/figdata.jld2` only, and writes
+   `output/supplement/figmeta.tex` (the
    display conventions quoted in the captions). Standalone twin of `figures.jl`.
 3. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex` (own preamble; captions quote
    display conventions only, via `\pv` keys resolved from `supp_figmeta.tex`, so
-   no number is hand-written) to `paper/supplement.pdf`. Validates every `\pv`
+   no number is hand-written) to `output/supplement/supplement.pdf`. Validates every `\pv`
    reference and figure path first. Needs only stock Julia and `pdflatex`.
 
 The four figures each redo a main-text structural-advantage analysis for
@@ -102,5 +131,5 @@ shows the prediction and output gaps against each measure; **S4** reproduces the
 betweenness panel of the baseline-dynamics figure.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
-`supp_figdata.jld2`, `supp_figs/`, `supp_figmeta.tex`, and `supplement.pdf` are
-generated; the `pdflatex` aux/log artifacts are not committed.
+Generated artifacts are under `output/supplement/`. LaTeX auxiliary files are
+created in a temporary directory and discarded.

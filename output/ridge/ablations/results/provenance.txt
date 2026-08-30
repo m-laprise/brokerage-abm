@@ -1,0 +1,14 @@
+generated=2026-08-30T10:52:56.101
+pair_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001
+pair_manifest=03219e577b8e74588907d301508e2bbe307d982cd2de722c22b448f580cae0b3
+size_matched_sweep=2026-08-30_d1db7c3_ridge_size_matched_lambda_a0.003_lambda_b0.001_rho_delta
+size_matched_manifest=a206ff3fc001a5fda34105675979581586cc9ce6273128287de0609ea6cfdc86
+single_principal_sweep=2026-08-30_d1db7c3_ridge_single_principal_lambda_a0.003_lambda_b0.001_rho_delta
+single_principal_manifest=e36deed54351b3c32e4a79da128986b06a2aeafe21255b15c3d5356152d71e85
+additive_sweep=2026-08-30_d1db7c3_ridge_additive_lambda_a0.003_lambda_b0.001_rho_delta
+additive_manifest=17e24c75c5f4013685e979d1b4b50f9567bbf6923d388d18ad090b8dc3ca8113
+late_periods=481:500
+weighting=one observation per effective realization
+realization_matching=resolved parameters in DESIGN_KEYS, with delta canonicalized to baseline when rho=1
+baseline_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50
+other_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20

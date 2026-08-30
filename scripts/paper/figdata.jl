@@ -1,11 +1,12 @@
 """
     scripts/paper/figdata.jl
 
-Cluster-side extract for the figure pipeline. Reads the full sweep (BROKERAGE_ABM_SWEEP_DIR)
-    and writes paper/figdata.jld2: the
-small derived dataset from which scripts/paper/figures.jl renders every figure,
-locally, with no access to the sweep. No hard-coded results: every stored value
-is computed from the saved sweep data at run time.
+Cluster-side extract for the figure pipeline. Reads the full sweep
+(`BROKERAGE_ABM_SWEEP_DIR`) and writes the small derived dataset from which
+the figure renderer operates. The default output is `output/main/figdata.jld2`;
+set `BROKERAGE_ABM_FIGDATA_PATH` to generate a counterpart for another sweep.
+The renderer then works locally with no access to the sweep. No hard-coded
+results: every stored value is computed from the saved sweep data at run time.
 
 Rerun only when the underlying numbers change (a new sweep, or a figure needing a
 metric not yet extracted); styling iteration needs only figures.jl.
@@ -31,9 +32,15 @@ include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
-const OUTFILE = normpath(joinpath(@__DIR__, "..", "..", "paper", "figdata.jld2"))
+const DEFAULT_OUTFILE =
+    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
+const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE))
 const LATE_WIDTH = 20   # final-period window, the headline statistic
 const SWEEP = load_sweep_dataset(ROOT)
+const BASELINE_REL = "oat/rho=0.5"
+length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
+all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP.results) ||
+    error("expected 20 seeds outside the baseline")
 
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
@@ -79,7 +86,7 @@ end
 fd = Dict{String,Any}()
 
 # ── baseline per-period ensemble series ──
-baseline_rel = "oat/rho=0.5"
+baseline_rel = BASELINE_REL
 baseline = load_mdfs(baseline_rel)
 N = load_cfg(baseline_rel)["N"]
 fd["period"] = collect(baseline[1].period)
@@ -155,10 +162,16 @@ fd["meta"] = Dict(
     "sweep" => basename(ROOT),
     "manifest_hash" => SWEEP.manifest_hash,
     "schema_version" => SWEEP.schema_version,
+    "n_runs" => sum(length(result.seeds) for result in SWEEP.results),
+    "baseline_n_seeds" => length(SWEEP.result_by_rel[baseline_rel].seeds),
+    "learning_model" => String(get(load_cfg(baseline_rel), "learning_model", "nn")),
+    "condition_seed_counts" =>
+        Dict(result.rel => length(result.seeds) for result in SWEEP.results),
     "generated" => string(now()),
     "source" => "scripts/paper/figdata.jl",
 )
 
+mkpath(dirname(OUTFILE))
 jldsave(OUTFILE; figdata=fd)
 println(
     "wrote $OUTFILE ($(round(filesize(OUTFILE) / 1024; digits=1)) KB; ",

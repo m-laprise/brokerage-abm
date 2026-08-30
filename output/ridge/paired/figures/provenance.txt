@@ -1,0 +1,13 @@
+generated=2026-08-30T10:58:43.536
+source=scripts/ridge/paired_figures.jl
+nn_sweep=2026-08-30_e5b9858_combined_20_baseline50
+nn_manifest=832649d803422e8b73ab4d6d9610ac9977b7e5212ddcf5287404c7eac9cf4dd7
+ridge_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001
+ridge_manifest=03219e577b8e74588907d301508e2bbe307d982cd2de722c22b448f580cae0b3
+effective_realizations=98
+general_seeds=20
+baseline_seeds=50
+rolling_window=5
+network_measure_interval=20
+display_start=30
+axes=shared between NN and paired Ridge within each figure

@@ -1,0 +1,13 @@
+generated=2026-08-30T10:29:26.411
+nn_sweep=2026-08-30_e5b9858_combined_20_baseline50
+nn_manifest=832649d803422e8b73ab4d6d9610ac9977b7e5212ddcf5287404c7eac9cf4dd7
+nn_schema=5
+nn_commit=e5b9858195ee3c39493b245f14df82f704c272bd
+ridge_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001
+ridge_manifest=03219e577b8e74588907d301508e2bbe307d982cd2de722c22b448f580cae0b3
+ridge_schema=7
+ridge_commit=d1db7c310c91c32c3760e4e06832fc4f9dbfeb3d
+late_periods=481:500
+weighting=one observation per effective realization
+baseline_comparison_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50
+other_comparison_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20

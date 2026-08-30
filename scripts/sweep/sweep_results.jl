@@ -78,7 +78,9 @@ function load_sweep_dataset(root::AbstractString)
 
     results = SweepResult[]
     for condition in sort(conditions; by=c -> c[:condition_index])
-        expected_seeds = Int.(condition[:seeds])
+        # Schema 5 stored one common seed set in manifest metadata. Schema 7
+        # stores seeds on each condition so the baseline may use a larger set.
+        expected_seeds = Int.(get(condition, :seeds, meta[:seeds]))
         rel = condition[:result_reldir]
         path = joinpath(root, rel, "data.jld2")
         isfile(path) || error("missing aggregate for effective realization: $rel")

@@ -39,10 +39,9 @@ scripts/diagnostics/adv_results/
 # SLURM job logs
 *.out
 *.err
-# Paper pipeline build artifacts (compile-check wrapper)
+# LaTeX auxiliary artifacts
 paper/_build/
-# Supplement pdflatex aux artifact (the PDF itself is the deliverable, kept)
 paper/*.aux
-# Figure-input digests: small derived datasets enabling local figure rendering
-!paper/figdata.jld2
-!paper/supp_figdata.jld2
+# Figure-input datasets are generated outputs, but kept for local rendering.
+!output/main/figdata.jld2
+!output/supplement/figdata.jld2

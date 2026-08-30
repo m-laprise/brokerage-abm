@@ -2,7 +2,7 @@
     scripts/paper/stats.jl
 
 Compute every statistic quoted in the paper's results section and emit it to
-paper/values.tex as \\pvDefine{key}{value} pairs, from the saved sweep data ONLY.
+output/main/values.tex as \\pvDefine{key}{value} pairs, from the saved sweep data ONLY.
 No simulation. No hard-coded results: every emitted value is derived from data.jld2
 files and their config metadata at run time. Literal constants below are selection
 conventions only (window bounds, baseline parameter values, display rounding).
@@ -11,7 +11,7 @@ Conventions:
   late mean  = time average over the final 20 periods (headline statistic)
   early mean = time average over t in [50, 70]
   "across regimes" = unweighted mean over effective model realizations
-  (each realization first averaged over its 10 seeds)
+  (each realization first averaged over its planned seeds)
 
 Usage: julia --project scripts/paper/stats.jl
 """
@@ -23,7 +23,8 @@ include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
-const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "paper", "values.tex"))
+const OUTTEX =
+    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "values.tex"))
 const LATE_WIDTH = 20
 const EARLY = (50, 70)
 const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere else)
@@ -56,6 +57,12 @@ const SWEEP = load_sweep_dataset(ROOT)
 const B = SWEEP.results
 cellat(rel) = grid_result(SWEEP, rel)
 BL = cellat(BASELINE_REL)
+const BASELINE_N_SEEDS = length(SWEEP.result_by_rel[BASELINE_REL].seeds)
+const GENERAL_SEED_COUNTS = [
+    length(result.seeds) for result in B if result.rel != BASELINE_REL
+]
+all(==(20), GENERAL_SEED_COUNTS) || error("expected 20 seeds outside the baseline")
+BASELINE_N_SEEDS == 50 || error("expected 50 baseline seeds")
 oatb(ax, v) = cellat("oat/$ax=$v")
 function rdcell(rho, delta)
     first(
@@ -73,6 +80,8 @@ pv(k, v) = (push!(VALS, k => v); println(rpad(k, 28), v); v)
 # counts
 pv("nRegimes", fint(length(B)))
 pv("nRuns", fint(sum(length(c.seeds) for c in B)))
+pv("nGeneralSeeds", fint(only(unique(GENERAL_SEED_COUNTS))))
+pv("nBaselineSeeds", fint(BASELINE_N_SEEDS))
 
 # ── 5.1 ──
 pv("outBaselineLate", f2(late(BL.mdfs, col(:outsourcing_rate))))
@@ -203,6 +212,7 @@ pv(
 )
 
 # ── emit values.tex ──
+mkpath(dirname(OUTTEX))
 open(OUTTEX, "w") do io
     println(
         io,

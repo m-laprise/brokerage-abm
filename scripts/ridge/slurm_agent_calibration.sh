@@ -1,6 +1,6 @@
 #!/bin/bash
 # Baseline calibration of the agent Ridge penalty while holding the broker
-# penalty fixed at 0.001. Submit as a 30-task array, one task per penalty-seed
+# penalty fixed at 0.001. Submit as a 70-task array, one task per penalty-seed
 # combination. Reporting sweeps use a separate seed set.
 #
 # Required environment:
@@ -9,7 +9,7 @@
 #   BROKERAGE_ABM_REPO                        repository root
 #   JULIA_DEPOT_PATH                          shared Julia depot
 #
-# Agent penalties:   0.1, 0.3, 0.5
+# Agent penalties:   0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 0.5
 # Broker penalty:    0.001
 # Calibration seeds: 9001:9010
 #SBATCH --job-name=brokerage_ridge_agent_calibration
@@ -25,7 +25,7 @@ REPO="${BROKERAGE_ABM_REPO:-/projects/BSTEWART/mlaprise/brokerage-abm}"
 OUTPUT_DIR="${BROKERAGE_ABM_RIDGE_AGENT_CALIBRATION_DIR:?set agent calibration output directory}"
 TASK_ID="${SLURM_ARRAY_TASK_ID:?submit this script as an array}"
 
-AGENT_LAMBDAS=(0.1 0.3 0.5)
+AGENT_LAMBDAS=(0.001 0.003 0.01 0.03 0.1 0.3 0.5)
 BROKER_LAMBDA=0.001
 N_SEEDS=10
 N_TASKS=$((${#AGENT_LAMBDAS[@]} * N_SEEDS))
