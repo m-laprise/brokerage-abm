@@ -23,6 +23,8 @@ using Printf: @sprintf
 using Statistics: cor, mean, median, quantile, std
 
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
+include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
+include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
 
 const PAIR_ROOT = get(ENV, "BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR") do
     error("BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR is required")
@@ -126,19 +128,23 @@ end
 function ensemble_series(result::SweepResult, metric::Symbol; seeds=result.seeds)
     index = Dict(seed => idx for (idx, seed) in enumerate(result.seeds))
     periods = result.mdfs[index[first(seeds)]].period
-    values = Vector{Float64}(undef, length(periods))
-    for period_idx in eachindex(periods)
-        values[period_idx] = nanmean(
-            metric_series(result.mdfs[index[seed]], metric)[period_idx] for seed in seeds
-        )
-    end
-    return periods, values
+    seed_series = reduce(
+        hcat, (Float64.(metric_series(result.mdfs[index[seed]], metric)) for seed in seeds)
+    )
+    summaries = [
+        monte_carlo_interval(view(seed_series, period_index, :)) for
+        period_index in axes(seed_series, 1)
+    ]
+    return (
+        periods,
+        [summary.mean for summary in summaries],
+        [summary.lower for summary in summaries],
+        [summary.upper for summary in summaries],
+    )
 end
 
 function monte_carlo_se(values)::Float64
-    kept = filter(!isnan, Float64.(collect(values)))
-    length(kept) > 1 || return NaN
-    return std(kept) / sqrt(length(kept))
+    return monte_carlo_interval(values).se
 end
 
 f3(value) = @sprintf("%.3f", value)
@@ -239,52 +245,69 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
         xlabel="Period",
         ylabel="Broker-agent rank gap",
     )
-    period, pair_series = ensemble_series(pair_by_design[baseline_key], :rank_gap)
-    lines!(ax1, period, pair_series; color=colors[:pair], linewidth=2.5, label="Pair")
+    pair_series = ensemble_series(pair_by_design[baseline_key], :rank_gap)
+    function interval_line!(axis, series; color, label)
+        period, estimate, lower, upper = series
+        band!(axis, period, lower, upper; color=(color, 0.14))
+        lines!(axis, period, estimate; color, linewidth=2.5, label)
+    end
+    interval_line!(ax1, pair_series; color=colors[:pair], label="Pair")
     for variant in VARIANTS
-        _, series = ensemble_series(
-            datasets_by_design[variant.key][baseline_key], :rank_gap
-        )
-        lines!(
-            ax1,
-            period,
-            series;
-            color=colors[variant.key],
-            linewidth=2.5,
-            label=variant.label,
-        )
+        series = ensemble_series(datasets_by_design[variant.key][baseline_key], :rank_gap)
+        interval_line!(ax1, series; color=colors[variant.key], label=variant.label)
     end
     Legend(fig[0, 1:4], ax1; orientation=:horizontal, framevisible=false, tellwidth=false)
 
-    pair_values = [condition_mean(pair_by_design[key], :rank_gap) for key in design_keys]
     for (column, variant) in enumerate(VARIANTS)
-        variant_values = [
-            condition_mean(datasets_by_design[variant.key][key], :rank_gap) for
-            key in design_keys
+        points = [
+            let pair_result = pair_by_design[key]
+                variant_result = datasets_by_design[variant.key][key]
+                seeds = variant_result.seeds
+                pair_seed_values = seed_values(pair_result, :rank_gap; seeds)
+                variant_seed_values = seed_values(variant_result, :rank_gap; seeds)
+                interval = paired_monte_carlo_interval(
+                    pair_seed_values, variant_seed_values
+                )
+                (
+                    reference=nanmean(pair_seed_values),
+                    difference=interval.mean,
+                    lower=interval.lower,
+                    upper=interval.upper,
+                )
+            end for key in design_keys
         ]
-        lo = min(minimum(pair_values), minimum(variant_values))
-        hi = max(maximum(pair_values), maximum(variant_values))
-        pad = max(0.02, 0.05 * (hi - lo))
+        x = [point.reference for point in points]
+        y = [point.difference for point in points]
+        lower = [point.lower for point in points]
+        upper = [point.upper for point in points]
+        ylo, yhi = extrema(filter(isfinite, vcat(lower, upper)))
+        ypad = max(0.02, 0.05 * (yhi - ylo))
         panel = Char(Int('B') + column - 1)
         ax = Axis(
             fig[1, column + 1];
             title="$panel. $(variant.label)",
             xlabel="Pair Ridge rank gap",
-            ylabel="Ablation rank gap",
-            limits=(lo - pad, hi + pad, lo - pad, hi + pad),
+            ylabel="Ablation - Pair Ridge",
+            limits=(nothing, (ylo - ypad, yhi + ypad)),
         )
-        lines!(
-            ax, [lo - pad, hi + pad], [lo - pad, hi + pad]; color=:gray55, linestyle=:dash
-        )
-        scatter!(
+        hlines!(ax, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.5)
+        rangebars!(
             ax,
-            pair_values,
-            variant_values;
-            color=(colors[variant.key], 0.78),
-            markersize=11,
+            x,
+            lower,
+            upper;
+            color=(colors[variant.key], 0.55),
+            linewidth=1.0,
+            whiskerwidth=5,
         )
+        scatter!(ax, x, y; color=(colors[variant.key], 0.78), markersize=11)
         text!(
-            ax, lo, hi; text="26 effective realizations", align=(:left, :top), fontsize=14
+            ax,
+            minimum(x),
+            yhi;
+            text="26 effective realizations",
+            align=(:left, :top),
+            fontsize=14,
         )
     end
     save(joinpath(OUT_DIR, "ridge_ablations.png"), fig; px_per_unit=2)
@@ -294,11 +317,7 @@ end
 function ablation_grid_figure(pair::SweepDataset, datasets)
     model_datasets = (
         (key=:pair, label="Pair", dataset=pair),
-        (
-            key=:size_matched,
-            label="Size-matched",
-            dataset=datasets[:size_matched],
-        ),
+        (key=:size_matched, label="Size-matched", dataset=datasets[:size_matched]),
         (
             key=:single_principal,
             label="Single-principal",
@@ -314,22 +333,23 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
         1.0 => :firebrick,
     )
     function grid_points(dataset)
-        cells = filter(
-            cell -> get(cell, :pair, nothing) == "rho_delta", dataset.grid_cells
-        )
+        cells = filter(cell -> get(cell, :pair, nothing) == "rho_delta", dataset.grid_cells)
         return [
             (
                 rho=Float64(cell[:xval]),
                 delta=Float64(cell[:yval]),
-                gap=condition_mean(
-                    dataset.result_by_rel[cell[:result_reldir]], :rank_gap
+                interval=monte_carlo_interval(
+                    seed_values(dataset.result_by_rel[cell[:result_reldir]], :rank_gap)
                 ),
             ) for cell in cells
         ]
     end
     points = Dict(model.key => grid_points(model.dataset) for model in model_datasets)
-    gaps = [point.gap for model_points in values(points) for point in model_points]
-    lo, hi = extrema(gaps)
+    bounds = [
+        bound for model_points in values(points) for point in model_points for
+        bound in (point.interval.lower, point.interval.upper)
+    ]
+    lo, hi = extrema(filter(isfinite, bounds))
     pad = 0.06 * (hi - lo + eps())
     ylimits = (lo - pad, hi + pad)
     deltas = sort(unique(point.delta for point in points[:pair]))
@@ -350,10 +370,19 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
             line_points = sort(
                 filter(point -> point.delta == delta, points[model.key]); by=x -> x.rho
             )
+            rangebars!(
+                axis,
+                [point.rho for point in line_points],
+                [point.interval.lower for point in line_points],
+                [point.interval.upper for point in line_points];
+                color=(delta_colors[delta], 0.72),
+                linewidth=1.1,
+                whiskerwidth=7,
+            )
             scatterlines!(
                 axis,
                 [point.rho for point in line_points],
-                [point.gap for point in line_points];
+                [point.interval.mean for point in line_points];
                 color=delta_colors[delta],
                 linewidth=2.2,
                 markersize=9,
@@ -371,6 +400,7 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
 end
 
 function main()
+    provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
     mkpath(OUT_DIR)
     pair = load_sweep_dataset(PAIR_ROOT)
     datasets = Dict(variant.key => load_sweep_dataset(variant.root) for variant in VARIANTS)
@@ -400,6 +430,15 @@ function main()
             metric in METRICS
         ],
     )
+    for statistic in ("se", "ci_lower", "ci_upper", "n")
+        append!(
+            condition_header,
+            [
+                "$(variant.key)_minus_pair_$(metric)_$(statistic)" for variant in VARIANTS
+                for metric in METRICS
+            ],
+        )
+    end
     condition_rows = Vector{Any}[]
     for design_key in design_keys
         reference = pair_by_design[design_key]
@@ -421,6 +460,14 @@ function main()
         end
         for variant in VARIANTS, metric in METRICS
             push!(row, estimates[(variant.key, metric)] - estimates[(:pair, metric)])
+        end
+        for field in (:se, :lower, :upper, :n), variant in VARIANTS, metric in METRICS
+            pair_seed_values = seed_values(reference, metric; seeds)
+            variant_seed_values = seed_values(
+                datasets_by_design[variant.key][design_key], metric; seeds
+            )
+            interval = paired_monte_carlo_interval(pair_seed_values, variant_seed_values)
+            push!(row, getproperty(interval, field))
         end
         push!(condition_rows, row)
     end
@@ -484,6 +531,7 @@ function main()
             seed_values(
                 datasets_by_design[variant.key][baseline_key], metric; seeds=baseline_seeds
             ) .- seed_values(pair_by_design[baseline_key], metric; seeds=baseline_seeds)
+        paired_baseline_interval = monte_carlo_interval(paired_baseline)
         pair_values = [
             condition_mean(
                 pair_by_design[design_key],
@@ -502,6 +550,16 @@ function main()
             formatter=signed3,
         )
         add("$(variant.key)BaselineDeltaSE_$(metric)", monte_carlo_se(paired_baseline))
+        add(
+            "$(variant.key)BaselineDeltaLower_$(metric)",
+            paired_baseline_interval.lower;
+            formatter=signed3,
+        )
+        add(
+            "$(variant.key)BaselineDeltaUpper_$(metric)",
+            paired_baseline_interval.upper;
+            formatter=signed3,
+        )
         add("$(variant.key)DeltaMean_$(metric)", mean(differences); formatter=signed3)
         add("$(variant.key)DeltaMedian_$(metric)", median(differences); formatter=signed3)
         add(
@@ -527,6 +585,7 @@ function main()
         datasets_by_design[:additive][baseline_key], :rank_gap; seeds=baseline_seeds
     )
     baseline_single_minus_additive = single_baseline .- additive_baseline
+    single_minus_additive_interval = monte_carlo_interval(baseline_single_minus_additive)
     add(
         "singleMinusAdditiveBaseline_rank_gap",
         nanmean(baseline_single_minus_additive);
@@ -535,6 +594,16 @@ function main()
     add(
         "singleMinusAdditiveBaselineSE_rank_gap",
         monte_carlo_se(baseline_single_minus_additive),
+    )
+    add(
+        "singleMinusAdditiveBaselineLower_rank_gap",
+        single_minus_additive_interval.lower;
+        formatter=signed3,
+    )
+    add(
+        "singleMinusAdditiveBaselineUpper_rank_gap",
+        single_minus_additive_interval.upper;
+        formatter=signed3,
     )
     single_condition = [
         condition_mean(datasets_by_design[:single_principal][key], :rank_gap) for
@@ -582,6 +651,8 @@ function main()
 
     open(joinpath(OUT_DIR, "values.tex"), "w") do io
         println(io, "% Generated by scripts/ridge/analyze_ablations.jl on $(now()).")
+        println(io, "% Analysis commit: $(provenance.commit)")
+        println(io, "% Analysis source clean: $(provenance.source_clean)")
         println(io, "% Effective realizations receive equal weight.")
         println(
             io,
@@ -595,6 +666,8 @@ function main()
 
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
+        println(io, "analysis_commit=$(provenance.commit)")
+        println(io, "analysis_source_clean=$(provenance.source_clean)")
         println(io, "pair_sweep=$(basename(normpath(PAIR_ROOT)))")
         println(io, "pair_manifest=$(pair.manifest_hash)")
         for variant in VARIANTS

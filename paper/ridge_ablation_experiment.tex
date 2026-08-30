@@ -153,8 +153,10 @@ receives one observation.
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/ablations/results/ridge_ablations.png}
 \caption{Ridge broker ablations. Panel A uses all 50 baseline seeds. Panels
-B--D give one point to each effective realization. Dashed lines mark equality
-with paired Ridge.}
+B--D plot the paired ablation-minus-reference difference for each effective
+realization against its paired-Ridge mean. Ribbons in Panel A are pointwise
+95\% Monte Carlo intervals. Whiskers in Panels B--D are 95\% intervals for the
+mean seed-level difference, and dashed lines mark no difference.}
 \label{fig:ridge-ablations}
 \end{figure}
 
@@ -164,7 +166,8 @@ with paired Ridge.}
 \caption{Broker-agent rank-correlation gaps across the $\rho\times\delta$
 design. Each panel shows one Ridge broker variant, each line shows one value
 of $\delta$, and markers are late-window seed means. The vertical scale is
-shared across panels, and the dashed line marks a zero broker-agent gap. At
+shared across panels, whiskers are 95\% Monte Carlo intervals, and the dashed
+line marks a zero broker-agent gap. At
 $\rho=1$, $\delta$ is inactive, so the coincident endpoints represent one
 effective realization and receive no additional analytical weight.}
 \label{fig:ridge-ablation-grid}

@@ -30,11 +30,12 @@ Usage: julia --project scripts/paper/supp_figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
+include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
 using Statistics: mean
 
-const OUT =
-    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figs"))
+const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figs"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
 # Display conventions, quoted in the supplement captions via the keys emitted to
@@ -68,8 +69,16 @@ const CELLKEY = Dict("constraint" => "constraint", "effective_size" => "effsize"
 const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2"))
 )["figdata"]
+const REPORTING_PROVENANCE = reporting_git_provenance(
+    normpath(joinpath(@__DIR__, "..", ".."))
+)
+FD["meta"]["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
+    error("supplement figure data were extracted by a different analysis commit")
+FD["meta"]["analysis_source_clean"] == true ||
+    error("supplement figure data were extracted from dirty analysis sources")
 const PER = FD["period"]
 const SER = FD["series"]
+const SER_SEEDS = FD["series_seed_values"]
 const TEND = maximum(PER)
 const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
 const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
@@ -78,19 +87,48 @@ function savefig(fname, fig)
     (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
 end
 
-# measurement-period indices and the smoothed series of `key`
+# Measurement-period indices and the pointwise Monte Carlo summary of `key`.
+# Each seed is smoothed before summarizing across seeds.
 measidx() = [i for i in eachindex(PER) if PER[i] % MEASINT == 0]
-measseries(key) = (mi=measidx(); (PER[mi], rolling_mean(SER[key][mi], ROLLW)))
+function measseries(key)
+    indices = measidx()
+    raw = SER_SEEDS[key][indices, :]
+    smoothed = reduce(
+        hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
+    )
+    summaries = [
+        monte_carlo_interval(view(smoothed, period_index, :)) for
+        period_index in axes(smoothed, 1)
+    ]
+    return (
+        PER[indices],
+        [summary.mean for summary in summaries],
+        [summary.lower for summary in summaries],
+        [summary.upper for summary in summaries],
+    )
+end
 # autoscaled y-limits over the DISPLAYED window only (x >= TSTART), padded both ends
 function ywin(curves...)
     v = Float64[]
-    for (xs, ys) in curves
-        append!(v, [ys[i] for i in eachindex(ys) if xs[i] >= TSTART && !isnan(ys[i])])
+    for (xs, _, lower, upper) in curves
+        for bound in (lower, upper)
+            append!(
+                v,
+                [bound[i] for i in eachindex(bound) if xs[i] >= TSTART && !isnan(bound[i])],
+            )
+        end
     end
     isempty(v) && return nothing
     lo, hi = minimum(v), maximum(v);
     pad = 0.06 * (hi - lo + eps())
     (lo - pad, hi + pad)
+end
+
+function draw_interval_series!(axis, series; color=COL_GAP)
+    x, estimate, lower, upper = series
+    band!(axis, x, lower, upper; color=(color, 0.16))
+    scatterlines!(axis, x, estimate; color, linewidth=2.2, markersize=6)
+    return nothing
 end
 
 # ── S1: each measure vs rho across the grid, one line per delta ──
@@ -113,11 +151,32 @@ function supp_S1_grid_lines()
             yticklabelsize=TICK_FS,
         )
         for d in dls
-            pts = sort([(c["rho"], c[ck]) for c in gc if c["delta"] == d]; by=first)
+            pts = sort(
+                [
+                    let interval = monte_carlo_interval(c["seed_values"][ck])
+                        (
+                            rho=c["rho"],
+                            mean=interval.mean,
+                            lower=interval.lower,
+                            upper=interval.upper,
+                        )
+                    end for c in gc if c["delta"] == d
+                ];
+                by=point -> point.rho,
+            )
+            rangebars!(
+                ax,
+                [point.rho for point in pts],
+                [point.lower for point in pts],
+                [point.upper for point in pts];
+                color=(DELTA_COLORS[d], 0.72),
+                linewidth=1.2,
+                whiskerwidth=8,
+            )
             scatterlines!(
                 ax,
-                first.(pts),
-                last.(pts);
+                [point.rho for point in pts],
+                [point.mean for point in pts];
                 color=DELTA_COLORS[d],
                 linewidth=2.0,
                 markersize=10,
@@ -140,7 +199,8 @@ function supp_S2_position()
     fig = Figure(; size=(1180, 860))
     for (ri, (key, lab)) in enumerate(((CONSTR), (EFFS)))
         # left: the measure over time at baseline (no access-fraction series)
-        x, y = measseries(key)
+        series = measseries(key)
+        x = series[1]
         axl = Axis(
             fig[ri, 1];
             title=ri == 1 ? "Over time, at baseline" : "",
@@ -152,9 +212,9 @@ function supp_S2_position()
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
             xticks=TIME_TICKS,
-            limits=((TSTART, TEND + 1), ywin((x, y))),
+            limits=((TSTART, TEND + 1), ywin(series)),
         )
-        scatterlines!(axl, x, y; color=COL_GAP, linewidth=2.2, markersize=6)
+        draw_interval_series!(axl, series)
         # right: across regimes, access fraction (x) vs the measure (y)
         yv = [c[CELLKEY[key]] for c in cells]
         axr = Axis(
@@ -228,7 +288,7 @@ end
 function supp_S4_network_dynamics()
     fig = Figure(; size=(1180, 460))
     for (ci, (key, lab)) in enumerate((CONSTR, EFFS))
-        x, y = measseries(key)
+        series = measseries(key)
         ax = Axis(
             fig[1, ci];
             title=lab,
@@ -239,35 +299,27 @@ function supp_S4_network_dynamics()
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
             xticks=TIME_TICKS,
-            limits=((TSTART, TEND + 1), ywin((x, y))),
+            limits=((TSTART, TEND + 1), ywin(series)),
         )
-        scatterlines!(ax, x, y; color=COL_GAP, linewidth=2.2, markersize=6)
+        draw_interval_series!(ax, series)
     end
     colgap!(fig.layout, 16)
     savefig("supp_S4_network_dynamics.png", fig)
 end
 
-for (name, f) in (
-    ("S1", supp_S1_grid_lines),
-    ("S2", supp_S2_position),
-    ("S3", supp_S3_advantage),
-    ("S4", supp_S4_network_dynamics),
+foreach(
+    function_name -> function_name(),
+    (supp_S1_grid_lines, supp_S2_position, supp_S3_advantage, supp_S4_network_dynamics),
 )
-    try
-        f()
-    catch e
-        println("  $name FAILED: ", sprint(showerror, e)[1:min(end, 400)])
-    end
-end
 # emit the display-convention keys quoted by the supplement captions
 open(
-    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figmeta.tex")),
-    "w",
+    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figmeta.tex")), "w"
 ) do io
     println(
         io,
         "% supp_figmeta.tex: generated by scripts/paper/supp_figures.jl. Do not edit by hand.",
     )
+    println(io, "% Analysis commit: $(REPORTING_PROVENANCE.commit)")
     println(
         io,
         "% Display conventions used to render output/supplement/figs/, quoted in captions via \\pv keys.",

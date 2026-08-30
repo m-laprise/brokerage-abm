@@ -20,14 +20,18 @@ using JLD2: jldopen
 using Printf: @sprintf
 using Statistics: cor, mean, median, quantile, std
 
+include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
+include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
+
 const NN_ROOT = get(ENV, "BROKERAGE_ABM_NN_SWEEP_DIR") do
     error("BROKERAGE_ABM_NN_SWEEP_DIR is required")
 end
 const RIDGE_ROOT = get(ENV, "BROKERAGE_ABM_RIDGE_SWEEP_DIR") do
     error("BROKERAGE_ABM_RIDGE_SWEEP_DIR is required")
 end
-const OUT_DIR =
-    normpath(joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "results"))
+const OUT_DIR = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "results")
+)
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
 const DESIGN_KEYS = (
@@ -191,9 +195,7 @@ function validate_comparison(nn::ComparisonSweep, ridge::ComparisonSweep)
 end
 
 function monte_carlo_se(values)::Float64
-    kept = filter(!isnan, Float64.(collect(values)))
-    length(kept) > 1 || return NaN
-    return std(kept) / sqrt(length(kept))
+    return monte_carlo_interval(values).se
 end
 
 f3(value) = @sprintf("%.3f", value)
@@ -213,25 +215,32 @@ end
 function ensemble_series(result::ComparisonResult, metric::Symbol; seeds=result.seeds)
     index = Dict(seed => idx for (idx, seed) in enumerate(result.seeds))
     periods = result.mdfs[index[first(seeds)]].period
-    values = Vector{Float64}(undef, length(periods))
-    for period_idx in eachindex(periods)
-        values[period_idx] = nanmean(
-            metric_series(result.mdfs[index[seed]], metric)[period_idx] for seed in seeds
-        )
-    end
-    return periods, values
+    seed_series = reduce(
+        hcat, (Float64.(metric_series(result.mdfs[index[seed]], metric)) for seed in seeds)
+    )
+    summaries = [
+        monte_carlo_interval(view(seed_series, period_index, :)) for
+        period_index in axes(seed_series, 1)
+    ]
+    return (
+        periods,
+        [summary.mean for summary in summaries],
+        [summary.lower for summary in summaries],
+        [summary.upper for summary in summaries],
+    )
 end
 
 function comparison_figure(nn, ridge, rows)
     common = nn.results[BASELINE_REL].seeds
-    period, nn_broker = ensemble_series(nn.results[BASELINE_REL], :broker_holdout_rank)
-    _, nn_agent = ensemble_series(nn.results[BASELINE_REL], :agent_holdout_rank)
-    _, ridge_broker = ensemble_series(
+    nn_broker = ensemble_series(nn.results[BASELINE_REL], :broker_holdout_rank)
+    nn_agent = ensemble_series(nn.results[BASELINE_REL], :agent_holdout_rank)
+    ridge_broker = ensemble_series(
         ridge.results[BASELINE_REL], :broker_holdout_rank; seeds=common
     )
-    _, ridge_agent = ensemble_series(
+    ridge_agent = ensemble_series(
         ridge.results[BASELINE_REL], :agent_holdout_rank; seeds=common
     )
+    period = nn_broker[1]
 
     fig = Figure(; size=(1500, 540), fontsize=18)
     ax1 = Axis(
@@ -240,60 +249,69 @@ function comparison_figure(nn, ridge, rows)
         xlabel="Period",
         ylabel="Holdout rank correlation",
     )
-    lines!(ax1, period, nn_broker; color=:black, linewidth=2.5, label="NN broker")
-    lines!(ax1, period, nn_agent; color=:gray45, linewidth=2.5, label="NN agents")
-    lines!(ax1, period, ridge_broker; color=:steelblue, linewidth=2.5, label="Ridge broker")
-    lines!(ax1, period, ridge_agent; color=:darkorange, linewidth=2.5, label="Ridge agents")
-    Legend(
-        fig[0, 1:3],
-        ax1;
-        orientation=:horizontal,
-        framevisible=false,
-        tellwidth=false,
-    )
+    function interval_line!(axis, series; color, label)
+        x, estimate, lower, upper = series
+        band!(axis, x, lower, upper; color=(color, 0.14))
+        lines!(axis, x, estimate; color, linewidth=2.5, label)
+    end
+    interval_line!(ax1, nn_broker; color=:black, label="NN broker")
+    interval_line!(ax1, nn_agent; color=:gray45, label="NN agents")
+    interval_line!(ax1, ridge_broker; color=:steelblue, label="Ridge broker")
+    interval_line!(ax1, ridge_agent; color=:darkorange, label="Ridge agents")
+    Legend(fig[0, 1:3], ax1; orientation=:horizontal, framevisible=false, tellwidth=false)
 
-    function identity_scatter(position, x, y, title, label)
-        lo = min(minimum(x), minimum(y))
-        hi = max(maximum(x), maximum(y))
-        pad = max(0.02, 0.05 * (hi - lo))
+    function paired_difference_plot(position, metric, title)
+        points = [
+            let nr = nn.results[row.rel], rr = ridge.results[row.rel]
+                interval = paired_monte_carlo_interval(
+                    seed_values(nr, metric), seed_values(rr, metric)
+                )
+                (
+                    reference=condition_mean(nr, metric),
+                    difference=interval.mean,
+                    lower=interval.lower,
+                    upper=interval.upper,
+                )
+            end for row in rows
+        ]
+        x = [point.reference for point in points]
+        y = [point.difference for point in points]
+        lower = [point.lower for point in points]
+        upper = [point.upper for point in points]
+        yrange = vcat(lower, upper)
+        ylo, yhi = extrema(filter(isfinite, yrange))
+        ypad = max(0.02, 0.05 * (yhi - ylo))
         ax = Axis(
             position;
             title=title,
-            xlabel="NN",
-            ylabel="Paired Ridge",
-            limits=(lo - pad, hi + pad, lo - pad, hi + pad),
+            xlabel="NN condition mean",
+            ylabel="Paired Ridge - NN",
+            limits=(nothing, (ylo - ypad, yhi + ypad)),
         )
-        lines!(
-            ax, [lo - pad, hi + pad], [lo - pad, hi + pad]; color=:gray55, linestyle=:dash
+        hlines!(ax, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.5)
+        rangebars!(
+            ax, x, lower, upper; color=(:steelblue, 0.55), linewidth=1.0, whiskerwidth=5
         )
-        scatter!(ax, x, y; color=(:steelblue, 0.75), markersize=11)
-        text!(ax, lo, hi; text=label, align=(:left, :top), fontsize=15)
+        scatter!(ax, x, y; color=(:steelblue, 0.78), markersize=10)
+        text!(
+            ax,
+            minimum(x),
+            yhi;
+            text="98 effective realizations",
+            align=(:left, :top),
+            fontsize=15,
+        )
         return ax
     end
 
-    nn_rank_gap = Float64[row.nn_rank_gap for row in rows]
-    ridge_rank_gap = Float64[row.ridge_rank_gap for row in rows]
-    identity_scatter(
-        fig[1, 2],
-        nn_rank_gap,
-        ridge_rank_gap,
-        "B. Broker-agent rank gap",
-        "98 effective realizations",
-    )
-    nn_output_gap = Float64[row.nn_output_gap for row in rows]
-    ridge_output_gap = Float64[row.ridge_output_gap for row in rows]
-    identity_scatter(
-        fig[1, 3],
-        nn_output_gap,
-        ridge_output_gap,
-        "C. Broker-agent output gap",
-        "98 effective realizations",
-    )
+    paired_difference_plot(fig[1, 2], :rank_gap, "B. Broker-agent rank gap")
+    paired_difference_plot(fig[1, 3], :output_gap, "C. Broker-agent output gap")
     save(joinpath(OUT_DIR, "ridge_comparison.png"), fig; px_per_unit=2)
     return nothing
 end
 
 function main()
+    provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
     mkpath(OUT_DIR)
     nn = load_comparison_sweep(NN_ROOT)
     ridge = load_comparison_sweep(RIDGE_ROOT)
@@ -346,6 +364,10 @@ function main()
         "N",
         [string(prefix, metric) for metric in metrics for prefix in ("nn_", "ridge_")]...,
         ["delta_$(metric)" for metric in metrics]...,
+        ["delta_se_$(metric)" for metric in metrics]...,
+        ["delta_ci_lower_$(metric)" for metric in metrics]...,
+        ["delta_ci_upper_$(metric)" for metric in metrics]...,
+        ["delta_n_$(metric)" for metric in metrics]...,
     ]
     condition_rows = Vector{Any}[]
     for row in rows
@@ -355,11 +377,20 @@ function main()
             push!(values, getproperty(row, Symbol("ridge_", metric)))
         end
         for metric in metrics
-            push!(
-                values,
-                getproperty(row, Symbol("ridge_", metric)) -
-                getproperty(row, Symbol("nn_", metric)),
+            nr = nn.results[row.rel]
+            rr = ridge.results[row.rel]
+            interval = paired_monte_carlo_interval(
+                seed_values(nr, metric), seed_values(rr, metric)
             )
+            push!(values, interval.mean)
+        end
+        for field in (:se, :lower, :upper, :n), metric in metrics
+            nr = nn.results[row.rel]
+            rr = ridge.results[row.rel]
+            interval = paired_monte_carlo_interval(
+                seed_values(nr, metric), seed_values(rr, metric)
+            )
+            push!(values, getproperty(interval, field))
         end
         push!(condition_rows, values)
     end
@@ -402,11 +433,14 @@ function main()
         paired =
             seed_values(ridge_baseline, metric; seeds=common_seeds) .-
             seed_values(nn_baseline, metric; seeds=common_seeds)
+        paired_interval = monte_carlo_interval(paired)
         label = replace(string(metric), "_" => " ")
         add("nnBaseline_$(metric)", nn_value)
         add("ridgeBaseline_$(metric)", ridge_common)
         add("baselineDelta_$(metric)", nanmean(paired); formatter=signed3)
         add("baselineDeltaSE_$(metric)", monte_carlo_se(paired))
+        add("baselineDeltaLower_$(metric)", paired_interval.lower; formatter=signed3)
+        add("baselineDeltaUpper_$(metric)", paired_interval.upper; formatter=signed3)
         println(
             rpad(label, 24),
             " NN=",
@@ -440,6 +474,8 @@ function main()
     values_path = joinpath(OUT_DIR, "values.tex")
     open(values_path, "w") do io
         println(io, "% Generated by scripts/ridge/analyze_sweep.jl on $(now()).")
+        println(io, "% Analysis commit: $(provenance.commit)")
+        println(io, "% Analysis source clean: $(provenance.source_clean)")
         println(io, "% NN sweep: $(basename(NN_ROOT)); commit: $(nn.git_commit)")
         println(io, "% Ridge sweep: $(basename(RIDGE_ROOT)); commit: $(ridge.git_commit)")
         println(io, "% Effective realizations receive equal weight.")
@@ -455,6 +491,8 @@ function main()
 
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
+        println(io, "analysis_commit=$(provenance.commit)")
+        println(io, "analysis_source_clean=$(provenance.source_clean)")
         println(io, "nn_sweep=$(basename(normpath(NN_ROOT)))")
         println(io, "nn_manifest=$(nn.manifest_hash)")
         println(io, "nn_schema=$(nn.schema_version)")

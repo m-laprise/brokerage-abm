@@ -19,12 +19,15 @@ Usage: julia --project scripts/paper/stats.jl
 using Statistics, Printf, Dates
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
-const OUTTEX =
-    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "values.tex"))
+const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "values.tex"))
+const REPORTING_PROVENANCE = reporting_git_provenance(
+    normpath(joinpath(@__DIR__, "..", ".."))
+)
 const LATE_WIDTH = 20
 const EARLY = (50, 70)
 const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere else)
@@ -229,6 +232,8 @@ open(OUTTEX, "w") do io
         length(SWEEP.grid_cells),
     )
     println(io, "% manifest: ", SWEEP.manifest_hash)
+    println(io, "% analysis commit: ", REPORTING_PROVENANCE.commit)
+    println(io, "% analysis source clean: ", REPORTING_PROVENANCE.source_clean)
     println(io, "% Do not edit by hand; every value is computed from the saved sweep data.")
     println(
         io,

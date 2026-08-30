@@ -55,8 +55,9 @@ paired comparisons of the primary ranking and output outcomes.
 With the common seeds, the NN broker-agent rank-correlation gap is
 \rv{nnBaseline_rank_gap}, compared with
 \rv{ridgeBaseline_rank_gap} under paired Ridge. The paired change is
-\rv{baselineDelta_rank_gap}, with Monte Carlo standard error
-\rv{baselineDeltaSE_rank_gap}. Table~\ref{tab:ridge-baseline} reports the other
+\rv{baselineDelta_rank_gap}, with a 95\% Monte Carlo interval of
+[\rv{baselineDeltaLower_rank_gap}, \rv{baselineDeltaUpper_rank_gap}].
+Table~\ref{tab:ridge-baseline} reports the other
 baseline outcomes. Figure~\ref{fig:ridge-dynamics} shows how the baseline's
 matching, network, access, and outsourcing dynamics differ over the full run.
 Figure~\ref{fig:ridge-comparison}A isolates the corresponding broker and agent
@@ -137,8 +138,8 @@ Figure~\ref{fig:ridge-grid} shows the matching-problem surface under each
 learning system. Figure~\ref{fig:ridge-position} compares the broker's evolving
 network position and access, and Figure~\ref{fig:ridge-advantage} shows how the
 rank and output gaps covary with those structural outcomes across effective
-realizations. Figure~\ref{fig:ridge-comparison}B--C summarizes the same
-condition-level comparison directly against the equality line.
+realizations. Figure~\ref{fig:ridge-comparison}B--C summarizes the paired
+condition-level differences directly against zero.
 
 \paragraph{Interpretation.}
 The paired-Ridge results show that neural-network flexibility is not necessary
@@ -161,6 +162,7 @@ only one endpoint type per fitting row, and removing bilinear pair features.
 learning system. Panels show matches per agent, mean and median agent-network
 degree, broker betweenness centrality, access fraction, and outsourcing rate.
 Lines are five-observation rolling ensemble means over 50 common seeds.
+Ribbons are pointwise 95\% Monte Carlo intervals.
 Betweenness is measured every 20 periods; other measures are recorded every
 period. Axes begin at period 30 and are shared across learning systems.}
 \label{fig:ridge-dynamics}
@@ -172,7 +174,8 @@ period. Axes begin at period 30 and are shared across learning systems.}
 \caption{Outcomes across the $\rho\times\delta$ matching grid under NN (top
 two rows) and paired Ridge (bottom two rows). Each line is a value of $\delta$;
 each marker is a grid coordinate's late-window seed mean. Corresponding NN and
-Ridge panels use the same vertical scale. Coordinates that map to the same
+Ridge panels use the same vertical scale. Whiskers are 95\% Monte Carlo
+intervals. Coordinates that map to the same
 effective realization share the same estimate and receive no additional
 analytical weight.}
 \label{fig:ridge-grid}
@@ -183,7 +186,8 @@ analytical weight.}
 \includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR3_position_work.png}
 \caption{Broker position and access under NN and paired Ridge. Left panels show
 five-observation rolling ensemble means at the baseline. Right panels show one
-point per one-at-a-time regime, using late-window seed means. Corresponding
+point per one-at-a-time regime, using late-window seed means. Ribbons are
+pointwise 95\% Monte Carlo intervals. Corresponding
 panels use shared axes.}
 \label{fig:ridge-position}
 \end{figure}
@@ -203,8 +207,10 @@ and Ridge panels use shared axes; color denotes $\rho$.}
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/paired/results/ridge_comparison.png}
 \caption{Direct paired-Ridge comparison. Panel A uses the 50 common baseline
-seeds. Panels B and C give one point to each of the 98 effective realizations.
-Dashed lines mark equal NN and Ridge values.}
+seeds, with pointwise 95\% Monte Carlo intervals. Panels B and C plot the
+paired Ridge-minus-NN difference for each of the 98 effective realizations
+against that realization's NN mean. Whiskers are 95\% intervals for the mean
+seed-level difference, and dashed lines mark no difference.}
 \label{fig:ridge-comparison}
 \end{figure}
 

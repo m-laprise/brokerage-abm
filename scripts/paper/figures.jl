@@ -11,6 +11,7 @@ to output/main/figs/ and the display-convention keys to output/main/figmeta.tex.
 
   fig1_dynamics       baseline dynamics
   fig2_grid_lines     six outcomes across the rho x delta grid, lines per delta
+                      with 95% Monte Carlo interval whiskers
   fig3_position_work  betweenness & access over time at baseline + cross-regime scatter
   fig4_advantage      structural measures vs informational/output gaps
 
@@ -18,6 +19,8 @@ Usage: julia --project scripts/paper/figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
+include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
 using Statistics: mean
 
@@ -49,14 +52,60 @@ const DELTA_COLORS = Dict(
 const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
 )["figdata"]
+const REPORTING_PROVENANCE = reporting_git_provenance(
+    normpath(joinpath(@__DIR__, "..", ".."))
+)
+FD["meta"]["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
+    error("main figure data were extracted by a different analysis commit")
+FD["meta"]["analysis_source_clean"] == true ||
+    error("main figure data were extracted from dirty analysis sources")
 const PER = FD["period"]
 const SER = FD["series"]
+const SER_SEEDS = FD["series_seed_values"]
 const TEND = maximum(PER)
 const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
 const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
 const ADV_MARKER_SIZE = 10
 function savefig(fname, fig)
     (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
+end
+
+function summarized_series(key; measured=false)
+    indices = if measured
+        [index for index in eachindex(PER) if PER[index] % BETWINT == 0]
+    else
+        collect(eachindex(PER))
+    end
+    raw = SER_SEEDS[key][indices, :]
+    smoothed = reduce(
+        hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
+    )
+    summaries = [
+        monte_carlo_interval(view(smoothed, period_index, :)) for
+        period_index in axes(smoothed, 1)
+    ]
+    return (
+        PER[indices],
+        [summary.mean for summary in summaries],
+        [summary.lower for summary in summaries],
+        [summary.upper for summary in summaries],
+    )
+end
+
+function draw_interval_series!(
+    axis, series, color; label=nothing, points=false, linestyle=:solid, linewidth=2.2
+)
+    x, estimate, lower, upper = series
+    band!(axis, x, lower, upper; color=(color, 0.16))
+    keywords = isnothing(label) ? (;) : (; label)
+    if points
+        scatterlines!(
+            axis, x, estimate; color, linewidth, markersize=6, linestyle, keywords...
+        )
+    else
+        lines!(axis, x, estimate; color, linewidth, linestyle, keywords...)
+    end
+    return nothing
 end
 
 # ── Position: betweenness & access over time at baseline + cross-regime scatter ──
@@ -74,19 +123,16 @@ function fig3_position_work()
         yticklabelsize=TICK_FS,
         limits=((TSTART, TEND + 1), (0, 1.0)),
     )
-    mi = [i for i in eachindex(PER) if PER[i] % BETWINT == 0]
-    bw = rolling_mean(SER["betweenness"][mi], ROLLW)   # measured every BETWINT periods
-    scatterlines!(
+    draw_interval_series!(
         axa,
-        PER[mi],
-        bw;
-        color=COL_GAP,
-        linewidth=2.2,
-        markersize=6,
+        summarized_series("betweenness"; measured=true),
+        COL_GAP;
+        points=true,
         label="broker betweenness centrality",
     )
-    ac = rolling_mean(SER["access"], ROLLW)            # per-period
-    lines!(axa, PER, ac; color=COL_ACCESS, linewidth=2.2, label="access fraction")
+    draw_interval_series!(
+        axa, summarized_series("access"), COL_ACCESS; label="access fraction"
+    )
     axislegend(axa; position=:rc, LEG_KW...)
     # right: cross-regime scatter, access (x) vs betweenness (y)
     cells = FD["oat_cells"]
@@ -113,7 +159,7 @@ end
 function fig2_grid_lines()
     gcells = FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gcells]))
-    cells = Dict((c["rho"], c["delta"]) => c["outcomes"] for c in gcells)
+    cells = Dict((c["rho"], c["delta"]) => c for c in gcells)
     # 2x3: column 1 = the [0,1]-bounded structural quantities (absolute 0-1 axis);
     # columns 2-3 = the prediction and output outcomes (each panel autoscaled).
     layout = [
@@ -135,11 +181,32 @@ function fig2_grid_lines()
             limits=cc == 1 ? (nothing, (0, 1.02)) : (nothing, nothing),
         )
         for d in dls
-            pts = sort([(r, o[ttl]) for ((r, dd), o) in cells if dd == d]; by=first)
+            pts = sort(
+                [
+                    let interval = monte_carlo_interval(c["outcome_seed_values"][ttl])
+                        (
+                            rho=r,
+                            mean=interval.mean,
+                            lower=interval.lower,
+                            upper=interval.upper,
+                        )
+                    end for ((r, dd), c) in cells if dd == d
+                ];
+                by=point -> point.rho,
+            )
+            rangebars!(
+                ax,
+                [point.rho for point in pts],
+                [point.lower for point in pts],
+                [point.upper for point in pts];
+                color=(DELTA_COLORS[d], 0.72),
+                linewidth=1.2,
+                whiskerwidth=8,
+            )
             scatterlines!(
                 ax,
-                first.(pts),
-                last.(pts);
+                [point.rho for point in pts],
+                [point.mean for point in pts];
                 color=DELTA_COLORS[d],
                 linewidth=2.0,
                 markersize=10,
@@ -207,14 +274,15 @@ end
 
 # ── Baseline dynamics, placed first in the results section ──
 function fig1_dynamics()
-    # ensemble mean, ROLLW-rolling over the full series; display trimming is axis-only
-    ot(key) = (PER, rolling_mean(SER[key], ROLLW))
-    function otb()    # betweenness: rolling over the BETWINT-period measurements
-        mi = [i for i in eachindex(PER) if PER[i] % BETWINT == 0]
-        (PER[mi], rolling_mean(SER["betweenness"][mi], ROLLW))
-    end
+    # Each seed is smoothed first. The line and pointwise interval are then
+    # computed across seeds; display trimming remains axis-only.
+    ot(key) = summarized_series(key)
+    otb() = summarized_series("betweenness"; measured=true)
     yrange(ss...) = (
-        v=filter(!isnan, vcat((s[2][s[1] .>= TSTART] for s in ss)...));   # displayed window only
+        v=filter(
+            !isnan,
+            vcat((vcat(s[3][s[1] .>= TSTART], s[4][s[1] .>= TSTART]) for s in ss)...),
+        );   # displayed window only
         hi=maximum(v);
         (0, hi + 0.06 * (hi + eps()))
     )   # all y-axes start at zero
@@ -242,16 +310,9 @@ function fig1_dynamics()
     )
     # a `label` keyword is only passed when a label is requested: a plot with
     # label="" would still register a (blank) legend entry
-    function drw!(ax, s, col; lbl=nothing, ls=:solid, pts=false, lw=2.2)
-        kw = isnothing(lbl) ? (;) : (; label=lbl)
-        if pts
-            scatterlines!(
-                ax, s[1], s[2]; color=col, linewidth=lw, markersize=6, linestyle=ls, kw...
-            )
-        else
-            lines!(ax, s[1], s[2]; color=col, linewidth=lw, linestyle=ls, kw...)
-        end
-    end
+    drw!(ax, s, col; lbl=nothing, ls=:solid, pts=false, lw=2.2) = draw_interval_series!(
+        ax, s, col; label=lbl, points=pts, linestyle=ls, linewidth=lw
+    )
     let a = mk(1, 1:2, "Matches per agent", yl[1])
         drw!(a, mpa, COL_DIAG)
     end
@@ -274,23 +335,16 @@ function fig1_dynamics()
     savefig("fig1_dynamics.png", fig)
 end
 
-for (name, f) in (
-    ("fig1", fig1_dynamics),
-    ("fig2", fig2_grid_lines),
-    ("fig3", fig3_position_work),
-    ("fig4", fig4_advantage),
+foreach(
+    function_name -> function_name(),
+    (fig1_dynamics, fig2_grid_lines, fig3_position_work, fig4_advantage),
 )
-    try
-        f()
-    catch e
-        println("  $name FAILED: ", sprint(showerror, e)[1:min(end, 400)])
-    end
-end
 # emit the display-convention keys quoted by the captions (paper/captions.tex)
 open(normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figmeta.tex")), "w") do io
     println(
         io, "% figmeta.tex: generated by scripts/paper/figures.jl. Do not edit by hand."
     )
+    println(io, "% Analysis commit: $(REPORTING_PROVENANCE.commit)")
     println(
         io,
         "% Display conventions used to render output/main/figs/, quoted in captions via \\pv keys.",

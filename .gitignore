@@ -45,3 +45,4 @@ paper/*.aux
 # Figure-input datasets are generated outputs, but kept for local rendering.
 !output/main/figdata.jld2
 !output/supplement/figdata.jld2
+!output/ridge/paired/figdata.jld2

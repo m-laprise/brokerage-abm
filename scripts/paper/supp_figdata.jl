@@ -25,12 +25,11 @@ Contents of supp_figdata.jld2 (single key "figdata", a Dict):
   series      per-period ensemble means at the baseline: constraint and
               effective_size (full per-period vectors; the renderer keeps the
               measurement periods)
-  oat_cells   late means per one-at-a-time regime: access,
-              constraint, effsize (for the cross-regime scatter, S2 right)
-  grid_cells  rho, delta, and the constraint/effsize late means per rho x delta
-              grid coordinate, for S1
-  regime_cells rho, constraint, effsize, rankgap, qgap per effective realization,
-               for S3
+  series_seed_values
+              period-by-seed matrices underlying the baseline ensemble means
+  oat_cells   late means and seed values per one-at-a-time regime
+  grid_cells  rho, delta, late means, and seed values per grid coordinate
+  regime_cells rho, late means, and seed values per effective realization
   meta        sweep id, generation time, generating script
 
 Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/supp_figdata.jl
@@ -39,12 +38,16 @@ Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/supp_f
 using JLD2, DataFrames, Statistics, Dates
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUTFILE = normpath(
     joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2")
+)
+const REPORTING_PROVENANCE = reporting_git_provenance(
+    normpath(joinpath(@__DIR__, "..", ".."))
 )
 const LATE_WIDTH = 20   # final-period window, the headline statistic (matches figdata.jl)
 const SWEEP = load_sweep_dataset(ROOT)
@@ -57,7 +60,7 @@ all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
 tailmean(df, col) = nanmean(df[late_mask(df), col])
-seedmean(mdfs, col) = nanmean([tailmean(d, col) for d in mdfs])
+seed_values(mdfs, col) = Float64[tailmean(d, col) for d in mdfs]
 function accessf(df)
     (
         t=(df.access_count .+ df.assessment_count);
@@ -65,13 +68,16 @@ function accessf(df)
     )
 end
 access_tail(df) = nanmean(accessf(df)[late_mask(df)])
-cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
+access_values(mdfs) = Float64[access_tail(d) for d in mdfs]
 # broker-minus-self gaps, the y-axes of S3 (identical definitions to figdata.jl)
-qgap(m) = seedmean(m, :q_broker_mean) - seedmean(m, :q_self_mean)
-rankgap(m) = seedmean(m, :broker_holdout_rank) - seedmean(m, :agent_holdout_rank)
-# per-period ensemble mean of f(df) over seeds
-function ens(mdfs, f)
-    (per=mdfs[1].period; [nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)])
+function gap_values(mdfs, broker_col, agent_col)
+    seed_values(mdfs, broker_col) .- seed_values(mdfs, agent_col)
+end
+qgap_values(mdfs) = gap_values(mdfs, :q_broker_mean, :q_self_mean)
+rankgap_values(mdfs) = gap_values(mdfs, :broker_holdout_rank, :agent_holdout_rank)
+seed_series(mdfs, f) = reduce(hcat, (Float64.(f(df)) for df in mdfs))
+function ensemble_mean(values::AbstractMatrix)
+    Float64[nanmean(view(values, period_index, :)) for period_index in axes(values, 1)]
 end
 load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
 
@@ -80,18 +86,22 @@ fd = Dict{String,Any}()
 # ── baseline per-period ensemble series (S2 left and S4) ──
 baseline = load_mdfs(BASELINE_REL)
 fd["period"] = collect(baseline[1].period)
-function series(m)
-    Dict{String,Vector{Float64}}(
-        "constraint" => ens(m, d -> d.constraint),
-        "effective_size" => ens(m, d -> d.effective_size),
+function series_seed_values(m)
+    Dict{String,Matrix{Float64}}(
+        "constraint" => seed_series(m, d -> d.constraint),
+        "effective_size" => seed_series(m, d -> d.effective_size),
     )
 end
-fd["series"] = series(baseline)
+fd["baseline_seeds"] = copy(SWEEP.result_by_rel[BASELINE_REL].seeds)
+fd["series_seed_values"] = series_seed_values(baseline)
+fd["series"] = Dict(
+    key => ensemble_mean(values) for (key, values) in fd["series_seed_values"]
+)
 
 # ── one-at-a-time cells (S2 right scatter) ──
 # same regime list as figdata.jl's oat_cells, so the supplement scatter spans the
 # same regimes as the main-text position analysis.
-fd["oat_cells"] = let out = Dict{String,Float64}[]
+fd["oat_cells"] = let out = Dict{String,Any}[]
     seen = Set{String}()
     for grid in SWEEP.grid_cells
         grid[:kind] == "oat" || continue
@@ -99,11 +109,26 @@ fd["oat_cells"] = let out = Dict{String,Float64}[]
         result.rel in seen && continue
         push!(seen, result.rel)
         m = result.mdfs
-        a = cell_access(m);
-        c = seedmean(m, :constraint);
-        e = seedmean(m, :effective_size)
+        seed_data = Dict(
+            "access" => access_values(m),
+            "constraint" => seed_values(m, :constraint),
+            "effsize" => seed_values(m, :effective_size),
+        )
+        a = nanmean(seed_data["access"])
+        c = nanmean(seed_data["constraint"])
+        e = nanmean(seed_data["effsize"])
         (isnan(a) || isnan(c) || isnan(e)) && continue
-        push!(out, Dict("access" => a, "constraint" => c, "effsize" => e))
+        push!(
+            out,
+            Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
+                "access" => a,
+                "constraint" => c,
+                "effsize" => e,
+                "seed_values" => seed_data,
+            ),
+        )
     end
     out
 end
@@ -115,14 +140,23 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
     for grid in SWEEP.grid_cells
         get(grid, :pair, nothing) == "rho_delta" || continue
         m = SWEEP.result_by_rel[grid[:result_reldir]].mdfs
+        result = SWEEP.result_by_rel[grid[:result_reldir]]
         cfg = grid[:resolved_params]
+        constraint_values = seed_values(m, :constraint)
+        effective_size_values = seed_values(m, :effective_size)
         push!(
             out,
             Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
                 "rho" => Float64(cfg[:rho]),
                 "delta" => Float64(cfg[:delta]),
-                "constraint" => seedmean(m, :constraint),
-                "effsize" => seedmean(m, :effective_size),
+                "constraint" => nanmean(constraint_values),
+                "effsize" => nanmean(effective_size_values),
+                "seed_values" => Dict(
+                    "constraint" => constraint_values,
+                    "effsize" => effective_size_values,
+                ),
             ),
         )
     end
@@ -130,20 +164,29 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
 end
 
 # ── every effective realization (S3) ──
-fd["regime_cells"] = let out = Dict{String,Float64}[]
+fd["regime_cells"] = let out = Dict{String,Any}[]
     for result in SWEEP.results
         m, cfg = result.mdfs, result.cfg
-        c = seedmean(m, :constraint);
+        seed_data = Dict(
+            "constraint" => seed_values(m, :constraint),
+            "effsize" => seed_values(m, :effective_size),
+            "rankgap" => rankgap_values(m),
+            "qgap" => qgap_values(m),
+        )
+        c = nanmean(seed_data["constraint"])
         isnan(c) && continue
         push!(
             out,
             Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
                 "rho" => Float64(cfg["rho"]),
                 "delta" => Float64(cfg["delta"]),
                 "constraint" => c,
-                "effsize" => seedmean(m, :effective_size),
-                "rankgap" => rankgap(m),
-                "qgap" => qgap(m),
+                "effsize" => nanmean(seed_data["effsize"]),
+                "rankgap" => nanmean(seed_data["rankgap"]),
+                "qgap" => nanmean(seed_data["qgap"]),
+                "seed_values" => seed_data,
             ),
         )
     end
@@ -160,6 +203,8 @@ fd["meta"] = Dict(
         Dict(result.rel => length(result.seeds) for result in SWEEP.results),
     "generated" => string(now()),
     "source" => "scripts/paper/supp_figdata.jl",
+    "analysis_git_commit" => REPORTING_PROVENANCE.commit,
+    "analysis_source_clean" => REPORTING_PROVENANCE.source_clean,
 )
 
 mkpath(dirname(OUTFILE))

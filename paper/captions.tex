@@ -13,7 +13,8 @@ Broker centrality and access fraction
 \begin{pcaption}{position}
 Left: broker betweenness centrality and access fraction over time at the
 baseline, as \pv{rollWin}-observation rolling ensemble means over
-seeds; centrality is measured every \pv{betwInterval} periods. Right: one dot
+seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
+\pv{betwInterval} periods. Right: one dot
 per one-at-a-time regime, each a late-window mean over that regime's
 seeds. Time starts at $t=\pv{axisStart}$ (end of burn-in).
 \end{pcaption}
@@ -24,6 +25,7 @@ Outcomes across the matching problem ($\rho\times\delta$)
 \begin{pcaption}{grid}
 Six outcomes across the $\rho\times\delta$ grid; one line per gain
 $\delta$, one marker per regime, each a late-window mean over that regime's seeds.
+Whiskers are 95\% Monte Carlo intervals.
 The rank-correlation gap is broker minus principals; the output gap, broker
 channel minus self-search.
 \end{pcaption}
@@ -42,5 +44,6 @@ Baseline dynamics
 \end{ptitle}
 \begin{pcaption}{dynamics}
 Lines are \pv{rollWin}-observation rolling ensemble means over seeds at the
-baseline regime. Axes start at $t=\pv{axisStart}$.
+baseline regime; ribbons are pointwise 95\% Monte Carlo intervals. Axes start
+at $t=\pv{axisStart}$.
 \end{pcaption}

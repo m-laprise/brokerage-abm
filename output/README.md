@@ -8,13 +8,19 @@ under `paper/`; generator and build scripts are under `scripts/`.
 
 The source sweep, manifest hash, condition count, run count, and seed counts are
 stored in `main/figdata.jld2`. The generated header in `main/values.tex` also
-records the source sweep and manifest hash.
+records the source sweep and manifest hash. Figure-input datasets retain the
+seed-level time series and late-window values used to compute Monte Carlo
+intervals. Reporting artifacts also record the clean analysis-code commit, and
+builders reject inputs produced by a different commit.
 
 - [Results section](main/results_section.tex)
 - [Figure 1: Baseline dynamics](main/figs/fig1_dynamics.png)
 - [Figure 2: Matching grid](main/figs/fig2_grid_lines.png)
 - [Figure 3: Position and work](main/figs/fig3_position_work.png)
 - [Figure 4: Structural advantage](main/figs/fig4_advantage.png)
+- Monte Carlo convergence diagnostics: `main/convergence/condition_audit.tsv`
+  and `main/convergence/outcome_summary.tsv`. These are reproducibility
+  diagnostics and do not appear as paper figures or appendix analyses.
 
 ## Supplementary appendix
 
@@ -38,8 +44,8 @@ records the source sweep and manifest hash.
 
 ## Canonical generators
 
-- Main results: `scripts/paper/stats.jl`, `figdata.jl`, `figures.jl`, and
-  `build_section.jl`
+- Main results: `scripts/paper/stats.jl`, `figdata.jl`, `figures.jl`,
+  `audit_convergence.jl`, and `build_section.jl`
 - Supplement: `scripts/paper/supp_figdata.jl`, `supp_figures.jl`, and
   `build_supplement.jl`
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and

@@ -123,7 +123,11 @@ measured on deterministic random-partner holdout samples evaluated
 against noiseless true output: Spearman rank correlation measures
 whether predictions order possible matches correctly, while $R^2$
 measures level accuracy; gaps subtract the principal value from the
-broker value.
+broker value. $R^2$ varies much more because its finite-holdout denominator
+is realized-output variance, so modest prediction errors can produce extreme
+negative values when that variance is small. This volatility does not affect
+model behavior or the conclusions based on ranking, matching, and realized
+output because $R^2$ is diagnostic only and never enters a decision rule.
 
 \emph{Results}. All results are computed from a parameter sweep of the
 simulated market. In the baseline regime,
@@ -150,6 +154,15 @@ ensemble means over seeds, summarized by time averages over fixed windows within
 run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
 levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
 within-run drift. Full parameter values are given in Appendix~B~\S10.
+Monte Carlo convergence was assessed by comparing estimates from the first 10
+seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
+baseline, and by computing Student-$t$ 95\% intervals from seed-level
+late-window means. Across the \pv{mcOutcomeCount} non-$R^2$ outcomes shown in
+the figures, the 90th percentile across conditions of interval half-widths
+ranged from \pv{mcCiP90MinPercent}\% to \pv{mcCiP90MaxPercent}\% of each
+outcome's P90--P10 variation across effective realizations; the corresponding
+nested-seed changes ranged from \pv{mcNestedP90MinPercent}\% to
+\pv{mcNestedP90MaxPercent}\% on the same scale.
 
 \subsection{The broker primarily provides assessment, not access}
 

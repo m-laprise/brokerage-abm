@@ -18,26 +18,36 @@ node, `srun --partition=cpu --mem=8G`):
 
 The reporting root must contain 20 seeds for every effective realization and
 50 seeds for the baseline, for 1,990 runs in total. The data extractors check
-this seed plan before writing outputs.
+this seed plan before writing outputs. Every reporting stage also requires all
+source, paper, specification, and test files to match the current Git commit.
+Generated files under `output/` may differ. Each derived dataset and provenance
+file records the analysis commit, and downstream stages reject inputs produced
+by another commit.
 
 1. `julia --project --threads=auto scripts/paper/stats.jl`
    Computes every statistic quoted in the section and writes `output/main/values.tex`
    (one `\pvDefine{key}{value}` per quoted number).
 2. `julia --project --threads=auto scripts/paper/figdata.jl`
-   Extracts the small figure-input dataset to `output/main/figdata.jld2` (~260 KB):
-   the baseline ensemble series and the per-realization late means each figure
-   consumes.
+   Extracts the figure-input dataset to `output/main/figdata.jld2`: the
+   seed-level baseline series and seed-level late-window values each figure
+   consumes. Ensemble and condition means are retained for convenience, but
+   uncertainty is reconstructed from the saved seed values.
+3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
+   Writes the reproducible seed-convergence audit to
+   `output/main/convergence/`. The condition and outcome tables are retained as
+   diagnostics and are not included in the paper. Only the concise non-$R^2$
+   range in `values.tex` is consumed by the methods section.
 
 Local tier (no data access; works from a clone of this repository):
 
-3. `julia --project --threads=auto scripts/paper/figures.jl`
+4. `julia --project --threads=auto scripts/paper/figures.jl`
    Renders the four results assets, `fig1_*.png` through `fig4_*.png`, at print
    resolution,
    numbered in order of first citation in the prose, reading only
    `output/main/figdata.jld2`; also writes `output/main/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
    start).
-4. `julia --project --threads=auto scripts/paper/build_section.jl`
+5. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
@@ -62,7 +72,8 @@ pandoc output/main/results_section.tex -f latex -o results_section.docx \
 Pandoc reads the flattened fragment directly: math becomes native Word equations,
 the `booktabs` tables become Word tables, and the figures in `output/main/figs/` are
 embedded (hence `--resource-path=output/main`). Run step 4 first. The `.docx` reflects
-whatever is in `results_section.tex`. Needs only pandoc (>= 3), no LibreOffice.
+whatever is in `results_section.tex`. Run step 5 first. Needs only pandoc (>= 3),
+no LibreOffice.
 Document styling such as fonts can be set with a pandoc `--reference-doc`.
 
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
@@ -71,7 +82,8 @@ Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 ## Paired-Ridge figure supplement
 
 The paired-Ridge report reproduces the full content of Main Figures 1--4 with
-NN and paired Ridge in the same assets and shared axes. To create its compact
+NN and paired Ridge in the same assets and shared axes. Direct NN-Ridge and
+ablation contrasts use intervals on common-seed differences. To create its compact
 Ridge input dataset on the cluster, point the general extractor at the paired
 Ridge sweep and a separate output file:
 
@@ -107,8 +119,8 @@ Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute n
 
 1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `output/supplement/figdata.jld2`:
-   the baseline per-period constraint/effective-size series, the one-at-a-time
-   and grid late means, and the per-realization late means S1-S4 consume. Standalone
+   the seed-level baseline constraint/effective-size series, the one-at-a-time
+   and grid late values, and the per-realization late values S1-S4 consume. Standalone
    twin of `figdata.jl`; no hard-coded results.
 
 Local tier (no data access; works from a clone):

@@ -1,13 +1,16 @@
 At the baseline, every ablation reduces the broker's ranking advantage.  The
 size-matched gap is \rav{size_matchedBaseline_rank_gap}, a paired change of
-\rav{size_matchedBaselineDelta_rank_gap} from paired Ridge (Monte Carlo standard
-error \rav{size_matchedBaselineDeltaSE_rank_gap}).  The single-principal and
+\rav{size_matchedBaselineDelta_rank_gap} from paired Ridge (95\% Monte Carlo
+interval [\rav{size_matchedBaselineDeltaLower_rank_gap},
+\rav{size_matchedBaselineDeltaUpper_rank_gap}]).  The single-principal and
 additive gaps are \rav{single_principalBaseline_rank_gap} and
 \rav{additiveBaseline_rank_gap}, with paired changes of
 \rav{single_principalBaselineDelta_rank_gap} and
-\rav{additiveBaselineDelta_rank_gap}.  Their Monte Carlo standard errors are
-\rav{single_principalBaselineDeltaSE_rank_gap} and
-\rav{additiveBaselineDeltaSE_rank_gap}.
+\rav{additiveBaselineDelta_rank_gap}.  Their 95\% Monte Carlo intervals are
+[\rav{single_principalBaselineDeltaLower_rank_gap},
+\rav{single_principalBaselineDeltaUpper_rank_gap}] and
+[\rav{additiveBaselineDeltaLower_rank_gap},
+\rav{additiveBaselineDeltaUpper_rank_gap}].
 
 The size-matched contrast is consistent across the design.  Its rank gap is
 lower than paired Ridge in all \rav{nConditions} effective realizations.  The
@@ -49,8 +52,9 @@ use different fitting rows.  Additive Ridge retains $x_i+x_j$ in each row;
 single-principal Ridge retains one randomly selected endpoint and reconstructs
 a pair score by adding two fitted one-type scores.  Their baseline paired
 rank-gap difference (single-principal minus additive) is
-\rav{singleMinusAdditiveBaseline_rank_gap}, with Monte Carlo standard error
-\rav{singleMinusAdditiveBaselineSE_rank_gap}.  Across effective realizations,
+\rav{singleMinusAdditiveBaseline_rank_gap}, with a 95\% Monte Carlo interval of
+[\rav{singleMinusAdditiveBaselineLower_rank_gap},
+\rav{singleMinusAdditiveBaselineUpper_rank_gap}].  Across effective realizations,
 the difference has median \rav{singleMinusAdditiveMedian_rank_gap} and 10th and
 90th percentiles \rav{singleMinusAdditiveQ10_rank_gap} and
 \rav{singleMinusAdditiveQ90_rank_gap}; it is positive in only

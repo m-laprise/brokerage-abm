@@ -18,4 +18,6 @@ using Test
     include("test_regression_baseline.jl")
     include("test_sweep_config.jl")
     include("test_sweep_artifacts.jl")
+    include("test_monte_carlo.jl")
+    include("test_reporting_provenance.jl")
 end

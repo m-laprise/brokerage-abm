@@ -13,13 +13,16 @@ metric not yet extracted); styling iteration needs only figures.jl.
 
 Contents of figdata.jld2 (single key "figdata", a Dict):
   period         per-period time axis of the baseline runs
-  series         per-period ensemble means at the baseline:
+  series         per-period ensemble means at the baseline, retained for
+                 convenience
+  series_seed_values
+                 period-by-seed matrices at the baseline:
                  betweenness, access, mean_degree, median_degree, mpa
                  (matches per agent, both sides), outsourcing
-  oat_cells      late means per one-at-a-time regime: betw, access, qgap
+  oat_cells      late means and seed values per one-at-a-time regime
   grid_cells     rho, delta, and the nine named outcome late means per rho x delta
-                 grid coordinate
-  regime_cells   rho, delta, betw, access, rankgap, qgap per effective realization
+                 grid coordinate, plus the underlying seed values
+  regime_cells   rho, delta, late means, and seed values per effective realization
   meta           sweep id, generation time, generating script
 
 Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/figdata.jl
@@ -28,13 +31,18 @@ Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/figdat
 using JLD2, DataFrames, Statistics, Dates
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
-const DEFAULT_OUTFILE =
-    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
+const DEFAULT_OUTFILE = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2")
+)
 const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE))
+const REPORTING_PROVENANCE = reporting_git_provenance(
+    normpath(joinpath(@__DIR__, "..", ".."))
+)
 const LATE_WIDTH = 20   # final-period window, the headline statistic
 const SWEEP = load_sweep_dataset(ROOT)
 const BASELINE_REL = "oat/rho=0.5"
@@ -45,12 +53,7 @@ all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
 tailmean(df, col) = nanmean(df[late_mask(df), col])
-function seedstat(mdfs, col)
-    (
-        vs=filter(!isnan, [tailmean(d, col) for d in mdfs]);
-        isempty(vs) ? (NaN, NaN) : (mean(vs), std(vs))
-    )
-end
+seed_values(mdfs, col) = Float64[tailmean(d, col) for d in mdfs]
 function accessf(df)
     (
         t=(df.access_count .+ df.assessment_count);
@@ -58,30 +61,35 @@ function accessf(df)
     )
 end
 access_tail(df) = nanmean(accessf(df)[late_mask(df)])
-cell_access(mdfs) = nanmean([access_tail(d) for d in mdfs])
+access_values(mdfs) = Float64[access_tail(d) for d in mdfs]
 load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
 load_cfg(rel) = grid_result(SWEEP, rel).cfg
-qgap(m) = seedstat(m, :q_broker_mean)[1] - seedstat(m, :q_self_mean)[1]
-rankgap(m) = seedstat(m, :broker_holdout_rank)[1] - seedstat(m, :agent_holdout_rank)[1]
-function ens(mdfs, f)
-    (per=mdfs[1].period; [nanmean(Float64[f(d)[t] for d in mdfs]) for t in eachindex(per)])
+function gap_values(mdfs, broker_col, agent_col)
+    seed_values(mdfs, broker_col) .- seed_values(mdfs, agent_col)
+end
+qgap_values(mdfs) = gap_values(mdfs, :q_broker_mean, :q_self_mean)
+rankgap_values(mdfs) = gap_values(mdfs, :broker_holdout_rank, :agent_holdout_rank)
+r2gap_values(mdfs) = gap_values(mdfs, :broker_holdout_r2, :agent_holdout_r2)
+seed_series(mdfs, f) = reduce(hcat, (Float64.(f(df)) for df in mdfs))
+function ensemble_mean(values::AbstractMatrix)
+    Float64[nanmean(view(values, period_index, :)) for period_index in axes(values, 1)]
 end
 
 # the nine outcomes shared by figures 2 and 3; names must match figures.jl panels
-function outcomes(m)
-    Dict{String,Float64}(
-        "Betweenness centrality" => seedstat(m, :betweenness)[1],
-        "Access fraction" => cell_access(m),
-        "Broker prediction R²" => seedstat(m, :broker_holdout_r2)[1],
-        "Prediction R² gap" =>
-            seedstat(m, :broker_holdout_r2)[1] - seedstat(m, :agent_holdout_r2)[1],
-        "Broker rank correlation" => seedstat(m, :broker_holdout_rank)[1],
-        "Rank correlation gap" => rankgap(m),
-        "Broker output q" => seedstat(m, :q_broker_mean)[1],
-        "Output gap q" => qgap(m),
-        "Outsourcing rate" => seedstat(m, :outsourcing_rate)[1],
+function outcome_seed_values(m)
+    Dict{String,Vector{Float64}}(
+        "Betweenness centrality" => seed_values(m, :betweenness),
+        "Access fraction" => access_values(m),
+        "Broker prediction R²" => seed_values(m, :broker_holdout_r2),
+        "Prediction R² gap" => r2gap_values(m),
+        "Broker rank correlation" => seed_values(m, :broker_holdout_rank),
+        "Rank correlation gap" => rankgap_values(m),
+        "Broker output q" => seed_values(m, :q_broker_mean),
+        "Output gap q" => qgap_values(m),
+        "Outsourcing rate" => seed_values(m, :outsourcing_rate),
     )
 end
+outcome_means(values) = Dict(key => nanmean(seed_values) for (key, seed_values) in values)
 
 fd = Dict{String,Any}()
 
@@ -90,20 +98,24 @@ baseline_rel = BASELINE_REL
 baseline = load_mdfs(baseline_rel)
 N = load_cfg(baseline_rel)["N"]
 fd["period"] = collect(baseline[1].period)
-function series(m, N)
-    Dict{String,Vector{Float64}}(
-        "betweenness" => ens(m, d -> d.betweenness),
-        "access" => ens(m, accessf),
-        "mean_degree" => ens(m, d -> d.mean_degree),
-        "median_degree" => ens(m, d -> d.median_degree),
-        "mpa" => ens(m, d -> 2 .* d.n_total_matches ./ N),
-        "outsourcing" => ens(m, d -> d.outsourcing_rate),
+function series_seed_values(m, N)
+    Dict{String,Matrix{Float64}}(
+        "betweenness" => seed_series(m, d -> d.betweenness),
+        "access" => seed_series(m, accessf),
+        "mean_degree" => seed_series(m, d -> d.mean_degree),
+        "median_degree" => seed_series(m, d -> d.median_degree),
+        "mpa" => seed_series(m, d -> 2 .* d.n_total_matches ./ N),
+        "outsourcing" => seed_series(m, d -> d.outsourcing_rate),
     )
 end
-fd["series"] = series(baseline, N)
+fd["baseline_seeds"] = copy(SWEEP.result_by_rel[baseline_rel].seeds)
+fd["series_seed_values"] = series_seed_values(baseline, N)
+fd["series"] = Dict(
+    key => ensemble_mean(values) for (key, values) in fd["series_seed_values"]
+)
 
 # ── one-at-a-time cells (figure 1 scatter) ──
-fd["oat_cells"] = let out = Dict{String,Float64}[]
+fd["oat_cells"] = let out = Dict{String,Any}[]
     seen = Set{String}()
     for grid in SWEEP.grid_cells
         grid[:kind] == "oat" || continue
@@ -111,10 +123,25 @@ fd["oat_cells"] = let out = Dict{String,Float64}[]
         result.rel in seen && continue
         push!(seen, result.rel)
         m = result.mdfs
-        b = seedstat(m, :betweenness)[1];
-        a = cell_access(m)
+        seed_data = Dict(
+            "betw" => seed_values(m, :betweenness),
+            "access" => access_values(m),
+            "qgap" => qgap_values(m),
+        )
+        b = nanmean(seed_data["betw"])
+        a = nanmean(seed_data["access"])
         (isnan(b) || isnan(a)) && continue
-        push!(out, Dict("betw" => b, "access" => a, "qgap" => qgap(m)))
+        push!(
+            out,
+            Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
+                "betw" => b,
+                "access" => a,
+                "qgap" => nanmean(seed_data["qgap"]),
+                "seed_values" => seed_data,
+            ),
+        )
     end
     out
 end
@@ -124,13 +151,18 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
     for grid in SWEEP.grid_cells
         get(grid, :pair, nothing) == "rho_delta" || continue
         m = SWEEP.result_by_rel[grid[:result_reldir]].mdfs
+        result = SWEEP.result_by_rel[grid[:result_reldir]]
         cfg = grid[:resolved_params]
+        seed_data = outcome_seed_values(m)
         push!(
             out,
             Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
                 "rho" => Float64(cfg[:rho]),
                 "delta" => Float64(cfg[:delta]),
-                "outcomes" => outcomes(m),
+                "outcomes" => outcome_means(seed_data),
+                "outcome_seed_values" => seed_data,
             ),
         )
     end
@@ -138,20 +170,29 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
 end
 
 # ── every effective realization (figure 3) ──
-fd["regime_cells"] = let out = Dict{String,Float64}[]
+fd["regime_cells"] = let out = Dict{String,Any}[]
     for result in SWEEP.results
         m, cfg = result.mdfs, result.cfg
-        b = seedstat(m, :betweenness)[1];
+        seed_data = Dict(
+            "betw" => seed_values(m, :betweenness),
+            "access" => access_values(m),
+            "rankgap" => rankgap_values(m),
+            "qgap" => qgap_values(m),
+        )
+        b = nanmean(seed_data["betw"])
         isnan(b) && continue
         push!(
             out,
             Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
                 "rho" => Float64(cfg["rho"]),
                 "delta" => Float64(cfg["delta"]),
                 "betw" => b,
-                "access" => cell_access(m),
-                "rankgap" => rankgap(m),
-                "qgap" => qgap(m),
+                "access" => nanmean(seed_data["access"]),
+                "rankgap" => nanmean(seed_data["rankgap"]),
+                "qgap" => nanmean(seed_data["qgap"]),
+                "seed_values" => seed_data,
             ),
         )
     end
@@ -169,6 +210,8 @@ fd["meta"] = Dict(
         Dict(result.rel => length(result.seeds) for result in SWEEP.results),
     "generated" => string(now()),
     "source" => "scripts/paper/figdata.jl",
+    "analysis_git_commit" => REPORTING_PROVENANCE.commit,
+    "analysis_source_clean" => REPORTING_PROVENANCE.source_clean,
 )
 
 mkpath(dirname(OUTFILE))

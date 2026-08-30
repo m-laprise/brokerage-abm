@@ -19,6 +19,8 @@ Usage: julia --project --threads=auto scripts/ridge/paired_figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))
+include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 using Dates: now
 using JLD2: load
@@ -45,6 +47,7 @@ const OUT_DIR = normpath(
         joinpath(REPO_ROOT, "output", "ridge", "paired", "figures"),
     ),
 )
+const REPORTING_PROVENANCE = reporting_git_provenance(REPO_ROOT)
 
 const NN = load(NN_PATH)["figdata"]
 const RIDGE = load(RIDGE_PATH)["figdata"]
@@ -80,10 +83,14 @@ function validate_inputs()
             error("unexpected $label seed plan")
         lowercase(String(meta["learning_model"])) == expected_model ||
             error("unexpected $label learning model")
+        meta["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
+            error("$label figure data were extracted by a different analysis commit")
+        meta["analysis_source_clean"] == true ||
+            error("$label figure data were extracted from dirty analysis sources")
     end
     NN["period"] == RIDGE["period"] || error("NN and Ridge periods differ")
     Set(keys(NN["meta"]["condition_seed_counts"])) ==
-        Set(keys(RIDGE["meta"]["condition_seed_counts"])) ||
+    Set(keys(RIDGE["meta"]["condition_seed_counts"])) ||
         error("NN and Ridge effective designs differ")
     nn_grid = Set((cell["rho"], cell["delta"]) for cell in NN["grid_cells"])
     ridge_grid = Set((cell["rho"], cell["delta"]) for cell in RIDGE["grid_cells"])
@@ -96,10 +103,7 @@ function padded(values; lower=nothing, upper=nothing, fraction=0.06)
     isempty(kept) && error("cannot scale an empty series")
     lo, hi = extrema(kept)
     pad = fraction * (hi - lo + eps())
-    return (
-        isnothing(lower) ? lo - pad : lower,
-        isnothing(upper) ? hi + pad : upper,
-    )
+    return (isnothing(lower) ? lo - pad : lower, isnothing(upper) ? hi + pad : upper)
 end
 
 function save_figure(name, figure)
@@ -110,20 +114,58 @@ end
 
 function measured_series(data, key)
     period = data["period"]
-    values = data["series"][key]
-    if key == "betweenness"
-        indices = [index for index in eachindex(period) if period[index] % BETWINT == 0]
-        return period[indices], rolling_mean(values[indices], ROLLW)
+    indices = if key == "betweenness"
+        [index for index in eachindex(period) if period[index] % BETWINT == 0]
+    else
+        collect(eachindex(period))
     end
-    return period, rolling_mean(values, ROLLW)
+    raw = data["series_seed_values"][key][indices, :]
+    smoothed = reduce(
+        hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
+    )
+    summaries = [
+        monte_carlo_interval(view(smoothed, period_index, :)) for
+        period_index in axes(smoothed, 1)
+    ]
+    return (
+        period[indices],
+        [summary.mean for summary in summaries],
+        [summary.lower for summary in summaries],
+        [summary.upper for summary in summaries],
+    )
 end
 
 function displayed_values(series...)
     values = Float64[]
-    for (period, y) in series
-        append!(values, y[(period .>= TSTART) .& .!isnan.(y)])
+    for (period, _, lower, upper) in series
+        for bound in (lower, upper)
+            append!(values, bound[(period .>= TSTART) .& .!isnan.(bound)])
+        end
     end
     return values
+end
+
+function draw_interval_series!(
+    axis, series, color; label=nothing, linestyle=:solid, points=false
+)
+    period, estimate, lower, upper = series
+    band!(axis, period, lower, upper; color=(color, 0.16))
+    keywords = isnothing(label) ? (;) : (; label)
+    if points
+        scatterlines!(
+            axis,
+            period,
+            estimate;
+            color,
+            linewidth=2.2,
+            markersize=5,
+            linestyle,
+            keywords...,
+        )
+    else
+        lines!(axis, period, estimate; color, linewidth=2.2, linestyle, keywords...)
+    end
+    return nothing
 end
 
 function figure_r1()
@@ -132,14 +174,8 @@ function figure_r1()
     tend = maximum(period)
     series = Dict(
         (model.label, key) => measured_series(model.data, key) for model in MODELS for
-        key in (
-            "mpa",
-            "mean_degree",
-            "median_degree",
-            "betweenness",
-            "access",
-            "outsourcing",
-        )
+        key in
+        ("mpa", "mean_degree", "median_degree", "betweenness", "access", "outsourcing")
     )
     ylimits = Dict(
         "mpa" => padded(
@@ -156,9 +192,7 @@ function figure_r1()
             lower=0.0,
         ),
         "betweenness" => padded(
-            displayed_values(
-                (series[(model.label, "betweenness")] for model in MODELS)...
-            );
+            displayed_values((series[(model.label, "betweenness")] for model in MODELS)...);
             lower=0.0,
         ),
         "access" => padded(
@@ -187,45 +221,28 @@ function figure_r1()
             )
             row == 1 && hidexdecorations!(axis; grid=false)
             if column == 1
-                lines!(axis, series[(model.label, "mpa")]...; color=COL_DIAG, linewidth=2.2)
+                draw_interval_series!(axis, series[(model.label, "mpa")], COL_DIAG)
             elseif column == 2
-                lines!(
-                    axis,
-                    series[(model.label, "mean_degree")]...;
-                    color=COL_AGENT,
-                    linewidth=2.2,
-                    label="mean",
+                draw_interval_series!(
+                    axis, series[(model.label, "mean_degree")], COL_AGENT; label="mean"
                 )
-                lines!(
+                draw_interval_series!(
                     axis,
-                    series[(model.label, "median_degree")]...;
-                    color=COL_REFERENCE,
-                    linewidth=2.2,
+                    series[(model.label, "median_degree")],
+                    COL_REFERENCE;
                     linestyle=:dot,
                     label="median",
                 )
                 row == 1 && axislegend(axis; position=:rb, LEG_KW...)
             elseif column == 3
-                scatterlines!(
-                    axis,
-                    series[(model.label, "betweenness")]...;
-                    color=COL_GAP,
-                    linewidth=2.2,
-                    markersize=5,
+                draw_interval_series!(
+                    axis, series[(model.label, "betweenness")], COL_GAP; points=true
                 )
             elseif column == 4
-                lines!(
-                    axis,
-                    series[(model.label, "access")]...;
-                    color=COL_ACCESS,
-                    linewidth=2.2,
-                )
+                draw_interval_series!(axis, series[(model.label, "access")], COL_ACCESS)
             else
-                lines!(
-                    axis,
-                    series[(model.label, "outsourcing")]...;
-                    color=COL_BROKER,
-                    linewidth=2.2,
+                draw_interval_series!(
+                    axis, series[(model.label, "outsourcing")], COL_BROKER
                 )
             end
         end
@@ -243,10 +260,7 @@ const GRID_LAYOUT = [
 ]
 
 function grid_outcomes(data)
-    Dict(
-        (cell["rho"], cell["delta"]) => cell["outcomes"] for
-        cell in data["grid_cells"]
-    )
+    Dict((cell["rho"], cell["delta"]) => cell for cell in data["grid_cells"])
 end
 
 function figure_r2()
@@ -255,10 +269,14 @@ function figure_r2()
     ylimits = Dict{String,Tuple{Float64,Float64}}()
     for title in GRID_LAYOUT
         outcome_values = [
-            outcome[title] for cells in values(model_cells) for outcome in values(cells)
+            cell["outcomes"][title] for cells in values(model_cells) for
+            cell in values(cells)
         ]
-        ylimits[title] = title in ("Betweenness centrality", "Access fraction") ?
-                         (0.0, 1.02) : padded(outcome_values)
+        ylimits[title] = if title in ("Betweenness centrality", "Access fraction")
+            (0.0, 1.02)
+        else
+            padded(outcome_values)
+        end
     end
 
     fig = Figure(; size=(1320, 1280), fontsize=16)
@@ -267,7 +285,7 @@ function figure_r2()
         title = GRID_LAYOUT[local_row, column]
         axis = Axis(
             fig[row, column];
-                    title=title,
+            title=title,
             xlabel=local_row == 2 ? "ρ (complementarity vs quality)" : "",
             xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
             limits=(nothing, ylimits[title]),
@@ -275,15 +293,30 @@ function figure_r2()
         for delta in deltas
             points = sort(
                 [
-                    (rho, outcome[title]) for ((rho, d), outcome) in
-                    model_cells[model.label] if d == delta
+                    let interval = monte_carlo_interval(cell["outcome_seed_values"][title])
+                        (
+                            rho=rho,
+                            mean=interval.mean,
+                            lower=interval.lower,
+                            upper=interval.upper,
+                        )
+                    end for ((rho, d), cell) in model_cells[model.label] if d == delta
                 ];
-                by=first,
+                by=point -> point.rho,
+            )
+            rangebars!(
+                axis,
+                [point.rho for point in points],
+                [point.lower for point in points],
+                [point.upper for point in points];
+                color=(DELTA_COLORS[delta], 0.72),
+                linewidth=1.1,
+                whiskerwidth=7,
             )
             scatterlines!(
                 axis,
-                first.(points),
-                last.(points);
+                [point.rho for point in points],
+                [point.mean for point in points];
                 color=DELTA_COLORS[delta],
                 linewidth=2.0,
                 markersize=8,
@@ -292,7 +325,9 @@ function figure_r2()
                 label="δ = $delta",
             )
         end
-        model_index == 1 && local_row == 1 && column == 1 &&
+        model_index == 1 &&
+            local_row == 1 &&
+            column == 1 &&
             axislegend(axis, "Regime gain"; position=:lb, LEG_KW...)
     end
     Label(fig[1:2, 0], "NN"; rotation=pi / 2, fontsize=20, font=:bold)
@@ -305,9 +340,7 @@ end
 function figure_r3()
     period = NN["period"]
     tend = maximum(period)
-    all_access = [
-        cell["access"] for model in MODELS for cell in model.data["oat_cells"]
-    ]
+    all_access = [cell["access"] for model in MODELS for cell in model.data["oat_cells"]]
     access_limit = padded(all_access; lower=0.0)
     fig = Figure(; size=(1180, 780), fontsize=17)
     for (row, model) in enumerate(MODELS)
@@ -320,21 +353,14 @@ function figure_r3()
         )
         betweenness = measured_series(model.data, "betweenness")
         access = measured_series(model.data, "access")
-        scatterlines!(
+        draw_interval_series!(
             time_axis,
-            betweenness...;
-            color=COL_GAP,
-            linewidth=2.2,
-            markersize=5,
+            betweenness,
+            COL_GAP;
+            points=true,
             label="broker betweenness centrality",
         )
-        lines!(
-            time_axis,
-            access...;
-            color=COL_ACCESS,
-            linewidth=2.2,
-            label="access fraction",
-        )
+        draw_interval_series!(time_axis, access, COL_ACCESS; label="access fraction")
         row == 1 && axislegend(time_axis; position=:rc, LEG_KW...)
         row == 1 && hidexdecorations!(time_axis; grid=false)
 
@@ -363,7 +389,9 @@ function figure_r3()
 end
 
 function figure_r4()
-    outcomes = ((label="Rank correlation gap", key="rankgap"), (label="Output gap q", key="qgap"))
+    outcomes = (
+        (label="Rank correlation gap", key="rankgap"), (label="Output gap q", key="qgap")
+    )
     predictors = (
         (label="Broker betweenness centrality", key="betw"),
         (label="Access fraction", key="access"),
@@ -375,8 +403,7 @@ function figure_r4()
     )
     xlimits = Dict(
         predictor.key => padded(
-            cell[predictor.key] for model in MODELS for
-            cell in model.data["regime_cells"]
+            cell[predictor.key] for model in MODELS for cell in model.data["regime_cells"]
         ) for predictor in predictors
     )
 
@@ -431,6 +458,8 @@ function write_provenance()
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "source=scripts/ridge/paired_figures.jl")
+        println(io, "analysis_commit=$(REPORTING_PROVENANCE.commit)")
+        println(io, "analysis_source_clean=$(REPORTING_PROVENANCE.source_clean)")
         println(io, "nn_sweep=$(NN["meta"]["sweep"])")
         println(io, "nn_manifest=$(NN["meta"]["manifest_hash"])")
         println(io, "ridge_sweep=$(RIDGE["meta"]["sweep"])")
