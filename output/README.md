@@ -29,6 +29,7 @@ builders reject inputs produced by a different commit.
 - [Figure S2](supplement/figs/supp_S2_position.png)
 - [Figure S3](supplement/figs/supp_S3_advantage.png)
 - [Figure S4](supplement/figs/supp_S4_network_dynamics.png)
+- [Figure S5: Paired-Ridge robustness](supplement/figs/supp_S5_ridge_robustness.png)
 
 ## Ridge experiments
 
@@ -45,9 +46,9 @@ builders reject inputs produced by a different commit.
 ## Canonical generators
 
 - Main results: `scripts/paper/stats.jl`, `figdata.jl`, `figures.jl`,
-  `audit_convergence.jl`, and `build_section.jl`
-- Supplement: `scripts/paper/supp_figdata.jl`, `supp_figures.jl`, and
-  `build_supplement.jl`
+  `audit_convergence.jl`, `ridge_supplement.jl`, and `build_section.jl`
+- Supplement: `scripts/paper/supp_figdata.jl`, `supp_figures.jl`,
+  `ridge_supplement.jl`, and `build_supplement.jl`
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and
   `analyze_ablations.jl`
 - Paired-Ridge figures: `scripts/ridge/paired_figures.jl`

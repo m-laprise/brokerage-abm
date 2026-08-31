@@ -145,8 +145,12 @@ styling therefore never requires the cluster:
 # on the cluster, with BROKERAGE_ABM_SWEEP_DIR set:
 julia --project --threads=auto scripts/paper/stats.jl
 julia --project --threads=auto scripts/paper/figdata.jl
+BROKERAGE_ABM_SWEEP_DIR=<paired-ridge-sweep> \
+BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2 \
+  julia --project --threads=auto scripts/paper/figdata.jl
 # locally, from a clone, no data access needed:
 julia --project --threads=auto scripts/paper/figures.jl
+julia --project --threads=auto scripts/paper/ridge_supplement.jl
 julia --project --threads=auto scripts/paper/build_section.jl
 ```
 
@@ -163,6 +167,7 @@ BROKERAGE_ABM_SWEEP_DIR=<paired-ridge-sweep> \
 BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2 \
   julia --project --threads=auto scripts/paper/figdata.jl
 julia --project --threads=auto scripts/ridge/paired_figures.jl
+julia --project --threads=auto scripts/paper/ridge_supplement.jl
 julia --project --threads=auto scripts/ridge/build_reports.jl
 ```
 
@@ -173,6 +178,6 @@ copied there from `paper/`. The output index is `output/README.md`.
 
 The **Supplementary Material** (`output/supplement/supplement.pdf`) reproduces the structural-
 advantage analyses with the broker's two other ego-network measures, Burt's
-constraint and effective size. It is a separate, self-contained pipeline
-(`supp_figdata.jl` -> `supp_figures.jl` -> `build_supplement.jl`), so it and the
-results section regenerate independently; see `scripts/paper/README.md`.
+constraint and effective size. It also contains one focused figure showing the
+paired-Ridge ranking result across all effective realizations and the
+$\rho\times\delta$ design; see `scripts/paper/README.md`.

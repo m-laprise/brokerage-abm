@@ -32,6 +32,9 @@ by another commit.
    seed-level baseline series and seed-level late-window values each figure
    consumes. Ensemble and condition means are retained for convenience, but
    uncertainty is reconstructed from the saved seed values.
+   Run the same extractor against the paired-Ridge sweep with
+   `BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2`; the exact
+   command is given below.
 3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
    Writes the reproducible seed-convergence audit to
    `output/main/convergence/`. The condition and outcome tables are retained as
@@ -49,7 +52,10 @@ Local tier (no data access; works from a clone of this repository):
    `output/main/figdata.jld2`; also writes `output/main/figmeta.tex` (the display
    conventions quoted in captions: rolling window, measurement interval, axis
    start).
-5. `julia --project --threads=auto scripts/paper/build_section.jl`
+5. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
+   Computes the four Ridge values quoted in the section and renders
+   Supplementary Figure S5 from the paired-Ridge figure data.
+6. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
@@ -59,7 +65,7 @@ Local tier (no data access; works from a clone of this repository):
    temporary directory. Needs only stock Julia and `pdflatex`.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
-editing `figures.jl` and rerunning steps 3-4 locally. The cluster tier reruns
+editing `figures.jl` and rerunning steps 4-6 locally. The cluster tier reruns
 only when the underlying numbers change: a new sweep, or a figure needing a
 metric not yet extracted, which `figdata.jl` must then be taught to include.
 
@@ -74,7 +80,7 @@ pandoc output/main/results_section.tex -f latex -o results_section.docx \
 Pandoc reads the flattened fragment directly: math becomes native Word equations,
 the `booktabs` tables become Word tables, and the figures in `output/main/figs/` are
 embedded (hence `--resource-path=output/main`). Run step 4 first. The `.docx` reflects
-whatever is in `results_section.tex`. Run step 5 first. Needs only pandoc (>= 3),
+whatever is in `results_section.tex`. Run step 6 first. Needs only pandoc (>= 3),
 no LibreOffice.
 Document styling such as fonts can be set with a pandoc `--reference-doc`.
 
@@ -107,15 +113,13 @@ realizations and the 20-seed general, 50-seed baseline reporting plan. Outputs
 are under `output/ridge/paired/figures/` and are embedded in the paired-Ridge
 report.
 
-## Supplementary Material (alternative structural measures)
+## Supplementary Material
 
 The results section measures the broker's structural advantage by betweenness
 centrality. The Supplementary Material reproduces the same analyses with the
 broker's two other saved ego-network measures, Burt's aggregate **constraint** and
-**effective size** (`src/measures.jl`), in four figures (S1-S4). It is a **separate,
-self-contained pipeline**: it shares no inputs or outputs with the steps above, so
-the results section and the supplement are regenerated independently of each other.
-The same two tiers apply.
+**effective size** (`src/measures.jl`), in Figures S1-S4. Figure S5 provides the
+focused paired-Ridge evidence cited in the main text. The same two tiers apply.
 
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
 
@@ -132,17 +136,24 @@ Local tier (no data access; works from a clone):
    `output/supplement/figdata.jld2` only, and writes
    `output/supplement/figmeta.tex` (the
    display conventions quoted in the captions). Standalone twin of `figures.jl`.
-3. `julia --project --threads=auto scripts/paper/build_supplement.jl`
-   Compiles the standalone `paper/supplement.tex` (own preamble; captions quote
-   display conventions only, via `\pv` keys resolved from `supp_figmeta.tex`, so
-   no number is hand-written) to `output/supplement/supplement.pdf`. Validates every `\pv`
-   reference and figure path first. Needs only stock Julia and `pdflatex`.
+3. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
+   Reads the paired-Ridge `figdata.jld2`, renders the all-realization and
+   $\rho\times\delta$ robustness evidence as Figure S5, and writes the four Ridge
+   values quoted in the main text and supplement. Run the paired-Ridge figure-data
+   extraction described above first.
+4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
+   Compiles the standalone `paper/supplement.tex`. Caption values are resolved
+   from generated `\pv` definitions, so no result is hand-written. The builder
+   validates every `\pv` reference and figure path first. Needs only stock Julia
+   and `pdflatex`.
 
-The four figures each redo a main-text structural-advantage analysis for
+The first four figures each redo a main-text structural-advantage analysis for
 constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
 the baseline time path and the relationship with access across regimes; **S3**
 shows the prediction and output gaps against each measure; **S4** reproduces the
-betweenness panel of the baseline-dynamics figure.
+betweenness panel of the baseline-dynamics figure. **S5** shows the paired-Ridge
+broker-minus-principal ranking gap across all effective realizations and across
+the rho x delta grid.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 Generated artifacts are under `output/supplement/`. LaTeX auxiliary files are
