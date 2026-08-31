@@ -1,5 +1,7 @@
-generated=2026-08-30T10:58:43.536
+generated=2026-08-30T14:31:31.975
 source=scripts/ridge/paired_figures.jl
+analysis_commit=5b5f2f582525fb716af6647b07db75aa1ed1f075
+analysis_source_clean=true
 nn_sweep=2026-08-30_e5b9858_combined_20_baseline50
 nn_manifest=832649d803422e8b73ab4d6d9610ac9977b7e5212ddcf5287404c7eac9cf4dd7
 ridge_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001

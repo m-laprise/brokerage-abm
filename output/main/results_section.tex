@@ -1,8 +1,8 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-08-30 10:52
-% from section_source.tex + captions.tex + values.tex + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; repo commit d1db7c3.
-% Every number was computed from the saved sweep data by scripts/paper/stats.jl.
+% Built by scripts/paper/build_section.jl on 2026-08-30 14:34
+% from section_source.tex + captions.tex + values.tex + convergence/values.tex + figmeta.tex;
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit 5b5f2f5; clean sources.
+% Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
 
@@ -122,7 +122,11 @@ measured on deterministic random-partner holdout samples evaluated
 against noiseless true output: Spearman rank correlation measures
 whether predictions order possible matches correctly, while $R^2$
 measures level accuracy; gaps subtract the principal value from the
-broker value.
+broker value. $R^2$ varies much more because its finite-holdout denominator
+is realized-output variance, so modest prediction errors can produce extreme
+negative values when that variance is small. This volatility does not affect
+model behavior or the conclusions based on ranking, matching, and realized
+output because $R^2$ is diagnostic only and never enters a decision rule.
 
 \emph{Results}. All results are computed from a parameter sweep of the
 simulated market. In the baseline regime,
@@ -149,6 +153,15 @@ ensemble means over seeds, summarized by time averages over fixed windows within
 run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
 levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
 within-run drift. Full parameter values are given in Appendix~B~\S10.
+Monte Carlo convergence was assessed by comparing estimates from the first 10
+seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
+baseline, and by computing Student-$t$ 95\% intervals from seed-level
+late-window means. Across the 14 non-$R^2$ outcomes shown in
+the figures, the 90th percentile across conditions of interval half-widths
+ranged from 5.3\% to 24.9\% of each
+outcome's P90--P10 variation across effective realizations; the corresponding
+nested-seed changes ranged from 2.7\% to
+10.4\% on the same scale.
 
 \subsection{The broker primarily provides assessment, not access}
 
@@ -171,7 +184,8 @@ baseline and across regimes.
 \centering
 \includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
 \caption{\textbf{Baseline dynamics.} Lines are 5-observation rolling ensemble means over seeds at the
-baseline regime. Axes start at $t=30$.}
+baseline regime; ribbons are pointwise 95\% Monte Carlo intervals. Axes start
+at $t=30$.}
 \label{fig:dynamics}
 \end{figure}
 
@@ -298,6 +312,7 @@ of the performance gap.
 \includegraphics[width=\linewidth]{figs/fig2_grid_lines.png}
 \caption{\textbf{Outcomes across the matching problem ($\rho\times\delta$).} Six outcomes across the $\rho\times\delta$ grid; one line per gain
 $\delta$, one marker per regime, each a late-window mean over that regime's seeds.
+Whiskers are 95\% Monte Carlo intervals.
 The rank-correlation gap is broker minus principals; the output gap, broker
 channel minus self-search.}
 \label{fig:grid}
@@ -333,7 +348,8 @@ rare and falling over time (Fig.~\ref{fig:position}).
 \includegraphics[width=\linewidth]{figs/fig3_position_work.png}
 \caption{\textbf{Broker centrality and access fraction.} Left: broker betweenness centrality and access fraction over time at the
 baseline, as 5-observation rolling ensemble means over
-seeds; centrality is measured every 20 periods. Right: one dot
+seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
+20 periods. Right: one dot
 per one-at-a-time regime, each a late-window mean over that regime's
 seeds. Time starts at $t=30$ (end of burn-in).}
 \label{fig:position}

@@ -35,8 +35,10 @@ by another commit.
 3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
    Writes the reproducible seed-convergence audit to
    `output/main/convergence/`. The condition and outcome tables are retained as
-   diagnostics and are not included in the paper. Only the concise non-$R^2$
-   range in `values.tex` is consumed by the methods section.
+   diagnostics and are not included in the paper. Relative precision follows
+   the conventional interval-half-width-to-estimate definition; cells whose
+   interval contains zero retain only absolute precision. Only the concise
+   non-$R^2$ range in `values.tex` is consumed by the methods section.
 
 Local tier (no data access; works from a clone of this repository):
 

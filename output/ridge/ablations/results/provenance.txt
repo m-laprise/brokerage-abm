@@ -1,4 +1,6 @@
-generated=2026-08-30T10:52:56.101
+generated=2026-08-30T14:29:46.748
+analysis_commit=5b5f2f582525fb716af6647b07db75aa1ed1f075
+analysis_source_clean=true
 pair_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001
 pair_manifest=03219e577b8e74588907d301508e2bbe307d982cd2de722c22b448f580cae0b3
 size_matched_sweep=2026-08-30_d1db7c3_ridge_size_matched_lambda_a0.003_lambda_b0.001_rho_delta

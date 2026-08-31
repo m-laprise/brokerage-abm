@@ -158,11 +158,12 @@ Monte Carlo convergence was assessed by comparing estimates from the first 10
 seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
 baseline, and by computing Student-$t$ 95\% intervals from seed-level
 late-window means. Across the \pv{mcOutcomeCount} non-$R^2$ outcomes shown in
-the figures, the 90th percentile across conditions of interval half-widths
-ranged from \pv{mcCiP90MinPercent}\% to \pv{mcCiP90MaxPercent}\% of each
-outcome's P90--P10 variation across effective realizations; the corresponding
-nested-seed changes ranged from \pv{mcNestedP90MinPercent}\% to
-\pv{mcNestedP90MaxPercent}\% on the same scale.
+the figures, median relative interval half-widths across conditions ranged from
+\pv{mcCiMedianMinPercent}\% to \pv{mcCiMedianMaxPercent}\%; median relative
+nested-seed changes ranged from \pv{mcNestedMedianMinPercent}\% to
+\pv{mcNestedMedianMaxPercent}\%. Relative precision uses the absolute
+full-sample estimate as its denominator; cells whose 95\% interval contains
+zero are assessed from their absolute intervals instead.
 
 \subsection{The broker primarily provides assessment, not access}
 

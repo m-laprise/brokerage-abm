@@ -1,0 +1,12 @@
+generated=2026-08-30T14:29:07.214
+sweep=2026-08-30_e5b9858_combined_20_baseline50
+manifest=832649d803422e8b73ab4d6d9610ac9977b7e5212ddcf5287404c7eac9cf4dd7
+analysis_commit=5b5f2f582525fb716af6647b07db75aa1ed1f075
+analysis_source_clean=true
+effective_realizations=98
+general_nested_comparison=first 10 versus all 20 seeds
+baseline_nested_comparison=first 20 versus all 50 seeds
+normalization=outcome P90 minus P10 across effective realizations
+non_r2_outcomes=14
+p90_relative_ci_half_width_percent=5.3:24.9
+p90_relative_nested_change_percent=2.7:10.4

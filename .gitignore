@@ -35,6 +35,7 @@ docs/site/
 # Generated diagnostic outputs (reproducible by re-running the scripts)
 scripts/diagnostics/_results/
 scripts/diagnostics/adv_results/
+output/main/convergence/condition_audit.tsv
 *.jld2
 # SLURM job logs
 *.out
