@@ -1,7 +1,8 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-08-30 21:56
-% from section_source.tex + captions.tex + values.tex + convergence/values.tex + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit be82497; clean sources.
+% Built by scripts/paper/build_section.jl on 2026-08-31 00:41
+% from section_source.tex + captions.tex + values.tex + convergence/values.tex +
+% Ridge values + figmeta.tex;
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit 96c5e37; clean sources.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -80,6 +81,16 @@ observations from the recent past to update their prediction function.
 To respect the symmetry of the unordered pairs in its training data, the
 broker uses as input a symmetric feature vector built from the type
 vectors.
+
+As a robustness experiment, I repeat the complete design with Ridge regression
+replacing both neural networks. Principals regress output on the candidate's
+type; the broker uses the same symmetric additive and bilinear pair features as
+in the main model. Histories, training window, observation cap, fitting cadence,
+and reporting seeds are unchanged. Baseline calibration on 10 seeds excluded
+from reporting selected $\lambda_a=0.003$ for principals and
+$\lambda_b=0.001$ for the broker. This tests whether neural-network flexibility
+is necessary for the broker's ranking advantage; it does not equalize the
+learners' data or feature representations.
 
 \emph{Search and match formation} (Appendix B \S\S6--7). Self-search draws on
 known network neighbors and a small random pool of strangers; brokered
@@ -241,6 +252,20 @@ $0.51$ and $-3.35$ on average across regimes). To pick the
 best matches, the broker's services rely on a good
 ordering of candidate pairings, even without an accurate appraisal of their
 absolute worth.
+
+The ordering advantage is not an artifact of neural-network flexibility. With
+Ridge learning, the late broker-minus-principal rank-correlation gap is
+0.335 at the baseline and has a median of
+0.342 across the 98 effective realizations.
+The gap is positive in all 98 realizations. Within the
+$\rho\times\delta$ design it narrows as $\delta$ increases, especially when
+complementarity dominates, but remains positive at every parameter coordinate
+(Supplementary Fig.~S5). Thus, within the model, a broker
+using pooled mediated-match histories and an additive-plus-bilinear pair
+representation does not require a neural network to rank candidates better
+than principals. This result does not show that pooled data alone are
+sufficient, because the Ridge broker still observes both parties and retains a
+pair representation unavailable to principals.
 
 Within the model, the broker acts not as an appraiser of general quality
 (cf.\ Li~1998), but as a

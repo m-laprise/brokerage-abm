@@ -1,0 +1,105 @@
+% Compile from the repository root with:
+% pdflatex -interaction=nonstopmode -halt-on-error -output-directory=output/main/figs paper/model_overview.tex
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usetikzlibrary{arrows.meta,calc,positioning}
+
+\definecolor{principalfill}{HTML}{E8F1F8}
+\definecolor{principalstroke}{HTML}{3976A8}
+\definecolor{brokerfill}{HTML}{FBEBDD}
+\definecolor{brokerstroke}{HTML}{B5652A}
+\definecolor{sharedfill}{HTML}{EEF1F3}
+\definecolor{sharedstroke}{HTML}{59636B}
+\definecolor{feedbackfill}{HTML}{E7F2E8}
+\definecolor{feedbackstroke}{HTML}{4F8055}
+
+\begin{document}
+\begin{tikzpicture}[
+    font=\sffamily,
+    >={Latex[length=2.3mm,width=1.5mm]},
+    flow/.style={draw=sharedstroke, line width=0.8pt, -{Latex[length=2.3mm,width=1.5mm]}},
+    branch/.style={flow, rounded corners=3pt},
+    box/.style={
+        draw=sharedstroke,
+        fill=sharedfill,
+        rounded corners=3pt,
+        line width=0.8pt,
+        align=center,
+        inner xsep=6pt,
+        inner ysep=5pt
+    },
+    principal/.style={box, draw=principalstroke, fill=principalfill},
+    broker/.style={box, draw=brokerstroke, fill=brokerfill},
+    feedback/.style={box, draw=feedbackstroke, fill=feedbackfill},
+    label/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+]
+
+\node[box, text width=15.1cm, minimum height=1.05cm] (init) at (7.65,7.35) {%
+    \textbf{Initialization at period 0}\\[-1pt]
+    \scriptsize Draw principal types and the matching environment; create the
+    small-world network and broker roster;\\
+    seed histories, predictors, satisfaction, and broker reputation
+};
+
+\node[box, text width=2.65cm, minimum height=1.55cm] (begin) at (1.6,4.05) {%
+    \textbf{Begin period}\\[-1pt]
+    \scriptsize Refresh broker roster\\
+    Draw principal demand\\
+    Choose one search channel
+};
+
+\node[box, text width=2.75cm, minimum height=1.55cm] (learn) at (5.0,4.05) {%
+    \textbf{Update predictors}\\[-1pt]
+    \scriptsize Broker every period;\\eligible principals on\\alternating schedules
+};
+
+\node[principal, text width=3.6cm, minimum height=1.75cm] (self) at (8.8,5.05) {%
+    \textbf{Self-search}\\[-1pt]
+    \scriptsize Candidates: network neighbors\\and a random stranger pool\\
+    Rank using pair experience\\or the principal predictor
+};
+
+\node[broker, text width=3.6cm, minimum height=1.75cm] (broker) at (8.8,3.05) {%
+    \textbf{Brokered search}\\[-1pt]
+    \scriptsize Candidates: roster and current clients\\
+    Rank from pooled two-party histories
+};
+
+\node[box, text width=3.5cm, minimum height=2.05cm] (market) at (13.3,4.05) {%
+    \textbf{Shared offer market}\\[-1pt]
+    \scriptsize Submit top offers above\\the reservation threshold\\
+    Accept reciprocal offers or\\offers approved by the receiver\\
+    Realize match output
+};
+
+\node[feedback, text width=4.0cm, minimum height=1.7cm] (update) at (12.25,1.25) {%
+    \textbf{Update the market state}\\[-1pt]
+    \scriptsize Add observations to histories\\and add network ties\\
+    Update satisfaction and broker reputation
+};
+
+\node[feedback, text width=3.0cm, minimum height=1.35cm] (measure) at (7.25,1.25) {%
+    \textbf{Record measures}\\[-1pt]
+    \scriptsize Post-matching,\\pre-turnover state
+};
+
+\node[box, text width=2.65cm, minimum height=1.35cm] (turnover) at (2.0,1.25) {%
+    \textbf{Turnover}\\[-1pt]
+    \scriptsize Exit principals and initialize entrants
+};
+
+\draw[flow] (init.south west) ++(1.6,0) -- (begin.north);
+\draw[flow] (begin.east) -- (learn.west);
+\draw[branch] (learn.east) -- ++(0.1,0) |- (self.west);
+\draw[branch] (learn.east) -- ++(0.1,0) |- (broker.west);
+\draw[branch] (self.east) -- ++(0.25,0) |- (market.west);
+\draw[branch] (broker.east) -- ++(0.25,0) |- (market.west);
+\draw[flow] (market.south) -- (update.north);
+\draw[flow] (update.west) -- (measure.east);
+\draw[flow] (measure.west) -- (turnover.east);
+\draw[flow, rounded corners=5pt] (turnover.west) -- ++(-0.45,0) |- (begin.west)
+    node[label, midway, rotate=90] {next period};
+
+\end{tikzpicture}
+\end{document}

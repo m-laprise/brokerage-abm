@@ -33,7 +33,7 @@ one wants to represent.
 Pseudo-code and complete specifications for the model are included as
 \textbf{Appendix A and B}, respectively, and the code base for the project,
 implemented in Julia, is publicly available at
-\texttt{https://github.com/m-laprise/transientbrokerage}. It includes the
+\texttt{https://github.com/m-laprise/brokerage-abm}. It includes the
 scripts needed to reproduce the experiments that generated the data
 analyzed in this section, extract every number mentioned, create the
 figures and tables, and generate the results section in its entirety.
@@ -47,6 +47,22 @@ satisfaction score for each channel; principals who have never used the
 broker rely on its reputation (average satisfaction of current clients).
 After each period, each agent exits with probability $\eta$ and is
 replaced by a fresh entrant.
+
+The schematic below summarizes initialization and the within-period sequence;
+the mechanisms are described in detail afterward.
+
+\begin{center}
+\centering
+\includegraphics[width=\linewidth]{figs/model_overview.pdf}
+\begin{minipage}{0.96\linewidth}
+\small\textbf{Model overview.} Initialization creates the period-0 market
+state. Each period, principals choose a search channel, eligible prediction
+models update, and the two channels construct separate candidate
+rankings. All offers then enter a shared market. Realized matches update
+histories, network ties, satisfaction, and broker reputation. Measures are
+recorded before turnover, after which the next period begins.
+\end{minipage}
+\end{center}
 
 \emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
 fixed type, a vector of observable characteristics. A realized match
@@ -144,8 +160,10 @@ simulated market. In the baseline regime,
 $N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
 $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
 initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
-self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
-run are treated as burn-in. Around this baseline, I vary one parameter at a time
+self-search pool size $n_{\mathrm{strangers}}=10$. The simulation retains all
+periods, but time-series displays begin at $t=30$ to omit the initialization
+transient. This display cutoff does not change the simulation or the late-period
+estimands. Around this baseline, I vary one parameter at a time
 ($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
 $\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
