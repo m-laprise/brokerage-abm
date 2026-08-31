@@ -22,6 +22,8 @@ Contents of figdata.jld2 (single key "figdata", a Dict):
   oat_cells      late means and seed values per one-at-a-time regime
   grid_cells     rho, delta, and the nine named outcome late means per rho x delta
                  grid coordinate, plus the underlying seed values
+  rho_eta_cells  rho, eta, access, and betweenness late means per rho x eta
+                 grid coordinate, plus the underlying seed values
   regime_cells   rho, delta, late means, and seed values per effective realization
   meta           sweep id, generation time, generating script
 
@@ -169,7 +171,33 @@ fd["grid_cells"] = let out = Dict{String,Any}[]
     out
 end
 
-# ── every effective realization (figure 3) ──
+# ── rho x eta grid cells (figure 3) ──
+fd["rho_eta_cells"] = let out = Dict{String,Any}[]
+    for grid in SWEEP.grid_cells
+        get(grid, :pair, nothing) == "rho_eta" || continue
+        result = SWEEP.result_by_rel[grid[:result_reldir]]
+        cfg = grid[:resolved_params]
+        seed_data = Dict(
+            "betw" => seed_values(result.mdfs, :betweenness),
+            "access" => access_values(result.mdfs),
+        )
+        push!(
+            out,
+            Dict(
+                "rel" => result.rel,
+                "seeds" => copy(result.seeds),
+                "rho" => Float64(cfg[:rho]),
+                "eta" => Float64(cfg[:eta]),
+                "betw" => nanmean(seed_data["betw"]),
+                "access" => nanmean(seed_data["access"]),
+                "seed_values" => seed_data,
+            ),
+        )
+    end
+    out
+end
+
+# ── every effective realization (figure 4) ──
 fd["regime_cells"] = let out = Dict{String,Any}[]
     for result in SWEEP.results
         m, cfg = result.mdfs, result.cfg

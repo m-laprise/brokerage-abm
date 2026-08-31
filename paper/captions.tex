@@ -14,9 +14,13 @@ Broker centrality and access fraction
 Left: broker betweenness centrality and access fraction over time at the
 baseline, as \pv{rollWin}-observation rolling ensemble means over
 seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
-\pv{betwInterval} periods. Right: one dot
-per one-at-a-time regime, each a late-window mean over that regime's
-seeds. Time-series panels begin at $t=\pv{axisStart}$ to omit the
+\pv{betwInterval} periods. Right: all 20 combinations in the $\rho\times\eta$
+grid, with other parameters held at baseline, each shown as a late-window mean
+over that regime's seeds. Color identifies turnover $\eta$, marker shape
+identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes.
+Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary
+$\rho=1$, where complementarity is absent, is shown unconnected. Time-series
+panels begin at $t=\pv{axisStart}$ to omit the
 initialization transient.
 \end{pcaption}
 

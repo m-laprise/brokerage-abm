@@ -48,6 +48,12 @@ const DELTA_COLORS = Dict(
     0.75 => :darkorange,
     1.0 => :firebrick,
 )
+const ETA_PALETTE = Makie.to_color.(
+    ["#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677"]
+)
+const RHO_MARKERS = Dict(
+    0.0 => :circle, 0.5 => :rect, 0.85 => :diamond, 1.0 => :utriangle
+)
 
 const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
@@ -110,7 +116,7 @@ end
 
 # ── Position: betweenness & access over time at baseline + cross-regime scatter ──
 function fig3_position_work()
-    fig = Figure(; size=(1180, 470))
+    fig = Figure(; size=(1230, 470))
     # left: broker betweenness and access fraction over time at baseline
     axa = Axis(
         fig[1, 1];
@@ -134,10 +140,18 @@ function fig3_position_work()
         axa, summarized_series("access"), COL_ACCESS; label="access fraction"
     )
     axislegend(axa; position=:rc, LEG_KW...)
-    # right: cross-regime scatter, access (x) vs betweenness (y)
-    cells = FD["oat_cells"]
-    bx = [c["betw"] for c in cells];
-    ay = [c["access"] for c in cells]
+    # right: rho x eta regimes, access (x) vs betweenness (y). Lines connect
+    # rho < 1 within eta; rho = 1 is an unconnected pure-quality boundary.
+    cells = FD["rho_eta_cells"]
+    betweenness = [c["betw"] for c in cells]
+    access = [c["access"] for c in cells]
+    rho = Float64[c["rho"] for c in cells]
+    eta = Float64[c["eta"] for c in cells]
+    eta_values = sort(unique(eta))
+    length(eta_values) <= length(ETA_PALETTE) || error("turnover palette is too short")
+    eta_colors = Dict(
+        value => ETA_PALETTE[index] for (index, value) in enumerate(eta_values)
+    )
     axc = Axis(
         fig[1, 2];
         title="Across regimes",
@@ -150,7 +164,84 @@ function fig3_position_work()
         yticklabelsize=TICK_FS,
         limits=(nothing, (0, 1)),
     )
-    scatter!(axc, ay, bx; color=:black, markersize=13)
+    for value in eta_values
+        mask = eta .== value
+        indices = sort(findall(mask); by=index -> rho[index])
+        xs = access[indices]
+        ys = betweenness[indices]
+        rhos = rho[indices]
+        xintervals = [
+            monte_carlo_interval(cells[index]["seed_values"]["access"]) for index in
+            indices
+        ]
+        yintervals = [
+            monte_carlo_interval(cells[index]["seed_values"]["betw"]) for index in
+            indices
+        ]
+        errorbars!(
+            axc,
+            xs,
+            ys,
+            xs .- [interval.lower for interval in xintervals],
+            [interval.upper for interval in xintervals] .- xs;
+            direction=:x,
+            color=(eta_colors[value], 0.45),
+            whiskerwidth=5,
+        )
+        errorbars!(
+            axc,
+            xs,
+            ys,
+            ys .- [interval.lower for interval in yintervals],
+            [interval.upper for interval in yintervals] .- ys;
+            color=(eta_colors[value], 0.45),
+            whiskerwidth=5,
+        )
+        interior = findall(rhos .< 1.0)
+        lines!(
+            axc, xs[interior], ys[interior]; color=eta_colors[value], linewidth=2.2
+        )
+        for (r, x, y) in zip(rhos, xs, ys)
+            scatter!(
+                axc,
+                [x],
+                [y];
+                marker=RHO_MARKERS[r],
+                color=eta_colors[value],
+                markersize=13,
+                strokecolor=:black,
+                strokewidth=0.5,
+            )
+        end
+    end
+    eta_elements = [
+        LineElement(; color=eta_colors[value], linewidth=3) for
+        value in eta_values
+    ]
+    rho_values = sort(unique(rho))
+    rho_elements = [
+        MarkerElement(;
+            marker=RHO_MARKERS[value],
+            color=:gray60,
+            strokecolor=:black,
+            strokewidth=0.5,
+            markersize=11,
+        ) for value in rho_values
+    ]
+    Legend(
+        fig[1, 3],
+        [eta_elements, rho_elements],
+        [
+            ["η = $value" for value in eta_values],
+            ["ρ = $value" for value in rho_values],
+        ],
+        ["turnover rate", "matching composition"],
+        labelsize=LABEL_FS,
+        titlesize=LABEL_FS,
+        patchsize=(18, 13),
+        rowgap=4,
+        framevisible=false,
+    )
     colgap!(fig.layout, 14)
     savefig("fig3_position_work.png", fig)
 end
