@@ -368,9 +368,9 @@ broker's betweenness centrality rises (\pv{betwBaselineEarly} to
 regimes (Fig.~\ref{fig:position}). Agent turnover removes ties about as
 fast as they appear, and the network does not densify: agent degree falls over time
 in \pv{degFallsN} of \pv{nRegimes} regimes. This raises a crucial question:
-why is the structural advantage not self-liquidating, even at low turnover (at
-$\eta=0.01$, betweenness centrality still rises from \pv{betwEta001Early} to
-\pv{betwEta001Late})?
+why is the structural advantage not self-liquidating, even below the baseline
+turnover rate (at $\eta=0.01$, betweenness centrality still rises from
+\pv{betwEta001Early} to \pv{betwEta001Late})?
 
 Assessment and access have opposite effects on the broker's structural position.
 The broker lies on the shortest path between clients and roster members who are not
@@ -386,10 +386,17 @@ accumulated ties, then introduces entrants without established connections. The
 $\rho\times\eta$ grid separates this effect from the composition of the matching
 problem (Fig.~\ref{fig:position}). At every $\rho$, increasing turnover raises both
 the access fraction and broker centrality. At every turnover rate, moving from
-$\rho=0$ to $\rho=0.85$ raises access but lowers centrality. Turnover and matching
-composition therefore generate different relationships between access and
-centrality: turnover recreates gaps in the network, while movement toward general
-quality makes the broker's work more likely to fill those gaps with direct ties.
+$\rho=0$ to $\rho=0.85$ raises access but lowers centrality. The sensitivity is
+substantial but nonlinear: holding other parameters at baseline, increasing
+$\eta$ from 0 to 0.03 lowers late mean agent degree from \pv{degEta0Late} to
+\pv{degEta003Late} and raises broker centrality from \pv{betwEta0Late} to
+\pv{betwEta003Late}, with most of the change occurring between $\eta=0.001$ and
+$0.01$. Thus, the broker becomes highly central only when agents enter and leave
+often enough to prevent the network from filling up with lasting ties. Turnover
+and matching composition therefore generate different relationships between
+access and centrality: turnover recreates gaps in the network, while movement
+toward general quality makes the broker's work more likely to fill those gaps with
+direct ties.
 
 \begin{figure}[t]
 \centering
@@ -419,9 +426,10 @@ moderate or high turnover, complementarity-heavy regimes combine renewed gaps in
 the network with brokerage that primarily assesses existing relationships. These
 are the regimes in which the broker becomes most central. Moving toward general
 quality makes brokered matches more likely to provide access, creating direct ties
-that leave the broker less central. High centrality thus requires both a continuing
-supply of structural gaps and brokerage that fills requested positions mainly
-through assessment. Because access remains low overall (a late mean of
+that leave the broker less central. High centrality thus requires a continuing
+supply of structural gaps, supplied here by recurrent turnover, together with
+brokerage that fills requested positions mainly through assessment. Because access
+remains low overall (a late mean of
 \pv{accessAcrossBaseLate} across regimes and declining within runs), the broker's
 work does little to eliminate the structural basis of its own position.
 

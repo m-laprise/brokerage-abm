@@ -171,6 +171,12 @@ pv("degFallsN", fint(count(dd .< 0)))
 e1 = cellat("oat/eta=0.01")
 pv("betwEta001Early", f2(early(e1.mdfs, col(:betweenness))))
 pv("betwEta001Late", f2(late(e1.mdfs, col(:betweenness))))
+e0 = cellat("oat/eta=0.0")
+e003 = cellat("oat/eta=0.03")
+pv("degEta0Late", f1(late(e0.mdfs, col(:mean_degree))))
+pv("degEta003Late", f1(late(e003.mdfs, col(:mean_degree))))
+pv("betwEta0Late", f2(late(e0.mdfs, col(:betweenness))))
+pv("betwEta003Late", f2(late(e003.mdfs, col(:betweenness))))
 # Rho groups use common support across rho levels. The rho x delta grid is
 # excluded because delta is not an effective dimension at rho=1.
 function rhofam(c)
