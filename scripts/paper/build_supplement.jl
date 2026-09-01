@@ -4,15 +4,13 @@
 Compile the standalone Supplementary Material to
 `output/supplement/supplement.pdf`. Inputs are the hand-edited
 `paper/supplement.tex`, generated `output/supplement/figmeta.tex`, and the
-generated paired-Ridge paper values and figures in `output/supplement/figs/`.
+figures in `output/supplement/figs/`.
 
 The build fails on a missing input, an undefined `\\pv` value, an unused display
-convention, a missing figure, or a LaTeX error. Ridge result values share a file
-with the main manuscript, so the supplement need not consume all of them.
+convention, a missing figure, or a LaTeX error.
 Auxiliary files are created in a temporary directory and discarded.
 
-Run `scripts/paper/supp_figures.jl` and `scripts/paper/ridge_supplement.jl`
-first.
+Run `scripts/paper/supp_figures.jl` first.
 
 Usage: julia --project --threads=auto scripts/paper/build_supplement.jl
 """
@@ -23,9 +21,6 @@ const PAPER = normpath(joinpath(@__DIR__, "..", "..", "paper"))
 const GENERATED = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement"))
 const SRC = joinpath(PAPER, "supplement.tex")
 const FIGMETA = joinpath(GENERATED, "figmeta.tex")
-const RIDGE_VALS = normpath(
-    joinpath(GENERATED, "..", "ridge", "paired", "results", "paper_values.tex")
-)
 const FIGDIR = joinpath(GENERATED, "figs")
 const PDF = joinpath(GENERATED, "supplement.pdf")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
@@ -36,21 +31,19 @@ fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
 
 isfile(SRC) || fail("missing $SRC")
 isfile(FIGMETA) || fail("missing $FIGMETA (run scripts/paper/supp_figures.jl first)")
-isfile(RIDGE_VALS) ||
-    fail("missing $RIDGE_VALS (run scripts/paper/ridge_supplement.jl first)")
 analysis_commits = [
     validate_analysis_commit(
         REPORTING_PROVENANCE,
         recorded_analysis_commit(provenance_file);
         artifact=basename(provenance_file),
-    ) for provenance_file in (FIGMETA, RIDGE_VALS)
+    ) for provenance_file in (FIGMETA,)
 ]
 length(unique(analysis_commits)) == 1 ||
     fail("supplement inputs record different analysis commits")
 
 defs = Set{String}()
 figmeta_defs = Set{String}()
-for values_file in (FIGMETA, RIDGE_VALS), line in eachline(values_file)
+for values_file in (FIGMETA,), line in eachline(values_file)
     match_result = match(r"^\\pvDefine\{([^}]+)\}\{.*\}\s*$", line)
     isnothing(match_result) || begin
         match_result[1] in defs && fail("duplicate \\pv definition: $(match_result[1])")

@@ -83,7 +83,7 @@ load_mdfs(rel) = grid_result(SWEEP, rel).mdfs
 
 fd = Dict{String,Any}()
 
-# ── baseline per-period ensemble series (S2 left and S4) ──
+# ── baseline per-period ensemble series (S2 left) ──
 baseline = load_mdfs(BASELINE_REL)
 fd["period"] = collect(baseline[1].period)
 function series_seed_values(m)

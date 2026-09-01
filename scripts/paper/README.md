@@ -64,8 +64,8 @@ Local tier (no data access; works from a clone of this repository):
    `output/main/figmeta.tex` (the display conventions quoted in captions:
    rolling window, measurement interval, axis start).
 6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
-   Computes the four Ridge values quoted in the section and renders
-   Supplementary Figure S4 from the paired-Ridge figure data.
+   Computes the four base Ridge values quoted in the section from the retained
+   seed-level figure data.
 7. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
@@ -142,8 +142,7 @@ report.
 The results section measures the broker's structural advantage by betweenness
 centrality. The Supplementary Material reproduces the same analyses with the
 broker's two other saved ego-network measures, Burt's aggregate **constraint** and
-**effective size** (`src/measures.jl`), in Figures S1-S3. Figure S4 provides the
-focused paired-Ridge evidence cited in the main text. The same two tiers apply.
+**effective size** (`src/measures.jl`), in Figures S1-S3. The same two tiers apply.
 
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
 
@@ -160,23 +159,16 @@ Local tier (no data access; works from a clone):
    `output/supplement/figdata.jld2` only, and writes
    `output/supplement/figmeta.tex` (the
    display conventions quoted in the captions). Standalone twin of `figures.jl`.
-3. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
-   Reads the paired-Ridge `figdata.jld2`, renders the all-realization and
-   $\rho\times\delta$ robustness evidence as Figure S4, and writes the four Ridge
-   values quoted in the main text and supplement. Run the paired-Ridge figure-data
-   extraction described above first.
-4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
+3. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex`. Caption values are resolved
    from generated `\pv` definitions, so no result is hand-written. The builder
    validates every `\pv` reference and figure path first. Needs only stock Julia
    and `pdflatex`.
 
-The first three figures each redo a main-text structural-advantage analysis for
+The three figures each redo a main-text structural-advantage analysis for
 constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
 the baseline time path and the relationship with access across regimes; **S3**
-shows the ranking and output differences against each measure. **S4** shows the
-paired-Ridge broker-minus-principal difference in holdout rank correlation across
-all effective realizations and across the rho x delta grid.
+shows the ranking and output differences against each measure.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 Generated artifacts are under `output/supplement/`. LaTeX auxiliary files are

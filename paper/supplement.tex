@@ -7,11 +7,7 @@
 % broker's two other saved ego-network measures: Burt's aggregate constraint and
 % Burt's effective size. Figures are rendered by scripts/paper/supp_figures.jl
 % from output/supplement/figdata.jld2 (extracted by supp_figdata.jl).
-% Figure S4 reports the paired-Ridge robustness result and is rendered by
-% scripts/paper/ridge_supplement.jl from output/ridge/paired/figdata.jld2.
-%
 % No result is hand-written. Display conventions come from supp_figmeta.tex and
-% paired-Ridge results come from paper_values.tex through the \pv mechanism below,
 % so caption facts cannot drift from the figure code. Captions describe figure
 % elements and their derivation only, with no additional interpretation.
 
@@ -34,7 +30,6 @@
   \else\csname pv@#1\endcsname\fi}
 \makeatother
 \input{../output/supplement/figmeta.tex}
-\input{../output/ridge/paired/results/paper_values.tex}
 
 \setlength{\parskip}{0.6\baselineskip}
 \setlength{\parindent}{0pt}
@@ -43,16 +38,15 @@
 
 \begin{center}
 {\large\bfseries Supplementary Material}\\[2pt]
-{\large Alternative Structural Measures and Ridge Robustness}
+{\large Alternative Structural Measures}
 \end{center}
 
 The first three figures reproduce the main structural-advantage analyses with the
 broker's two other saved ego-network measures, Burt's aggregate network constraint
 and Burt's effective size. Both are recomputed for the broker every
-\pv{suppMeasInterval} periods. Figure~\ref{fig:supp-ridge} reports the focused
-paired-Ridge robustness analysis discussed in the main text. As in the main text,
-a regime is one scientifically distinct parameter configuration; duplicate grid
-coordinates and inactive parameters do not create additional regimes.
+\pv{suppMeasInterval} periods. As in the main text, a regime is one scientifically
+distinct parameter configuration; duplicate grid coordinates and inactive
+parameters do not create additional regimes.
 
 \begin{figure}[htbp]
 \centering
@@ -86,21 +80,6 @@ channel minus self-search, bottom) against broker Burt constraint (left) and bro
 effective size (right); one dot per regime, each a late-window mean over
 that regime's seeds, colored by the matching parameter $\rho$.}
 \label{fig:supp-advantage}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]{supp_S4_ridge_robustness.png}
-\caption{Broker ranking advantage under paired-Ridge learning. Panel A orders
-the \pv{ridgeNConditions} regimes by their late-period
-broker-minus-principal difference in holdout rank correlation; points are regime
-means and whiskers are 95\% Monte Carlo intervals over seeds. Panel B shows the
-same difference across the $\rho\times\delta$ design, with one line per value of
-$\delta$ over $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where
-$\delta$ is inactive, is shown once and unconnected. Markers are regime means,
-whiskers are 95\% Monte Carlo intervals, and the horizontal line marks equal
-broker and principal holdout rank correlations.}
-\label{fig:supp-ridge}
 \end{figure}
 
 \end{document}
