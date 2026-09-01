@@ -19,6 +19,7 @@ Usage: julia --project scripts/paper/stats.jl
 using Statistics, Printf, Dates
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
+include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
@@ -35,9 +36,11 @@ const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere
 nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 winm(d, v, (lo, hi)) = nm(v[(d.period .>= lo) .& (d.period .<= hi)])
 cellw(m, f, w) = nm([winm(d, f(d), w) for d in m])     # seed mean of window means
+seedw(m, f, w) = [winm(d, f(d), w) for d in m]
 late_window(m) = (maximum(m[1].period) - LATE_WIDTH + 1, maximum(m[1].period))
 late(m, f) = cellw(m, f, late_window(m));
 early(m, f) = cellw(m, f, EARLY)
+late_seed_values(m, f) = seedw(m, f, late_window(m))
 col(c) = d -> d[!, c]
 # display formats (rounding conventions, not results)
 f1(x) = @sprintf("%.1f", x)
@@ -75,6 +78,10 @@ function rdcell(rho, delta)
             cell[:resolved_params][:delta] == delta
     )
 end
+const RHO_DELTA_RESULTS = unique_effective_results([
+    grid_result(SWEEP, cell[:reldir]) for
+    cell in SWEEP.grid_cells if get(cell, :pair, nothing) == "rho_delta"
+])
 
 # ── emitted values, in order ──
 VALS = Pair{String,String}[]
@@ -90,24 +97,35 @@ pv("nBaselineSeeds", fint(BASELINE_N_SEEDS))
 pv("outBaselineLate", f2(late(BL.mdfs, col(:outsourcing_rate))))
 pv("outBaselineEarly", f2(early(BL.mdfs, col(:outsourcing_rate))))
 ob = [late(c.mdfs, col(:outsourcing_rate)) for c in B]
-pv("outBaseMin", f2(minimum(ob)));
-pv("outBaseMax", f2(maximum(ob)))
+pv("outBaseDominantN", fint(count(>(0.5), ob)))
+out_below_half = [c for (c, value) in zip(B, ob) if value <= 0.5]
+all(c -> c.cfg["eta"] == 0.0, out_below_half) ||
+    error("an outsourcing-below-half realization has positive turnover")
 og = [late(c.mdfs, ogap) for c in B]
 pv("ogapBaseMean", fs2(nm(og)))
 pv("ogapBasePosN", fint(count(>(0), filter(!isnan, og))))
+og_intervals = [monte_carlo_interval(late_seed_values(c.mdfs, ogap)) for c in B]
+pv("ogapBaseCIPosN", fint(count(interval -> interval.lower > 0.0, og_intervals)))
+pv("ogapBaseNegN", fint(count(<(0), filter(!isnan, og))))
+pv("ogapBaseCINegN", fint(count(interval -> interval.upper < 0.0, og_intervals)))
+negative_ogap_cells = [c for (c, value) in zip(B, og) if value < 0.0]
+all(c -> c.cfg["eta"] <= 0.001, negative_ogap_cells) ||
+    error("a negative-output-gap realization has eta > 0.001")
 ac_l = [late(c.mdfs, accessf) for c in B];
 ac_e = [early(c.mdfs, accessf) for c in B]
 pv("accessAcrossBaseLate", f2(nm(ac_l)))
 pv("accessAcrossBaseEarly", f2(nm(ac_e)))
-pv("brokerRankBaseline", f2(late(BL.mdfs, col(:broker_holdout_rank))))
-d0 = [
-    late(c.mdfs, col(:broker_holdout_rank)) for c in unique_effective_results([
-        grid_result(SWEEP, cell[:reldir]) for cell in SWEEP.grid_cells if
-        get(cell, :pair, nothing) == "rho_delta" && cell[:resolved_params][:delta] == 0.0
-    ],)
+pv("accessBaseMax", f2(maximum(ac_l)))
+access_change_intervals = [
+    monte_carlo_interval(
+        late_seed_values(c.mdfs, accessf) .- seedw(c.mdfs, accessf, EARLY)
+    ) for c in B
 ]
-pv("brokerRankD0Min", f2(minimum(d0)));
-pv("brokerRankD0Max", f2(maximum(d0)))
+pv(
+    "accessDeclineCIN",
+    fint(count(interval -> interval.upper < 0.0, access_change_intervals)),
+)
+pv("brokerRankBaseline", f2(late(BL.mdfs, col(:broker_holdout_rank))))
 pv("brokerR2Baseline", f2(late(BL.mdfs, col(:broker_holdout_r2))))
 pv("agentRankBaseline", f2(late(BL.mdfs, col(:agent_holdout_rank))))
 pv("agentR2BaselineBase", f2(late(BL.mdfs, col(:agent_holdout_r2))))
@@ -133,31 +151,41 @@ brk_r2 = [late(c.mdfs, col(:broker_holdout_r2)) for c in B]
 agt_rank = [late(c.mdfs, col(:agent_holdout_rank)) for c in B]
 agt_r2 = [late(c.mdfs, col(:agent_holdout_r2)) for c in B]
 pv("brokerRankBaseMed", f2(med(brk_rank)));
-pv("brokerRankBaseMean", f2(nm(brk_rank)))
-pv("brokerR2BaseMed", f2(med(brk_r2)));
-pv("brokerR2BaseMean", f2(nm(brk_r2)))
-pv("agentRankBaseMed", f2(med(agt_rank)));
-pv("agentRankBaseMean", f2(nm(agt_rank)))
-pv("agentR2BaseMed", f2(med(agt_r2)));
-pv("agentR2BaseMean", f2(nm(agt_r2)))
+pv("brokerR2BaseMed", f2(med(brk_r2)))
+pv("agentRankBaseMed", f2(med(agt_rank)))
+pv("agentR2BaseMed", f2(med(agt_r2)))
+rank_gap_values = brk_rank .- agt_rank
+rank_gap_intervals = [monte_carlo_interval(late_seed_values(c.mdfs, rankgap)) for c in B]
+pv("rankGapNNPosN", fint(count(>(0), rank_gap_values)))
+pv("rankGapNNCiPosN", fint(count(interval -> interval.lower > 0.0, rank_gap_intervals)))
+pv("rankGapNNCiNegN", fint(count(interval -> interval.upper < 0.0, rank_gap_intervals)))
+pv("brokerR2PositiveN", fint(count(>(0), brk_r2)))
 
 # ── 5.2 ──
 pv("betwRho0", f2(late(oatb("rho", "0.0").mdfs, col(:betweenness))))
 pv("betwRho1", f2(late(oatb("rho", "1.0").mdfs, col(:betweenness))))
 pv("accessRho0", f2(late(oatb("rho", "0.0").mdfs, accessf)))
 pv("accessRho1", f2(late(oatb("rho", "1.0").mdfs, accessf)))
-pv("betwDelta0", f2(late(oatb("delta", "0.0").mdfs, col(:betweenness))))
-pv("betwDelta05", f2(late(BL.mdfs, col(:betweenness))))
-pv("betwDelta075", f2(late(oatb("delta", "0.75").mdfs, col(:betweenness))))
-pv("brokerRankHardCorner", f2(late(rdcell(0.0, 0.75).mdfs, col(:broker_holdout_rank))))
-pv("brokerR2Rho0D0", fs2(late(rdcell(0.0, 0.0).mdfs, col(:broker_holdout_r2))))
-pv("brokerR2Rho0D05", f2(late(rdcell(0.0, 0.5).mdfs, col(:broker_holdout_r2))))
-pv("brokerR2Rho0D075", f2(late(rdcell(0.0, 0.75).mdfs, col(:broker_holdout_r2))))
-pv("r2GapHardCorner", f2(late(rdcell(0.0, 0.75).mdfs, col(:r2_gap))))
-pv("ogapRho0OAT", fs2(late(oatb("rho", "0.0").mdfs, ogap)))
-pv("ogapRho1OAT", fs2(late(oatb("rho", "1.0").mdfs, ogap)))
-pv("rankGapRho0D0", f2(late(rdcell(0.0, 0.0).mdfs, rankgap)))
-pv("rankGapRho0D075", f2(late(rdcell(0.0, 0.75).mdfs, rankgap)))
+pv("rhoDeltaEffectiveN", fint(length(RHO_DELTA_RESULTS)))
+grid_rank_intervals = [
+    monte_carlo_interval(late_seed_values(result.mdfs, rankgap)) for
+    result in RHO_DELTA_RESULTS
+]
+grid_ogap_intervals = [
+    monte_carlo_interval(late_seed_values(result.mdfs, ogap)) for
+    result in RHO_DELTA_RESULTS
+]
+pv("gridRankGapCIPosN", fint(count(interval -> interval.lower > 0.0, grid_rank_intervals)))
+pv(
+    "gridOutputGapCIPosN",
+    fint(count(interval -> interval.lower > 0.0, grid_ogap_intervals)),
+)
+rho0_delta0 = rdcell(0.0, 0.0)
+rho0_delta1 = rdcell(0.0, 1.0)
+pv("brokerRankRho0D0", f2(late(rho0_delta0.mdfs, col(:broker_holdout_rank))))
+pv("brokerRankRho0D1", f2(late(rho0_delta1.mdfs, col(:broker_holdout_rank))))
+pv("rankGapRho0D0", f2(late(rho0_delta0.mdfs, rankgap)))
+pv("rankGapRho0D1", f2(late(rho0_delta1.mdfs, rankgap)))
 
 # ── 5.3 ──
 pv("degBaselineEarly", f1(early(BL.mdfs, col(:mean_degree))))
@@ -168,15 +196,43 @@ dd = [late(c.mdfs, col(:mean_degree)) - early(c.mdfs, col(:mean_degree)) for c i
 db = [late(c.mdfs, col(:betweenness)) - early(c.mdfs, col(:betweenness)) for c in B]
 pv("comoveN", fint(count((dd .< 0) .& (db .> 0))))
 pv("degFallsN", fint(count(dd .< 0)))
-e1 = cellat("oat/eta=0.01")
-pv("betwEta001Early", f2(early(e1.mdfs, col(:betweenness))))
-pv("betwEta001Late", f2(late(e1.mdfs, col(:betweenness))))
 e0 = cellat("oat/eta=0.0")
 e003 = cellat("oat/eta=0.03")
 pv("degEta0Late", f1(late(e0.mdfs, col(:mean_degree))))
 pv("degEta003Late", f1(late(e003.mdfs, col(:mean_degree))))
 pv("betwEta0Late", f2(late(e0.mdfs, col(:betweenness))))
 pv("betwEta003Late", f2(late(e003.mdfs, col(:betweenness))))
+function rhoetacells(eta)
+    unique_effective_results([
+        grid_result(SWEEP, cell[:reldir]) for cell in SWEEP.grid_cells if
+        get(cell, :pair, nothing) == "rho_eta" && cell[:resolved_params][:eta] == eta
+    ])
+end
+rho_eta0 = rhoetacells(0.0)
+rho_eta01 = rhoetacells(0.01)
+pv("rhoEtaRhoN", fint(length(rho_eta0)))
+rho_eta0_support = sort([result.cfg["rho"] for result in rho_eta0])
+rho_eta01_support = sort([result.cfg["rho"] for result in rho_eta01])
+rho_eta01_support == rho_eta0_support ||
+    error("rho x eta slices have different rho support")
+pv(
+    "qgapEta0CINegN",
+    fint(
+        count(
+            result -> monte_carlo_interval(late_seed_values(result.mdfs, ogap)).upper < 0.0,
+            rho_eta0,
+        ),
+    ),
+)
+pv(
+    "qgapEta01CIPosN",
+    fint(
+        count(
+            result -> monte_carlo_interval(late_seed_values(result.mdfs, ogap)).lower > 0.0,
+            rho_eta01,
+        ),
+    ),
+)
 # Rho groups use common support across rho levels. The rho x delta grid is
 # excluded because delta is not an effective dimension at rho=1.
 function rhofam(c)
@@ -192,33 +248,17 @@ function rhocells(rv)
     ],)
 end
 grp(rv, f) = nm([f(c) for c in rhocells(rv)])
-let ns = [length(rhocells(v)) for v in (0.0, 0.5, 1.0)]
-    allequal(ns) || error("rho groups have unequal sizes: $ns")
-    pv("rhoGroupN", fint(ns[1]))
+let sizes = [length(rhocells(rho)) for rho in (0.0, 0.5, 1.0)]
+    allequal(sizes) || error("rho groups have unequal sizes: $sizes")
 end
-pv("outRho0Group", f2(grp(0.0, c -> late(c.mdfs, col(:outsourcing_rate)))))
-pv("outRho05Group", f2(grp(0.5, c -> late(c.mdfs, col(:outsourcing_rate)))))
-pv("outRho1Group", f2(grp(1.0, c -> late(c.mdfs, col(:outsourcing_rate)))))
-pv("accessRho0Group", f2(grp(0.0, c -> late(c.mdfs, accessf))))
-pv("accessRho05Group", f2(grp(0.5, c -> late(c.mdfs, accessf))))
-pv("accessRho1Group", f2(grp(1.0, c -> late(c.mdfs, accessf))))
-pv("betwRho0Group", f2(grp(0.0, c -> late(c.mdfs, col(:betweenness)))))
-pv("betwRho05Group", f2(grp(0.5, c -> late(c.mdfs, col(:betweenness)))))
-pv("betwRho1Group", f2(grp(1.0, c -> late(c.mdfs, col(:betweenness)))))
-pv("degRho0Group", f1(grp(0.0, c -> late(c.mdfs, col(:mean_degree)))))
-pv("degRho05Group", f1(grp(0.5, c -> late(c.mdfs, col(:mean_degree)))))
-pv("degRho1Group", f1(grp(1.0, c -> late(c.mdfs, col(:mean_degree)))))
 pv("ogapRho0Group", fs2(grp(0.0, c -> late(c.mdfs, ogap))))
-pv("ogapRho05Group", fs2(grp(0.5, c -> late(c.mdfs, ogap))))
 pv("ogapRho1Group", fs2(grp(1.0, c -> late(c.mdfs, ogap))))
+pv("rankGapRho0Group", f2(grp(0.0, c -> late(c.mdfs, rankgap))))
+pv("rankGapRho1Group", f2(grp(1.0, c -> late(c.mdfs, rankgap))))
 rho1 = [c for c in B if c.cfg["rho"] == 1.0]
-pv("rhoOneN", fint(length(rho1)))
-pv(
-    "rhoOneThinN",
-    fint(
-        count(c -> late(c.mdfs, col(:mean_degree)) < early(c.mdfs, col(:mean_degree)), rho1)
-    ),
-)
+rho1_rank_gap = [late(c.mdfs, rankgap) for c in rho1]
+pv("rhoOneRankGapMean", f2(nm(rho1_rank_gap)))
+pv("rhoOneRankGapPosN", fint(count(>(0), rho1_rank_gap)))
 
 # ── emit values.tex ──
 mkpath(dirname(OUTTEX))

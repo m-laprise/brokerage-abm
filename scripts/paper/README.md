@@ -42,35 +42,45 @@ by another commit.
    the conventional interval-half-width-to-estimate definition; cells whose
    interval contains zero retain only absolute precision. Only the concise
    non-$R^2$ range in `values.tex` is consumed by the methods section.
+4. `julia --project --threads=auto scripts/ridge/analyze_ablations.jl`
+   Reads the four complete Ridge sweeps named by
+   `BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR`,
+   `BROKERAGE_ABM_RIDGE_SIZE_MATCHED_SWEEP_DIR`,
+   `BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR`, and
+   `BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR`. It writes the detailed ablation
+   report inputs under `output/ridge/ablations/results/`, the small set of
+   main-text values in `paper_values.tex`, and the seed-level main-figure data
+   in `output/ridge/ablations/figdata.jld2`.
 
 Local tier (no data access; works from a clone of this repository):
 
-4. `julia --project --threads=auto scripts/paper/figures.jl`
-   Renders the four results assets, `fig1_*.png` through `fig4_*.png`, at print
-   resolution,
-   numbered in order of first citation in the prose, reading only
-   `output/main/figdata.jld2`; also writes `output/main/figmeta.tex` (the display
-   conventions quoted in captions: rolling window, measurement interval, axis
-   start).
-5. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
+5. `julia --project --threads=auto scripts/paper/figures.jl`
+   Renders the five results assets at print resolution, including the two-panel
+   information-source figure. It reads only `output/main/figdata.jld2` and
+   `output/ridge/ablations/figdata.jld2`; it also writes
+   `output/main/figmeta.tex` (the display conventions quoted in captions:
+   rolling window, measurement interval, axis start).
+6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
    Computes the four Ridge values quoted in the section and renders
    Supplementary Figure S5 from the paired-Ridge figure data.
-6. `julia --project --threads=auto scripts/paper/build_section.jl`
+7. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
    `output/main/results_section.tex`, an `\input`-ready fragment with literal numbers
    and a provenance header. Fails on any undefined or unused value, title, or
    caption block, or missing figure, then compile-checks the fragment in a
-   temporary directory. Needs only stock Julia and `pdflatex`.
+   temporary directory. The results section contains five figures, numbered by
+   their order of first citation rather than by their asset filenames. Needs
+   only stock Julia and `pdflatex`.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
-editing `figures.jl` and rerunning steps 4-6 locally. The cluster tier reruns
+editing `figures.jl` and rerunning steps 5--7 locally. The cluster tier reruns
 only when the underlying numbers change: a new sweep, or a figure needing a
 metric not yet extracted, which `figdata.jl` must then be taught to include.
 
-Word export (optional). To produce an editable `.docx` of the section — for
-co-authors or track-changes — convert the generated fragment with pandoc:
+Word export (optional). To produce an editable `.docx` of the section for
+co-authors or track-changes, convert the generated fragment with pandoc:
 
 ```
 pandoc output/main/results_section.tex -f latex -o results_section.docx \
@@ -79,8 +89,8 @@ pandoc output/main/results_section.tex -f latex -o results_section.docx \
 
 Pandoc reads the flattened fragment directly: math becomes native Word equations,
 the `booktabs` tables become Word tables, and the figures in `output/main/figs/` are
-embedded (hence `--resource-path=output/main`). Run step 4 first. The `.docx` reflects
-whatever is in `results_section.tex`. Run step 6 first. Needs only pandoc (>= 3),
+embedded (hence `--resource-path=output/main`). Run steps 4--7 first. The `.docx`
+reflects whatever is in `results_section.tex`. Needs only pandoc (>= 3),
 no LibreOffice.
 Document styling such as fonts can be set with a pandoc `--reference-doc`.
 

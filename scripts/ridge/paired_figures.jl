@@ -256,7 +256,7 @@ end
 
 const GRID_LAYOUT = [
     "Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
-    "Access fraction" "Broker prediction R²" "Output gap q"
+    "Access fraction" "Principal rank correlation" "Output gap q"
 ]
 
 function grid_outcomes(data)
@@ -265,6 +265,17 @@ end
 
 function figure_r2()
     model_cells = Dict(model.label => grid_outcomes(model.data) for model in MODELS)
+    boundary_cells = Dict(
+        model.label =>
+            let candidates = [
+                    cell for cell in model.data["grid_cells"] if cell["rho"] == 1.0
+                ]
+                length(unique(cell["rel"] for cell in candidates)) == 1 || error(
+                    "$(model.label) rho = 1 coordinates do not share one realization"
+                )
+                first(candidates)
+            end for model in MODELS
+    )
     deltas = sort(unique(cell["delta"] for cell in NN["grid_cells"]))
     ylimits = Dict{String,Tuple{Float64,Float64}}()
     for title in GRID_LAYOUT
@@ -300,7 +311,8 @@ function figure_r2()
                             lower=interval.lower,
                             upper=interval.upper,
                         )
-                    end for ((rho, d), cell) in model_cells[model.label] if d == delta
+                    end for
+                    ((rho, d), cell) in model_cells[model.label] if d == delta && rho < 1.0
                 ];
                 by=point -> point.rho,
             )
@@ -325,10 +337,33 @@ function figure_r2()
                 label="δ = $delta",
             )
         end
+        boundary_interval = monte_carlo_interval(
+            boundary_cells[model.label]["outcome_seed_values"][title]
+        )
+        rangebars!(
+            axis,
+            [1.0],
+            [boundary_interval.lower],
+            [boundary_interval.upper];
+            color=(:gray25, 0.8),
+            linewidth=1.1,
+            whiskerwidth=7,
+        )
+        scatter!(
+            axis,
+            [1.0],
+            [boundary_interval.mean];
+            color=:gray25,
+            marker=:diamond,
+            markersize=9,
+            strokewidth=0.4,
+            strokecolor=:gray20,
+            label="ρ = 1 boundary",
+        )
         model_index == 1 &&
             local_row == 1 &&
             column == 1 &&
-            axislegend(axis, "Regime gain"; position=:lb, LEG_KW...)
+            axislegend(axis, "Difficulty"; position=:lb, LEG_KW...)
     end
     Label(fig[1:2, 0], "NN"; rotation=pi / 2, fontsize=20, font=:bold)
     Label(fig[3:4, 0], "Paired Ridge"; rotation=pi / 2, fontsize=20, font=:bold)

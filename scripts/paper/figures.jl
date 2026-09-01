@@ -3,28 +3,34 @@
 
 Figure assets for the paper's results section. TeX figure numbers follow their
 placement in `paper/section_source.tex`; the asset filenames remain stable.
-Reads ONLY output/main/figdata.jld2 (the small derived dataset written by
-scripts/paper/figdata.jl on the cluster), so figures render locally with no
-access to the sweep. CairoMakie only; no simulation; no hard-coded results
+Reads only the small derived datasets `output/main/figdata.jld2` and
+`output/ridge/ablations/figdata.jld2`, which are written on the cluster, so
+figures render locally with no access to the sweeps. CairoMakie only; no
+simulation; no hard-coded results
 (literal constants are display conventions only). Outputs print-resolution PNGs
 to output/main/figs/ and the display-convention keys to output/main/figmeta.tex.
 
   fig1_dynamics       baseline dynamics
+  fig_information_sources
+                      sources of the broker's ranking advantage
   fig2_grid_lines     six outcomes across the rho x delta grid, lines per delta
                       with 95% Monte Carlo interval whiskers
   fig3_position_work  betweenness & access over time at baseline + cross-regime scatter
   fig4_advantage      structural measures vs informational/output gaps
 
-Usage: julia --project scripts/paper/figures.jl
+Usage: julia --project --threads=auto scripts/paper/figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
-using Statistics: mean
+using Statistics: mean, median
 
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figs"))
+const INFORMATION_FIGDATA = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figdata.jld2")
+)
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
 # Display conventions, quoted in the captions (paper/captions.tex) via the keys
@@ -48,12 +54,8 @@ const DELTA_COLORS = Dict(
     0.75 => :darkorange,
     1.0 => :firebrick,
 )
-const ETA_PALETTE = Makie.to_color.(
-    ["#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677"]
-)
-const RHO_MARKERS = Dict(
-    0.0 => :circle, 0.5 => :rect, 0.85 => :diamond, 1.0 => :utriangle
-)
+const ETA_PALETTE = Makie.to_color.(["#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677"])
+const RHO_MARKERS = Dict(0.0 => :circle, 0.5 => :rect, 0.85 => :diamond, 1.0 => :utriangle)
 
 const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
@@ -65,6 +67,14 @@ FD["meta"]["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
     error("main figure data were extracted by a different analysis commit")
 FD["meta"]["analysis_source_clean"] == true ||
     error("main figure data were extracted from dirty analysis sources")
+isfile(INFORMATION_FIGDATA) ||
+    error("missing Ridge ablation figure data: $INFORMATION_FIGDATA")
+const INFORMATION_FD = JLD2.load(INFORMATION_FIGDATA)["figdata"]
+const INFORMATION_META = INFORMATION_FD["meta"]
+INFORMATION_META["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
+    error("Ridge ablation figure data were extracted by a different analysis commit")
+INFORMATION_META["analysis_source_clean"] == true ||
+    error("Ridge ablation figure data were extracted from dirty analysis sources")
 const PER = FD["period"]
 const SER = FD["series"]
 const SER_SEEDS = FD["series_seed_values"]
@@ -111,6 +121,121 @@ function draw_interval_series!(
     else
         lines!(axis, x, estimate; color, linewidth, linestyle, keywords...)
     end
+    return nothing
+end
+
+function fig_information_sources()
+    models = (
+        (key="pair", label="Paired\nRidge", color=:black),
+        (key="size_matched", label="Size-\nmatched", color=:darkorange),
+        (key="single_principal", label="One\nendpoint", color=:seagreen),
+        (key="additive", label="Additive", color=:steelblue),
+    )
+    variants = models[2:end]
+    conditions = INFORMATION_FD["conditions"]
+    length(conditions) == INFORMATION_META["n_conditions"] == 26 ||
+        error("expected 26 Ridge ablation figure conditions")
+    baseline = only(
+        filter(
+            condition -> condition["result_reldir"] == INFORMATION_META["baseline_reldir"],
+            conditions,
+        ),
+    )
+    length(baseline["seeds"]) == 50 || error("expected 50 baseline ablation seeds")
+    all(
+        length(condition["seeds"]) ==
+        (condition["result_reldir"] == INFORMATION_META["baseline_reldir"] ? 50 : 20) for
+        condition in conditions
+    ) || error("unexpected Ridge ablation seed plan")
+
+    pair_baseline = baseline["rank_gaps"]["pair"]
+    baseline_intervals = [
+        paired_monte_carlo_interval(pair_baseline, baseline["rank_gaps"][model.key]) for
+        model in variants
+    ]
+    condition_values = Dict(
+        model.key => [
+            monte_carlo_interval(condition["rank_gaps"][model.key]).mean for
+            condition in conditions
+        ] for model in models
+    )
+
+    fig = Figure(; size=(1180, 520))
+    axis_style = (;
+        titlesize=TITLE_FS - 4,
+        ylabelsize=LABEL_FS - 2,
+        xticklabelsize=TICK_FS - 2,
+        yticklabelsize=TICK_FS - 2,
+    )
+    ax_baseline = Axis(
+        fig[1, 1];
+        title="A. Baseline change from paired Ridge",
+        ylabel="Change in broker - principal rank gap",
+        xticks=(1:length(variants), [model.label for model in variants]),
+        axis_style...,
+    )
+    hlines!(ax_baseline, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.4)
+    for (index, (model, interval)) in enumerate(zip(variants, baseline_intervals))
+        rangebars!(
+            ax_baseline,
+            [index],
+            [interval.lower],
+            [interval.upper];
+            color=model.color,
+            linewidth=1.6,
+            whiskerwidth=12,
+        )
+        scatter!(
+            ax_baseline,
+            [index],
+            [interval.mean];
+            color=model.color,
+            marker=:diamond,
+            markersize=15,
+            strokecolor=:gray20,
+            strokewidth=0.5,
+        )
+    end
+
+    ax_conditions = Axis(
+        fig[1, 2];
+        title="B. Across matching conditions",
+        ylabel="Broker - principal rank gap",
+        xticks=(1:length(models), [model.label for model in models]),
+        axis_style...,
+    )
+    hlines!(ax_conditions, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.4)
+    for condition_index in eachindex(conditions)
+        lines!(
+            ax_conditions,
+            1:length(models),
+            [condition_values[model.key][condition_index] for model in models];
+            color=(:gray45, 0.20),
+            linewidth=0.8,
+        )
+    end
+    for (index, model) in enumerate(models)
+        values = condition_values[model.key]
+        scatter!(
+            ax_conditions,
+            fill(index, length(values)),
+            values;
+            color=(model.color, 0.58),
+            markersize=6,
+        )
+        scatter!(
+            ax_conditions,
+            [index],
+            [median(values)];
+            color=model.color,
+            marker=:diamond,
+            markersize=16,
+            strokecolor=:gray20,
+            strokewidth=0.6,
+        )
+    end
+    colgap!(fig.layout, 26)
+    savefig("fig_information_sources.png", fig)
     return nothing
 end
 
@@ -171,12 +296,10 @@ function fig3_position_work()
         ys = betweenness[indices]
         rhos = rho[indices]
         xintervals = [
-            monte_carlo_interval(cells[index]["seed_values"]["access"]) for index in
-            indices
+            monte_carlo_interval(cells[index]["seed_values"]["access"]) for index in indices
         ]
         yintervals = [
-            monte_carlo_interval(cells[index]["seed_values"]["betw"]) for index in
-            indices
+            monte_carlo_interval(cells[index]["seed_values"]["betw"]) for index in indices
         ]
         errorbars!(
             axc,
@@ -198,9 +321,7 @@ function fig3_position_work()
             whiskerwidth=5,
         )
         interior = findall(rhos .< 1.0)
-        lines!(
-            axc, xs[interior], ys[interior]; color=eta_colors[value], linewidth=2.2
-        )
+        lines!(axc, xs[interior], ys[interior]; color=eta_colors[value], linewidth=2.2)
         for (r, x, y) in zip(rhos, xs, ys)
             scatter!(
                 axc,
@@ -215,8 +336,7 @@ function fig3_position_work()
         end
     end
     eta_elements = [
-        LineElement(; color=eta_colors[value], linewidth=3) for
-        value in eta_values
+        LineElement(; color=eta_colors[value], linewidth=3) for value in eta_values
     ]
     rho_values = sort(unique(rho))
     rho_elements = [
@@ -231,11 +351,8 @@ function fig3_position_work()
     Legend(
         fig[1, 3],
         [eta_elements, rho_elements],
-        [
-            ["η = $value" for value in eta_values],
-            ["ρ = $value" for value in rho_values],
-        ],
-        ["turnover rate", "matching composition"],
+        [["η = $value" for value in eta_values], ["ρ = $value" for value in rho_values]],
+        ["turnover rate", "matching composition"];
         labelsize=LABEL_FS,
         titlesize=LABEL_FS,
         patchsize=(18, 13),
@@ -246,16 +363,20 @@ function fig3_position_work()
     savefig("fig3_position_work.png", fig)
 end
 
-# ── Matching grid: six outcomes vs rho, one line per delta (rho = 1 included) ──
+# ── Matching grid: six outcomes vs rho, with rho = 1 as a separate boundary ──
 function fig2_grid_lines()
     gcells = FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gcells]))
     cells = Dict((c["rho"], c["delta"]) => c for c in gcells)
+    boundary_cells = [c for c in gcells if c["rho"] == 1.0]
+    length(unique(c["rel"] for c in boundary_cells)) == 1 ||
+        error("rho = 1 grid coordinates do not share one effective realization")
+    boundary_cell = first(boundary_cells)
     # 2x3: column 1 = the [0,1]-bounded structural quantities (absolute 0-1 axis);
     # columns 2-3 = the prediction and output outcomes (each panel autoscaled).
     layout = [
         "Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
-        "Access fraction" "Broker prediction R²" "Output gap q"
+        "Access fraction" "Principal rank correlation" "Output gap q"
     ]
     fig = Figure(; size=(1280, 700))
     for rr in 1:2, cc in 1:3
@@ -281,7 +402,7 @@ function fig2_grid_lines()
                             lower=interval.lower,
                             upper=interval.upper,
                         )
-                    end for ((r, dd), c) in cells if dd == d
+                    end for ((r, dd), c) in cells if dd == d && r < 1.0
                 ];
                 by=point -> point.rho,
             )
@@ -306,7 +427,28 @@ function fig2_grid_lines()
                 label="δ = $d",
             )
         end
-        rr == 1 && cc == 1 && axislegend(ax, "Regime gain"; position=:lb, LEG_KW...)
+        boundary_interval = monte_carlo_interval(boundary_cell["outcome_seed_values"][ttl])
+        rangebars!(
+            ax,
+            [1.0],
+            [boundary_interval.lower],
+            [boundary_interval.upper];
+            color=(:gray25, 0.8),
+            linewidth=1.2,
+            whiskerwidth=8,
+        )
+        scatter!(
+            ax,
+            [1.0],
+            [boundary_interval.mean];
+            color=:gray25,
+            marker=:diamond,
+            markersize=11,
+            strokewidth=0.4,
+            strokecolor=:gray20,
+            label="ρ = 1 boundary",
+        )
+        rr == 1 && cc == 1 && axislegend(ax, "Difficulty"; position=:lb, LEG_KW...)
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
@@ -428,7 +570,13 @@ end
 
 foreach(
     function_name -> function_name(),
-    (fig1_dynamics, fig2_grid_lines, fig3_position_work, fig4_advantage),
+    (
+        fig1_dynamics,
+        fig_information_sources,
+        fig2_grid_lines,
+        fig3_position_work,
+        fig4_advantage,
+    ),
 )
 # emit the display-convention keys quoted by the captions (paper/captions.tex)
 open(normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figmeta.tex")), "w") do io

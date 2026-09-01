@@ -94,7 +94,7 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Match output is symmetric and pair-level. The deterministic signal has three parts: agent general quality, pair interaction, and a regime-dependent gain applied to the interaction.
+Match output is symmetric and pair-level. The deterministic signal has three parts: agent general quality, pair interaction, and a pair-dependent multiplier applied to the interaction.
 
 \subsubsection{2a. Match quality}\label{a.-match-quality}
 
@@ -125,9 +125,9 @@ Unlike agent types, \(\mathbf c\) is not re-normalized after the perturbation.
 
 \subsubsection{2c. Match-specific interaction}\label{c.-match-specific-interaction}
 
-The interaction term is \(g(\mathbf{x}_i,\mathbf{x}_j)\,\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j\), where \(g\) is a regime-dependent gain.
+The interaction term is \(g(\mathbf{x}_i,\mathbf{x}_j)\,\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j\), where \(g\) is a pair-dependent multiplier.
 
-\(\mathbf{A}\) is a symmetric positive definite interaction matrix. Matrix \(\mathbf{A}\) gives a smooth bilinear interaction geometry, while \(\mathbf{B}\) partitions pairs into gain regimes on the same type space. \(\mathbf{A}\) and \(\mathbf{B}\) are fixed for the duration of the simulation.
+\(\mathbf{A}\) is a symmetric positive definite interaction matrix. Matrix \(\mathbf{A}\) gives a smooth bilinear interaction geometry, while \(\mathbf{B}\) divides pairs into two regions of the same type space. \(\mathbf{A}\) and \(\mathbf{B}\) are fixed for the duration of the simulation.
 
 \textbf{Base interaction.} Draw \(\mathbf{M}_A\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and set
 
@@ -139,13 +139,13 @@ Thus \(\mathbf{A}\) is symmetric positive definite and \(\operatorname{tr}(\math
 
 For an isotropic unit vector \(\mathbf{x}\), \(E[\mathbf{x}\mathbf{x}^\top]=\mathbf{I}/d\), so \(E[\mathbf{x}^\top\mathbf{A}\mathbf{x}]=\operatorname{tr}(\mathbf{A})/d=1\). This normalization fixes the average interaction scale.
 
-\textbf{Regime-dependent gain.} A second symmetric matrix \(\mathbf{B}\in\mathbb{R}^{d\times d}\) defines
+\textbf{Difficulty parameter.} A second symmetric matrix \(\mathbf{B}\in\mathbb{R}^{d\times d}\) defines
 
 \[g(\mathbf{x}_i, \mathbf{x}_j) = 1 + \delta \cdot \text{sign}(\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j)\]
 
 where \(\delta\in[0,1]\) (default 0.5).
 
-The regime depends only on the sign of \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j\). Positive gives gain \(1+\delta\), negative gives \(1-\delta\), and zero gives gain 1. Because \(\mathbf{B}\) is symmetric, the gain is symmetric in \(i\) and \(j\).
+The multiplier depends only on the sign of \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j\). Positive gives \(1+\delta\), negative gives \(1-\delta\), and zero gives 1. At \(\delta=0\), the boundary between the two regions has no effect. As \(\delta\) increases, crossing it changes the interaction more sharply, which makes the complementarity component harder to learn. Because \(\mathbf{B}\) is symmetric, the multiplier is symmetric in \(i\) and \(j\).
 
 The regime matrix \(\mathbf{B}\) is constructed so the regime split is not a rescaling of the base interaction on the realized type distribution. Let
 

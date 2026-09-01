@@ -1,8 +1,10 @@
-# Generated scientific outputs
+# Scientific outputs and research notes
 
 This directory is the single canonical location for generated reports,
 figures, result tables, and figure-input datasets. Hand-edited TeX sources are
-under `paper/`; generator and build scripts are under `scripts/`.
+under `paper/`; generator and build scripts are under `scripts/`. Explicitly
+labeled research notes may also be preserved here beside the outputs that
+motivate them. They are not generated results or manuscript claims.
 
 ## Main results
 
@@ -42,6 +44,9 @@ builders reject inputs produced by a different commit.
 - [Ridge ablation report](ridge/ablations/ridge_ablation_experiment.pdf)
 - [Figure RA1: Ridge ablation contrasts](ridge/ablations/results/ridge_ablations.png)
 - [Figure RA2: Ridge ablation grid](ridge/ablations/results/ridge_ablation_grid.png)
+- [Research note: broker exploitation and principal learning](ridge/ablations/explore_exploit_research_note.md),
+  a hand-authored hypothesis and proposed experimental design, not a generated
+  result or manuscript claim
 
 ## Canonical generators
 

@@ -1,8 +1,8 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-08-31 00:41
+% Built by scripts/paper/build_section.jl on 2026-08-31 16:44
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge values + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit 96c5e37; clean sources.
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit d5cb1b8; clean sources.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -33,7 +33,7 @@ one wants to represent.
 Pseudo-code and complete specifications for the model are included as
 \textbf{Appendix A and B}, respectively, and the code base for the project,
 implemented in Julia, is publicly available at
-\texttt{https://github.com/m-laprise/transientbrokerage}. It includes the
+\texttt{https://github.com/m-laprise/brokerage-abm}. It includes the
 scripts needed to reproduce the experiments that generated the data
 analyzed in this section, extract every number mentioned, create the
 figures and tables, and generate the results section in its entirety.
@@ -47,6 +47,22 @@ satisfaction score for each channel; principals who have never used the
 broker rely on its reputation (average satisfaction of current clients).
 After each period, each agent exits with probability $\eta$ and is
 replaced by a fresh entrant.
+
+The schematic below summarizes initialization and the within-period sequence;
+the mechanisms are described in detail afterward.
+
+\begin{center}
+\centering
+\includegraphics[width=\linewidth]{figs/model_overview.pdf}
+\begin{minipage}{0.96\linewidth}
+\small\textbf{Model overview.} Initialization creates the period-0 market
+state. Each period, principals choose a search channel, eligible prediction
+models update, and the two channels construct separate candidate
+rankings. All offers then enter a shared market. Realized matches update
+histories, network ties, satisfaction, and broker reputation. Measures are
+recorded before turnover, after which the next period begins.
+\end{minipage}
+\end{center}
 
 \emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
 fixed type, a vector of observable characteristics. A realized match
@@ -144,8 +160,10 @@ simulated market. In the baseline regime,
 $N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
 $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
 initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
-self-search pool size $n_{\mathrm{strangers}}=10$; the first 30 periods of each
-run are treated as burn-in. Around this baseline, I vary one parameter at a time
+self-search pool size $n_{\mathrm{strangers}}=10$. The simulation retains all
+periods, but time-series displays begin at $t=30$ to omit the initialization
+transient. This display cutoff does not change the simulation or the late-period
+estimands. Around this baseline, I vary one parameter at a time
 ($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
 $\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
@@ -197,7 +215,7 @@ baseline and across regimes.
 \includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
 \caption{\textbf{Baseline dynamics.} Lines are 5-observation rolling ensemble means over seeds at the
 baseline regime; ribbons are pointwise 95\% Monte Carlo intervals. Axes start
-at $t=30$.}
+at $t=30$ to omit the initialization transient.}
 \label{fig:dynamics}
 \end{figure}
 
@@ -291,10 +309,11 @@ one-at-a-time sweep, $\delta=0.5$), while at fixed $\rho=0.5$ it moves little wi
 the complexity of the complementarity component (0.81, 0.83,
 0.83 at
 $\delta=0,0.5,0.75$). The access fraction moves the opposite way from the centrality
-(0.10 at $\rho=0$ against 0.17 at $\rho=1$). Under pure
-complementarity ($\rho=0$), the
-broker is more central but, in practice, bridges less: a larger share of its
-matches re-pair principals already tied to each other.
+(0.10 at $\rho=0$ against 0.17 at $\rho=1$). The
+$\rho\times\eta$ grid shows the same conditional relationship at every turnover
+rate: moving from $\rho=0$ to $\rho=0.85$ raises access and lowers centrality.
+Under pure complementarity ($\rho=0$), the broker is more central but bridges less:
+a larger share of its matches re-pair principals already tied to each other.
 
 Meanwhile, the prediction measures vary with the complexity of the complementarity
 component, $\delta$. Ordering is what the broker
@@ -344,8 +363,8 @@ channel minus self-search.}
 \label{fig:grid}
 \end{figure}
 
-\subsection{Value is created through assessment, not access: some brokers become
-most central when they bridge the least}
+\subsection{When Value Comes From Assessment, Not Access: brokers can be highly
+central while doing little bridging}
 
 In almost all regimes, the broker's structural position strengthens over time while
 the agent network thins. At the baseline, mean agent degree falls
@@ -355,19 +374,35 @@ broker's betweenness centrality rises (0.61 to
 regimes (Fig.~\ref{fig:position}). Agent turnover removes ties about as
 fast as they appear, and the network does not densify: agent degree falls over time
 in 80 of 98 regimes. This raises a crucial question:
-why is the structural advantage not self-liquidating, even at low turnover (at
-$\eta=0.01$, betweenness centrality still rises from 0.46 to
-0.74)?
+why is the structural advantage not self-liquidating, even below the baseline
+turnover rate (at $\eta=0.01$, betweenness centrality still rises from
+0.46 to 0.74)?
 
-The answer comes from the fact that structural position is endogenous, produced by
-which agents form ties and which agents go to the broker. The broker is tied to a
-rotating set of clients and roster members and lies on the shortest path between
-any two of them not directly connected. A brokered match adds a new
-agent-to-agent tie, after which the broker no longer lies on the pair's shortest
-path, only when the two were not already connected. Hence the broker's work
-densifies the network only when it
-provides access, not when it provides assessment, and across regimes access is
-rare and falling over time (Fig.~\ref{fig:position}).
+Assessment and access have opposite effects on the broker's structural position.
+The broker lies on the shortest path between clients and roster members who are not
+directly connected. An assessment match pairs principals who already have a tie,
+so it does not add a direct path or eliminate the broker's position between other
+agents. An access match creates a new agent-to-agent tie. For that pair, the broker
+ceases to be the shortest connection. Assessment therefore allows the broker to
+serve the market without eroding the network structure that makes it central,
+whereas access consumes that structural opportunity.
+
+Turnover replenishes structural opportunity. It removes agents and their
+accumulated ties, then introduces entrants without established connections. The
+$\rho\times\eta$ grid separates this effect from the composition of the matching
+problem (Fig.~\ref{fig:position}). At every $\rho$, increasing turnover raises both
+the access fraction and broker centrality. At every turnover rate, moving from
+$\rho=0$ to $\rho=0.85$ raises access but lowers centrality. The sensitivity is
+substantial but nonlinear: holding other parameters at baseline, increasing
+$\eta$ from 0 to 0.03 lowers late mean agent degree from 85.6 to
+16.6 and raises broker centrality from 0.11 to
+0.84, with most of the change occurring between $\eta=0.001$ and
+$0.01$. Thus, the broker becomes highly central only when agents enter and leave
+often enough to prevent the network from filling up with lasting ties. Turnover
+and matching composition therefore generate different relationships between
+access and centrality: turnover recreates gaps in the network, while movement
+toward general quality makes the broker's work more likely to fill those gaps with
+direct ties.
 
 \begin{figure}[t]
 \centering
@@ -375,43 +410,44 @@ rare and falling over time (Fig.~\ref{fig:position}).
 \caption{\textbf{Broker centrality and access fraction.} Left: broker betweenness centrality and access fraction over time at the
 baseline, as 5-observation rolling ensemble means over
 seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
-20 periods. Right: one dot
-per one-at-a-time regime, each a late-window mean over that regime's
-seeds. Time starts at $t=30$ (end of burn-in).}
+20 periods. Right: all 20 combinations in the $\rho\times\eta$
+grid, with other parameters held at baseline, each shown as a late-window mean
+over that regime's seeds. Color identifies turnover $\eta$, marker shape
+identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes.
+Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary
+$\rho=1$, where complementarity is absent, is shown unconnected. Time-series
+panels begin at $t=30$ to omit the
+initialization transient.}
 \label{fig:position}
 \end{figure}
 
-The pure-quality regimes ($\rho=1$) come closest to escaping
-this logic: principals there match well on
-their own, outsourcing is somewhat lower (0.88 against
-0.92 at $\rho=0$, late means), and brokered matches are twice as
-often access (0.13 against 0.08). Yet, in these
-regimes, the broker's position does not really self-liquidate, as it never
-accumulates in the first place: broker centrality is far lower to begin with (a
-late mean of
-0.12 across $\rho=1$ regimes, against 0.83 at
-baseline) and stalls rather than rises. The access share still declines within
-runs, and the network still thins in 9 of 11 such
-regimes (the exceptions above to the co-movement between agent degree and
-broker centrality are of this type). Only
-in the pure-quality regime with the highest reservation threshold ($f_r=1.2$) does
-mean agent degree rise over time. Identifying regimes in which brokered
-access dominates and densification erodes the broker's position, if any, remains an
-open question.
+The pure-quality boundary ($\rho=1$) isolates the endpoint of this relationship.
+Principals there match well on their own, outsourcing is somewhat lower
+(0.88 against 0.92 at $\rho=0$, late means), and brokered
+matches are twice as often access (0.13 against
+0.08). Broker centrality is nevertheless far lower, with a late
+mean of 0.12 across $\rho=1$ regimes against
+0.83 at baseline. Higher turnover raises both access and
+centrality within the pure-quality boundary, but centrality remains below that of
+the complementarity-heavy regimes at the same turnover rate. The broker does not
+begin highly central and then lose its position as access ties accumulate. It
+never accumulates a comparable position. Within runs, the access share still
+declines, and the network thins in 9 of 11 pure-quality
+regimes.
 
-The broker's structural advantage across regimes, measured by
-betweenness centrality, is negatively correlated with the access fraction
-(Fig.~\ref{fig:advantage}): the broker is most central where it bridges
-least. Bridging opportunity and bridging behavior thus move in opposite directions
-across regimes, another counter-intuitive pattern in light of existing theory.
-Clients value the broker's assessment services and outsource in large numbers, and
-the broker's ties to its many clients are what make it central; its advantageous
-position, however, does not correlate with making more access matches. Because
-access is low throughout (a late mean of 0.11 across
-regimes, declining within runs), the densifying effect of the broker's
-work is weak and its
-structural advantage persists. Where brokering is assessment rather than
-access, self-liquidation of the structural advantage need not arise.
+The broker can therefore be highly central while doing little bridging, but low
+access alone does not make it central. With little turnover, principals retain
+their accumulated ties, and both access and broker centrality remain low. With
+moderate or high turnover, complementarity-heavy regimes combine renewed gaps in
+the network with brokerage that primarily assesses existing relationships. These
+are the regimes in which the broker becomes most central. Moving toward general
+quality makes brokered matches more likely to provide access, creating direct ties
+that leave the broker less central. High centrality thus requires a continuing
+supply of structural gaps, supplied here by recurrent turnover, together with
+brokerage that fills requested positions mainly through assessment. Because access
+remains low overall (a late mean of
+0.11 across regimes and declining within runs), the broker's
+work does little to eliminate the structural basis of its own position.
 
 \begin{figure}[t]
 \centering
@@ -422,19 +458,19 @@ dot per regime, each a late-window mean over that regime's seeds.}
 \label{fig:advantage}
 \end{figure}
 
-Across regimes (late means), the realized output gap is positively
-correlated with broker betweenness centrality, but negatively with the
-access fraction and the broker's holdout rank correlation
-(Fig.~\ref{fig:advantage}). This is particularly true along the dimension of
-changes in the matching problem. Complementarity-dominated regimes ($\rho=0$) are
-sparse
-and brokered-assessment-heavy: principals hold fewer ties, outsource more of their
-demand, and the broker is at once most central and most valuable, while providing
+Across effective realizations (late means), the broker's output advantage is
+greatest in the complementarity-heavy regimes where it is most central and provides
+relatively little access (Fig.~\ref{fig:advantage}). This pooled association is
+driven by the composition of the matching problem, not by a uniformly negative
+relationship between access and centrality. Turnover raises access and centrality
+together, while movement toward general quality raises access and lowers
+centrality. Complementarity-dominated regimes ($\rho=0$) are sparse and
+brokered-assessment-heavy: principals hold fewer ties, outsource more of their
+demand, and the broker is at once most central and most valuable while providing
 the least access (Table~\ref{tab:rhogroups}; Fig.~\ref{fig:advantage}).
-Quality-dominated regimes ($\rho=1$)
-sit at the other end of each of these measures, with the baseline regime in
-between. Structural opportunity thus accumulates exactly where the broker's
-matches are worth the most.
+Quality-dominated regimes ($\rho=1$) sit at the other end of each of these
+measures. Structural opportunity and broker value accumulate together where
+turnover renews network gaps and matching depends on complementarity.
 
 \begin{table}[t]
 \centering\small

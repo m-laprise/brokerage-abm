@@ -15,22 +15,39 @@ Left: broker betweenness centrality and access fraction over time at the
 baseline, as \pv{rollWin}-observation rolling ensemble means over
 seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
 \pv{betwInterval} periods. Right: all 20 combinations in the $\rho\times\eta$
-grid, with other parameters held at baseline, each shown as a late-window mean
-over that regime's seeds. Color identifies turnover $\eta$, marker shape
-identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes.
+grid, with other parameters held at baseline, including $\delta=0.5$, each shown
+as a late-window mean over that regime's seeds. Color identifies turnover $\eta$,
+marker shape identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on
+both axes.
 Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary
 $\rho=1$, where complementarity is absent, is shown unconnected. Time-series
 panels begin at $t=\pv{axisStart}$ to omit the
 initialization transient.
 \end{pcaption}
 
+\begin{ptitle}{information}
+Sources of the broker's ranking advantage
+\end{ptitle}
+\begin{pcaption}{information}
+Panel A shows each Ridge restriction's change in the broker-minus-principal rank gap
+relative to paired Ridge at the baseline. Points are mean common-seed differences;
+whiskers are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the
+absolute rank gap under paired Ridge and each restriction across the
+\pv{ablationConditionN} regimes in the baseline and $\rho\times\delta$ design.
+Thin lines connect the same regime, small points are regime means, diamonds are
+medians, and the horizontal line marks zero.
+\end{pcaption}
+
 \begin{ptitle}{grid}
 Outcomes across the matching problem ($\rho\times\delta$)
 \end{ptitle}
 \begin{pcaption}{grid}
-Six outcomes across the $\rho\times\delta$ grid; one line per gain
-$\delta$, one marker per regime, each a late-window mean over that regime's seeds.
-Whiskers are 95\% Monte Carlo intervals.
+Six outcomes across the $\rho\times\delta$ grid; one line per difficulty level
+$\delta$, each spanning $\rho=0$ through $0.85$. The pure-quality boundary
+$\rho=1$, where $\delta$ has no effect, is one separate regime shown once and
+unconnected. The figure therefore displays all 26 regimes in the design. Each
+marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte
+Carlo intervals.
 The rank-correlation gap is broker minus principals; the output gap, broker
 channel minus self-search.
 \end{pcaption}
@@ -41,7 +58,8 @@ Prediction and output gaps vs centrality and access
 \begin{pcaption}{advantage}
 Rank-correlation gap (broker minus principals) and output gap (broker channel
 minus self-search) against broker betweenness centrality and access fraction; one
-dot per regime, each a late-window mean over that regime's seeds.
+dot per regime, each a late-window mean over its seeds. Color
+identifies matching composition $\rho$.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}

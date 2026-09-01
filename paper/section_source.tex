@@ -76,16 +76,17 @@ complementarity term that depends on the interaction of the two types:
 even two high-quality agents can make a bad match. At $\rho=1$ match value
 is pure general quality, at $\rho=0$ it is pure complementarity.
 
-\emph{Complexity of the matching problem} (Appendix B \S2c). A gain $\delta$
-sets how complex the prediction problem is by modulating the
-complementarity term up or down by a fixed amount depending on which of
-two regions of type-pair space a pair falls into, with the regions
-constructed to add structure to the problem. The effect is to raise the
-number of independent components needed to describe how match value
-varies across pairs. The gain $\delta$ acts only on the complementarity term
-and has no effect at $\rho=1$, where match value is pure general quality.
+\emph{Difficulty of the matching problem} (Appendix B \S2c). The parameter
+$\delta$ determines how difficult the complementarity component is to learn. A
+pair's smooth interaction, $\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j$, is
+multiplied by $1+\delta$ on one side of a sharp boundary in type-pair space and
+by $1-\delta$ on the other. At $\delta=0$ the boundary has no effect. As
+$\delta$ increases, crossing it changes match value more sharply, so a learner
+must recover both the smooth interaction and which side of the boundary a pair
+occupies. The parameter acts only on complementarity and has no effect at
+$\rho=1$, where match value is pure general quality.
 
-\emph{Data collection and learning} (Appendix A \S3, algorithms 2 and 3;
+\emph{Data collection and learning} (Appendix A \S3, algorithms 2--4;
 Appendix B \S3). Principals record their own match history, with the type
 of each partner and the realized output of the pairing, brokered or not.
 The broker records the matches it mediates, with the type of both
@@ -102,21 +103,29 @@ As a robustness experiment, I repeat the complete design with Ridge regression
 replacing both neural networks. Principals regress output on the candidate's
 type; the broker uses the same symmetric additive and bilinear pair features as
 in the main model. Histories, training window, observation cap, fitting cadence,
-and reporting seeds are unchanged. Baseline calibration on 10 seeds excluded
-from reporting selected $\lambda_a=0.003$ for principals and
+and reporting seeds are unchanged. Calibration on 10 baseline seeds excluded from
+reporting selected $\lambda_a=0.003$ for principals and
 $\lambda_b=0.001$ for the broker. This tests whether neural-network flexibility
-is necessary for the broker's ranking advantage; it does not equalize the
-learners' data or feature representations.
+is necessary for the broker's ranking advantage. It does not yet distinguish
+whether that advantage comes from how much data the broker has or what those data
+contain.
+
+To identify what about the broker's data produces this advantage, I run three
+additional Ridge versions at the baseline and on the $\rho\times\delta$ design.
+One limits the broker to no more observations than a typical principal. Another
+retains information about only one randomly selected party from each past match.
+The third retains both parties but omits the interaction between their types.
+Principal learning and all other settings are unchanged.
 
 \emph{Search and match formation} (Appendix B \S\S6--7). Self-search draws on
 known network neighbors and a small random pool of strangers; brokered
-search, on the broker's standing roster and current clients. Agents use
-their prediction functions to rank potential candidates and offers are
-made to the top ones. For known partners, principals use the mean of
-their past experiences with them as the predicted value. Offers above
-the reservation threshold are accepted. When a match is made, its output
-is realized and both parties form a direct tie. Ties persist until one
-of the agents exits.
+search, on the broker's standing roster and current clients. Predicted values
+rank potential candidates; ties are ordered uniformly at random, so a constant
+predictor still produces a random ranking. Offers are made to the top candidates.
+For known partners, principals use the mean of their past experiences with them as
+the predicted value. Offers above the reservation threshold are accepted. When a
+match is made, its output is realized and both parties form a direct tie. Ties
+persist until one of the agents exits.
 
 \emph{Economics} (Appendix B \S4). A match's realized output is its per-period
 value to each party. All quantities (reservation threshold, fees, search
@@ -131,8 +140,9 @@ Satisfaction scores net out costs or fees.
 These modeling choices are the formal counterpart of the theoretical
 claims made above. Decomposing match output into general-quality and
 complementarity separates the attributional channel from the relational
-one. A principal learns from its own one-sided history, while the broker
-learns from both sides of matches and pools across clients.
+one. A principal learns from its own matches and observes only its
+counterpart's type, while the broker pools mediated matches across clients and
+observes both parties' types in each match.
 
 \emph{Measurement} (Appendix B \S8). Diagnostic measures are recorded every
 period. In this article, structural position is measured as the broker's
@@ -143,20 +153,23 @@ potential. The results would be substantively similar if examining the
 ego-network measures of Burt's constraint and effective size (Borgatti
 1997; Burt 1992; Everett and Borgatti 2020); an alternative set of
 figures to that effect is included as Supplementary Material. The access
-fraction is the share of standard brokered matches in which the
-counterparty was not already tied to the demander. Prediction quality is
-measured on deterministic random-partner holdout samples evaluated
-against noiseless true output: Spearman rank correlation measures
+fraction is the share of brokered matches in which the counterparty was not
+already tied to the demander. Prediction quality is measured on deterministic
+random-partner holdout samples evaluated against noiseless true output. Holdout
+evaluation reproduces the model's candidate-ranking behavior, including random
+ordering of tied predictions. Spearman rank correlation measures
 whether predictions order possible matches correctly, while $R^2$
 measures level accuracy; gaps subtract the principal value from the
 broker value. $R^2$ varies much more because its finite-holdout denominator
-is realized-output variance, so modest prediction errors can produce extreme
-negative values when that variance is small. This volatility does not affect
-model behavior or the conclusions based on ranking, matching, and realized
-output because $R^2$ is diagnostic only and never enters a decision rule.
+is the variance of noiseless holdout outputs, so modest prediction errors can
+produce extreme negative values when that variance is small. This volatility does
+not affect model behavior or the conclusions based on ranking, matching, and
+realized output because $R^2$ is diagnostic only and never enters a decision rule.
 
 \emph{Results}. All results are computed from a parameter sweep of the
-simulated market. In the baseline regime,
+simulated market. A regime is one scientifically distinct parameter configuration;
+duplicate grid coordinates and inactive parameters do not create additional
+regimes. In the baseline regime,
 $N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
 $\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
 initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
@@ -175,13 +188,16 @@ $\rho\times f_r$ refinement over
 $\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
 $\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
 $\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
-one-at-a-time levels. The design comprises \pv{nRegimes} regimes, with
+one-at-a-time levels. The design comprises \pv{nRegimes} regimes. Repeated grid
+coordinates that resolve to the same configuration belong to one regime,
+including $\rho=1$ coordinates where $\delta$ is inactive. There are
 \pv{nGeneralSeeds} independent seeds generally and
-\pv{nBaselineSeeds} at the baseline (\pv{nRuns} runs in total). Reported statistics are
-ensemble means over seeds, summarized by time averages over fixed windows within a
-run: late means over the final 20 periods ($t\in[481,500]$), used for all reported
-levels unless noted otherwise, and early means over $t\in[50,70]$, to quantify
-within-run drift. Full parameter values are given in Appendix~B~\S10.
+\pv{nBaselineSeeds} at the baseline (\pv{nRuns} runs in total). Within each
+regime, outcomes are averaged over a fixed time window within each seed and
+then across seeds. Late means use the final 20 periods ($t\in[481,500]$) for all
+reported levels unless noted otherwise; early means use $t\in[50,70]$ to quantify
+within-run drift. Cross-regime summaries give each regime equal weight. Remaining
+baseline parameter values are given in Appendix~B~\S9.
 Monte Carlo convergence was assessed by comparing estimates from the first 10
 seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
 baseline, and by computing Student-$t$ 95\% intervals from seed-level
@@ -190,25 +206,26 @@ the figures, median relative interval half-widths across conditions ranged from
 \pv{mcCiMedianMinPercent}\% to \pv{mcCiMedianMaxPercent}\%; median relative
 nested-seed changes ranged from \pv{mcNestedMedianMinPercent}\% to
 \pv{mcNestedMedianMaxPercent}\%. Relative precision uses the absolute
-full-sample estimate as its denominator; cells whose 95\% interval contains
+full-sample estimate as its denominator; regimes whose 95\% interval contains
 zero are assessed from their absolute intervals instead.
 
 \subsection{The broker primarily provides assessment, not access}
 
-Across the simulations, the broker is the dominant channel in the market.
-Principals route most demand to the broker rather than to self-search: the
-outsourcing rate as a share of demand is
-\pv{outBaselineLate} at the baseline (late mean, up from an early mean
-of \pv{outBaselineEarly}), and it stays high across regimes (late
-means of \pv{outBaseMin} to \pv{outBaseMax}). Principals prefer the broker because
-its matches are better. The realized value of broker-channel matches exceeds that
-of self-search matches in \pv{ogapBasePosN} of \pv{nRegimes} regimes, with
-an output gap (broker mean realized output minus self-search mean realized output)
-averaging $\pv{ogapBaseMean}$ across regimes (late means). This is the model's
-rendering of why relational work gets outsourced: the broker constructs better
-matches, on average, than clients do on their own. Table~\ref{tab:baseline-measures}
-collects these measures, and the assessment measures discussed below, at the
-baseline and across regimes.
+Across the tested regimes, the broker is usually the dominant channel in the
+market. The outsourcing rate as a share of demand is \pv{outBaselineLate} at the
+baseline (late mean, up from an early mean of \pv{outBaselineEarly}) and has a
+median of \pv{outBaseMed} across regimes. It exceeds one-half in
+\pv{outBaseDominantN} of \pv{nRegimes} regimes; the remaining regimes all have
+no turnover. Yet the broker primarily assesses options within the existing
+network rather than providing access beyond it. The access fraction (the share of
+brokered placements between principals with no pre-existing tie) has a late mean
+of \pv{accessAcrossBaseLate} across regimes, down from
+\pv{accessAcrossBaseEarly} early, and never exceeds \pv{accessBaseMax}. It
+declines over time in all \pv{nRegimes} regimes, with paired 95\% intervals below
+zero in all \pv{accessDeclineCIN}. Most brokered matches therefore connect
+principals already tied to each other. Figure~\ref{fig:dynamics} and
+Table~\ref{tab:baseline-measures} summarize these baseline dynamics and the main
+measures.
 
 \begin{figure}[t]
 \centering
@@ -245,110 +262,123 @@ Measure & early & late & late, median \\
 \end{tabular}
 \end{table}
 
-The broker constructs these better matches by providing assessment,
-not access. The access fraction (the share of brokered placements between two
-principals with no pre-existing tie) is low, with a late mean of
-\pv{accessAcrossBaseLate} across regimes (down from
-\pv{accessAcrossBaseEarly} early), and it declines over time in
-all regimes. Most brokered matches connect
-principals who already knew each other; the broker's contribution is to identify
-which of them pair well, not to bridge gaps in the network.
+Widespread broker use is generally, but not always, accompanied by higher realized
+output. Mean realized output is higher through the broker channel than through
+self-search in \pv{ogapBasePosN} regimes, and the output gap (broker minus
+self-search) averages $\pv{ogapBaseMean}$ across regimes (late means). Paired 95\%
+Monte Carlo intervals are above zero in
+\pv{ogapBaseCIPosN} regimes and below zero in \pv{ogapBaseCINegN}. The negative
+gaps occur in \pv{ogapBaseNegN} regimes, all with no or nearly no turnover
+($\eta\in\{0,0.001\}$). Broker use and output differ because principals choose a
+channel using satisfaction scores that include unfilled requests, fees, and search
+costs, whereas the output gap compares realized output among formed matches. The
+gap also reflects the candidates considered, offers made, and offers mutually
+accepted. Outsourcing is therefore not itself evidence that the broker always
+produces better matches.
 
-Moreover, the broker's assessment advantage comes from ranking candidates better,
-not from accurately predicting the output of potential matches. On a held-out
-sample of random partners (Appendix~A~\S8), the broker
-orders prospective pairings well (rank correlation of \pv{brokerRankBaseline} with
-the true ordering at the baseline, late mean, and
-$\pv{brokerRankBaseMean}$ on average across regimes)
-but predicts output levels poorly (holdout $R^2$ of \pv{brokerR2Baseline}
-at baseline, $\pv{brokerR2BaseMean}$ on average across regimes). Principals are
-weak on both, with a holdout rank correlation of \pv{agentRankBaseline} and a
-holdout $R^2$ of $\pv{agentR2BaselineBase}$ (baseline, late means;
-$\pv{agentRankBaseMean}$ and $\pv{agentR2BaseMean}$ on average across regimes). To pick the
-best matches, the broker's services rely on a good
-ordering of candidate pairings, even without an accurate appraisal of their
-absolute worth.
+The broker's assessment advantage appears more consistently in ranking candidates
+than in predicting output levels. On a held-out sample of random partners
+(Appendix~A~\S8), its rank correlation is \pv{brokerRankBaseline} at the
+baseline and has a median of \pv{brokerRankBaseMed} across regimes, compared with
+\pv{agentRankBaseline} and \pv{agentRankBaseMed} for principals. The
+broker-minus-principal rank gap is positive in \pv{rankGapNNPosN} of
+\pv{nRegimes} regimes. Paired 95\% intervals are above zero in
+\pv{rankGapNNCiPosN} regimes and below zero in only \pv{rankGapNNCiNegN}. The two
+nonpositive point estimates occur on the hardest pure-complementarity problems
+discussed below.
+The broker's level accuracy is less consistent, but not uniformly poor: its
+holdout $R^2$ is \pv{brokerR2Baseline} at baseline, has a median of
+\pv{brokerR2BaseMed} across regimes, and is positive in
+\pv{brokerR2PositiveN} of \pv{nRegimes} regimes. Candidate selection requires a
+useful ordering, not an accurate prediction of each candidate's absolute output.
 
-The ordering advantage is not an artifact of neural-network flexibility. With
-Ridge learning, the late broker-minus-principal rank-correlation gap is
-\pv{ridgeBaselineGap} at the baseline and has a median of
-\pv{ridgeMedianGap} across the \pv{ridgeNConditions} effective realizations.
-The gap is positive in all \pv{ridgePositiveN} realizations. Within the
-$\rho\times\delta$ design it narrows as $\delta$ increases, especially when
-complementarity dominates, but remains positive at every parameter coordinate
-(Supplementary Fig.~S5). Thus, within the model, a broker
-using pooled mediated-match histories and an additive-plus-bilinear pair
-representation does not require a neural network to rank candidates better
-than principals. This result does not show that pooled data alone are
-sufficient, because the Ridge broker still observes both parties and retains a
-pair representation unavailable to principals.
+Within the model, the broker's core service is choosing among accessible
+counterparties, not finding otherwise unreachable ones. Its ranking advantage
+appears under pure general quality as well as complementarity: at $\rho=1$, the
+broker-minus-principal rank gap averages \pv{rhoOneRankGapMean} and is positive in
+all \pv{rhoOneRankGapPosN} pure-quality regimes.
+The one-at-a-time checks also show that initial network degree ($k_G$), broker
+roster fraction, and the number of strangers available in self-search have
+comparatively small effects on the main economic outcomes.
 
-Within the model, the broker acts not as an appraiser of general quality
-(cf.\ Li~1998), but as a
-matchmaker who knows which parties suit each other. Its value comes from the
-ranking of complementarities, and it holds even where clients can reach
-counterparties directly.
+\subsection{The broker's information advantage comes from pooled, pair-level data}
+
+The ordering advantage does not depend on neural-network learning. When Ridge
+regression replaces both neural networks, the broker-minus-principal rank gap is
+\pv{ridgeBaselineGap} at the baseline, has a median of \pv{ridgeMedianGap} across
+the \pv{ridgeNConditions} regimes, and is positive in all \pv{ridgePositiveN}.
+The paired-Ridge broker still has more observations and retains more information
+about each pair than a principal. Three additional Ridge experiments impose the
+restrictions described above. Because each restriction changes later matching and
+learning, their effects need not add up.
+
+Pooled sample size accounts for much of the advantage
+(Fig.~\ref{fig:information-sources}). Across the \pv{ablationConditionN} regimes
+in the baseline and $\rho\times\delta$ design, the median rank gap is
+\pv{ablationPairMedianGap} under paired Ridge but only
+\pv{ablationSizeMedianGap} with a size-matched broker. The size-matched gap remains
+positive in \pv{ablationSizePositiveN} of \pv{ablationConditionN} regimes, so
+pooling is important without being the broker's only advantage.
+
+The information retained in each observation also matters. When the broker retains
+the type of only one party, the median rank gap is
+\pv{ablationSingleMedianGap} and is positive in only
+\pv{ablationSinglePositiveN} regimes. When it retains both parties only through
+the sum of their types, omitting their interaction, the corresponding figures are
+\pv{ablationAdditiveMedianGap} and \pv{ablationAdditivePositiveN}. The cost of
+omitting the interaction is greatest when complementarity matters; under pure
+general quality, it is unnecessary. The broker's information advantage therefore
+comes from both the number of observations it pools and whether each observation
+retains information about both parties and their interaction, not from
+neural-network flexibility alone.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.94\linewidth]{figs/fig_information_sources.png}
+\caption{\textbf{\pvtitle{information}.} \pvcaption{information}}
+\label{fig:information-sources}
+\end{figure}
 
 \subsection{The nature of the matching problem shapes the broker's advantage}
 \label{sec:matching-shapes}
 
 Different markets present brokers with matching problems of different kinds. In
-this model, recall that $\rho$ sets the composition of the match output, from pure
-general quality to pure complementarity, while $\delta$ controls the complexity of
-the complementarity component.
-Interestingly, across regimes, the broker's structural position tracks $\rho$
-while its prediction edge tracks $\delta$, and the two need not move together.
+this model, $\rho=0$ gives pure complementarity and $\rho=1$ gives pure general
+quality. The parameter $\delta$ increases learning difficulty by making
+complementarity payoffs change more sharply across a boundary in type-pair space.
+At $\rho=1$, complementarity disappears and $\delta$ has no effect. This endpoint
+is therefore a separate boundary condition, not a smooth continuation of the
+interior $\rho$ values. Broker centrality is governed primarily by the composition
+of match value ($\rho$). Betweenness centrality falls
+from \pv{betwRho0} at $\rho=0$ to \pv{betwRho1} at $\rho=1$, while the access
+fraction rises from \pv{accessRho0} to \pv{accessRho1} (late means along the
+one-at-a-time sweep, $\delta=0.5$). The $\rho\times\eta$ grid shows the same
+relationship at every turnover rate: moving from $\rho=0$ to $\rho=0.85$ raises
+access and lowers centrality. When complementarity dominates, the broker is more
+central even though more of its matches re-pair principals who are already tied.
 
-The structural measures vary with the composition $\rho$ and are nearly flat in the
-complexity $\delta$. Broker
-betweenness centrality is higher where matching is more complementarity-driven
-(\pv{betwRho0} at $\rho=0$ against \pv{betwRho1} at $\rho=1$; late means along the
-one-at-a-time sweep, $\delta=0.5$), while at fixed $\rho=0.5$ it moves little with
-the complexity of the complementarity component (\pv{betwDelta0}, \pv{betwDelta05},
-\pv{betwDelta075} at
-$\delta=0,0.5,0.75$). The access fraction moves the opposite way from the centrality
-(\pv{accessRho0} at $\rho=0$ against \pv{accessRho1} at $\rho=1$). The
-$\rho\times\eta$ grid shows the same conditional relationship at every turnover
-rate: moving from $\rho=0$ to $\rho=0.85$ raises access and lowers centrality.
-Under pure complementarity ($\rho=0$), the broker is more central but bridges less:
-a larger share of its matches re-pair principals already tied to each other.
+Difficulty changes the broker's informational advantage only when complementarity
+contributes substantially to match value. Under pure complementarity, increasing
+$\delta$ from 0 to 1 lowers the broker's rank correlation from
+\pv{brokerRankRho0D0} to \pv{brokerRankRho0D1} and changes the
+broker-minus-principal rank gap from \pv{rankGapRho0D0} to \pv{rankGapRho0D1}
+(Fig.~\ref{fig:grid}). This effect fades as $\rho$ approaches general quality and
+disappears at $\rho=1$ by construction. Paired 95\% intervals for the rank gap are
+above zero in \pv{gridRankGapCIPosN} of the \pv{rhoDeltaEffectiveN} regimes. Only
+the two hardest pure-complementarity conditions depart from the
+general pattern: one interval includes zero and the other is below zero. This is a
+qualification to the neural-network result, not a general failure of broker
+learning. With paired Ridge, the rank gap remains positive in every regime.
 
-Meanwhile, the prediction measures vary with the complexity of the complementarity
-component, $\delta$. Ordering is what the broker
-needs, and its rank correlation with realized output stays high across regimes
-(\pv{brokerRankD0Min} to \pv{brokerRankD0Max} on the simplest problems,
-\pv{brokerRankBaseline} at baseline, falling to \pv{brokerRankHardCorner} at
-$\rho=0$, $\delta=0.75$; Fig.~\ref{fig:grid}), well above the principals'
-throughout (\pv{agentRankBaseline} at baseline, $\pv{agentRankBaseMean}$ on average
-across regimes). Performance at predicting the
-output behaves differently from ordering: the broker's holdout $R^2$ under pure
-complementarity ($\rho=0$) is
-$\pv{brokerR2Rho0D0}$ when the output is simple but strongly negative when it is
-complex ($\pv{brokerR2Rho0D05}$ at $\delta=0.5$ and $\pv{brokerR2Rho0D075}$ at
-$\delta=0.75$, late means), worse than predicting
-the average and, on the hardest complementarity problems, worse than the principals
-(an $R^2$ gap of $\pv{r2GapHardCorner}$ at $\rho=0$, $\delta=0.75$), despite
-the broker seeing both sides of every match and pooling across the market. Ranking
-which match is better withstands difficulty far better than predicting exactly how
-good it will be, and the broker's ordering edge, though it narrows on the hardest
-complementarity problems, is what persists across different kinds of matching
-problems.
-
-In terms of realized match quality across different matching problems, the broker
-produces better matches than self-search wherever matching is
-complementarity-focused, most of all where
-it is also complex (the output gap is $\pv{ogapRho0OAT}$ at $\rho=0$, $\delta=0.5$,
-against $\pv{ogapRho1OAT}$ at $\rho=1$; late means; Fig.~\ref{fig:grid}),
-consistent with the idea that the broker matters most where match value turns on
-complementarity. This follows neither structural nor prediction measures cleanly.
-The broker's realized output
-advantage is largest exactly in regimes where its ranking advantage over principals
-is smallest,
-in the hard complementarity regimes: at $\rho=0$ the rank-correlation gap is
-\pv{rankGapRho0D0} at $\delta=0$ and \pv{rankGapRho0D075} at $\delta=0.75$ (grid,
-late means). This is likely because in practice, picking the correct winner more
-often is what really matters to realized outputs in this model, not the magnitude
-of the performance gap.
+The broker's realized output advantage is greatest when match value depends on
+complementarity. Paired 95\% intervals for the broker-minus-self-search output gap
+are above zero in all \pv{gridOutputGapCIPosN} regimes, including the two hardest
+pure-complementarity conditions. This does not imply that poorer holdout rankings
+produce better matches. Holdout rank correlation evaluates random partner sets;
+realized channel output also reflects endogenous candidate pools, offers, and
+mutual acceptance. The broker's realized-output advantage survives where its
+relative NN ranking advantage does not, but the results do not identify which
+stage of the matching process accounts for that difference.
 
 \begin{figure}[t]
 \centering
@@ -357,46 +387,42 @@ of the performance gap.
 \label{fig:grid}
 \end{figure}
 
-\subsection{When Value Comes From Assessment, Not Access: brokers can be highly
-central while doing little bridging}
+\subsection{A broker can be highly central while doing little bridging}
 
-In almost all regimes, the broker's structural position strengthens over time while
-the agent network thins. At the baseline, mean agent degree falls
-(\pv{degBaselineEarly} to \pv{degBaselineLate}, early to late means) and the
-broker's betweenness centrality rises (\pv{betwBaselineEarly} to
-\pv{betwBaselineLate}), and this co-movement holds in \pv{comoveN} of \pv{nRegimes}
-regimes (Fig.~\ref{fig:position}). Agent turnover removes ties about as
-fast as they appear, and the network does not densify: agent degree falls over time
-in \pv{degFallsN} of \pv{nRegimes} regimes. This raises a crucial question:
-why is the structural advantage not self-liquidating, even below the baseline
-turnover rate (at $\eta=0.01$, betweenness centrality still rises from
-\pv{betwEta001Early} to \pv{betwEta001Late})?
+In most regimes, the broker's structural position strengthens over time while the
+principal network thins. At the baseline, mean principal degree falls from
+\pv{degBaselineEarly} to \pv{degBaselineLate}, while broker betweenness centrality
+rises from \pv{betwBaselineEarly} to \pv{betwBaselineLate} (early to late means).
+This co-movement occurs in \pv{comoveN} of \pv{nRegimes} regimes,
+and principal degree falls in \pv{degFallsN} of them
+(Fig.~\ref{fig:position}). In most regimes, direct ties do not accumulate fast
+enough to offset turnover. The broker's structural advantage therefore does not
+self-liquidate.
 
-Assessment and access have opposite effects on the broker's structural position.
-The broker lies on the shortest path between clients and roster members who are not
-directly connected. An assessment match pairs principals who already have a tie,
-so it does not add a direct path or eliminate the broker's position between other
-agents. An access match creates a new agent-to-agent tie. For that pair, the broker
-ceases to be the shortest connection. Assessment therefore allows the broker to
-serve the market without eroding the network structure that makes it central,
-whereas access consumes that structural opportunity.
+Assessment and access explain the composition pattern above. An access match
+creates a direct tie between previously unconnected principals and can remove the
+broker from their shortest path. An assessment match reuses an existing tie, so the
+broker can serve the market without directly densifying the principal network.
+As matching shifts toward general quality, brokered access becomes more common,
+the principal network becomes denser, and broker betweenness falls sharply even
+though outsourcing remains high. The broker's access work therefore creates
+alternative paths even while principals continue to rely heavily on its services.
+Figure~\ref{fig:position} separates this composition pattern from turnover.
+Holding $\rho$ fixed, increasing turnover raises access and centrality at every
+tested $\rho$. The access fraction therefore has no uniform association with
+centrality. Turnover creates network gaps; matching composition determines how
+often brokerage closes them with direct ties.
 
-Turnover replenishes structural opportunity. It removes agents and their
-accumulated ties, then introduces entrants without established connections. The
-$\rho\times\eta$ grid separates this effect from the composition of the matching
-problem (Fig.~\ref{fig:position}). At every $\rho$, increasing turnover raises both
-the access fraction and broker centrality. At every turnover rate, moving from
-$\rho=0$ to $\rho=0.85$ raises access but lowers centrality. The sensitivity is
-substantial but nonlinear: holding other parameters at baseline, increasing
-$\eta$ from 0 to 0.03 lowers late mean agent degree from \pv{degEta0Late} to
-\pv{degEta003Late} and raises broker centrality from \pv{betwEta0Late} to
-\pv{betwEta003Late}, with most of the change occurring between $\eta=0.001$ and
-$0.01$. Thus, the broker becomes highly central only when agents enter and leave
-often enough to prevent the network from filling up with lasting ties. Turnover
-and matching composition therefore generate different relationships between
-access and centrality: turnover recreates gaps in the network, while movement
-toward general quality makes the broker's work more likely to fill those gaps with
-direct ties.
+The turnover effect is substantial but nonlinear. Holding other parameters at
+baseline, increasing $\eta$ from 0 to 0.03 lowers late mean principal degree from
+\pv{degEta0Late} to \pv{degEta003Late} and raises broker centrality from
+\pv{betwEta0Late} to \pv{betwEta003Late}, with most of the change occurring between
+$\eta=0.001$ and $0.01$. Turnover also changes realized broker value. In the
+$\rho\times\eta$ grid, the 95\% interval for the broker-minus-self-search output
+gap is below zero in \pv{qgapEta0CINegN} of \pv{rhoEtaRhoN} $\rho$ conditions at
+$\eta=0$, but above zero in \pv{qgapEta01CIPosN} of \pv{rhoEtaRhoN} by
+$\eta=0.01$. In the model, turnover supplies both structural opportunities and the
+conditions under which brokered matches outperform self-search.
 
 \begin{figure}[t]
 \centering
@@ -405,33 +431,12 @@ direct ties.
 \label{fig:position}
 \end{figure}
 
-The pure-quality boundary ($\rho=1$) isolates the endpoint of this relationship.
-Principals there match well on their own, outsourcing is somewhat lower
-(\pv{outRho1Group} against \pv{outRho0Group} at $\rho=0$, late means), and brokered
-matches are twice as often access (\pv{accessRho1Group} against
-\pv{accessRho0Group}). Broker centrality is nevertheless far lower, with a late
-mean of \pv{betwRho1Group} across $\rho=1$ regimes against
-\pv{betwBaselineLate} at baseline. Higher turnover raises both access and
-centrality within the pure-quality boundary, but centrality remains below that of
-the complementarity-heavy regimes at the same turnover rate. The broker does not
-begin highly central and then lose its position as access ties accumulate. It
-never accumulates a comparable position. Within runs, the access share still
-declines, and the network thins in \pv{rhoOneThinN} of \pv{rhoOneN} pure-quality
-regimes.
-
-The broker can therefore be highly central while doing little bridging, but low
-access alone does not make it central. With little turnover, principals retain
-their accumulated ties, and both access and broker centrality remain low. With
-moderate or high turnover, complementarity-heavy regimes combine renewed gaps in
-the network with brokerage that primarily assesses existing relationships. These
-are the regimes in which the broker becomes most central. Moving toward general
-quality makes brokered matches more likely to provide access, creating direct ties
-that leave the broker less central. High centrality thus requires a continuing
-supply of structural gaps, supplied here by recurrent turnover, together with
-brokerage that fills requested positions mainly through assessment. Because access
-remains low overall (a late mean of
-\pv{accessAcrossBaseLate} across regimes and declining within runs), the broker's
-work does little to eliminate the structural basis of its own position.
+The pure-quality boundary confirms that low access alone is not sufficient for high
+centrality. Although higher turnover raises centrality there, centrality remains
+below pure complementarity at the same turnover rate. In the tested regimes, high
+centrality occurs when turnover renews network gaps and brokerage mainly assesses
+existing relationships. Because access remains low overall and declines within
+runs, brokerage does little to eliminate the structural basis of its own position.
 
 \begin{figure}[t]
 \centering
@@ -440,35 +445,37 @@ work does little to eliminate the structural basis of its own position.
 \label{fig:advantage}
 \end{figure}
 
-Across effective realizations (late means), the broker's output advantage is
-greatest in the complementarity-heavy regimes where it is most central and provides
-relatively little access (Fig.~\ref{fig:advantage}). This pooled association is
-driven by the composition of the matching problem, not by a uniformly negative
-relationship between access and centrality. Turnover raises access and centrality
-together, while movement toward general quality raises access and lowers
-centrality. Complementarity-dominated regimes ($\rho=0$) are sparse and
-brokered-assessment-heavy: principals hold fewer ties, outsource more of their
-demand, and the broker is at once most central and most valuable while providing
-the least access (Table~\ref{tab:rhogroups}; Fig.~\ref{fig:advantage}).
-Quality-dominated regimes ($\rho=1$) sit at the other end of each of these
-measures. Structural opportunity and broker value accumulate together where
-turnover renews network gaps and matching depends on complementarity.
+Figure~\ref{fig:advantage} shows that structural position relates differently to
+relative ranking and realized value. Across otherwise matched parameter settings,
+moving from pure complementarity to pure general quality reduces the output gap from
+\pv{ogapRho0Group} to \pv{ogapRho1Group}, while increasing the
+broker-minus-principal rank gap from \pv{rankGapRho0Group} to
+\pv{rankGapRho1Group}. The broker is therefore most central and produces its
+largest realized-output advantage where its relative holdout-ranking advantage is
+smaller. Taken together, the results separate the sources of informational,
+economic, and structural advantage: pooled pair-level data improves ranking,
+complementarity raises broker value, and turnover renews the network gaps that
+sustain centrality. These advantages need not move together.
 
-\begin{table}[t]
-\centering\small
-\caption{\textbf{Matching-problem composition and structural advantage.}
-Regime-group means at the three $\rho$ levels in the model, using
-late means. Each group pools the \pv{rhoGroupN} regimes of the $\rho$ family at
-that level: the one-at-a-time $\rho$ regime and the $\rho$-paired grid cells.
-Output gap is broker-channel realized output minus self-search realized output.}
-\label{tab:rhogroups}
-\begin{tabular}{lccccc}
-\toprule
- & Mean agent degree & Outsourcing rate & Broker betweenness & Access fraction & Output gap \\
-\midrule
-$\rho=0$   & \pv{degRho0Group}  & \pv{outRho0Group}  & \pv{betwRho0Group}  & \pv{accessRho0Group}  & $\pv{ogapRho0Group}$ \\
-$\rho=0.5$ & \pv{degRho05Group} & \pv{outRho05Group} & \pv{betwRho05Group} & \pv{accessRho05Group} & $\pv{ogapRho05Group}$ \\
-$\rho=1$   & \pv{degRho1Group}  & \pv{outRho1Group}  & \pv{betwRho1Group}  & \pv{accessRho1Group}  & $\pv{ogapRho1Group}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\subsection{Propositions}
+
+The simulation results can be condensed into the following falsifiable
+propositions, offered as hypotheses for future empirical work:
+
+\noindent\textbf{P1.} In complex matching markets, brokers add value primarily by
+assessing complementarity among reachable counterparties, not by bridging
+disconnected parties.
+
+\noindent\textbf{P2.} A broker's betweenness centrality is produced by outsourcing
+volume and client satisfaction, it tracks how much complementarity matters to match
+value, and assessment-heavy brokers tend to retain or gain centrality as networks
+evolve.
+
+\noindent\textbf{P3.} Bridging position and bridging behavior are generally
+negatively related across markets: the most central brokers tend to do less
+bridging, except where turnover continually creates new network gaps for them to
+bridge.
+
+\noindent\textbf{P4.} Broker predictive advantage tracks the complexity of learning
+the complementarities relevant to match value, and it can diverge from structural
+centrality.

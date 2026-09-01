@@ -50,15 +50,18 @@ The first four figures reproduce the main structural-advantage analyses with the
 broker's two other saved ego-network measures, Burt's aggregate network constraint
 and Burt's effective size. Both are recomputed for the broker every
 \pv{suppMeasInterval} periods. Figure~\ref{fig:supp-ridge} reports the focused
-paired-Ridge robustness analysis discussed in the main text.
+paired-Ridge robustness analysis discussed in the main text. As in the main text,
+a regime is one scientifically distinct parameter configuration; duplicate grid
+coordinates and inactive parameters do not create additional regimes.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{supp_S1_grid_lines.png}
 \caption{Broker Burt constraint (left) and broker effective size (right) across the
-$\rho\times\delta$ grid; one line per gain $\delta$, one marker per
-regime, each a late-window mean over that regime's seeds. Whiskers are
-95\% Monte Carlo intervals.}
+$\rho\times\delta$ grid. Lines for each difficulty level $\delta$ span
+$\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where $\delta$ is
+inactive, is shown once and unconnected. Markers are late-window means over seeds
+and whiskers are 95\% Monte Carlo intervals.}
 \label{fig:supp-grid}
 \end{figure}
 
@@ -100,15 +103,15 @@ Axes start at $t=\pv{suppAxisStart}$ to omit the initialization transient.}
 \centering
 \includegraphics[width=\linewidth]{supp_S5_ridge_robustness.png}
 \caption{Broker ranking advantage under paired-Ridge learning. Panel A orders
-the \pv{ridgeNConditions} effective realizations by their late-period
+the \pv{ridgeNConditions} regimes by their late-period
 broker-minus-principal rank-correlation gap. The gap is positive in
-\pv{ridgePositiveN} realizations and has a median of \pv{ridgeMedianGap}; points
-are realization means and whiskers are 95\% Monte Carlo intervals over seeds.
+\pv{ridgePositiveN} regimes and has a median of \pv{ridgeMedianGap}; points
+are regime means and whiskers are 95\% Monte Carlo intervals over seeds.
 Panel B shows the same Ridge gap across the $\rho\times\delta$ design, with one
-line per value of $\delta$. Markers are parameter-coordinate means and whiskers
-are 95\% Monte Carlo intervals. Coordinates that resolve to the same effective
-realization share an estimate and receive no additional analytical weight. At
-$\rho=1$, $\delta$ is inactive. The baseline gap is
+line per value of $\delta$ over $\rho=0$ through $0.85$. The pure-quality boundary
+$\rho=1$, where $\delta$ is inactive, is shown once and unconnected. Markers are
+regime means and whiskers are 95\% Monte Carlo intervals. The
+baseline gap is
 \pv{ridgeBaselineGap}.}
 \label{fig:supp-ridge}
 \end{figure}

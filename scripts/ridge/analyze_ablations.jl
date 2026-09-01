@@ -13,12 +13,15 @@ Required environment:
   BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR
   BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR
 
-Outputs are written to `output/ridge/ablations/results/`.
+Detailed outputs are written to `output/ridge/ablations/results/`. Seed-level
+inputs for the compact main-text figure are written to
+`output/ridge/ablations/figdata.jld2`.
 """
 
 using CairoMakie
 using DataFrames: DataFrame
 using Dates: now
+using JLD2: jldsave
 using Printf: @sprintf
 using Statistics: cor, mean, median, quantile, std
 
@@ -54,6 +57,10 @@ const VARIANTS = (
 )
 const OUT_DIR = normpath(
     joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "results")
+)
+const PAPER_VALUES = joinpath(OUT_DIR, "paper_values.tex")
+const FIGDATA = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figdata.jld2")
 )
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
@@ -338,6 +345,7 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
             (
                 rho=Float64(cell[:xval]),
                 delta=Float64(cell[:yval]),
+                result_rel=String(cell[:result_reldir]),
                 interval=monte_carlo_interval(
                     seed_values(dataset.result_by_rel[cell[:result_reldir]], :rank_gap)
                 ),
@@ -368,7 +376,8 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
         hlines!(axis, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.5)
         for delta in deltas
             line_points = sort(
-                filter(point -> point.delta == delta, points[model.key]); by=x -> x.rho
+                filter(point -> point.delta == delta && point.rho < 1.0, points[model.key]);
+                by=x -> x.rho,
             )
             rangebars!(
                 axis,
@@ -391,7 +400,31 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
                 label="δ = $delta",
             )
         end
-        index == 1 && axislegend(axis, "Regime gain"; position=:lt, framevisible=true)
+        boundary_points = filter(point -> point.rho == 1.0, points[model.key])
+        length(unique(point.result_rel for point in boundary_points)) == 1 ||
+            error("$(model.label) rho = 1 coordinates do not share one realization")
+        boundary = first(boundary_points)
+        rangebars!(
+            axis,
+            [1.0],
+            [boundary.interval.lower],
+            [boundary.interval.upper];
+            color=(:gray25, 0.8),
+            linewidth=1.1,
+            whiskerwidth=7,
+        )
+        scatter!(
+            axis,
+            [1.0],
+            [boundary.interval.mean];
+            color=:gray25,
+            marker=:diamond,
+            markersize=10,
+            strokewidth=0.4,
+            strokecolor=:gray20,
+            label="ρ = 1 boundary",
+        )
+        index == 1 && axislegend(axis, "Difficulty"; position=:lt, framevisible=true)
     end
     colgap!(fig.layout, 16)
     rowgap!(fig.layout, 12)
@@ -503,6 +536,38 @@ function main()
     write_tsv(
         joinpath(OUT_DIR, "baseline_common_seeds.tsv"), baseline_header, baseline_rows
     )
+
+    figure_conditions = Dict{String,Any}[]
+    for design_key in design_keys
+        reference = datasets_by_design[:size_matched][design_key]
+        seeds = reference.seeds
+        rank_gaps = Dict(
+            String(key) => seed_values(result_for(key, design_key), :rank_gap; seeds) for
+            key in all_keys
+        )
+        push!(
+            figure_conditions,
+            Dict{String,Any}(
+                "result_reldir" => reference.rel,
+                "rho" => reference.cfg["rho"],
+                "delta" => reference.cfg["delta"],
+                "seeds" => seeds,
+                "rank_gaps" => rank_gaps,
+            ),
+        )
+    end
+    figure_data = Dict{String,Any}(
+        "meta" => Dict{String,Any}(
+            "analysis_git_commit" => provenance.commit,
+            "analysis_source_clean" => provenance.source_clean,
+            "n_conditions" => length(design_keys),
+            "baseline_reldir" => datasets_by_design[:size_matched][baseline_key].rel,
+            "late_width" => LATE_WIDTH,
+        ),
+        "conditions" => figure_conditions,
+    )
+    mkpath(dirname(FIGDATA))
+    jldsave(FIGDATA; figdata=figure_data)
 
     values = Pair{String,String}[]
     add(key, value; formatter=f3) = push!(values, key => formatter(value))
@@ -664,6 +729,27 @@ function main()
         end
     end
 
+    value_by_key = Dict(values)
+    paper_values = (
+        "ablationConditionN" => value_by_key["nConditions"],
+        "ablationPairMedianGap" => value_by_key["pairMedian_rank_gap"],
+        "ablationSizeMedianGap" => value_by_key["size_matchedMedian_rank_gap"],
+        "ablationSizePositiveN" => value_by_key["size_matchedPositiveN_rank_gap"],
+        "ablationSingleMedianGap" => value_by_key["single_principalMedian_rank_gap"],
+        "ablationSinglePositiveN" => value_by_key["single_principalPositiveN_rank_gap"],
+        "ablationAdditiveMedianGap" => value_by_key["additiveMedian_rank_gap"],
+        "ablationAdditivePositiveN" => value_by_key["additivePositiveN_rank_gap"],
+    )
+    open(PAPER_VALUES, "w") do io
+        println(io, "% Generated by scripts/ridge/analyze_ablations.jl on $(now()).")
+        println(io, "% Analysis commit: $(provenance.commit)")
+        println(io, "% Analysis source clean: $(provenance.source_clean)")
+        println(io, "% Effective realizations receive equal weight.")
+        for (key, value) in paper_values
+            println(io, "\\pvDefine{$key}{$value}")
+        end
+    end
+
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "analysis_commit=$(provenance.commit)")
@@ -709,6 +795,7 @@ function main()
     ablation_figure(pair_by_design, datasets_by_design, design_keys, baseline_key)
     ablation_grid_figure(pair, datasets)
     println("wrote Ridge ablation outputs to $OUT_DIR")
+    println("wrote seed-level main-figure data to $FIGDATA")
     return nothing
 end
 

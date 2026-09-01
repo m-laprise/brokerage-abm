@@ -132,7 +132,7 @@ function fig1_grid_lines()
                 label="δ = $delta",
             )
         end
-        row == 1 && col == 1 && axislegend(ax, "Regime gain"; position=:rb, LEG_KW...)
+        row == 1 && col == 1 && axislegend(ax, "Difficulty"; position=:rb, LEG_KW...)
         axs[row, col] = ax
     end
     for row in 1:3

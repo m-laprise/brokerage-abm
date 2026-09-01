@@ -135,6 +135,10 @@ end
 function supp_S1_grid_lines()
     gc = FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gc]))
+    boundary_cells = [c for c in gc if c["rho"] == 1.0]
+    length(unique(c["rel"] for c in boundary_cells)) == 1 ||
+        error("rho = 1 grid coordinates do not share one effective realization")
+    boundary_cell = first(boundary_cells)
     fig = Figure(; size=(1180, 470))
     for (ci, (key, lab)) in enumerate((CONSTR, EFFS))
         ck = CELLKEY[key]
@@ -160,7 +164,7 @@ function supp_S1_grid_lines()
                             lower=interval.lower,
                             upper=interval.upper,
                         )
-                    end for c in gc if c["delta"] == d
+                    end for c in gc if c["delta"] == d && c["rho"] < 1.0
                 ];
                 by=point -> point.rho,
             )
@@ -185,7 +189,28 @@ function supp_S1_grid_lines()
                 label="δ = $d",
             )
         end
-        ci == 1 && axislegend(ax, "Regime gain"; position=:rt, LEG_KW...)
+        boundary_interval = monte_carlo_interval(boundary_cell["seed_values"][ck])
+        rangebars!(
+            ax,
+            [1.0],
+            [boundary_interval.lower],
+            [boundary_interval.upper];
+            color=(:gray25, 0.8),
+            linewidth=1.2,
+            whiskerwidth=8,
+        )
+        scatter!(
+            ax,
+            [1.0],
+            [boundary_interval.mean];
+            color=:gray25,
+            marker=:diamond,
+            markersize=11,
+            strokewidth=0.4,
+            strokecolor=:gray20,
+            label="ρ = 1 boundary",
+        )
+        ci == 1 && axislegend(ax, "Difficulty"; position=:rt, LEG_KW...)
     end
     colgap!(fig.layout, 16)
     savefig("supp_S1_grid_lines.png", fig)

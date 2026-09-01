@@ -20,7 +20,7 @@ Contents of figdata.jld2 (single key "figdata", a Dict):
                  betweenness, access, mean_degree, median_degree, mpa
                  (matches per agent, both sides), outsourcing
   oat_cells      late means and seed values per one-at-a-time regime
-  grid_cells     rho, delta, and the nine named outcome late means per rho x delta
+  grid_cells     rho, delta, and the ten named outcome late means per rho x delta
                  grid coordinate, plus the underlying seed values
   rho_eta_cells  rho, eta, access, and betweenness late means per rho x eta
                  grid coordinate, plus the underlying seed values
@@ -46,6 +46,8 @@ const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
 const LATE_WIDTH = 20   # final-period window, the headline statistic
+const FIG3_RHO_VALUES = [0.0, 0.5, 0.85, 1.0]
+const FIG3_ETA_VALUES = [0.0, 0.001, 0.01, 0.02, 0.03]
 const SWEEP = load_sweep_dataset(ROOT)
 const BASELINE_REL = "oat/rho=0.5"
 length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
@@ -77,7 +79,7 @@ function ensemble_mean(values::AbstractMatrix)
     Float64[nanmean(view(values, period_index, :)) for period_index in axes(values, 1)]
 end
 
-# the nine outcomes shared by figures 2 and 3; names must match figures.jl panels
+# The ten outcomes available to grid figures; names must match figure panel labels.
 function outcome_seed_values(m)
     Dict{String,Vector{Float64}}(
         "Betweenness centrality" => seed_values(m, :betweenness),
@@ -85,6 +87,7 @@ function outcome_seed_values(m)
         "Broker prediction R²" => seed_values(m, :broker_holdout_r2),
         "Prediction R² gap" => r2gap_values(m),
         "Broker rank correlation" => seed_values(m, :broker_holdout_rank),
+        "Principal rank correlation" => seed_values(m, :agent_holdout_rank),
         "Rank correlation gap" => rankgap_values(m),
         "Broker output q" => seed_values(m, :q_broker_mean),
         "Output gap q" => qgap_values(m),
@@ -194,6 +197,12 @@ fd["rho_eta_cells"] = let out = Dict{String,Any}[]
             ),
         )
     end
+    expected = Set((rho, eta) for rho in FIG3_RHO_VALUES for eta in FIG3_ETA_VALUES)
+    observed = Set((cell["rho"], cell["eta"]) for cell in out)
+    length(out) == length(expected) ||
+        error("rho x eta extraction has duplicate or missing coordinates")
+    observed == expected ||
+        error("rho x eta extraction coordinates differ from the approved figure grid")
     out
 end
 

@@ -3,103 +3,152 @@
 \documentclass[tikz,border=5pt]{standalone}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usetikzlibrary{arrows.meta,calc,positioning}
+\usetikzlibrary{arrows.meta}
 
-\definecolor{principalfill}{HTML}{E8F1F8}
-\definecolor{principalstroke}{HTML}{3976A8}
-\definecolor{brokerfill}{HTML}{FBEBDD}
-\definecolor{brokerstroke}{HTML}{B5652A}
-\definecolor{sharedfill}{HTML}{EEF1F3}
-\definecolor{sharedstroke}{HTML}{59636B}
-\definecolor{feedbackfill}{HTML}{E7F2E8}
-\definecolor{feedbackstroke}{HTML}{4F8055}
+\definecolor{ink}{HTML}{25313B}
+\definecolor{muted}{HTML}{68747E}
+\definecolor{rule}{HTML}{CDD4D9}
+\definecolor{panel}{HTML}{F6F7F8}
+\definecolor{self}{HTML}{326D8A}
+\definecolor{selflight}{HTML}{E9F1F5}
+\definecolor{broker}{HTML}{A55D2B}
+\definecolor{brokerlight}{HTML}{F7EEE7}
+\definecolor{feedback}{HTML}{58745D}
+\definecolor{feedbacklight}{HTML}{EDF2EE}
 
 \begin{document}
 \begin{tikzpicture}[
-    font=\sffamily,
-    >={Latex[length=2.3mm,width=1.5mm]},
-    flow/.style={draw=sharedstroke, line width=0.8pt, -{Latex[length=2.3mm,width=1.5mm]}},
-    branch/.style={flow, rounded corners=3pt},
-    box/.style={
-        draw=sharedstroke,
-        fill=sharedfill,
-        rounded corners=3pt,
-        line width=0.8pt,
+    x=1cm,
+    y=1cm,
+    font=\small,
+    text=ink,
+    >={Latex[length=2.0mm,width=1.3mm]},
+    arrow/.style={-{Latex[length=2.0mm,width=1.3mm]}, draw=muted, line width=0.75pt},
+    branch/.style={arrow, rounded corners=2pt},
+    card/.style={
+        draw=rule,
+        fill=white,
+        rounded corners=1.5pt,
+        line width=0.65pt,
+        font=\footnotesize,
         align=center,
-        inner xsep=6pt,
-        inner ysep=5pt
+        inner xsep=5pt,
+        inner ysep=4pt
     },
-    principal/.style={box, draw=principalstroke, fill=principalfill},
-    broker/.style={box, draw=brokerstroke, fill=brokerfill},
-    feedback/.style={box, draw=feedbackstroke, fill=feedbackfill},
-    label/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+    stage/.style={card, minimum height=1.25cm},
+    section/.style={font=\scriptsize\bfseries, text=muted},
+    lanehead/.style={font=\scriptsize\bfseries, anchor=west},
+    update/.style={
+        draw=feedback,
+        fill=feedbacklight,
+        rounded corners=1.5pt,
+        line width=0.65pt,
+        align=center,
+        inner xsep=5pt,
+        inner ysep=4pt
+    }
 ]
 
-\node[box, text width=15.1cm, minimum height=1.05cm] (init) at (7.65,7.35) {%
-    \textbf{Initialization at period 0}\\[-1pt]
-    \scriptsize Draw principal types and the matching environment; create the
-    small-world network and broker roster;\\
-    seed histories, predictors, satisfaction, and broker reputation
-};
+% Period-0 setup, presented as context rather than as part of the period loop.
+\node[section, anchor=west] at (0,8.10) {PERIOD 0};
+\draw[rule, line width=0.6pt] (1.72,8.10) -- (15.65,8.10);
+\node[anchor=west, font=\footnotesize] at (0,7.68)
+    {Initialize principal types, network, broker roster, learning histories, satisfaction, and reputation};
 
-\node[box, text width=2.65cm, minimum height=1.55cm] (begin) at (1.6,4.05) {%
-    \textbf{Begin period}\\[-1pt]
-    \scriptsize Refresh broker roster\\
-    Draw principal demand\\
-    Choose one search channel
-};
+% Within-period mechanism.
+\node[section, anchor=west] at (0,7.10) {EACH PERIOD};
+\draw[rule, line width=0.6pt] (2.38,7.10) -- (15.65,7.10);
 
-\node[box, text width=2.75cm, minimum height=1.55cm] (learn) at (5.0,4.05) {%
-    \textbf{Update predictors}\\[-1pt]
-    \scriptsize Broker every period;\\eligible principals on\\alternating schedules
-};
+% Principals and the channel decision.
+\begin{scope}[shift={(0.55,5.25)}]
+    \draw[self, line width=0.75pt] (0.00,0.28) circle (0.17);
+    \draw[self, line width=0.75pt] (0.54,0.28) circle (0.17);
+    \draw[self, line width=0.75pt] (0.27,-0.22) circle (0.17);
+    \draw[self, line width=0.65pt] (0.15,0.16) -- (0.27,-0.05) -- (0.39,0.16);
+\end{scope}
+\node[align=center, font=\footnotesize\bfseries] (demand) at (0.82,4.55)
+    {Principals\\with demand};
 
-\node[principal, text width=3.6cm, minimum height=1.75cm] (self) at (8.8,5.05) {%
-    \textbf{Self-search}\\[-1pt]
-    \scriptsize Candidates: network neighbors\\and a random stranger pool\\
-    Rank using pair experience\\or the principal predictor
+\node[stage, text width=2.25cm] (choice) at (3.05,5.15) {%
+    \textbf{Choose a channel}\\[-1pt]
+    \scriptsize Satisfaction and\\broker reputation
 };
+\draw[arrow] (1.48,5.15) -- (choice.west);
 
-\node[broker, text width=3.6cm, minimum height=1.75cm] (broker) at (8.8,3.05) {%
-    \textbf{Brokered search}\\[-1pt]
-    \scriptsize Candidates: roster and current clients\\
-    Rank from pooled two-party histories
+% A single comparison panel holds the two search pathways.
+\fill[panel, rounded corners=2pt] (4.55,2.88) rectangle (10.88,6.82);
+\draw[rule, rounded corners=2pt, line width=0.65pt] (4.55,2.88) rectangle (10.88,6.82);
+\draw[rule, line width=0.55pt] (4.78,4.86) -- (10.65,4.86);
+
+\node[lanehead, text=self] at (4.82,6.56) {SELF-SEARCH};
+\node[lanehead, text=broker] at (4.82,4.60) {BROKERED SEARCH};
+
+\node[card, draw=self, fill=selflight, text width=1.85cm, minimum height=1.02cm]
+    (selfpool) at (6.05,5.66) {%
+    \textbf{Candidate set}\\[-1pt]
+    \scriptsize Neighbors\\+ strangers
 };
-
-\node[box, text width=3.5cm, minimum height=2.05cm] (market) at (13.3,4.05) {%
-    \textbf{Shared offer market}\\[-1pt]
-    \scriptsize Submit top offers above\\the reservation threshold\\
-    Accept reciprocal offers or\\offers approved by the receiver\\
-    Realize match output
+\node[card, draw=self, text width=2.55cm, minimum height=1.02cm]
+    (selfrank) at (9.10,5.66) {%
+    \textbf{Principal ranks}\\[-1pt]
+    \scriptsize Own match history
 };
+\draw[arrow, draw=self] (selfpool.east) -- (selfrank.west);
 
-\node[feedback, text width=4.0cm, minimum height=1.7cm] (update) at (12.25,1.25) {%
-    \textbf{Update the market state}\\[-1pt]
-    \scriptsize Add observations to histories\\and add network ties\\
-    Update satisfaction and broker reputation
+\node[card, draw=broker, fill=brokerlight, text width=1.85cm, minimum height=1.02cm]
+    (brokerpool) at (6.05,3.70) {%
+    \textbf{Candidate set}\\[-1pt]
+    \scriptsize Roster\\+ current clients
 };
+\node[card, draw=broker, text width=2.55cm, minimum height=1.02cm]
+    (brokerrank) at (9.10,3.70) {%
+    \textbf{Broker ranks}\\[-1pt]
+    \scriptsize Mediated matches pooled\\across clients
+};
+\draw[arrow, draw=broker] (brokerpool.east) -- (brokerrank.west);
 
-\node[feedback, text width=3.0cm, minimum height=1.35cm] (measure) at (7.25,1.25) {%
+\draw[branch, draw=self] (choice.east) -- ++(0.37,0) |- (selfpool.west);
+\draw[branch, draw=broker] (choice.east) -- ++(0.37,0) |- (brokerpool.west);
+
+% The two channels converge on a common market.
+\node[stage, text width=2.45cm] (market) at (12.30,5.15) {%
+    \textbf{Shared offer\\market}\\[-1pt]
+    \scriptsize Offers above threshold\\Receiver approval
+};
+\draw[branch, draw=self] (selfrank.east) -- ++(0.25,0) |- (market.west);
+\draw[branch, draw=broker] (brokerrank.east) -- ++(0.25,0) |- (market.west);
+
+\node[stage, draw=ink, fill=ink, text=white, text width=1.55cm]
+    (matches) at (15.00,5.15) {%
+    \textbf{Realized\\matches}\\[-1pt]
+    \scriptsize Output $q_{ij}$
+};
+\draw[arrow, draw=ink] (market.east) -- (matches.west);
+
+% Feedback and transition to the next period.
+\node[section, anchor=west, text=feedback] at (0,2.58) {UPDATE AND TRANSITION};
+\draw[rule, line width=0.6pt] (4.18,2.58) -- (15.65,2.58);
+
+\node[update, text width=3.45cm] (state) at (12.75,1.63) {%
+    \textbf{Update the state}\\[-1pt]
+    \scriptsize Principal and broker histories\\Network ties\\Satisfaction and reputation
+};
+\node[card, text width=2.25cm] (measure) at (8.75,1.63) {%
     \textbf{Record measures}\\[-1pt]
-    \scriptsize Post-matching,\\pre-turnover state
+    \scriptsize Post-matching,\\before turnover
 };
-
-\node[box, text width=2.65cm, minimum height=1.35cm] (turnover) at (2.0,1.25) {%
+\node[card, text width=2.15cm] (turnover) at (5.30,1.63) {%
     \textbf{Turnover}\\[-1pt]
-    \scriptsize Exit principals and initialize entrants
+    \scriptsize Exit principals\\and initialize entrants
+};
+\node[card, draw=ink, text width=1.55cm] (next) at (2.20,1.63) {%
+    \textbf{Next period}
 };
 
-\draw[flow] (init.south west) ++(1.6,0) -- (begin.north);
-\draw[flow] (begin.east) -- (learn.west);
-\draw[branch] (learn.east) -- ++(0.1,0) |- (self.west);
-\draw[branch] (learn.east) -- ++(0.1,0) |- (broker.west);
-\draw[branch] (self.east) -- ++(0.25,0) |- (market.west);
-\draw[branch] (broker.east) -- ++(0.25,0) |- (market.west);
-\draw[flow] (market.south) -- (update.north);
-\draw[flow] (update.west) -- (measure.east);
-\draw[flow] (measure.west) -- (turnover.east);
-\draw[flow, rounded corners=5pt] (turnover.west) -- ++(-0.45,0) |- (begin.west)
-    node[label, midway, rotate=90] {next period};
+\draw[branch, draw=feedback] (matches.south) -- ++(0,-0.52) -| (state.north);
+\draw[arrow, draw=feedback] (state.west) -- (measure.east);
+\draw[arrow] (measure.west) -- (turnover.east);
+\draw[arrow] (turnover.west) -- (next.east);
 
 \end{tikzpicture}
 \end{document}

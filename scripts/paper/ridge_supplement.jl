@@ -63,15 +63,19 @@ META["learning_model"] == "ridge" || error("expected paired-Ridge figure data")
 
 const REGIMES = FD["regime_cells"]
 const GRID = FD["grid_cells"]
+const GRID_BOUNDARY = let candidates = [cell for cell in GRID if cell["rho"] == 1.0]
+    length(unique(cell["rel"] for cell in candidates)) == 1 ||
+        error("rho = 1 grid coordinates do not share one effective realization")
+    first(candidates)
+end
 length(REGIMES) == 98 || error("expected 98 effective paired-Ridge realizations")
-all(
-    length(cell["seeds"]) == (cell["rel"] == BASELINE_REL ? 50 : 20) for
-    cell in REGIMES
-) || error("unexpected paired-Ridge seed plan")
+all(length(cell["seeds"]) == (cell["rel"] == BASELINE_REL ? 50 : 20) for cell in REGIMES) ||
+    error("unexpected paired-Ridge seed plan")
 
 rank_interval(cell) = monte_carlo_interval(cell["seed_values"]["rankgap"])
-grid_rank_interval(cell) =
+function grid_rank_interval(cell)
     monte_carlo_interval(cell["outcome_seed_values"]["Rank correlation gap"])
+end
 
 const REGIME_POINTS = sort(
     [
@@ -125,7 +129,7 @@ function ridge_robustness_figure()
 
     ax_grid = Axis(
         fig[1, 2];
-        title="B. Matching-complexity grid",
+        title="B. Matching-difficulty grid",
         xlabel="ρ (complementarity vs quality)",
         ylabel="Broker - principal rank-correlation gap",
         xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
@@ -146,7 +150,7 @@ function ridge_robustness_figure()
                         lower=interval.lower,
                         upper=interval.upper,
                     )
-                end for cell in GRID if cell["delta"] == delta
+                end for cell in GRID if cell["delta"] == delta && cell["rho"] < 1.0
             ];
             by=point -> point.rho,
         )
@@ -169,10 +173,29 @@ function ridge_robustness_figure()
             label="δ = $delta",
         )
     end
+    boundary_interval = grid_rank_interval(GRID_BOUNDARY)
+    rangebars!(
+        ax_grid,
+        [1.0],
+        [boundary_interval.lower],
+        [boundary_interval.upper];
+        color=(:gray25, 0.8),
+        linewidth=1.0,
+        whiskerwidth=6,
+    )
+    scatter!(
+        ax_grid,
+        [1.0],
+        [boundary_interval.mean];
+        color=:gray25,
+        marker=:diamond,
+        markersize=9,
+        label="ρ = 1 boundary",
+    )
     Legend(
         fig[0, 1:2],
         ax_grid,
-        "Regime gain";
+        "Difficulty";
         orientation=:horizontal,
         framevisible=false,
         tellwidth=false,
@@ -194,9 +217,7 @@ function write_values()
         println(io, "% Ridge sweep: ", META["sweep"])
         println(io, "\\pvDefine{ridgeNConditions}{$(length(REGIME_POINTS))}")
         println(io, "\\pvDefine{ridgePositiveN}{$POSITIVE_N}")
-        println(
-            io, "\\pvDefine{ridgeBaselineGap}{", @sprintf("%.3f", BASELINE.mean), "}"
-        )
+        println(io, "\\pvDefine{ridgeBaselineGap}{", @sprintf("%.3f", BASELINE.mean), "}")
         println(io, "\\pvDefine{ridgeMedianGap}{", @sprintf("%.3f", RIDGE_MEDIAN), "}")
     end
     println("wrote $VALUES")
