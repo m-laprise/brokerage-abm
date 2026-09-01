@@ -1,79 +1,85 @@
-At the baseline, every ablation reduces the broker's ranking advantage.  The
-size-matched gap is \rav{size_matchedBaseline_rank_gap}, a paired change of
+At the baseline, every ablation reduces the broker's ranking advantage. The
+size-matched broker-minus-principal difference in holdout rank correlation is
+\rav{size_matchedBaseline_rank_gap}, a paired change of
 \rav{size_matchedBaselineDelta_rank_gap} from paired Ridge (95\% Monte Carlo
 interval [\rav{size_matchedBaselineDeltaLower_rank_gap},
-\rav{size_matchedBaselineDeltaUpper_rank_gap}]).  The single-principal and
-additive gaps are \rav{single_principalBaseline_rank_gap} and
+\rav{size_matchedBaselineDeltaUpper_rank_gap}]). The single-principal and
+additive differences are \rav{single_principalBaseline_rank_gap} and
 \rav{additiveBaseline_rank_gap}, with paired changes of
 \rav{single_principalBaselineDelta_rank_gap} and
-\rav{additiveBaselineDelta_rank_gap}.  Their 95\% Monte Carlo intervals are
+\rav{additiveBaselineDelta_rank_gap}. Their 95\% Monte Carlo intervals are
 [\rav{single_principalBaselineDeltaLower_rank_gap},
 \rav{single_principalBaselineDeltaUpper_rank_gap}] and
 [\rav{additiveBaselineDeltaLower_rank_gap},
 \rav{additiveBaselineDeltaUpper_rank_gap}].
 
-The size-matched contrast is consistent across the design.  Its rank gap is
-lower than paired Ridge in all \rav{nConditions} effective realizations.  The
+The size-matched contrast is consistent across the design. Its
+broker-minus-principal difference in holdout rank correlation is lower than
+paired Ridge in all \rav{nConditions} effective realizations. The
 median change is \rav{size_matchedDeltaMedian_rank_gap}, and its 10th and 90th
 percentiles are \rav{size_matchedDeltaQ10_rank_gap} and
-\rav{size_matchedDeltaQ90_rank_gap}.  The gap nevertheless remains positive in
-\rav{size_matchedPositiveN_rank_gap}/\rav{nConditions} realizations.  The gap
-change is not solely a change in the broker's prediction.  The median broker
-rank correlation changes by \rav{size_matchedDeltaMedian_broker_holdout_rank},
-while the median agent rank correlation changes by
-\rav{size_matchedDeltaMedian_agent_holdout_rank}.  The agent rank correlation
+\rav{size_matchedDeltaQ90_rank_gap}. The difference nevertheless remains positive in
+\rav{size_matchedPositiveN_rank_gap}/\rav{nConditions} realizations. The change
+in this difference is not solely a change in the broker's prediction. The median
+broker holdout rank correlation changes by
+\rav{size_matchedDeltaMedian_broker_holdout_rank}, while the median principal
+holdout rank correlation changes by
+\rav{size_matchedDeltaMedian_agent_holdout_rank}. The principal holdout rank correlation
 also exceeds paired Ridge in all \rav{size_matchedGreaterN_agent_holdout_rank}
 realizations under size matching, all
 \rav{single_principalGreaterN_agent_holdout_rank} under single-principal
 history, and \rav{additiveGreaterN_agent_holdout_rank} under additive Ridge.
 This pattern is consistent with an exploration mechanism: altered broker
 rankings change the partners agents encounter and may broaden the diversity of
-partner types in their learning histories.  The saved diagnostics do not
+partner types in their learning histories. The saved diagnostics do not
 measure that diversity, so these results do not establish the proposed
 mechanism directly.
 
 The pair-versus-additive contrast holds both endpoint types in each broker
-fitting row while removing the bilinear pair features.  As
+fitting row while removing the bilinear pair features. As
 Figure~\ref{fig:ridge-ablation-grid} shows, the system-level effect is larger
-when the interaction component of the production function is strong.  The
-median additive-Ridge gap rises from
+when the interaction component of the production function is strong. The median
+additive-Ridge broker-minus-principal difference in holdout rank correlation
+rises from
 \rav{additiveRho0_rank_gap} at $\rho=0$ to
 \rav{additiveRho0p85_rank_gap} at $\rho=0.85$ and
-\rav{additiveRho1_rank_gap} at $\rho=1$.  At $\rho=1$, where $\delta$ drops out
+\rav{additiveRho1_rank_gap} at $\rho=1$. At $\rho=1$, where $\delta$ drops out
 and the additive representation is correctly aligned with the production
-function, additive Ridge exceeds the paired-Ridge gap of
-\rav{pairRho1_rank_gap}.  The latter result is consistent with a finite-sample
-cost from unnecessary bilinear regressors, but the rank-gap contrast alone
+function, additive Ridge exceeds the paired-Ridge difference of
+\rav{pairRho1_rank_gap}. The latter result is consistent with a finite-sample
+cost from unnecessary bilinear regressors, but this contrast alone
 does not establish that mechanism because matching and agent learning also
 adjust.
 
 Single-principal and additive Ridge both produce additive pair scores, but they
-use different fitting rows.  Additive Ridge retains $x_i+x_j$ in each row;
+use different fitting rows. Additive Ridge retains $x_i+x_j$ in each row;
 single-principal Ridge retains one randomly selected endpoint and reconstructs
-a pair score by adding two fitted one-type scores.  Their baseline paired
-rank-gap difference (single-principal minus additive) is
+a pair score by adding two fitted one-type scores. At the baseline, subtracting
+the additive variant's broker-minus-principal difference in holdout rank
+correlation from the single-principal variant's gives
 \rav{singleMinusAdditiveBaseline_rank_gap}, with a 95\% Monte Carlo interval of
 [\rav{singleMinusAdditiveBaselineLower_rank_gap},
-\rav{singleMinusAdditiveBaselineUpper_rank_gap}].  Across effective realizations,
+\rav{singleMinusAdditiveBaselineUpper_rank_gap}]. Across effective realizations,
 the difference has median \rav{singleMinusAdditiveMedian_rank_gap} and 10th and
 90th percentiles \rav{singleMinusAdditiveQ10_rank_gap} and
 \rav{singleMinusAdditiveQ90_rank_gap}; it is positive in only
 \rav{singleMinusAdditiveGreaterN_rank_gap}/\rav{nConditions} realizations.
 Thus, among the two additive-score variants, retaining both endpoint types in
 each fitting row produces a modest system-level ranking benefit in most
-realizations.  This is not a comparison of bilinear representations: neither
+realizations. This is not a comparison of bilinear representations: neither
 variant can represent the bilinear interaction, which is strongest at low
 $\rho$.
 
 The observed brokered-minus-self output gap remains positive in all
-\rav{nConditions} realizations under each ablation, even when the broker's rank
-gap is negative.  This channel mean difference is descriptive, not a causal
-estimate of brokerage's effect on output.  Agents endogenously choose channels,
+\rav{nConditions} realizations under each ablation, even when the
+broker-minus-principal difference in holdout rank correlation is negative. This
+channel mean difference is descriptive, not a causal
+estimate of brokerage's effect on output. Agents endogenously choose channels,
 the channels expose them to different candidate sets, and acceptance decisions
-differ.  The positive gap therefore does not show that brokerage improves a
+differ. The positive gap therefore does not show that brokerage improves a
 match while holding the demander and feasible candidates fixed, nor does it
-identify access, selection, or network position as its cause.  The ablation
+identify access, selection, or network position as its cause. The ablation
 contrasts are full-system interventions: prediction, matching, learning
-histories, outsourcing, and network position adjust together.  They estimate
+histories, outsourcing, and network position adjust together. They estimate
 the consequences of each modeled restriction for the resulting system, not
 additive shares of a fixed-data prediction advantage.

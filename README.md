@@ -21,8 +21,8 @@ realized match value, brokered access, outsourcing, and structural centrality.
 ## Results and documentation
 
 - [Generated results section](output/main/results_section.tex)
-- [Main manuscript](output/manuscript/transientbrokerage.pdf)
-- [Complete working paper with appendices](output/manuscript/transientbrokerage_complete.pdf)
+- [Main manuscript without appendices](output/manuscript/brokers_who_do_not_bridge_without_appendices.pdf)
+- [Complete working paper with appendices](output/manuscript/brokers_who_do_not_bridge_with_appendices.pdf)
 - [Scientific output index](output/README.md), covering the main figures,
   supplementary analyses, and Ridge experiments
 - [Appendix A: Simulation pseudocode](simulation_pseudocode.pdf)

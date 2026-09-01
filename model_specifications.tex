@@ -60,7 +60,7 @@ Each agent \(i\) is characterized by:
   \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
 \end{itemize}
 
-\subsubsection{Agent types}\label{agent-types}
+\subsubsection{Agent Types}\label{agent-types}
 
 Type vectors are generated near a smooth one-dimensional curve on the unit sphere in \(\mathbb{R}^d\). The curve is parameterized by a position \(u \in [0, 1]\):
 
@@ -96,7 +96,7 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 Match output is symmetric and pair-level. The deterministic signal has three parts: agent general quality, pair interaction, and a pair-dependent multiplier applied to the interaction.
 
-\subsubsection{2a. Match quality}\label{a.-match-quality}
+\subsubsection{2a. Match Quality}\label{a.-match-quality}
 
 Let \(q_{ij}\) be the per-period value of the match between agents \(i\) and \(j\), measured in monetary units:
 
@@ -111,7 +111,7 @@ The deterministic signal \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) 
 
 where \(\rho \in [0,1]\) mixes general quality (§2b) and interaction (§2c).
 
-\subsubsection{2b. Agent general quality}\label{b.-agent-general-quality}
+\subsubsection{2b. Agent General Quality}\label{b.-agent-general-quality}
 
 \(\mathbf{c}\) is an ideal type vector. Each agent's general-quality score is \(\mathbf{x}_i^\top\mathbf{c}\).
 
@@ -123,7 +123,7 @@ A pair contributes the average score \(\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\
 
 Unlike agent types, \(\mathbf c\) is not re-normalized after the perturbation.
 
-\subsubsection{2c. Match-specific interaction}\label{c.-match-specific-interaction}
+\subsubsection{2c. Match-Specific Interaction}\label{c.-match-specific-interaction}
 
 The interaction term is \(g(\mathbf{x}_i,\mathbf{x}_j)\,\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j\), where \(g\) is a pair-dependent multiplier.
 
@@ -185,7 +185,7 @@ Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_
 
 Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to refit every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model refits only when its history is nonempty and it has received new observations since its previous fitting call. A parameter switch selects the prediction model. Neural-network learning is the default. Ridge regression is the alternate experiment.
 
-\subsubsection{3a. Prediction models and fitting}\label{a.-architecture-and-fitting}
+\subsubsection{3a. Prediction Models and Fitting}\label{a.-architecture-and-fitting}
 
 In the default model, both agents and the broker use a fully-connected network with one hidden layer, ReLU activations, and a single linear output:
 
@@ -213,7 +213,7 @@ where \(n_{\text{new}}\) is the number of observations added since that model's 
 
 Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, fitting deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
 
-\subsubsection{\texorpdfstring{3b. Agent \(i\)'s model}{3b. Agent i's model}}\label{b.-agent-is-model}
+\subsubsection{\texorpdfstring{3b. Agent \(i\)'s Model}{3b. Agent i's Model}}\label{b.-agent-is-model}
 
 \textbf{History.} \(\mathcal{H}_i^t = \{(\mathbf{x}_j, q_{ij})\}_{m=1}^{n_i}\) records the other party's type and realized match output from every match involving \(i\).
 
@@ -221,7 +221,7 @@ Initialization is period 0 for each learner. Its seed-history count is stored as
 
 The hidden width is \(h_A = 2d\), so the baseline uses 16 hidden units.
 
-\subsubsection{3c. Broker's model}\label{c.-brokers-model}
+\subsubsection{3c. Broker's Model}\label{c.-brokers-model}
 
 \textbf{History.} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}_{m=1}^{n_b}\) records both parties' types and realized match output from broker-mediated matches.
 
@@ -243,7 +243,7 @@ Because \(\psi(\mathbf{x}_i,\mathbf{x}_j)=\psi(\mathbf{x}_j,\mathbf{x}_i)\), eac
 
 The broker learns only from mediated matches. It does not observe self-search outcomes.
 
-\subsubsection{3d. Ridge broker ablations}\label{d.-ridge-broker-ablations}
+\subsubsection{3d. Ridge Broker Ablations}\label{d.-ridge-broker-ablations}
 
 Three separate Ridge-only ablations change the broker while leaving every agent's local Ridge model unchanged. \textbf{Size-matched pooled history} uniformly samples the broker's windowed and capped fitting data without replacement, using the smaller of its available sample size and the nearest-integer median sample size among agents with nonempty histories, with half-integers rounded up. \textbf{Single-principal history} randomly retains one endpoint when each broker observation is recorded, fits \(g_b(\mathbf x)=\alpha_b+\boldsymbol\gamma_b^\top\mathbf x\), and scores a pair as \(g_b(\mathbf x_i)+g_b(\mathbf x_j)-\bar q_b\), where \(\bar q_b\) is the current fitting-sample output mean and defaults to \(Q\) before fitting. \textbf{Additive Ridge} uses \(\mathbf x_i+\mathbf x_j\) without bilinear features. All use the calibrated agent and broker penalties, period window, observation cap, and fitting cadence.
 
@@ -253,7 +253,7 @@ Matches use a common reservation threshold and channel-specific cost accounting.
 
 At initialization, 10,000 random agent pairs define the calibration mean \(\bar{q}_{\text{cal}} = E[q]\). This calibration quantity scales \(r\), \(\phi\), and \(c_s\).
 
-\subsubsection{4a. Outside options}\label{a.-outside-options}
+\subsubsection{4a. Outside Options}\label{a.-outside-options}
 
 All agents share a reservation threshold \(r\), calibrated at initialization:
 
@@ -261,11 +261,11 @@ All agents share a reservation threshold \(r\), calibrated at initialization:
 
 where \(\bar{q}_{\text{cal}}\) is the calibration mean and \(f_r\) is the reservation coefficient (default 0.60). Since \(\phi\) and \(c_s\) do not depend on \(r\) (§4c), \(f_r\) may take any nonnegative value, including \(f_r \geq 1\), and is swept as an analysis axis.
 
-\subsubsection{4b. Participation constraints}\label{b.-participation-constraints}
+\subsubsection{4b. Participation Constraints}\label{b.-participation-constraints}
 
 Demanders emit offers only above the reservation threshold. Self-search uses the demander evaluation \(\hat{q}_{i}(\mathbf{x}_j)>r\). Brokered search uses the broker pair prediction \(\hat{q}_b(\{i,j\})>r\). A one-sided offer is accepted only if the receiver's evaluation exceeds \(r\); reciprocal offers are accepted automatically (§6d).
 
-\subsubsection{4c. Search costs}\label{c.-search-costs}
+\subsubsection{4c. Search Costs}\label{c.-search-costs}
 
 The self-search cost and broker fee share one calibrated level:
 
@@ -287,17 +287,17 @@ The self-search cost and broker fee share one calibrated level:
 
 Agents interact through a single undirected network \(G\) that determines search opportunities and structural position.
 
-\subsubsection{5a. Network initialization}\label{a.-network-initialization}
+\subsubsection{5a. Network Initialization}\label{a.-network-initialization}
 
 \(G\) is initialized as a Watts-Strogatz small-world graph on the \(N\) agents (Watts \& Strogatz, 1998), with ring degree \(k_G = 6\), rewiring probability \(p_{\text{rewire}} = 0.1\), and random agent order on the ring.
 
 The broker is added as a permanent node with no type vector. Broker-node edges are synchronized to standing roster members, current-period broker clients, and agents currently engaged in broker-channel matches (§6b).
 
-\subsubsection{5b. Match tie formation}\label{b.-match-tie-formation}
+\subsubsection{5b. Match Tie Formation}\label{b.-match-tie-formation}
 
 Each realized match adds an undirected \(i\)-\(j\) edge if one does not already exist. Ties persist until either node exits.
 
-\subsubsection{5c. Agent turnover}\label{c.-agent-turnover}
+\subsubsection{5c. Agent Turnover}\label{c.-agent-turnover}
 
 Agents exit independently each period with probability \(\eta_{\mathrm{exit}}\) (default 0.02). An exiting agent is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing agents sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
 
@@ -309,7 +309,7 @@ At the start of each period, each agent draws active relationship demand
 
 where \(K\) is the maximum number of active demands the agent can initiate in the period and \(p_{\text{demand}}\) defaults to 0.50. If \(d_i > 0\), the agent chooses \textbf{one channel for the batch} (§7): self-search or broker.
 
-\subsubsection{6a. Self-search}\label{a.-self-search}
+\subsubsection{6a. Self-Search}\label{a.-self-search}
 
 Agent \(i\)'s self-search candidate pool has two components:
 
@@ -319,7 +319,7 @@ Agent \(i\)'s self-search candidate pool has two components:
 
 Agent \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\). Equal evaluations are ordered uniformly at random, so an agent whose predictions are constant produces a random ranking rather than an undefined ordering.
 
-\subsubsection{6b. Broker roster and access}\label{b.-broker-roster-and-access}
+\subsubsection{6b. Broker Roster and Access}\label{b.-broker-roster-and-access}
 
 The broker maintains a \textbf{roster} of agents it can propose as counterparties when mediating matches. In each period, it also observes the current-client set \(D^t\) of agents who outsourced. Broker access for the period is:
 
@@ -339,11 +339,11 @@ where the broker roster share \(\alpha_R\) defaults to 0.20. The model draws \(R
 
 then the broker samples without replacement from \(\{1,\ldots,N\}\setminus \widetilde{\text{Roster}}^t\) until \(|\text{Roster}^t| = R^*\), or until the population is exhausted. Broker-node edges are synchronized to the standing roster, current clients, and current broker-mediated matches (§5a).
 
-\subsubsection{6c. Broker-mediated search}\label{c.-broker-mediated-search}
+\subsubsection{6c. Broker-Mediated Search}\label{c.-broker-mediated-search}
 
 For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match quality. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
 
-\subsubsection{6d. Offer acceptance and match formation}\label{d.-offer-acceptance-and-match-formation}
+\subsubsection{6d. Offer Acceptance and Match Formation}\label{d.-offer-acceptance-and-match-formation}
 
 All self-search and broker offers enter one shared market, grouped by unordered pair.
 
@@ -370,7 +370,7 @@ Before the next period begins, match lists are cleared. The next period begins w
 
 \subsection{7. The Outsourcing Decision}\label{the-outsourcing-decision}
 
-\subsubsection{7a. Satisfaction tracking}\label{a.-satisfaction-tracking}
+\subsubsection{7a. Satisfaction Tracking}\label{a.-satisfaction-tracking}
 
 Each agent \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an EWMA of realized match value net of search costs:
 
@@ -405,7 +405,7 @@ At initialization, self-satisfaction is the mean of seed match outcomes and brok
 
 The first broker choice, regardless of placement success, switches the agent from broker reputation to its own \(s_{i,\text{broker}}^t\) (§7b).
 
-\subsubsection{7b. Decision rule}\label{b.-decision-rule}
+\subsubsection{7b. Decision Rule}\label{b.-decision-rule}
 
 Each agent with \(d_i > 0\) compares:
 
@@ -419,7 +419,7 @@ Each agent with \(d_i > 0\) compares:
 
 The agent chooses the higher-score channel. Ties are resolved by fair coin flip.
 
-\subsubsection{7c. Broker reputation}\label{c.-broker-reputation}
+\subsubsection{7c. Broker Reputation}\label{c.-broker-reputation}
 
 \[\text{rep}_b^{t+1} = \begin{cases} \frac{1}{|D^t|} \sum_{i \in D^t} s_{i,\text{broker}}^{t+1} & \text{if } D^t \neq \emptyset \\[4pt] \text{rep}_b^{t} & \text{otherwise} \end{cases}\]
 
@@ -429,7 +429,7 @@ where \(D^t\) is the set of agents who outsourced to the broker this period. Wit
 
 Period measures are evaluated after current-period matching, satisfaction, and reputation updates, but before agent entry/exit turnover. Agent decisions do not depend on these measures.
 
-\subsubsection{Network measures}\label{network-measures}
+\subsubsection{Network Measures}\label{network-measures}
 
 Broker network-position measures use \(G\), including the broker node (§5a). They are computed when \(t \bmod \Delta_{\mathrm{net}}=0\) (default 20). Other period measures are recorded each period.
 
@@ -452,7 +452,7 @@ where \(p_{bj} = 1/d_b\) and \(p_{hj} = 1/d_h\) (Everett \& Borgatti, 2020). The
 
 where \(d_b\) is the broker's degree and \(t_b\) is the number of ties among the broker's neighbors, excluding ties to the broker.
 
-\subsubsection{Prediction quality}\label{prediction-quality}
+\subsubsection{Prediction Quality}\label{prediction-quality}
 
 Prediction quality is evaluated on holdout pairs and accepted directed offers:
 
@@ -488,7 +488,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 
 Rank correlation evaluates the strict ranking produced from predicted output. Candidates are ordered by predicted output, with each set of equal predictions ordered uniformly at random. Agent and broker tie-breaking draws are independent. Spearman's \(\rho_S\) is then computed between this produced ranking and the realized-output ranks; equal realized outputs retain their average ranks. The same rule is applied to each holdout candidate set and to the pooled accepted directed offers within each selected-offer channel. Thus a constant predictor produces a random ranking with expected rank correlation zero. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Holdout summaries use common valid-agent support for all four measures: an agent-level holdout set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
 
-\subsubsection{Other measures}\label{other-measures}
+\subsubsection{Other Measures}\label{other-measures}
 
 {
 \begin{longtable}[]{@{}
@@ -518,7 +518,7 @@ Agent-node degree summaries & Mean, median, minimum, and maximum degree, excludi
 
 \subsection{9. Baseline Values and Reproducibility}\label{baseline-values-and-reproducibility}
 
-\subsubsection{9a. Baseline parameter values}\label{a.-baseline-parameter-values}
+\subsubsection{9a. Baseline Parameter Values}\label{a.-baseline-parameter-values}
 
 The table lists baseline values only. Entries are arranged in two columns; each column follows the document order, with the run length listed first.
 

@@ -170,7 +170,7 @@ function fig_information_sources()
     ax_baseline = Axis(
         fig[1, 1];
         title="A. Baseline change from paired Ridge",
-        ylabel="Change in broker - principal rank gap",
+        ylabel="Change in rank-correlation difference\n(broker minus principal)",
         xticks=(1:length(variants), [model.label for model in variants]),
         axis_style...,
     )
@@ -200,7 +200,7 @@ function fig_information_sources()
     ax_conditions = Axis(
         fig[1, 2];
         title="B. Across matching conditions",
-        ylabel="Broker - principal rank gap",
+        ylabel="Difference in holdout rank correlation\n(broker minus principal)",
         xticks=(1:length(models), [model.label for model in models]),
         axis_style...,
     )
@@ -374,13 +374,18 @@ function fig2_grid_lines()
     boundary_cell = first(boundary_cells)
     # 2x3: column 1 = the [0,1]-bounded structural quantities (absolute 0-1 axis);
     # columns 2-3 = the prediction and output outcomes (each panel autoscaled).
-    layout = [
+    keys = [
         "Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
+        "Access fraction" "Principal rank correlation" "Output gap q"
+    ]
+    labels = [
+        "Betweenness centrality" "Broker rank correlation" "Rank-correlation difference";
         "Access fraction" "Principal rank correlation" "Output gap q"
     ]
     fig = Figure(; size=(1280, 700))
     for rr in 1:2, cc in 1:3
-        ttl = layout[rr, cc]
+        key = keys[rr, cc]
+        ttl = labels[rr, cc]
         ax = Axis(
             fig[rr, cc];
             title=ttl,
@@ -395,7 +400,7 @@ function fig2_grid_lines()
         for d in dls
             pts = sort(
                 [
-                    let interval = monte_carlo_interval(c["outcome_seed_values"][ttl])
+                    let interval = monte_carlo_interval(c["outcome_seed_values"][key])
                         (
                             rho=r,
                             mean=interval.mean,
@@ -427,7 +432,7 @@ function fig2_grid_lines()
                 label="δ = $d",
             )
         end
-        boundary_interval = monte_carlo_interval(boundary_cell["outcome_seed_values"][ttl])
+        boundary_interval = monte_carlo_interval(boundary_cell["outcome_seed_values"][key])
         rangebars!(
             ax,
             [1.0],
@@ -455,7 +460,7 @@ function fig2_grid_lines()
     savefig("fig2_grid_lines.png", fig)
 end
 
-# ── Advantage: structural measures vs informational/output gaps (4 panels) ──
+# ── Advantage: structural measures vs informational/output differences (4 panels) ──
 function fig4_advantage()
     bc = FD["regime_cells"]
     rho = [c["rho"] for c in bc]
@@ -464,7 +469,7 @@ function fig4_advantage()
     rg = [c["rankgap"] for c in bc];
     qg = [c["qgap"] for c in bc]
     xs = [("Broker betweenness centrality", bw), ("Access fraction", ac)]
-    ys = [("Rank correlation gap", rg), ("Output gap q", qg)]
+    ys = [("Rank-correlation difference", rg), ("Output gap q", qg)]
     fig = Figure(; size=(1150, 940))
     for (ri, (ylab, yv)) in enumerate(ys), (ci, (xlab, xv)) in enumerate(xs)
         ax = Axis(

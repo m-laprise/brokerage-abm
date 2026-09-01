@@ -62,7 +62,7 @@ Local tier (no data access; works from a clone of this repository):
    rolling window, measurement interval, axis start).
 6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
    Computes the four Ridge values quoted in the section and renders
-   Supplementary Figure S5 from the paired-Ridge figure data.
+   Supplementary Figure S4 from the paired-Ridge figure data.
 7. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
@@ -76,10 +76,11 @@ Local tier (no data access; works from a clone of this repository):
 8. `julia --project --threads=auto scripts/paper/build_manuscript.jl`
    Inlines the generated results section into the editable manuscript root and
    writes a submission-ready bundle under `output/manuscript/`. The bundle's
-   `transientbrokerage.tex` contains the complete manuscript with no results
+   `brokers_who_do_not_bridge_without_appendices.tex` contains the main
+   manuscript with no results
    `\input`; `references.bib`, all referenced figures, a Biber `.bbl`, and a
    compile-checked main PDF are placed beside it. It also uses `pdfunite` to
-   create `transientbrokerage_complete.pdf`, containing the main manuscript,
+   create `brokers_who_do_not_bridge_with_appendices.pdf`, containing the main manuscript,
    Appendix A (simulation pseudocode), Appendix B (model specifications), and
    the Supplementary Material, in that order. Run step 7 first whenever any
    results input or provenance changes.
@@ -138,7 +139,7 @@ report.
 The results section measures the broker's structural advantage by betweenness
 centrality. The Supplementary Material reproduces the same analyses with the
 broker's two other saved ego-network measures, Burt's aggregate **constraint** and
-**effective size** (`src/measures.jl`), in Figures S1-S4. Figure S5 provides the
+**effective size** (`src/measures.jl`), in Figures S1-S3. Figure S4 provides the
 focused paired-Ridge evidence cited in the main text. The same two tiers apply.
 
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
@@ -146,19 +147,19 @@ Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute n
 1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `output/supplement/figdata.jld2`:
    the seed-level baseline constraint/effective-size series, the one-at-a-time
-   and grid late values, and the per-realization late values S1-S4 consume. Standalone
+   and grid late values, and the per-realization late values S1-S3 consume. Standalone
    twin of `figdata.jl`; no hard-coded results.
 
 Local tier (no data access; works from a clone):
 
 2. `julia --project --threads=auto scripts/paper/supp_figures.jl`
-   Renders `output/supplement/figs/supp_S1_*.png` ... `supp_S4_*.png` from
+   Renders Supplementary Figures S1--S3 from
    `output/supplement/figdata.jld2` only, and writes
    `output/supplement/figmeta.tex` (the
    display conventions quoted in the captions). Standalone twin of `figures.jl`.
 3. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
    Reads the paired-Ridge `figdata.jld2`, renders the all-realization and
-   $\rho\times\delta$ robustness evidence as Figure S5, and writes the four Ridge
+   $\rho\times\delta$ robustness evidence as Figure S4, and writes the four Ridge
    values quoted in the main text and supplement. Run the paired-Ridge figure-data
    extraction described above first.
 4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
@@ -167,12 +168,12 @@ Local tier (no data access; works from a clone):
    validates every `\pv` reference and figure path first. Needs only stock Julia
    and `pdflatex`.
 
-The first four figures each redo a main-text structural-advantage analysis for
+The first three figures each redo a main-text structural-advantage analysis for
 constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
 the baseline time path and the relationship with access across regimes; **S3**
-shows the prediction and output gaps against each measure; **S4** reproduces the
-betweenness panel of the baseline-dynamics figure. **S5** shows the paired-Ridge
-broker-minus-principal ranking gap across all effective realizations and across
+shows the ranking and output differences against each measure. **S4** shows the paired-Ridge
+broker-minus-principal difference in holdout rank correlation across all
+effective realizations and across
 the rho x delta grid.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).

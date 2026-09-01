@@ -1,7 +1,7 @@
 """
     scripts/paper/supp_figures.jl
 
-Supplementary figures (S1-S4). Standalone twin of scripts/paper/figures.jl:
+Supplementary figures (S1-S3). Standalone twin of scripts/paper/figures.jl:
 reads ONLY output/supplement/figdata.jld2 (written by scripts/paper/supp_figdata.jl on
 the cluster), so the supplement renders locally with no access to the sweep, and
 independently of the results-section figures. CairoMakie only; no simulation; no
@@ -18,15 +18,13 @@ Burt's aggregate constraint and Burt's effective size:
   S2  each measure over time at baseline (left) and against access fraction
       across regimes (right); constraint top, effective size bottom (the
       position analysis, without the access-fraction time series)
-  S3  rank-correlation gap and output gap against each measure, colored by rho
+  S3  rank-correlation difference and output gap against each measure, colored by rho
       (the advantage analysis, with the alternative measures in place of betweenness)
-  S4  each measure over time at baseline (the betweenness panel of the
-      baseline-dynamics figure, one panel per measure)
 
 Like betweenness, both measures are recomputed only every network_measure_interval
-(20) periods, so the time panels (S2 left, S4) plot the measurement periods.
+(20) periods, so the time panels in S2 plot the measurement periods.
 
-Usage: julia --project scripts/paper/supp_figures.jl
+Usage: julia --project --threads=auto scripts/paper/supp_figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
@@ -260,13 +258,13 @@ function supp_S2_position()
     savefig("supp_S2_position.png", fig)
 end
 
-# ── S3: rank gap and output gap against each measure, colored by rho ──
+# ── S3: rank-correlation difference and output gap against each measure ──
 function supp_S3_advantage()
     bc = FD["regime_cells"]
     rho = [c["rho"] for c in bc]
     xs = [(CONSTR[2], [c["constraint"] for c in bc]), (EFFS[2], [c["effsize"] for c in bc])]
     ys = [
-        ("Rank correlation gap", [c["rankgap"] for c in bc]),
+        ("Rank-correlation difference", [c["rankgap"] for c in bc]),
         ("Output gap q", [c["qgap"] for c in bc]),
     ]
     fig = Figure(; size=(1150, 940))
@@ -309,32 +307,9 @@ function supp_S3_advantage()
     savefig("supp_S3_advantage.png", fig)
 end
 
-# ── S4: each measure over time at baseline ──
-function supp_S4_network_dynamics()
-    fig = Figure(; size=(1180, 460))
-    for (ci, (key, lab)) in enumerate((CONSTR, EFFS))
-        series = measseries(key)
-        ax = Axis(
-            fig[1, ci];
-            title=lab,
-            xlabel="period",
-            titlesize=TITLE_FS,
-            xlabelsize=LABEL_FS,
-            ylabelsize=LABEL_FS,
-            xticklabelsize=TICK_FS,
-            yticklabelsize=TICK_FS,
-            xticks=TIME_TICKS,
-            limits=((TSTART, TEND + 1), ywin(series)),
-        )
-        draw_interval_series!(ax, series)
-    end
-    colgap!(fig.layout, 16)
-    savefig("supp_S4_network_dynamics.png", fig)
-end
-
 foreach(
     function_name -> function_name(),
-    (supp_S1_grid_lines, supp_S2_position, supp_S3_advantage, supp_S4_network_dynamics),
+    (supp_S1_grid_lines, supp_S2_position, supp_S3_advantage),
 )
 # emit the display-convention keys quoted by the supplement captions
 open(

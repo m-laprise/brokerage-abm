@@ -254,8 +254,12 @@ function figure_r1()
     save_figure("figR1_dynamics.png", fig)
 end
 
-const GRID_LAYOUT = [
+const GRID_KEYS = [
     "Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
+    "Access fraction" "Principal rank correlation" "Output gap q"
+]
+const GRID_LABELS = [
+    "Betweenness centrality" "Broker rank correlation" "Rank-correlation difference";
     "Access fraction" "Principal rank correlation" "Output gap q"
 ]
 
@@ -278,12 +282,11 @@ function figure_r2()
     )
     deltas = sort(unique(cell["delta"] for cell in NN["grid_cells"]))
     ylimits = Dict{String,Tuple{Float64,Float64}}()
-    for title in GRID_LAYOUT
+    for key in GRID_KEYS
         outcome_values = [
-            cell["outcomes"][title] for cells in values(model_cells) for
-            cell in values(cells)
+            cell["outcomes"][key] for cells in values(model_cells) for cell in values(cells)
         ]
-        ylimits[title] = if title in ("Betweenness centrality", "Access fraction")
+        ylimits[key] = if key in ("Betweenness centrality", "Access fraction")
             (0.0, 1.02)
         else
             padded(outcome_values)
@@ -293,18 +296,18 @@ function figure_r2()
     fig = Figure(; size=(1320, 1280), fontsize=16)
     for (model_index, model) in enumerate(MODELS), local_row in 1:2, column in 1:3
         row = 2 * (model_index - 1) + local_row
-        title = GRID_LAYOUT[local_row, column]
+        key = GRID_KEYS[local_row, column]
         axis = Axis(
             fig[row, column];
-            title=title,
+            title=GRID_LABELS[local_row, column],
             xlabel=local_row == 2 ? "ρ (complementarity vs quality)" : "",
             xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
-            limits=(nothing, ylimits[title]),
+            limits=(nothing, ylimits[key]),
         )
         for delta in deltas
             points = sort(
                 [
-                    let interval = monte_carlo_interval(cell["outcome_seed_values"][title])
+                    let interval = monte_carlo_interval(cell["outcome_seed_values"][key])
                         (
                             rho=rho,
                             mean=interval.mean,
@@ -338,7 +341,7 @@ function figure_r2()
             )
         end
         boundary_interval = monte_carlo_interval(
-            boundary_cells[model.label]["outcome_seed_values"][title]
+            boundary_cells[model.label]["outcome_seed_values"][key]
         )
         rangebars!(
             axis,
@@ -425,7 +428,8 @@ end
 
 function figure_r4()
     outcomes = (
-        (label="Rank correlation gap", key="rankgap"), (label="Output gap q", key="qgap")
+        (label="Rank-correlation difference", key="rankgap"),
+        (label="Output gap q", key="qgap"),
     )
     predictors = (
         (label="Broker betweenness centrality", key="betw"),

@@ -2,12 +2,12 @@
 % Compiles to output/supplement/supplement.pdf via
 % scripts/paper/build_supplement.jl.
 %
-% The first four supplementary figures reproduce the structural-advantage analyses of
+% The first three supplementary figures reproduce the structural-advantage analyses of
 % the main results section, which use broker betweenness centrality, with the
 % broker's two other saved ego-network measures: Burt's aggregate constraint and
 % Burt's effective size. Figures are rendered by scripts/paper/supp_figures.jl
 % from output/supplement/figdata.jld2 (extracted by supp_figdata.jl).
-% Figure S5 reports the paired-Ridge robustness result and is rendered by
+% Figure S4 reports the paired-Ridge robustness result and is rendered by
 % scripts/paper/ridge_supplement.jl from output/ridge/paired/figdata.jld2.
 %
 % No result is hand-written. Display conventions come from supp_figmeta.tex and
@@ -43,10 +43,10 @@
 
 \begin{center}
 {\large\bfseries Supplementary Material}\\[2pt]
-{\large Alternative structural measures and Ridge robustness}
+{\large Alternative Structural Measures and Ridge Robustness}
 \end{center}
 
-The first four figures reproduce the main structural-advantage analyses with the
+The first three figures reproduce the main structural-advantage analyses with the
 broker's two other saved ego-network measures, Burt's aggregate network constraint
 and Burt's effective size. Both are recomputed for the broker every
 \pv{suppMeasInterval} periods. Figure~\ref{fig:supp-ridge} reports the focused
@@ -81,7 +81,7 @@ $t=\pv{suppAxisStart}$ to omit the initialization transient.}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{supp_S3_advantage.png}
-\caption{Rank-correlation gap (broker minus principals, top) and output gap (broker
+\caption{Difference in holdout rank correlation (broker minus principal, top) and output gap (broker
 channel minus self-search, bottom) against broker Burt constraint (left) and broker
 effective size (right); one dot per regime, each a late-window mean over
 that regime's seeds, colored by the matching parameter $\rho$.}
@@ -90,29 +90,16 @@ that regime's seeds, colored by the matching parameter $\rho$.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\linewidth]{supp_S4_network_dynamics.png}
-\caption{Broker Burt constraint (left) and broker effective size (right) over time at
-the baseline regime, as \pv{suppRollWin}-observation
-rolling ensemble means over seeds, with pointwise 95\% Monte Carlo intervals,
-measured every \pv{suppMeasInterval} periods.
-Axes start at $t=\pv{suppAxisStart}$ to omit the initialization transient.}
-\label{fig:supp-dynamics}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]{supp_S5_ridge_robustness.png}
+\includegraphics[width=\linewidth]{supp_S4_ridge_robustness.png}
 \caption{Broker ranking advantage under paired-Ridge learning. Panel A orders
 the \pv{ridgeNConditions} regimes by their late-period
-broker-minus-principal rank-correlation gap. The gap is positive in
-\pv{ridgePositiveN} regimes and has a median of \pv{ridgeMedianGap}; points
-are regime means and whiskers are 95\% Monte Carlo intervals over seeds.
-Panel B shows the same Ridge gap across the $\rho\times\delta$ design, with one
-line per value of $\delta$ over $\rho=0$ through $0.85$. The pure-quality boundary
-$\rho=1$, where $\delta$ is inactive, is shown once and unconnected. Markers are
-regime means and whiskers are 95\% Monte Carlo intervals. The
-baseline gap is
-\pv{ridgeBaselineGap}.}
+broker-minus-principal difference in holdout rank correlation; points are regime
+means and whiskers are 95\% Monte Carlo intervals over seeds. Panel B shows the
+same difference across the $\rho\times\delta$ design, with one line per value of
+$\delta$ over $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where
+$\delta$ is inactive, is shown once and unconnected. Markers are regime means,
+whiskers are 95\% Monte Carlo intervals, and the horizontal line marks equal
+broker and principal holdout rank correlations.}
 \label{fig:supp-ridge}
 \end{figure}
 

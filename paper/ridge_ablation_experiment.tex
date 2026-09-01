@@ -41,8 +41,8 @@ change as matching evolves. All conditions use $\lambda_a=0.003$,
 $\lambda_b=0.001$, the same period window and fitting cadence, and the same
 broker observation cap before any additional size matching.
 
-The primary estimand in realization $c$ is the late-period broker-agent
-holdout rank-correlation gap
+The primary estimand in realization $c$ is the late-period broker-minus-principal
+difference in holdout rank correlation
 \[
 G_v(c)=\overline r_{b,v}(c)-\overline r_{a,v}(c),
 \]
@@ -80,7 +80,7 @@ Broker holdout rank correlation
   & \rav{size_matchedBaseline_broker_holdout_rank}
   & \rav{single_principalBaseline_broker_holdout_rank}
   & \rav{additiveBaseline_broker_holdout_rank} \\
-Broker-agent rank-correlation gap
+Broker-minus-principal difference in holdout rank correlation
   & \rav{pairBaseline_rank_gap}
   & \rav{size_matchedBaseline_rank_gap}
   & \rav{single_principalBaseline_rank_gap}
@@ -113,11 +113,12 @@ for each broker variant.
 
 \begin{table}[H]
 \centering
-\caption{Broker-agent rank-correlation gap across effective realizations}
+\caption{Broker-minus-principal difference in holdout rank correlation across
+effective realizations}
 \label{tab:ridge-ablation-robustness}
 \begin{tabular}{lrrrrr}
 \toprule
-Variant & Median gap & Median $\Delta$ & $\Delta$ [P10, P90] & Gap $>0$ & $\Delta>0$ \\
+Variant & Median difference & Median $\Delta$ & $\Delta$ [P10, P90] & Difference $>0$ & $\Delta>0$ \\
 \midrule
 Pair
   & \rav{pairMedian_rank_gap} & -- & --
@@ -152,23 +153,27 @@ receives one observation.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/ablations/results/ridge_ablations.png}
-\caption{Ridge broker ablations. Panel A uses all 50 baseline seeds. Panels
-B--D plot the paired ablation-minus-reference difference for each effective
-realization against its paired-Ridge mean. Ribbons in Panel A are pointwise
-95\% Monte Carlo intervals. Whiskers in Panels B--D are 95\% intervals for the
-mean seed-level difference, and dashed lines mark no difference.}
+\caption{Ridge broker restrictions. Panel A shows the baseline
+broker-minus-principal difference in holdout rank correlation over time under
+paired Ridge and the three restrictions. Lines are ensemble means over 50 common
+seeds; ribbons are pointwise 95\% Monte Carlo intervals. Panels B--D show each
+restriction's paired change from paired Ridge across the 26 effective regimes,
+against that regime's paired-Ridge mean. Whiskers are paired 95\% Monte Carlo
+intervals for the mean seed-level change, and dashed lines mark no change.}
 \label{fig:ridge-ablations}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\linewidth]{../output/ridge/ablations/results/ridge_ablation_grid.png}
-\caption{Broker-agent rank-correlation gaps across the $\rho\times\delta$
+\caption{Broker-minus-principal differences in holdout rank correlation across
+the $\rho\times\delta$
 design. Each panel shows one Ridge broker variant, each line shows one value
 of $\delta$ over $\rho=0$ through $0.85$, and markers are late-window seed means.
 The pure-quality boundary $\rho=1$, where $\delta$ is inactive, is shown once and
 unconnected. The vertical scale is shared across panels, whiskers are 95\% Monte
-Carlo intervals, and the dashed line marks a zero broker-agent gap.}
+Carlo intervals, and the dashed line marks equal broker and principal holdout
+rank correlations.}
 \label{fig:ridge-ablation-grid}
 \end{figure}
 

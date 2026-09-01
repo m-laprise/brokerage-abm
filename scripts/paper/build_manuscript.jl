@@ -20,15 +20,18 @@ using Dates: now
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const PAPER = joinpath(ROOT, "paper")
 const MAIN_OUTPUT = joinpath(ROOT, "output", "main")
-const SOURCE = joinpath(PAPER, "transientbrokerage.tex")
+const MAIN_STEM = "brokers_who_do_not_bridge_without_appendices"
+const COMPLETE_STEM = "brokers_who_do_not_bridge_with_appendices"
+const SOURCE = joinpath(PAPER, MAIN_STEM * ".tex")
 const RESULTS = joinpath(MAIN_OUTPUT, "results_section.tex")
 const BIBLIOGRAPHY = joinpath(PAPER, "references.bib")
 const OUTPUT = joinpath(ROOT, "output", "manuscript")
-const OUTPUT_TEX = joinpath(OUTPUT, "transientbrokerage.tex")
+const OUTPUT_TEX = joinpath(OUTPUT, MAIN_STEM * ".tex")
+const MAIN_PDF = joinpath(OUTPUT, MAIN_STEM * ".pdf")
 const PSEUDOCODE = joinpath(ROOT, "simulation_pseudocode.pdf")
 const SPECIFICATIONS = joinpath(ROOT, "model_specifications.pdf")
 const SUPPLEMENT = joinpath(ROOT, "output", "supplement", "supplement.pdf")
-const COMPLETE_PDF = joinpath(OUTPUT, "transientbrokerage_complete.pdf")
+const COMPLETE_PDF = joinpath(OUTPUT, COMPLETE_STEM * ".pdf")
 const INPUT_MARKER = "\\input{output/main/results_section.tex}"
 const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
@@ -76,9 +79,9 @@ flattened = replace(flattened, SOURCE_GRAPHICSPATH => BUNDLE_GRAPHICSPATH)
 occursin(INPUT_MARKER, flattened) && fail("results input was not flattened")
 
 header = """
-% transientbrokerage.tex: GENERATED, do not edit.
+% $(basename(OUTPUT_TEX)): GENERATED, do not edit.
 % Built by scripts/paper/build_manuscript.jl on $(now()).
-% The editable root is paper/transientbrokerage.tex; the results provenance is
+% The editable root is paper/$(basename(SOURCE)); the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 
 """
@@ -93,7 +96,8 @@ for relative_path in figure_paths
 end
 
 mktempdir() do build
-    cp(OUTPUT_TEX, joinpath(build, "transientbrokerage.tex"))
+    tex_name = basename(OUTPUT_TEX)
+    cp(OUTPUT_TEX, joinpath(build, tex_name))
     cp(joinpath(OUTPUT, "references.bib"), joinpath(build, "references.bib"))
     for relative_path in figure_paths
         destination = joinpath(build, relative_path)
@@ -106,7 +110,7 @@ mktempdir() do build
         pipeline(
             ignorestatus(
                 Cmd(
-                    `latexmk -pdf -interaction=nonstopmode -halt-on-error transientbrokerage.tex`;
+                    `latexmk -pdf -interaction=nonstopmode -halt-on-error $tex_name`;
                     dir=build,
                 ),
             );
@@ -115,7 +119,7 @@ mktempdir() do build
         );
         wait=true,
     )
-    final_log_path = joinpath(build, "transientbrokerage.log")
+    final_log_path = joinpath(build, MAIN_STEM * ".log")
     if !success(process)
         cp(build_log, joinpath(OUTPUT, "latexmk-failure.log"); force=true)
         fail("latexmk compile check failed; see output/manuscript/latexmk-failure.log")
@@ -132,7 +136,7 @@ mktempdir() do build
     end
 
     for extension in ("pdf", "bbl")
-        artifact = joinpath(build, "transientbrokerage.$extension")
+        artifact = joinpath(build, MAIN_STEM * "." * extension)
         isfile(artifact) || fail("latexmk did not create $artifact")
         cp(artifact, joinpath(OUTPUT, basename(artifact)); force=true)
     end
@@ -142,13 +146,13 @@ pdfunite = Sys.which("pdfunite")
 isnothing(pdfunite) && fail("pdfunite is required to assemble the complete PDF")
 
 components = [
-    joinpath(OUTPUT, "transientbrokerage.pdf"),
+    MAIN_PDF,
     PSEUDOCODE,
     SPECIFICATIONS,
     SUPPLEMENT,
 ]
 mktempdir() do build
-    combined = joinpath(build, "transientbrokerage_complete.pdf")
+    combined = joinpath(build, basename(COMPLETE_PDF))
     process = run(ignorestatus(Cmd([pdfunite, components..., combined])); wait=true)
     success(process) || fail("pdfunite failed while assembling the complete PDF")
     isfile(combined) || fail("pdfunite did not create the complete PDF")
@@ -156,8 +160,8 @@ mktempdir() do build
 end
 
 println("wrote complete manuscript bundle to $OUTPUT")
-println("  transientbrokerage.tex: flattened full manuscript")
+println("  $(basename(OUTPUT_TEX)): flattened main manuscript without appendices")
 println("  references.bib: $(count(line -> startswith(line, '@'), eachline(BIBLIOGRAPHY))) entries")
 println("  figures: $(length(figure_paths))")
 println("  compile check: OK")
-println("  transientbrokerage_complete.pdf: manuscript + Appendices A--B + Supplementary Material")
+println("  $(basename(COMPLETE_PDF)): main manuscript + Appendices A--B + Supplementary Material")

@@ -250,7 +250,7 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
         fig[1, 1];
         title="A. Baseline ranking advantage",
         xlabel="Period",
-        ylabel="Broker-agent rank gap",
+        ylabel="Difference in holdout rank correlation\n(broker minus principal)",
     )
     pair_series = ensemble_series(pair_by_design[baseline_key], :rank_gap)
     function interval_line!(axis, series; color, label)
@@ -293,7 +293,7 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
         ax = Axis(
             fig[1, column + 1];
             title="$panel. $(variant.label)",
-            xlabel="Pair Ridge rank gap",
+            xlabel="Pair Ridge difference in holdout rank correlation",
             ylabel="Ablation - Pair Ridge",
             limits=(nothing, (ylo - ypad, yhi + ypad)),
         )
@@ -369,7 +369,11 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
             fig[row, column];
             title=model.label,
             xlabel=row == 2 ? "ρ (complementarity vs quality)" : "",
-            ylabel=column == 1 ? "Broker-agent rank gap" : "",
+            ylabel=if column == 1
+                "Difference in holdout rank correlation\n(broker minus principal)"
+            else
+                ""
+            end,
             xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
             limits=(nothing, ylimits),
         )
@@ -771,7 +775,7 @@ function main()
         println(io, "other_seeds=$(join(1:20, ','))")
     end
 
-    println("Baseline late-period rank gaps:")
+    println("Baseline late-period differences in holdout rank correlation:")
     for key in all_keys
         value = condition_mean(
             result_for(key, baseline_key), :rank_gap; seeds=baseline_seeds
@@ -779,7 +783,7 @@ function main()
         println("  ", rpad(all_labels[key], 18), f3(value))
     end
     println(
-        "Median late-period rank gaps across $(length(design_keys)) effective realizations:"
+        "Median late-period differences in holdout rank correlation across $(length(design_keys)) effective realizations:",
     )
     for key in all_keys
         vals = [

@@ -7,7 +7,7 @@
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
 
-\subsection{Model and methods}
+\subsection{Model and Methods}
 
 To formalize and illustrate the theory developed in this article, this
 section describes an ABM of brokerage in a general matching market and
@@ -135,7 +135,7 @@ paths between principals that run through the broker (Brandes 2001;
 Freeman 1977), as the standard \emph{whole-network} measure of brokerage
 potential. The results would be substantively similar if examining the
 ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S4
+1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S3
 report those analyses. The access
 fraction is the share of brokered matches in which the counterparty was not
 already tied to the demander. Prediction quality is measured on deterministic
@@ -143,8 +143,8 @@ random-partner holdout samples evaluated against noiseless true output. Holdout
 evaluation reproduces the model's candidate-ranking behavior, including random
 ordering of tied predictions. Spearman rank correlation measures
 whether predictions order possible matches correctly, while $R^2$
-measures level accuracy; gaps subtract the principal value from the
-broker value. $R^2$ varies much more because its finite-holdout denominator
+measures level accuracy. The reported difference in holdout rank correlation
+subtracts the principal value from the broker value. $R^2$ varies much more because its finite-holdout denominator
 is the variance of noiseless holdout outputs, so modest prediction errors can
 produce extreme negative values when that variance is small. This volatility does
 not affect model behavior or the conclusions based on ranking, matching, and
@@ -193,7 +193,7 @@ nested-seed changes ranged from \pv{mcNestedMedianMinPercent}\% to
 full-sample estimate as its denominator; regimes whose 95\% interval contains
 zero are assessed from their absolute intervals instead.
 
-\subsection{The broker primarily provides assessment, not access}
+\subsection{The Broker Primarily Provides Assessment, Not Access}
 
 Across the tested regimes, the broker is usually the dominant channel in the
 market. The outsourcing rate as a share of demand is \pv{outBaselineLate} at the
@@ -213,7 +213,7 @@ measures.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig1_dynamics.png}
+\includegraphics[width=0.75\linewidth]{figs/fig1_dynamics.png}
 \caption{\textbf{\pvtitle{dynamics}.} \pvcaption{dynamics}}
 \label{fig:dynamics}
 \end{figure}
@@ -265,7 +265,7 @@ than in predicting output levels. On a held-out sample of random partners
 (Appendix~A~\S8), its rank correlation is \pv{brokerRankBaseline} at the
 baseline and has a median of \pv{brokerRankBaseMed} across regimes, compared with
 \pv{agentRankBaseline} and \pv{agentRankBaseMed} for principals. The
-broker-minus-principal rank gap is positive in \pv{rankGapNNPosN} of
+broker-minus-principal difference in holdout rank correlation is positive in \pv{rankGapNNPosN} of
 \pv{nRegimes} regimes. Paired 95\% intervals are above zero in
 \pv{rankGapNNCiPosN} regimes and below zero in only \pv{rankGapNNCiNegN}. The two
 nonpositive point estimates occur on the hardest pure-complementarity problems
@@ -279,19 +279,20 @@ useful ordering, not an accurate prediction of each candidate's absolute output.
 Within the model, the broker's core service is choosing among accessible
 counterparties, not finding otherwise unreachable ones. Its ranking advantage
 appears under pure general quality as well as complementarity: at $\rho=1$, the
-broker-minus-principal rank gap averages \pv{rhoOneRankGapMean} and is positive in
+broker-minus-principal difference in holdout rank correlation averages \pv{rhoOneRankGapMean} and is positive in
 all \pv{rhoOneRankGapPosN} pure-quality regimes.
 The one-at-a-time checks also show that initial network degree ($k_G$), broker
 roster fraction, and the number of strangers available in self-search have
 comparatively small effects on the main economic outcomes.
 
-\subsection{The broker's information advantage comes from pooled, pair-level data}
+\subsection{The Broker's Information Advantage Comes from Pooled, Pair-Level Data}
 
 The ordering advantage does not depend on neural-network learning. When Ridge
-regression replaces both neural networks, the broker-minus-principal rank gap is
+regression replaces both neural networks, the broker-minus-principal difference in
+holdout rank correlation is
 \pv{ridgeBaselineGap} at the baseline, has a median of \pv{ridgeMedianGap} across
 the \pv{ridgeNConditions} regimes, and is positive in all \pv{ridgePositiveN}.
-Supplementary Figure S5 reports the pattern across regimes and the
+Supplementary Figure S4 reports the pattern across regimes and the
 $\rho\times\delta$ design.
 The paired-Ridge broker still has more observations and retains more information
 about each pair than a principal. Three additional Ridge experiments impose the
@@ -300,14 +301,16 @@ learning, their effects need not add up.
 
 Pooled sample size accounts for much of the advantage
 (Fig.~\ref{fig:information-sources}). Across the \pv{ablationConditionN} regimes
-in the baseline and $\rho\times\delta$ design, the median rank gap is
+in the baseline and $\rho\times\delta$ design, the median broker-minus-principal
+difference in holdout rank correlation is
 \pv{ablationPairMedianGap} under paired Ridge but only
-\pv{ablationSizeMedianGap} with a size-matched broker. The size-matched gap remains
+\pv{ablationSizeMedianGap} with a size-matched broker. The size-matched difference remains
 positive in \pv{ablationSizePositiveN} of \pv{ablationConditionN} regimes, so
 pooling is important without being the broker's only advantage.
 
 The information retained in each observation also matters. When the broker retains
-the type of only one party, the median rank gap is
+the type of only one party, the median broker-minus-principal difference in
+holdout rank correlation is
 \pv{ablationSingleMedianGap} and is positive in only
 \pv{ablationSinglePositiveN} regimes. When it retains both parties only through
 the sum of their types, omitting their interaction, the corresponding figures are
@@ -325,7 +328,7 @@ neural-network flexibility alone.
 \label{fig:information-sources}
 \end{figure}
 
-\subsection{The nature of the matching problem shapes the broker's advantage}
+\subsection{The Nature of the Matching Problem Shapes the Broker's Advantage}
 \label{sec:matching-shapes}
 
 Different markets present brokers with matching problems of different kinds. In
@@ -347,14 +350,15 @@ Difficulty changes the broker's informational advantage only when complementarit
 contributes substantially to match value. Under pure complementarity, increasing
 $\delta$ from 0 to 1 lowers the broker's rank correlation from
 \pv{brokerRankRho0D0} to \pv{brokerRankRho0D1} and changes the
-broker-minus-principal rank gap from \pv{rankGapRho0D0} to \pv{rankGapRho0D1}
+broker-minus-principal difference in holdout rank correlation from
+\pv{rankGapRho0D0} to \pv{rankGapRho0D1}
 (Fig.~\ref{fig:grid}). This effect fades as $\rho$ approaches general quality and
-disappears at $\rho=1$ by construction. Paired 95\% intervals for the rank gap are
+disappears at $\rho=1$ by construction. Paired 95\% intervals for this difference are
 above zero in \pv{gridRankGapCIPosN} of the \pv{rhoDeltaEffectiveN} regimes. Only
 the two hardest pure-complementarity conditions depart from the
 general pattern: one interval includes zero and the other is below zero. This is a
 qualification to the neural-network result, not a general failure of broker
-learning. With paired Ridge, the rank gap remains positive in every regime.
+learning. With paired Ridge, this difference remains positive in every regime.
 
 The broker's realized output advantage is greatest when match value depends on
 complementarity. Paired 95\% intervals for the broker-minus-self-search output gap
@@ -373,7 +377,7 @@ stage of the matching process accounts for that difference.
 \label{fig:grid}
 \end{figure}
 
-\subsection{A broker can be highly central while doing little bridging}
+\subsection{A Broker Can Be Highly Central While Doing Little Bridging}
 
 In most regimes, the broker's structural position strengthens over time while the
 principal network thins. At the baseline, mean principal degree falls from
@@ -435,7 +439,8 @@ Figure~\ref{fig:advantage} shows that structural position relates differently to
 relative ranking and realized value. Across otherwise matched parameter settings,
 moving from pure complementarity to pure general quality reduces the output gap from
 \pv{ogapRho0Group} to \pv{ogapRho1Group}, while increasing the
-broker-minus-principal rank gap from \pv{rankGapRho0Group} to
+broker-minus-principal difference in holdout rank correlation from
+\pv{rankGapRho0Group} to
 \pv{rankGapRho1Group}. The broker is therefore most central and produces its
 largest realized-output advantage where its relative holdout-ranking advantage is
 smaller. Taken together, the results separate the sources of informational,
@@ -445,8 +450,9 @@ sustain centrality. These advantages need not move together.
 
 \subsection{Propositions}
 
-The simulation results can be condensed into the following falsifiable
-propositions, offered as hypotheses for future empirical work:
+The simulation results motivate the following falsifiable propositions for
+future empirical research. These propositions extend the model's implications
+beyond the simulated setting:
 
 \noindent\textbf{P1.} In complex matching markets, brokers add value primarily by
 assessing complementarity among reachable counterparties, not by bridging

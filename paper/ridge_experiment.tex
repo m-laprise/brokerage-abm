@@ -52,7 +52,8 @@ are visually comparable. Figure~\ref{fig:ridge-comparison} then shows direct
 paired comparisons of the primary ranking and output outcomes.
 
 \paragraph{Baseline.}
-With the common seeds, the NN broker-agent rank-correlation gap is
+With the common seeds, the NN broker-minus-principal difference in holdout rank
+correlation is
 \rv{nnBaseline_rank_gap}, compared with
 \rv{ridgeBaseline_rank_gap} under paired Ridge. The paired change is
 \rv{baselineDelta_rank_gap}, with a 95\% Monte Carlo interval of
@@ -79,7 +80,7 @@ Broker holdout rank correlation
   & \rv{nnBaseline_broker_holdout_rank}
   & \rv{ridgeBaseline_broker_holdout_rank}
   & \rv{baselineDelta_broker_holdout_rank} \\
-Broker-agent rank-correlation gap
+Broker-minus-principal difference in holdout rank correlation
   & \rv{nnBaseline_rank_gap}
   & \rv{ridgeBaseline_rank_gap}
   & \rv{baselineDelta_rank_gap} \\
@@ -116,14 +117,16 @@ was not already the demander's neighbor.
 
 \paragraph{Robustness across model realizations.}
 Across the \rv{nConditions} effective realizations, the median
-broker-agent rank-correlation gap is \rv{nnMedian_rank_gap} for NN and
+broker-minus-principal difference in holdout rank correlation is
+\rv{nnMedian_rank_gap} for NN and
 \rv{ridgeMedian_rank_gap} for Ridge. The median Ridge-minus-NN contrast is
 \rv{deltaMedian_rank_gap}. Its 10th and 90th percentiles are
-\rv{deltaQ10_rank_gap} and \rv{deltaQ90_rank_gap}. The Ridge gap is positive in
+\rv{deltaQ10_rank_gap} and \rv{deltaQ90_rank_gap}. The Ridge difference is positive in
 \rv{ridgePositiveN_rank_gap} realizations, compared with
-\rv{nnPositiveN_rank_gap} under NN, and exceeds the NN gap in
+\rv{nnPositiveN_rank_gap} under NN, and exceeds the NN difference in
 \rv{ridgeGreaterN_rank_gap} realizations. The correlation between NN and Ridge
-condition-level rank gaps is \rv{conditionCorrelation_rank_gap}.
+condition-level differences in holdout rank correlation is
+\rv{conditionCorrelation_rank_gap}.
 
 The within-system brokered-minus-self output gap has medians of
 \rv{nnMedian_output_gap} under NN and \rv{ridgeMedian_output_gap} under Ridge.
@@ -137,14 +140,16 @@ outsourcing is \rv{nnMedian_outsourcing_rate} under NN and
 Figure~\ref{fig:ridge-grid} shows the matching-problem surface under each
 learning system. Figure~\ref{fig:ridge-position} compares the broker's evolving
 network position and access, and Figure~\ref{fig:ridge-advantage} shows how the
-rank and output gaps covary with those structural outcomes across effective
+rank-correlation and output differences covary with those structural outcomes
+across effective
 realizations. Figure~\ref{fig:ridge-comparison}B--C summarizes the paired
 condition-level differences directly against zero.
 
 \paragraph{Interpretation.}
 The paired-Ridge results show that neural-network flexibility is not necessary
 for the broker to rank candidates better than agents in this modeled system:
-the Ridge gap is positive in \rv{ridgePositiveN_rank_gap} of
+the Ridge broker-minus-principal difference in holdout rank correlation is
+positive in \rv{ridgePositiveN_rank_gap} of
 \rv{nConditions} effective realizations. This result does not identify the
 cause of that advantage. The broker still observes both parties to each
 mediated match, represents the pair with additive and bilinear features, and
@@ -195,7 +200,8 @@ panels use shared axes.}
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR4_advantage.png}
-\caption{Rank-correlation and brokered-minus-self output gaps against broker
+\caption{Broker-minus-principal differences in holdout rank correlation and
+brokered-minus-self output gaps against broker
 betweenness centrality and access fraction under NN and paired Ridge. Each
 point is one effective realization's late-window seed mean. Corresponding NN
 and Ridge panels use shared axes; color denotes $\rho$.}
@@ -205,11 +211,15 @@ and Ridge panels use shared axes; color denotes $\rho$.}
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/paired/results/ridge_comparison.png}
-\caption{Direct paired-Ridge comparison. Panel A uses the 50 common baseline
-seeds, with pointwise 95\% Monte Carlo intervals. Panels B and C plot the
-paired Ridge-minus-NN difference for each of the 98 effective realizations
-against that realization's NN mean. Whiskers are 95\% intervals for the mean
-seed-level difference, and dashed lines mark no difference.}
+\caption{Direct paired-Ridge comparison. Panel A shows broker and principal
+holdout rank correlation over time under NN and paired Ridge at the baseline.
+Lines are ensemble means over 50 common seeds; ribbons are pointwise 95\% Monte
+Carlo intervals. Panels B and C show the paired Ridge-minus-NN change in the
+broker-minus-principal difference in holdout rank correlation and in the broker
+channel-minus-self-search output gap, respectively, for each of the 98 effective
+realizations. The horizontal position is that realization's NN mean. Whiskers are
+paired 95\% Monte Carlo intervals for the mean seed-level change, and dashed lines
+mark no change.}
 \label{fig:ridge-comparison}
 \end{figure}
 

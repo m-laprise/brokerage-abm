@@ -8,7 +8,7 @@ sweep by `scripts/paper/figdata.jl`.
 
 Outputs:
 
-  * `output/supplement/figs/supp_S5_ridge_robustness.png`
+  * `output/supplement/figs/supp_S4_ridge_robustness.png`
   * `output/ridge/paired/results/paper_values.tex`
 
 No raw sweep access is required. Every displayed value and interval is computed
@@ -35,7 +35,7 @@ const INPUT = get(
 const FIGURE = get(
     ENV,
     "BROKERAGE_ABM_RIDGE_SUPPLEMENT_FIGURE_PATH",
-    joinpath(REPO, "output", "supplement", "figs", "supp_S5_ridge_robustness.png"),
+    joinpath(REPO, "output", "supplement", "figs", "supp_S4_ridge_robustness.png"),
 )
 const VALUES = get(
     ENV,
@@ -100,8 +100,8 @@ function ridge_robustness_figure()
     ax_all = Axis(
         fig[1, 1];
         title="A. Across effective realizations",
-        xlabel="Effective realization, ordered by gap",
-        ylabel="Broker - principal rank-correlation gap",
+        xlabel="Effective realization, ordered by difference",
+        ylabel="Difference in holdout rank correlation\n(broker minus principal)",
         titlesize=TITLE_FS,
         xlabelsize=LABEL_FS,
         ylabelsize=LABEL_FS,
@@ -131,7 +131,7 @@ function ridge_robustness_figure()
         fig[1, 2];
         title="B. Matching-difficulty grid",
         xlabel="ρ (complementarity vs quality)",
-        ylabel="Broker - principal rank-correlation gap",
+        ylabel="Difference in holdout rank correlation\n(broker minus principal)",
         xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
         titlesize=TITLE_FS,
         xlabelsize=LABEL_FS,

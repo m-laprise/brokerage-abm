@@ -304,8 +304,12 @@ function comparison_figure(nn, ridge, rows)
         return ax
     end
 
-    paired_difference_plot(fig[1, 2], :rank_gap, "B. Broker-agent rank gap")
-    paired_difference_plot(fig[1, 3], :output_gap, "C. Broker-agent output gap")
+    paired_difference_plot(
+        fig[1, 2], :rank_gap, "B. Difference in holdout rank correlation"
+    )
+    paired_difference_plot(
+        fig[1, 3], :output_gap, "C. Broker channel minus self-search output gap"
+    )
     save(joinpath(OUT_DIR, "ridge_comparison.png"), fig; px_per_unit=2)
     return nothing
 end

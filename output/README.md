@@ -27,16 +27,15 @@ builders reject inputs produced by a different commit.
 
 ## Manuscript appendices and Supplementary Material
 
-- [Main manuscript](manuscript/transientbrokerage.pdf)
-- [Complete working paper with appendices](manuscript/transientbrokerage_complete.pdf)
+- [Main manuscript without appendices](manuscript/brokers_who_do_not_bridge_without_appendices.pdf)
+- [Complete working paper with appendices](manuscript/brokers_who_do_not_bridge_with_appendices.pdf)
 - [Appendix A: Simulation pseudocode](../simulation_pseudocode.pdf)
 - [Appendix B: Model specifications](../model_specifications.pdf)
 - [Supplementary Material: Alternative structural measures and Ridge robustness](supplement/supplement.pdf)
 - [Figure S1](supplement/figs/supp_S1_grid_lines.png)
 - [Figure S2](supplement/figs/supp_S2_position.png)
 - [Figure S3](supplement/figs/supp_S3_advantage.png)
-- [Figure S4](supplement/figs/supp_S4_network_dynamics.png)
-- [Figure S5: Paired-Ridge robustness](supplement/figs/supp_S5_ridge_robustness.png)
+- [Figure S4: Paired-Ridge robustness](supplement/figs/supp_S4_ridge_robustness.png)
 
 ## Ridge experiments
 

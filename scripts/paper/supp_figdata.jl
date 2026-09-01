@@ -4,7 +4,7 @@
 Cluster-side extract for the SUPPLEMENTARY figure pipeline. Standalone twin of
 scripts/paper/figdata.jl: it reads the full sweep (BROKERAGE_ABM_SWEEP_DIR) and writes
 output/supplement/figdata.jld2, the small derived dataset from which
-scripts/paper/supp_figures.jl renders the supplement figures (S1-S4) locally,
+scripts/paper/supp_figures.jl renders the supplement figures (S1-S3) locally,
 with no access to the sweep. This script shares no state with the results-section
 pipeline, so the two can be regenerated independently of each other.
 

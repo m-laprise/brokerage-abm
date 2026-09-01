@@ -29,13 +29,15 @@ initialization transient.
 Sources of the broker's ranking advantage
 \end{ptitle}
 \begin{pcaption}{information}
-Panel A shows each Ridge restriction's change in the broker-minus-principal rank gap
-relative to paired Ridge at the baseline. Points are mean common-seed differences;
-whiskers are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the
-absolute rank gap under paired Ridge and each restriction across the
-\pv{ablationConditionN} regimes in the baseline and $\rho\times\delta$ design.
-Thin lines connect the same regime, small points are regime means, diamonds are
-medians, and the horizontal line marks zero.
+Panel A shows each Ridge restriction's change in the broker-minus-principal
+difference in holdout rank correlation at the baseline, calculated as the
+restriction minus paired Ridge. Points are mean common-seed differences; whiskers
+are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the
+broker-minus-principal difference in holdout rank correlation under paired Ridge
+and each restriction across the \pv{ablationConditionN} regimes in the
+$\rho\times\delta$ design, including the baseline. Thin lines connect estimates
+for the same regime across restrictions, small points are regime means, diamonds
+are medians, and the horizontal line marks zero.
 \end{pcaption}
 
 \begin{ptitle}{grid}
@@ -48,18 +50,19 @@ $\rho=1$, where $\delta$ has no effect, is one separate regime shown once and
 unconnected. The figure therefore displays all 26 regimes in the design. Each
 marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte
 Carlo intervals.
-The rank-correlation gap is broker minus principals; the output gap, broker
+The reported difference in holdout rank correlation is broker minus principal;
+the output gap is broker
 channel minus self-search.
 \end{pcaption}
 
 \begin{ptitle}{advantage}
-Prediction and output gaps vs centrality and access
+Ranking and output differences by centrality and access
 \end{ptitle}
 \begin{pcaption}{advantage}
-Rank-correlation gap (broker minus principals) and output gap (broker channel
-minus self-search) against broker betweenness centrality and access fraction; one
-dot per regime, each a late-window mean over its seeds. Color
-identifies matching composition $\rho$.
+Difference in holdout rank correlation (broker minus principal) and output gap
+(broker channel minus self-search) against broker betweenness centrality and
+access fraction; one dot for each of the \pv{nRegimes} effective regimes, each a
+late-window mean over its seeds. Color identifies matching composition $\rho$.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}
@@ -67,6 +70,9 @@ Baseline dynamics
 \end{ptitle}
 \begin{pcaption}{dynamics}
 Lines are \pv{rollWin}-observation rolling ensemble means over seeds at the
-baseline regime; ribbons are pointwise 95\% Monte Carlo intervals. Axes start
-at $t=\pv{axisStart}$ to omit the initialization transient.
+baseline regime; shaded ribbons are pointwise 95\% Monte Carlo intervals. Some
+intervals are narrower than the plotted lines and therefore are not separately
+visible. Broker betweenness centrality is measured every \pv{betwInterval}
+periods; the other outcomes are measured every period. Axes start at
+$t=\pv{axisStart}$ to omit the initialization transient.
 \end{pcaption}
