@@ -1,5 +1,6 @@
 % brokers_who_do_not_bridge_without_appendices.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_manuscript.jl on 2026-09-01T05:09:49.659.
+% Built by scripts/paper/build_manuscript.jl on 2026-09-01T05:31:18.598.
+% Manuscript commit: 4af70121b2359b7c4498eb1885cdf6503c6a1e59; clean sources.
 % The editable root is paper/brokers_who_do_not_bridge_without_appendices.tex; the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 
@@ -223,10 +224,11 @@ Important models in the economics literature have focused on the attributional c
 
 % Generated from paper/section_source.tex by scripts/paper/build_section.jl.
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 04:30
+% Built by scripts/paper/build_section.jl on 2026-09-01 05:30
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1; clean sources.
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1e5487884bf82e80a3a232f4c769c66404;
+% manuscript commit 4af70121b2359b7c4498eb1885cdf6503c6a1e59; clean manuscript sources.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -359,8 +361,9 @@ paths between principals that run through the broker (Brandes 2001;
 Freeman 1977), as the standard \emph{whole-network} measure of brokerage
 potential. The results would be substantively similar if examining the
 ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S4
-report those analyses. The access
+1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S3
+report those analyses, with the baseline time paths in Supplementary Figure S2.
+The access
 fraction is the share of brokered matches in which the counterparty was not
 already tied to the demander. Prediction quality is measured on deterministic
 random-partner holdout samples evaluated against noiseless true output. Holdout
@@ -439,8 +442,11 @@ measures.
 \centering
 \includegraphics[width=0.75\linewidth]{figs/fig1_dynamics.png}
 \caption{\textbf{Baseline dynamics.} Lines are 5-observation rolling ensemble means over seeds at the
-baseline regime; ribbons are pointwise 95\% Monte Carlo intervals. Axes start
-at $t=30$ to omit the initialization transient.}
+baseline regime; shaded ribbons are pointwise 95\% Monte Carlo intervals. Some
+intervals are narrower than the plotted lines and therefore are not separately
+visible. Broker betweenness centrality is measured every 20
+periods; the other outcomes are measured every period. Axes start at
+$t=30$ to omit the initialization transient.}
 \label{fig:dynamics}
 \end{figure}
 
@@ -518,7 +524,7 @@ regression replaces both neural networks, the broker-minus-principal difference 
 holdout rank correlation is
 0.335 at the baseline, has a median of 0.342 across
 the 98 regimes, and is positive in all 98.
-Supplementary Figure S5 reports the pattern across regimes and the
+Supplementary Figure S4 reports the pattern across regimes and the
 $\rho\times\delta$ design.
 The paired-Ridge broker still has more observations and retains more information
 about each pair than a principal. Three additional Ridge experiments impose the
@@ -551,14 +557,14 @@ neural-network flexibility alone.
 \centering
 \includegraphics[width=0.94\linewidth]{figs/fig_information_sources.png}
 \caption{\textbf{Sources of the broker's ranking advantage.} Panel A shows each Ridge restriction's change in the broker-minus-principal
-difference in holdout rank correlation
-relative to paired Ridge at the baseline. Points are mean common-seed differences;
-whiskers are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the
+difference in holdout rank correlation at the baseline, calculated as the
+restriction minus paired Ridge. Points are mean common-seed differences; whiskers
+are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the
 broker-minus-principal difference in holdout rank correlation under paired Ridge
-and each restriction across the
-26 regimes in the baseline and $\rho\times\delta$ design.
-Thin lines connect the same regime, small points are regime means, diamonds are
-medians, and the horizontal line marks zero.}
+and each restriction across the 26 regimes in the
+$\rho\times\delta$ design, including the baseline. Thin lines connect estimates
+for the same regime across Ridge variants, small points are regime means, diamonds
+are medians, and the horizontal line marks zero.}
 \label{fig:information-sources}
 \end{figure}
 
@@ -584,7 +590,8 @@ Difficulty changes the broker's informational advantage only when complementarit
 contributes substantially to match value. Under pure complementarity, increasing
 $\delta$ from 0 to 1 lowers the broker's rank correlation from
 0.94 to 0.41 and changes the
-broker-minus-principal difference in holdout rank correlation from 0.28 to -0.04
+broker-minus-principal difference in holdout rank correlation from
+0.28 to -0.04
 (Fig.~\ref{fig:grid}). This effect fades as $\rho$ approaches general quality and
 disappears at $\rho=1$ by construction. Paired 95\% intervals for this difference are
 above zero in 24 of the 26 regimes. Only
@@ -613,7 +620,8 @@ unconnected. The figure therefore displays all 26 regimes in the design. Each
 marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte
 Carlo intervals.
 The reported difference in holdout rank correlation is broker minus principal;
-the output gap is broker channel minus self-search.}
+the output gap is broker
+channel minus self-search.}
 \label{fig:grid}
 \end{figure}
 
@@ -682,10 +690,10 @@ runs, brokerage does little to eliminate the structural basis of its own positio
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\linewidth]{figs/fig4_advantage.png}
-\caption{\textbf{Prediction and output differences vs centrality and access.} Difference in holdout rank correlation (broker minus principal) and output gap (broker channel
-minus self-search) against broker betweenness centrality and access fraction; one
-dot per regime, each a late-window mean over its seeds. Color
-identifies matching composition $\rho$.}
+\caption{\textbf{Ranking and output differences by centrality and access.} Difference in holdout rank correlation (broker minus principal) and output gap
+(broker channel minus self-search) against broker betweenness centrality and
+access fraction; one dot for each of the 98 effective regimes, each a
+late-window mean over its seeds. Color identifies matching composition $\rho$.}
 \label{fig:advantage}
 \end{figure}
 
@@ -693,7 +701,8 @@ Figure~\ref{fig:advantage} shows that structural position relates differently to
 relative ranking and realized value. Across otherwise matched parameter settings,
 moving from pure complementarity to pure general quality reduces the output gap from
 +0.87 to +0.23, while increasing the
-broker-minus-principal difference in holdout rank correlation from 0.10 to
+broker-minus-principal difference in holdout rank correlation from
+0.10 to
 0.46. The broker is therefore most central and produces its
 largest realized-output advantage where its relative holdout-ranking advantage is
 smaller. Taken together, the results separate the sources of informational,
@@ -703,8 +712,9 @@ sustain centrality. These advantages need not move together.
 
 \subsection{Propositions}
 
-The simulation results can be condensed into the following falsifiable
-propositions, offered as hypotheses for future empirical work:
+The simulation results motivate the following falsifiable propositions for
+future empirical research. These propositions extend the model's implications
+beyond the simulated setting:
 
 \noindent\textbf{P1.} In complex matching markets, brokers add value primarily by
 assessing complementarity among reachable counterparties, not by bridging
