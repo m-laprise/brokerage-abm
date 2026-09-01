@@ -1,0 +1,3249 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nyt/global//global/global/global}
+    \entry{aggarwalDemutualizationCorporateGovernance2002}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=9098dac5c79caa4ecfb6f78fff5dcfe6}{%
+           family={Aggarwal},
+           familyi={A\bibinitperiod},
+           given={Reena},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{fullhash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{fullhashraw}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{bibnamehash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{authorbibnamehash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{authornamehash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{authorfullhash}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \strng{authorfullhashraw}{9098dac5c79caa4ecfb6f78fff5dcfe6}
+      \field{sortinit}{A}
+      \field{sortinithash}{2f401846e2029bad6b3ecc16d50031e2}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1745-6622}
+      \field{journaltitle}{Journal of Applied Corporate Finance}
+      \field{langid}{english}
+      \field{number}{1}
+      \field{title}{Demutualization and {{Corporate Governance}} of {{Stock Exchanges}}}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{15}
+      \field{year}{2002}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{105\bibrangedash 113}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1111/j.1745-6622.2002.tb00345.x
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/5ZEKNYDU/Aggarwal - 2002 - Demutualization and Corporate Governance of Stock Exchanges.pdf;/Users/mlaprise/Zotero/storage/7X8UHGNS/j.1745-6622.2002.tb00345.html
+      \endverb
+      \verb{urlraw}
+      \verb https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1745-6622.2002.tb00345.x
+      \endverb
+      \verb{url}
+      \verb https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1745-6622.2002.tb00345.x
+      \endverb
+    \endentry
+    \entry{bandeljRelationalWorkEconomic2012}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=f4ea58d43af7f36e117b980f1690a881}{%
+           family={Bandelj},
+           familyi={B\bibinitperiod},
+           given={Nina},
+           giveni={N\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{fullhash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{fullhashraw}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{bibnamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorbibnamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authornamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorfullhash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorfullhashraw}{f4ea58d43af7f36e117b980f1690a881}
+      \field{extraname}{1}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This paper attempts to clarify the concept of relational work for understanding economic life as proposed by Viviana Zelizer. To do so, it first compares the concept to similar notions used in other disciplinary fields. Second, it reinterprets some exemplary economic sociology studies by using the relational work lens to clarify the concept’s utility for empirical analysis. Third, it speculates about the place of relational work in the theoretical toolkit of economic sociologists, in particular its relation to embeddedness. The paper concludes by arguing for the utility of the concept to integrate structural, cultural, and power-focused analyses of economic life, to highlight the often-overlooked role of emotions in economic exchange, and to ground an alternative to rational action theory in economic sociology.}
+      \field{day}{1}
+      \field{issn}{0032-3292}
+      \field{journaltitle}{Politics \& Society}
+      \field{langid}{english}
+      \field{month}{6}
+      \field{number}{2}
+      \field{shortjournal}{Politics \& Society}
+      \field{title}{Relational {{Work}} and {{Economic Sociology}}}
+      \field{urlday}{20}
+      \field{urlmonth}{7}
+      \field{urlyear}{2022}
+      \field{volume}{40}
+      \field{year}{2012}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{175\bibrangedash 201}
+      \range{pages}{27}
+      \verb{doi}
+      \verb 10.1177/0032329212441597
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/W5XKX7FT/Bandelj_2012_Relational Work and Economic Sociology.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0032329212441597
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0032329212441597
+      \endverb
+      \keyw{_lu,economic sociology,embeddedness,emotions,relational work,theory of action}
+    \endentry
+    \entry{bandeljRelationalWorkEconomy2020}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=f4ea58d43af7f36e117b980f1690a881}{%
+           family={Bandelj},
+           familyi={B\bibinitperiod},
+           given={Nina},
+           giveni={N\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{fullhash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{fullhashraw}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{bibnamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorbibnamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authornamehash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorfullhash}{f4ea58d43af7f36e117b980f1690a881}
+      \strng{authorfullhashraw}{f4ea58d43af7f36e117b980f1690a881}
+      \field{extraname}{2}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{In her groundbreaking scholarship on intimacy and economy, Viviana Zelizer coined the concept of relational work, or efforts in matching social relations with economic transactions and media of exchange. This article reviews the conceptual advances and empirical applications of relational work over the past two decades. I first trace the origins of the concept and discuss how it is distinct from the idea of embeddedness. I then identify variants of relational work proposed in economic sociology, including relational accounting, obfuscated exchange, clarifying and blurring practices, and emotions and power in relational work. The second part of the review discusses research on relational work in five areas: earmarking money, walking the terrain of morally problematic exchange, configuring social relations through economic activity, using social relations to negotiate economic interactions, and scaling up to relational work of organizations and institutions. I end by proposing areas of future research to examine the determinants and consequences of relational work for (dis)trust, (in)equality, and relational (mis)matches.}
+      \field{day}{30}
+      \field{issn}{0360-0572, 1545-2115}
+      \field{journaltitle}{Annual Review of Sociology}
+      \field{langid}{english}
+      \field{month}{7}
+      \field{number}{1}
+      \field{shortjournal}{Annu. Rev. Sociol.}
+      \field{title}{Relational {{Work}} in the {{Economy}}}
+      \field{urlday}{16}
+      \field{urlmonth}{12}
+      \field{urlyear}{2022}
+      \field{volume}{46}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{251\bibrangedash 272}
+      \range{pages}{22}
+      \verb{doi}
+      \verb 10.1146/annurev-soc-121919-054719
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/WUA8STS9/Bandelj - 2020 - Relational Work in the Economy.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.annualreviews.org/doi/10.1146/annurev-soc-121919-054719
+      \endverb
+      \verb{url}
+      \verb https://www.annualreviews.org/doi/10.1146/annurev-soc-121919-054719
+      \endverb
+    \endentry
+    \entry{bethuneInformationbasedTheoryFinancial2022a}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=6aff273450295694f7dcf2b777ed4591}{%
+           family={Bethune},
+           familyi={B\bibinitperiod},
+           given={Zachary},
+           giveni={Z\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=26623ebd797678f0a5d878badcb30339}{%
+           family={Sultanum},
+           familyi={S\bibinitperiod},
+           given={Bruno},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=0f6829832b65aed53e90fa8311d005d3}{%
+           family={Trachter},
+           familyi={T\bibinitperiod},
+           given={Nicholas},
+           giveni={N\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{fullhash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{fullhashraw}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{bibnamehash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{authorbibnamehash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{authornamehash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{authorfullhash}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \strng{authorfullhashraw}{e17f24f1bc52154a5e25fa2b27f7c238}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{We build a theory of financial intermediation based on the premise that some investors are better able to figure out the trade motives of their counterparties in bilateral meetings—screening experts. We solve for the equilibrium market structure and study how information asymmetries stemming from heterogeneity in screening expertise shape up the core–periphery trade structure. In particular, the core of the market is populated by screening experts: they have the largest share of trade volume, they are actively engaged in middleman activity, and trade with the most counterparties. Using transaction-level micro-data and information disclosure requirements, we provide extensive evidence consistent only with our theory of financial intermediation.}
+      \field{day}{1}
+      \field{issn}{0034-6527}
+      \field{journaltitle}{The Review of Economic Studies}
+      \field{month}{10}
+      \field{number}{5}
+      \field{shortjournal}{Rev Econ Stud}
+      \field{title}{An {{Information-based Theory}} of {{Financial Intermediation}}}
+      \field{urlday}{30}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{volume}{89}
+      \field{year}{2022}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{2381\bibrangedash 2444}
+      \range{pages}{64}
+      \verb{doi}
+      \verb 10.1093/restud/rdab092
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/TDMBDDHP/Bethune et al. - 2022 - An Information-based Theory of Financial Intermediation.pdf;/Users/mlaprise/Zotero/storage/9Z7UUJCM/rdab092.html
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1093/restud/rdab092
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1093/restud/rdab092
+      \endverb
+    \endentry
+    \entry{blockRelationalWorkMarket2012}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=04649aabfa64d5febd6bbc2afdae9934}{%
+           family={Block},
+           familyi={B\bibinitperiod},
+           given={Fred},
+           giveni={F\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{fullhash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{fullhashraw}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{bibnamehash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{authorbibnamehash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{authornamehash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{authorfullhash}{04649aabfa64d5febd6bbc2afdae9934}
+      \strng{authorfullhashraw}{04649aabfa64d5febd6bbc2afdae9934}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{This article introduces the special issue on ?Relational Work in Market Economies? by explaining the origins of the concept and its value in illuminating a dimension of market activity that has not been systematically addressed by social scientists. It also explains why this focus on individual economic transactions could be relevant for those whose interest centers on broader questions of political economy. Finally, there are brief descriptions of the other six articles that make up this special issue.}
+      \field{day}{1}
+      \field{issn}{0032-3292}
+      \field{journaltitle}{Politics \& Society}
+      \field{langid}{english}
+      \field{month}{6}
+      \field{number}{2}
+      \field{shorttitle}{Relational {{Work}} in {{Market Economies}}}
+      \field{title}{Relational {{Work}} in {{Market Economies}}: {{Introduction}}}
+      \field{urlday}{20}
+      \field{urlmonth}{1}
+      \field{urlyear}{2023}
+      \field{volume}{40}
+      \field{year}{2012}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{135\bibrangedash 144}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1177/0032329212441576
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/5KN9E8XD/Block_2012_Relational Work in Market Economies.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0032329212441576
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0032329212441576
+      \endverb
+    \endentry
+    \entry{borgattiStructuralHolesUnpacking1997}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=1fd697e189cda659215efa8b09d9f4f2}{%
+           family={Borgatti},
+           familyi={B\bibinitperiod},
+           given={Stephen\bibnamedelima P.},
+           giveni={S\bibinitperiod\bibinitdelim P\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{fullhash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{fullhashraw}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{bibnamehash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{authorbibnamehash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{authornamehash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{authorfullhash}{1fd697e189cda659215efa8b09d9f4f2}
+      \strng{authorfullhashraw}{1fd697e189cda659215efa8b09d9f4f2}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{journaltitle}{Connections}
+      \field{number}{1}
+      \field{shorttitle}{Structural Holes}
+      \field{title}{Structural Holes: {{Unpacking Burt}}’s Redundancy Measures}
+      \field{urlday}{15}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{20}
+      \field{year}{1997}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \true{nocite}
+      \field{pages}{35\bibrangedash 38}
+      \range{pages}{4}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/2MWDJX77/Borgatti - 1997 - Structural holes Unpacking Burt’s redundancy measures.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.researchgate.net/profile/Stephen-Borgatti/publication/284672270_Structural_holes_Unpacking_Burt's_redundancy_measures/links/687543804d336a4367470840/Structural-holes-Unpacking-Burts-redundancy-measures.pdf
+      \endverb
+      \verb{url}
+      \verb https://www.researchgate.net/profile/Stephen-Borgatti/publication/284672270_Structural_holes_Unpacking_Burt's_redundancy_measures/links/687543804d336a4367470840/Structural-holes-Unpacking-Burts-redundancy-measures.pdf
+      \endverb
+    \endentry
+    \entry{geoffreyc.bowkerSortingThingsOut1999}{book}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=204a44c003f4e5a76406da3423eeedec}{%
+           family={Bowker},
+           familyi={B\bibinitperiod},
+           given={Geoffrey\bibnamedelima C.},
+           giveni={G\bibinitperiod\bibinitdelim C\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=452ca0de87dd298f1cd9de5041fce28d}{%
+           family={Star},
+           familyi={S\bibinitperiod},
+           given={Susan\bibnamedelima L.},
+           giveni={S\bibinitperiod\bibinitdelim L\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{location}{1}{%
+        {Cambridge}%
+      }
+      \list{publisher}{1}{%
+        {MIT Press}%
+      }
+      \strng{namehash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{fullhash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{fullhashraw}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{bibnamehash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{authorbibnamehash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{authornamehash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{authorfullhash}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \strng{authorfullhashraw}{6cef0a98990bad0ee7ae200d4bde32b4}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Sorting {{Things Out}}: {{Classification}} and {{Its Consequences}}}
+      \field{year}{1999}
+      \field{dateera}{ce}
+    \endentry
+    \entry{brandesFasterAlgorithmBetweenness2001}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=392b457d9bac1ed69366176e7857d7e9}{%
+           family={Brandes},
+           familyi={B\bibinitperiod},
+           given={Ulrik},
+           giveni={U\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Routledge}%
+      }
+      \strng{namehash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{fullhash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{fullhashraw}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{bibnamehash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{authorbibnamehash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{authornamehash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{authorfullhash}{392b457d9bac1ed69366176e7857d7e9}
+      \strng{authorfullhashraw}{392b457d9bac1ed69366176e7857d7e9}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Motivated by the fast‐growing need to compute centrality indices on large, yet very sparse, networks, new algorithms for betweenness are introduced in this paper. They require O(n + m) space and run in O(nm) and O(nm + n2 log n) time on unweighted and weighted networks, respectively, where m is the number of links. Experimental evidence is provided that this substantially increases the range of networks for which centrality analysis is feasible. The betweenness centrality index is essential in the analysis of social networks, but costly to compute. Currently, the fastest known algorithms require ?(n 3) time and ?(n 2) space, where n is the number of actors in the network.}
+      \field{day}{1}
+      \field{issn}{0022-250X}
+      \field{journaltitle}{The Journal of Mathematical Sociology}
+      \field{month}{6}
+      \field{number}{2}
+      \field{title}{A Faster Algorithm for Betweenness Centrality}
+      \field{urlday}{15}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{25}
+      \field{year}{2001}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \true{nocite}
+      \field{pages}{163\bibrangedash 177}
+      \range{pages}{15}
+      \verb{doi}
+      \verb 10.1080/0022250X.2001.9990249
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/BMXJMQY6/Brandes - 2001 - A faster algorithm for betweenness centrality.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1080/0022250X.2001.9990249
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1080/0022250X.2001.9990249
+      \endverb
+    \endentry
+    \entry{burtStructuralHolesSocial1992}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Harvard University Press}%
+      }
+      \strng{namehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{bibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorbibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authornamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \field{extraname}{1}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Ronald Burt describes the social structural theory of competition that has developed through the last two decades. The contrast between perfect competition and monopoly is replaced with a network model of competition. The basic element in this account is the structural hole: a gap between two individuals with complementary resources or information. When the two are connected through a third individual as entrepreneur, the gap is filled, creating important advantages for the entrepreneur. Competitive advantage is a matter of access to structural holes in relation to market transactions.}
+      \field{eprinttype}{jstor}
+      \field{isbn}{978-0-674-84371-4}
+      \field{shorttitle}{Structural {{Holes}}}
+      \field{title}{Structural {{Holes}}: {{The Social Structure}} of {{Competition}}}
+      \field{urlday}{19}
+      \field{urlmonth}{1}
+      \field{urlyear}{2023}
+      \field{year}{1992}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{eprint}
+      \verb j.ctv1kz4h78
+      \endverb
+      \verb{urlraw}
+      \verb https://www.jstor.org/stable/j.ctv1kz4h78
+      \endverb
+      \verb{url}
+      \verb https://www.jstor.org/stable/j.ctv1kz4h78
+      \endverb
+    \endentry
+    \entry{burtNetworkStructureSocial2000}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{bibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorbibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authornamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \field{extraname}{2}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This is a review of argument and evidence on the connection between social networks and social capital. My summary points are three: (1) Research and theory will better cumulate across studies if we focus on the network mechanisms responsible for social capital effects rather than trying to integrate across metaphors of social capital loosely tied to distant empirical indicators. (2) There is an impressive diversity of empirical evidence showing that social capital is more a function of brokerage across structural holes than closure within a network, but there are contingency factors. (3) The two leading network mechanisms can be brought together in a productive way within a more general model of social capital. Structural holes are the source of value added, but network closure can be essential to realizing the value buried in the holes.}
+      \field{issn}{01913085}
+      \field{journaltitle}{Research in Organizational Behavior}
+      \field{langid}{english}
+      \field{shortjournal}{Research in Organizational Behavior}
+      \field{title}{The {{Network Structure Of Social Capital}}}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{volume}{22}
+      \field{year}{2000}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{345\bibrangedash 423}
+      \range{pages}{79}
+      \verb{doi}
+      \verb 10.1016/S0191-3085(00)22009-1
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/T38CP6VP/Burt - 2000 - The Network Structure Of Social Capital.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://linkinghub.elsevier.com/retrieve/pii/S0191308500220091
+      \endverb
+      \verb{url}
+      \verb https://linkinghub.elsevier.com/retrieve/pii/S0191308500220091
+      \endverb
+    \endentry
+    \entry{burtBridgeDecay2002a}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{bibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorbibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authornamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \field{extraname}{3}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This paper is about three points: network bridges are critical to the advantage known as social capital, bridges relative to other kinds of relationships show faster rates of decay over time, and the faster decay in bridges has implications for the stability of social capital. A bridge connects people not otherwise connected; in other words, it spans a structural hole in the surrounding organization. I have 4 years of data on the social networks of bankers in a large organization. I show that bridge relations are associated with more positive peer reputations and higher compensation, but bridges decay at an alarming rate. Out of 10, 9 bridges this year are gone next year. I describe factors in the rate of decay, find slower decay in the networks of bankers experienced with bridge relationships, and conclude that social capital accrues to those who already have it. An appendix is included on the kinked decay functions observed in contractual bridge relationships.}
+      \field{day}{1}
+      \field{issn}{0378-8733}
+      \field{journaltitle}{Social Networks}
+      \field{month}{10}
+      \field{number}{4}
+      \field{shortjournal}{Social Networks}
+      \field{title}{Bridge Decay}
+      \field{urlday}{15}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{24}
+      \field{year}{2002}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{333\bibrangedash 363}
+      \range{pages}{31}
+      \verb{doi}
+      \verb 10.1016/S0378-8733(02)00017-5
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/J5JE9R5K/Burt - 2002 - Bridge decay.pdf;/Users/mlaprise/Zotero/storage/ESQX8K7M/S0378873302000175.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.sciencedirect.com/science/article/pii/S0378873302000175
+      \endverb
+      \verb{url}
+      \verb https://www.sciencedirect.com/science/article/pii/S0378873302000175
+      \endverb
+    \endentry
+    \entry{burtStructuralHolesGood2004}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{bibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorbibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authornamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \field{extraname}{4}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This article outlines the mechanism by which brokerage provides social capital. Opinion and behavior are more homogeneous within than between groups, so people connected across groups are more familiar with alternative ways of thinking and behaving. Brokerage across the structural holes between groups provides a vision of options otherwise unseen, which is the mechanism by which brokerage becomes social capital. I review evidence consistent with the hypothesis, then look at the networks around managers in a large American electronics company. The organization is rife with structural holes, and brokerage has its expected correlates. Compensation, positive performance evaluations, promotions, and good ideas are disproportionately in the hands of people whose networks span structural holes. The between‐group brokers are more likely to express ideas, less likely to have ideas dismissed, and more likely to have ideas evaluated as valuable. I close with implications for creativity and structural change.}
+      \field{issn}{0002-9602}
+      \field{journaltitle}{American Journal of Sociology}
+      \field{number}{2}
+      \field{title}{Structural {{Holes}} and {{Good Ideas}}}
+      \field{urlday}{17}
+      \field{urlmonth}{5}
+      \field{urlyear}{2021}
+      \field{volume}{110}
+      \field{year}{2004}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{349\bibrangedash 399}
+      \range{pages}{51}
+      \verb{doi}
+      \verb 10.1086/421787
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/9QWKE64Q/Burt_2004_Structural Holes and Good Ideas.pdf;/Users/mlaprise/Zotero/storage/JZR4N38L/421787.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.journals.uchicago.edu/doi/full/10.1086/421787
+      \endverb
+      \verb{url}
+      \verb https://www.journals.uchicago.edu/doi/full/10.1086/421787
+      \endverb
+      \keyw{brokerage,corporate managers,creativity,social capital,structural change}
+    \endentry
+    \entry{burtFragileBrokerage}{incollection}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \name{editor}{2}{}{%
+        {{hash=84d0a096531859706501195a071f97f8}{%
+           family={Andersson},
+           familyi={A\bibinitperiod},
+           given={Tommy},
+           giveni={T\bibinitperiod}}}%
+        {{hash=50e927ea526bf6a64ceb0a8e739784e1}{%
+           family={Edling},
+           familyi={E\bibinitperiod},
+           given={Christofer},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Oxford}%
+      }
+      \list{publisher}{1}{%
+        {Oxford University Press}%
+      }
+      \strng{namehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{fullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{bibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorbibnamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authornamehash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhash}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{authorfullhashraw}{fd355c0061f6dee85bc26b7564b0e4c0}
+      \strng{editorbibnamehash}{63864ea65be8d67f790308c7d9b10039}
+      \strng{editornamehash}{63864ea65be8d67f790308c7d9b10039}
+      \strng{editorfullhash}{63864ea65be8d67f790308c7d9b10039}
+      \strng{editorfullhashraw}{63864ea65be8d67f790308c7d9b10039}
+      \field{extraname}{5}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Social {{Networks}}}
+      \field{series}{Nobel Conference Series}
+      \field{title}{Fragile Brokerage?}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/8JVFTAF7/FB 1 cover.pdf
+      \endverb
+      \verb{urlraw}
+      \verb http://www.ronaldsburt.com/research/files/FB.pdf
+      \endverb
+      \verb{url}
+      \verb http://www.ronaldsburt.com/research/files/FB.pdf
+      \endverb
+    \endentry
+    \entry{burtStrongBridgesTrust2026a}{book}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=fd355c0061f6dee85bc26b7564b0e4c0}{%
+           family={Burt},
+           familyi={B\bibinitperiod},
+           given={Ronald\bibnamedelima S.},
+           giveni={R\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ed2459c91cd97a042c648701f83bfa15}{%
+           family={Opper},
+           familyi={O\bibinitperiod},
+           given={Sonja},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Oxford University Press}%
+      }
+      \strng{namehash}{3422528d96df82d6396365a6c99f525e}
+      \strng{fullhash}{3422528d96df82d6396365a6c99f525e}
+      \strng{fullhashraw}{3422528d96df82d6396365a6c99f525e}
+      \strng{bibnamehash}{3422528d96df82d6396365a6c99f525e}
+      \strng{authorbibnamehash}{3422528d96df82d6396365a6c99f525e}
+      \strng{authornamehash}{3422528d96df82d6396365a6c99f525e}
+      \strng{authorfullhash}{3422528d96df82d6396365a6c99f525e}
+      \strng{authorfullhashraw}{3422528d96df82d6396365a6c99f525e}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-0-19-783429-9}
+      \field{shorttitle}{Strong {{Bridges}}}
+      \field{title}{Strong {{Bridges}}: {{Trust Beyond Structure}}}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/VT4DJPJM/99131807217006421.html
+      \endverb
+      \verb{urlraw}
+      \verb https://catalog.princeton.edu/catalog/99131807217006421
+      \endverb
+      \verb{url}
+      \verb https://catalog.princeton.edu/catalog/99131807217006421
+      \endverb
+    \endentry
+    \entry{carruthersFinancializationInstitutionalFoundations2015}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=b754103122c029ae1ec0f671f1f49e48}{%
+           family={Carruthers},
+           familyi={C\bibinitperiod},
+           given={Bruce\bibnamedelima G.},
+           giveni={B\bibinitperiod\bibinitdelim G\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{fullhash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{fullhashraw}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{bibnamehash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{authorbibnamehash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{authornamehash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{authorfullhash}{b754103122c029ae1ec0f671f1f49e48}
+      \strng{authorfullhashraw}{b754103122c029ae1ec0f671f1f49e48}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1475-1461}
+      \field{journaltitle}{Socio-Economic Review}
+      \field{number}{2}
+      \field{shortjournal}{Socio-Economic Review}
+      \field{title}{Financialization and the {{Institutional Foundations}} of the {{New Capitalism}}}
+      \field{urlday}{28}
+      \field{urlmonth}{8}
+      \field{urlyear}{2021}
+      \field{volume}{13}
+      \field{year}{2015}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{379\bibrangedash 398}
+      \range{pages}{20}
+      \verb{doi}
+      \verb 10.1093/ser/mwv008
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/WI3NWZE7/Carruthers_2015_Financialization and the institutional foundations of the new capitalism.pdf;/Users/mlaprise/Zotero/storage/FNCF7KSE/1686150.html
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1093/ser/mwv008
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1093/ser/mwv008
+      \endverb
+      \keyw{capitalism,financialization,institutionalism}
+    \endentry
+    \entry{ciepleyPublicPrivatePolitical2013a}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=6d7397b9dfc2b91c9a922ae75c83cd68}{%
+           family={Ciepley},
+           familyi={C\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{fullhash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{fullhashraw}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{bibnamehash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{authorbibnamehash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{authornamehash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{authorfullhash}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \strng{authorfullhashraw}{6d7397b9dfc2b91c9a922ae75c83cd68}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{This article challenges the liberal, contractual theory of the corporation and argues for replacing it with a political theory of the corporation. Corporations are government-like in their powers, and government grants them both their external “personhood” and their internal governing authority. They are thus not simply private. Yet they are privately organized and financed and therefore not simply public. Corporations transgress all the basic dichotomies that structure liberal treatments of law, economics, and politics: public/private, government/market, privilege/equality, and status/contract. They are “franchise governments” that cannot be satisfactorily assimilated to liberalism. The liberal effort to assimilate them, treating them as contractually constituted associations of private property owners, endows them with rights they ought not have, exacerbates their irresponsibility, and compromises their principal public benefit of generating long-term growth. Instead, corporations need to be placed in a distinct category—neither public nor private, but “corporate”—to be regulated by distinct rules and norms.}
+      \field{issn}{0003-0554, 1537-5943}
+      \field{journaltitle}{American Political Science Review}
+      \field{langid}{english}
+      \field{month}{2}
+      \field{number}{1}
+      \field{shorttitle}{Beyond {{Public}} and {{Private}}}
+      \field{title}{Beyond {{Public}} and {{Private}}: {{Toward}} a {{Political Theory}} of the {{Corporation}}}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{107}
+      \field{year}{2013}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{139\bibrangedash 158}
+      \range{pages}{20}
+      \verb{doi}
+      \verb 10.1017/S0003055412000536
+      \endverb
+      \verb{urlraw}
+      \verb https://www.cambridge.org/core/journals/american-political-science-review/article/abs/beyond-public-and-private-toward-a-political-theory-of-the-corporation/23BF8CB7FBBFC1BE29C5771A887862A9
+      \endverb
+      \verb{url}
+      \verb https://www.cambridge.org/core/journals/american-political-science-review/article/abs/beyond-public-and-private-toward-a-political-theory-of-the-corporation/23BF8CB7FBBFC1BE29C5771A887862A9
+      \endverb
+    \endentry
+    \entry{cohenTruthPowerLegal2019}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=8cbfa01c3351302c8ca4c0576ed26c17}{%
+           family={Cohen},
+           familyi={C\bibinitperiod},
+           given={Julie\bibnamedelima E.},
+           giveni={J\bibinitperiod\bibinitdelim E\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {New York, NY: Oxford University Press}%
+      }
+      \strng{namehash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{fullhash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{fullhashraw}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{bibnamehash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{authorbibnamehash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{authornamehash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{authorfullhash}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \strng{authorfullhashraw}{8cbfa01c3351302c8ca4c0576ed26c17}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-0-19-024669-3}
+      \field{langid}{english}
+      \field{pagetotal}{366 pages}
+      \field{shorttitle}{Between {{Truth}} and {{Power}}}
+      \field{title}{Between {{Truth}} and {{Power}}: {{The Legal Constructions}} of {{Informational Capitalism}}}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \keyw{informational capitalism,legal institutionalism,technological innovations,technology and society}
+    \endentry
+    \entry{colemanAsymmetricSociety1982}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=75bd153ea6e371d26904dafbd68d45c0}{%
+           family={Coleman},
+           familyi={C\bibinitperiod},
+           given={James\bibnamedelima S.},
+           giveni={J\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Syracuse, N.Y.: Syracuse University Press}%
+      }
+      \strng{namehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{fullhash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{fullhashraw}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{bibnamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorbibnamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authornamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorfullhash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorfullhashraw}{75bd153ea6e371d26904dafbd68d45c0}
+      \field{extraname}{1}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{1st ed.}
+      \field{isbn}{978-0-8156-0172-2}
+      \field{langid}{english}
+      \field{pagetotal}{xii, 191 p.}
+      \field{series}{The {{Frank W}}. {{Abrams}} Lectures}
+      \field{title}{The {{Asymmetric Society}}}
+      \field{year}{1982}
+      \field{dateera}{ce}
+      \keyw{.sociology (theory)}
+    \endentry
+    \entry{colemanFoundationsSocialTheory1990}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=75bd153ea6e371d26904dafbd68d45c0}{%
+           family={Coleman},
+           familyi={C\bibinitperiod},
+           given={James\bibnamedelima S.},
+           giveni={J\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge, Mass: Belknap Press of Harvard University Press}%
+      }
+      \strng{namehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{fullhash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{fullhashraw}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{bibnamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorbibnamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authornamehash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorfullhash}{75bd153ea6e371d26904dafbd68d45c0}
+      \strng{authorfullhashraw}{75bd153ea6e371d26904dafbd68d45c0}
+      \field{extraname}{2}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Foundations of {{Social Theory}}}
+      \field{year}{1990}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/B84JZ58R/99129013837906421.html
+      \endverb
+      \verb{urlraw}
+      \verb https://catalog.princeton.edu/catalog/99129013837906421
+      \endverb
+      \verb{url}
+      \verb https://catalog.princeton.edu/catalog/99129013837906421
+      \endverb
+    \endentry
+    \entry{eriksonFormalistRelationalistTheory2013}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=47a12b55c928469b5038abccc1e22dc5}{%
+           family={Erikson},
+           familyi={E\bibinitperiod},
+           given={Emily},
+           giveni={E\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{fullhash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{fullhashraw}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{bibnamehash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{authorbibnamehash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{authornamehash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{authorfullhash}{47a12b55c928469b5038abccc1e22dc5}
+      \strng{authorfullhashraw}{47a12b55c928469b5038abccc1e22dc5}
+      \field{sortinit}{E}
+      \field{sortinithash}{8da8a182d344d5b9047633dfc0cc9131}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Social network research is widely considered atheoretical. In contrast, in this article I argue that network analysis often mixes two distinct theoretical frameworks, creating a logically inconsistent foundation. Relationalism rejects essentialism and a priori categories and insists upon the intersubjectivity of experience and meaning as well as the importance of the content of interactions and their historical setting. Formalism is based on a structuralist interpretation of the theoretical works of Georg Simmel. Simmel laid out a neo-Kantian program of identifying a priori categories of relational types and patterns that operate independently of cultural content or historical setting. Formalism and relationalism are internally consistent theoretical perspectives, but there are tensions between them. To pave the way for stronger middle-range theoretical development, I disaggregate the two approaches and highlight the contradictions that must be addressed or resolved for the construction of any general and inclusive theory.}
+      \field{day}{1}
+      \field{issn}{0735-2751}
+      \field{journaltitle}{Sociological Theory}
+      \field{langid}{english}
+      \field{month}{9}
+      \field{number}{3}
+      \field{title}{Formalist and {{Relationalist Theory}} in {{Social Network Analysis}}}
+      \field{urlday}{19}
+      \field{urlmonth}{12}
+      \field{urlyear}{2022}
+      \field{volume}{31}
+      \field{year}{2013}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{219\bibrangedash 242}
+      \range{pages}{24}
+      \verb{doi}
+      \verb 10.1177/0735275113501998
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/NMK7LZ4P/Erikson_2013_Formalist and Relationalist Theory in Social Network Analysis.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0735275113501998
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0735275113501998
+      \endverb
+      \keyw{_lu}
+    \endentry
+    \entry{everettUnpackingBurtsConstraint2020}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=cb427ecc15f98825ee861c5c70d29278}{%
+           family={Everett},
+           familyi={E\bibinitperiod},
+           given={Martin\bibnamedelima G.},
+           giveni={M\bibinitperiod\bibinitdelim G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1fd697e189cda659215efa8b09d9f4f2}{%
+           family={Borgatti},
+           familyi={B\bibinitperiod},
+           given={Stephen\bibnamedelima P.},
+           giveni={S\bibinitperiod\bibinitdelim P\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{34d9696873588250476a5fa689939e6f}
+      \strng{fullhash}{34d9696873588250476a5fa689939e6f}
+      \strng{fullhashraw}{34d9696873588250476a5fa689939e6f}
+      \strng{bibnamehash}{34d9696873588250476a5fa689939e6f}
+      \strng{authorbibnamehash}{34d9696873588250476a5fa689939e6f}
+      \strng{authornamehash}{34d9696873588250476a5fa689939e6f}
+      \strng{authorfullhash}{34d9696873588250476a5fa689939e6f}
+      \strng{authorfullhashraw}{34d9696873588250476a5fa689939e6f}
+      \field{sortinit}{E}
+      \field{sortinithash}{8da8a182d344d5b9047633dfc0cc9131}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Burt (1992) proposed two principal measures of structural holes, effective size and constraint. However, the formulas describing the measures are somewhat opaque and have led to a certain amount of confusion. Borgatti (1997) showed that, for binary data, the effective size formula could be written very simply as degree (ego network size) minus average degree of alters within the ego network. The present paper presents an analogous reformulation of the constraint measure. We also derive minima and maxima for constraint, showing that, for small ego networks, constraint can be larger than one, and for larger ego networks, constraint cannot get as large as one. We also show that for networks with more than seven alters, the maximum constraint does not occur in a maximally dense or closed network, but rather in a relatively sparse “shadow ego network”, which is a network that contains an alter (the shadow ego) that is connected to every other alter, and where no other alter-alter ties exist.}
+      \field{day}{1}
+      \field{issn}{0378-8733}
+      \field{journaltitle}{Social Networks}
+      \field{month}{7}
+      \field{shortjournal}{Social Networks}
+      \field{title}{Unpacking {{Burt}}’s Constraint Measure}
+      \field{urlday}{15}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{62}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \true{nocite}
+      \field{pages}{50\bibrangedash 57}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.1016/j.socnet.2020.02.001
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/V9UJ8X7G/Everett and Borgatti - 2020 - Unpacking Burt’s constraint measure.pdf;/Users/mlaprise/Zotero/storage/PK7CA22W/S0378873320300101.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.sciencedirect.com/science/article/pii/S0378873320300101
+      \endverb
+      \verb{url}
+      \verb https://www.sciencedirect.com/science/article/pii/S0378873320300101
+      \endverb
+    \endentry
+    \entry{farrellUndergroundEmpireHow2023}{book}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=4b80d11b71fcc3d570e59d9598c5e086}{%
+           family={Farrell},
+           familyi={F\bibinitperiod},
+           given={Henry},
+           giveni={H\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=5cb6408b90706cdd7f8ab13f35083138}{%
+           family={Newman},
+           familyi={N\bibinitperiod},
+           given={Abraham},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {New York: Henry Holt and Company}%
+      }
+      \strng{namehash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{fullhash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{fullhashraw}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{bibnamehash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{authorbibnamehash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{authornamehash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{authorfullhash}{5b9abd9edd01243b57912fe4120e6c7d}
+      \strng{authorfullhashraw}{5b9abd9edd01243b57912fe4120e6c7d}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-1-250-84056-1}
+      \field{shorttitle}{Underground {{Empire}}}
+      \field{title}{Underground {{Empire}}: {{How America Weaponized The World Economy}}}
+      \field{year}{2023}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/ZAN25U63/99129040186506421.html
+      \endverb
+      \verb{urlraw}
+      \verb https://catalog.princeton.edu/catalog/99129040186506421
+      \endverb
+      \verb{url}
+      \verb https://catalog.princeton.edu/catalog/99129040186506421
+      \endverb
+    \endentry
+    \entry{fernandezDilemmaStatePower1994}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=0676d042a6e092a59971c262cb2f7476}{%
+           family={Fernandez},
+           familyi={F\bibinitperiod},
+           given={Roberto\bibnamedelima M.},
+           giveni={R\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=5ec9d351f98a19fa38cc8c0de316d0f6}{%
+           family={Gould},
+           familyi={G\bibinitperiod},
+           given={Roger\bibnamedelima V.},
+           giveni={R\bibinitperiod\bibinitdelim V\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {The University of Chicago Press}%
+      }
+      \strng{namehash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{fullhash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{fullhashraw}{d81fe435fa2278260bf8050b8541dada}
+      \strng{bibnamehash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{authorbibnamehash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{authornamehash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{authorfullhash}{d81fe435fa2278260bf8050b8541dada}
+      \strng{authorfullhashraw}{d81fe435fa2278260bf8050b8541dada}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{This article shows that occupancy of brokerage positions in the U.S. health policy domain's communication network is a crucial determinant of influence. However, the ability to convert structural position into power is contingent on the type of brokerage position occupied and whether the actor is a government organization. In the government sector, actors in representative positions are more influential to the extent that they take public stands on events, whereas liaison and itinerant positions only confer influence if their occupants remain impartial. The article concludess that the influence of government organizations is contingent on their capacity to link disparate actors in the communication network while remaining uncommitted to specific policy agendas.}
+      \field{issn}{0002-9602}
+      \field{journaltitle}{American Journal of Sociology}
+      \field{month}{5}
+      \field{number}{6}
+      \field{shorttitle}{A {{Dilemma}} of {{State Power}}}
+      \field{title}{A {{Dilemma}} of {{State Power}}: {{Brokerage}} and {{Influence}} in the {{National Health Policy Domain}}}
+      \field{urlday}{19}
+      \field{urlmonth}{1}
+      \field{urlyear}{2023}
+      \field{volume}{99}
+      \field{year}{1994}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{1455\bibrangedash 1491}
+      \range{pages}{37}
+      \verb{doi}
+      \verb 10.1086/230451
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/JUPJMXSW/Fernandez_Gould_1994_A Dilemma of State Power.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.journals.uchicago.edu/doi/abs/10.1086/230451
+      \endverb
+      \verb{url}
+      \verb https://www.journals.uchicago.edu/doi/abs/10.1086/230451
+      \endverb
+    \endentry
+    \entry{fourcadeSeeingMarket2017}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=309432dd74c531c527b43452ae3fc75e}{%
+           family={Fourcade},
+           familyi={F\bibinitperiod},
+           given={Marion},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=096c7ffc8c55053356fe58a20f9ba0c2}{%
+           family={Healy},
+           familyi={H\bibinitperiod},
+           given={Kieran},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{fullhash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{fullhashraw}{bbeb88ff639fabde04a110afecb75815}
+      \strng{bibnamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorbibnamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authornamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorfullhash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorfullhashraw}{bbeb88ff639fabde04a110afecb75815}
+      \field{extraname}{1}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{What do markets see when they look at people? Information dragnets increasingly yield huge quantities of individual-level data, which are analyzed to sort and slot people into categories of taste, riskiness or worth. These tools deepen the reach of the market and define new strategies of profit-making. We present a new theoretical framework for understanding their development. We argue that (a) modern organizations follow an institutional data imperative to collect as much data as possible; (b) as a result of the analysis and use of this data, individuals accrue a form of capital flowing from their positions as measured by various digital scoring and ranking methods; and (c) the facticity of these scoring methods makes them organizational devices with potentially stratifying effects. They offer firms new opportunities to structure and price offerings to consumers. For individuals, they create classification situations that identify shared life-chances in product and service markets. We discuss the implications of these processes and argue that they tend toward a new economy of moral judgment, where outcomes are experienced as morally deserved positions based on prior good actions and good tastes, as measured and classified by this new infrastructure of data collection and analysis.}
+      \field{day}{1}
+      \field{issn}{1475-1461}
+      \field{journaltitle}{Socio-Economic Review}
+      \field{month}{1}
+      \field{number}{1}
+      \field{shortjournal}{Socio-Economic Review}
+      \field{title}{Seeing like a Market}
+      \field{urlday}{6}
+      \field{urlmonth}{10}
+      \field{urlyear}{2023}
+      \field{volume}{15}
+      \field{year}{2017}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{9\bibrangedash 29}
+      \range{pages}{21}
+      \verb{doi}
+      \verb 10.1093/ser/mww033
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/5FK8KEHJ/Fourcade_Healy_2017_Seeing like a market.pdf;/Users/mlaprise/Zotero/storage/9U6HM5JU/2656165.html
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1093/ser/mww033
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1093/ser/mww033
+      \endverb
+      \keyw{_pertinent}
+    \endentry
+    \entry{fourcadeOrdinalSociety2024}{book}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=309432dd74c531c527b43452ae3fc75e}{%
+           family={Fourcade},
+           familyi={F\bibinitperiod},
+           given={Marion},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=096c7ffc8c55053356fe58a20f9ba0c2}{%
+           family={Healy},
+           familyi={H\bibinitperiod},
+           given={Kieran},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge, Massachusetts: Harvard University Press}%
+      }
+      \strng{namehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{fullhash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{fullhashraw}{bbeb88ff639fabde04a110afecb75815}
+      \strng{bibnamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorbibnamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authornamehash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorfullhash}{bbeb88ff639fabde04a110afecb75815}
+      \strng{authorfullhashraw}{bbeb88ff639fabde04a110afecb75815}
+      \field{extraname}{2}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{978-0-674-97114-1}
+      \field{title}{The Ordinal Society}
+      \field{year}{2024}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/C36ET892/99130444039506421.html
+      \endverb
+    \endentry
+    \entry{freemanSetMeasuresCentrality1977}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=012eafed0334767d87ec2b33bacb3367}{%
+           family={Freeman},
+           familyi={F\bibinitperiod},
+           given={Linton\bibnamedelima C.},
+           giveni={L\bibinitperiod\bibinitdelim C\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{fullhash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{fullhashraw}{012eafed0334767d87ec2b33bacb3367}
+      \strng{bibnamehash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{authorbibnamehash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{authornamehash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{authorfullhash}{012eafed0334767d87ec2b33bacb3367}
+      \strng{authorfullhashraw}{012eafed0334767d87ec2b33bacb3367}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{A Family of new measures of point and graph centrality based on early intuitions of Bavelas (1948) is introduced. These measures define centrality in terms of the degree to which a point falls on the shortest path between others and therefore has a potential for control of communication. They may be used to index centrality in any large or small network of symmetrical relations, whether connected or unconnected.}
+      \field{eprinttype}{jstor}
+      \field{issn}{0038-0431}
+      \field{journaltitle}{Sociometry}
+      \field{number}{1}
+      \field{title}{A {{Set}} of {{Measures}} of {{Centrality Based}} on {{Betweenness}}}
+      \field{urlday}{15}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{40}
+      \field{year}{1977}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \true{nocite}
+      \field{pages}{35\bibrangedash 41}
+      \range{pages}{7}
+      \verb{doi}
+      \verb 10.2307/3033543
+      \endverb
+      \verb{eprint}
+      \verb 3033543
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/24NH2J7E/Freeman - 1977 - A Set of Measures of Centrality Based on Betweenness.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.jstor.org/stable/3033543
+      \endverb
+      \verb{url}
+      \verb https://www.jstor.org/stable/3033543
+      \endverb
+    \endentry
+    \entry{galsterWordsDeedsRacial2005}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=7e7f489765f6c58e0f844870df9cb6e3}{%
+           family={Galster},
+           familyi={G\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=c6dfa725ba8e2b955434643ed123cd99}{%
+           family={Godfrey},
+           familyi={G\bibinitperiod},
+           given={Erin},
+           giveni={E\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Routledge}%
+      }
+      \strng{namehash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{fullhash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{fullhashraw}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{bibnamehash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{authorbibnamehash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{authornamehash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{authorfullhash}{cfb97adc70dc93948161156a1ca8ff13}
+      \strng{authorfullhashraw}{cfb97adc70dc93948161156a1ca8ff13}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Although prohibited by the federal Fair Housing Act of 1968, studies in the 1980s found that racial steering by real estate agents in the U.S. was still occurring. That legislation was strengthened in 1988, but throughout the 1990s, no study examined whether these tougher strictures helped eliminate steering. In 2000, HUD and the Urban Institute conducted the national Housing Discrimination Study in 20 U.S. metropolitan areas to replicate and extend that earlier work. In this article, we report the results of this latest study, which examined three types of steering and three steering mechanisms, all at three geographic scales. The results indicate that steering of all types is occurring when Black and White homebuyers are involved. In at least 12 to 15\% of the cases, agents provided gratuitous commentary that gave more information to White homebuyers and encouraged them to choose homes in areas with more White and fewer poor households. Steering is less prevalent when Hispanic and White buyers are involved. We also found no evidence that steering declined over the last decade, despite the toughening of the federal legislation in 1988. We conclude by discussing the implications for interracial wealth differentials and new fair housing enforcement initiatives.}
+      \field{day}{30}
+      \field{issn}{0194-4363}
+      \field{journaltitle}{Journal of the American Planning Association}
+      \field{month}{9}
+      \field{number}{3}
+      \field{shorttitle}{By {{Words}} and {{Deeds}}}
+      \field{title}{By {{Words}} and {{Deeds}}: {{Racial Steering}} by {{Real Estate Agents}} in the {{U}}.{{S}}. in 2000}
+      \field{urlday}{5}
+      \field{urlmonth}{7}
+      \field{urlyear}{2022}
+      \field{volume}{71}
+      \field{year}{2005}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{251\bibrangedash 268}
+      \range{pages}{18}
+      \verb{doi}
+      \verb 10.1080/01944360508976697
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/BDF6J4SB/Galster_Godfrey_2005_By Words and Deeds.pdf;/Users/mlaprise/Zotero/storage/L3N6F8EV/01944360508976697.html
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1080/01944360508976697
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1080/01944360508976697
+      \endverb
+      \keyw{brokerage (real estate),discrimination (housing)}
+    \endentry
+    \entry{gandyPanopticSortPolitical1993}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=837269b8210b16b6b11f6a07e4e47040}{%
+           family={Gandy},
+           familyi={G\bibinitperiod},
+           given={Oscar\bibnamedelima H.},
+           giveni={O\bibinitperiod\bibinitdelim H\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Avalon Publishing}%
+      }
+      \strng{namehash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{fullhash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{fullhashraw}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{bibnamehash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{authorbibnamehash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{authornamehash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{authorfullhash}{837269b8210b16b6b11f6a07e4e47040}
+      \strng{authorfullhashraw}{837269b8210b16b6b11f6a07e4e47040}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{The consensus is clear. Personal privacy will become the dominant issue of the 1990s. Yet a focus on privacy, as we have come to understand it so far, all but guarantees that we ignore the implications of the privacy debate at the more fundamental levels of individual autonomy, collective agency, and bureaucratic control. The Panoptic Sort helps us to understand just what is at stake when the bureaucracies of government and commerce gather, share, and make use of an almost unlimited amount of personal information to manage the social and economic systems within their spheres. Unlike Foucault's panoptic prison, which involved continual, all-encompassing surveillance, the current panoptic system depends upon the ability of operators to classify and then separate disciplinary subjects into groups in a way that increases the efficiency with which the techniques of correct training or rehabilitation may be applied to each individual. This book describes in full detail the design and use of the panoptic operation, with examples from marketing, employment, insurance, credit management, and the provision of governmental social services.}
+      \field{eprinttype}{googlebooks}
+      \field{isbn}{978-0-8133-1657-4}
+      \field{langid}{english}
+      \field{pagetotal}{304}
+      \field{shorttitle}{The {{Panoptic Sort}}}
+      \field{title}{The {{Panoptic Sort}}: {{A Political Economy}} of {{Personal Information}}}
+      \field{year}{1993}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb wreFAAAAMAAJ
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/6UWCP6SS/oso-9780197579411-chapter-9.pdf;/Users/mlaprise/Zotero/storage/DUZIBJPU/oso-9780197579411-chapter-1.pdf;/Users/mlaprise/Zotero/storage/KWNCNP8H/oso-9780197579411-chapter-4.pdf;/Users/mlaprise/Zotero/storage/LSQHUI8R/oso-9780197579411-chapter-5.pdf;/Users/mlaprise/Zotero/storage/QRA8TYQT/oso-9780197579411-chapter-10.pdf;/Users/mlaprise/Zotero/storage/S5MJMJWV/oso-9780197579411-chapter-2.pdf;/Users/mlaprise/Zotero/storage/WGFJ3GVV/oso-9780197579411-chapter-8.pdf;/Users/mlaprise/Zotero/storage/XQ6CW36K/oso-9780197579411-chapter-3.pdf
+      \endverb
+      \keyw{Business & Economics / Industries / Media & Communications,Language Arts & Disciplines / Communication Studies,Political Science / General}
+    \endentry
+    \entry{gouldStructuresMediationFormal1989}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=5ec9d351f98a19fa38cc8c0de316d0f6}{%
+           family={Gould},
+           familyi={G\bibinitperiod},
+           given={Roger\bibnamedelima V.},
+           giveni={R\bibinitperiod\bibinitdelim V\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=0676d042a6e092a59971c262cb2f7476}{%
+           family={Fernandez},
+           familyi={F\bibinitperiod},
+           given={Roberto\bibnamedelima M.},
+           giveni={R\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {[American Sociological Association, Wiley, Sage Publications, Inc.]}%
+      }
+      \strng{namehash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{fullhash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{fullhashraw}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{bibnamehash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{authorbibnamehash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{authornamehash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{authorfullhash}{b09c6f6dab1058297f81fceae16895a5}
+      \strng{authorfullhashraw}{b09c6f6dab1058297f81fceae16895a5}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{The concept of brokerage has gained considerable attention in recent years, but few researchers have attempted to specify what the phenomenon is. In this paper, we develop a theoretical conception of brokerage behavior in social systems characterized by the exchange or flow of resources. Building on the idea that any set of actors can be partitioned in a meaningful way into a set of mutually exclusive subgroups, we show that such a partition generates five formally, analytically, and intuitively distinct brokerage types or roles. We construct quantitative measures of each of these five types for actors in social networks and for whole systems, and show that statistical inference can be used to test whether occupancy of a brokerage position is the product of a random distribution of exchange relations or the product of underlying social structure.}
+      \field{eprinttype}{jstor}
+      \field{issn}{0081-1750}
+      \field{journaltitle}{Sociological Methodology}
+      \field{shorttitle}{Structures of {{Mediation}}}
+      \field{title}{Structures of {{Mediation}}: {{A Formal Approach}} to {{Brokerage}} in {{Transaction Networks}}}
+      \field{urlday}{9}
+      \field{urlmonth}{5}
+      \field{urlyear}{2022}
+      \field{volume}{19}
+      \field{year}{1989}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{89\bibrangedash 126}
+      \range{pages}{38}
+      \verb{doi}
+      \verb 10.2307/270949
+      \endverb
+      \verb{eprint}
+      \verb 270949
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/RJW33H3F/Gould_Fernandez_1989_Structures of Mediation.pdf
+      \endverb
+      \verb{urlraw}
+      \verb http://www.jstor.org/stable/270949
+      \endverb
+      \verb{url}
+      \verb http://www.jstor.org/stable/270949
+      \endverb
+      \keyw{_source principale}
+    \endentry
+    \entry{granovetterStrengthWeakTies1973}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=19600a6bee0d3a431e37dcbe16b17f50}{%
+           family={Granovetter},
+           familyi={G\bibinitperiod},
+           given={Mark\bibnamedelima S.},
+           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{fullhash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{fullhashraw}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{bibnamehash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{authorbibnamehash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{authornamehash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{authorfullhash}{19600a6bee0d3a431e37dcbe16b17f50}
+      \strng{authorfullhashraw}{19600a6bee0d3a431e37dcbe16b17f50}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Analysis of social networks is suggested as a tool for linking micro and macro levels of sociological theory. The procedure is illustrated by elaboration of the macro implications of one aspect of small-scale interaction: the strength of dyadic ties. It is argued that the degree of overlap of two individuals' friendship networks varies directly with the strength of their tie to one another. The impact of this principle on diffusion of influence and information, mobility opportunity, and community organization is explored. Stress is laid on the cohesive power of weak ties. Most network models deal, implicitly, with strong ties, thus confining their applicability to small, well-defined groups. Emphasis on weak ties lends itself to discussion of relations between groups and to analysis of segments of social structure not easily defined in terms of primary groups.}
+      \field{issn}{0002-9602}
+      \field{journaltitle}{American Journal of Sociology}
+      \field{number}{6}
+      \field{title}{The {{Strength}} of {{Weak Ties}}}
+      \field{urlday}{15}
+      \field{urlmonth}{11}
+      \field{urlyear}{2019}
+      \field{volume}{78}
+      \field{year}{1973}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{1360\bibrangedash 1380}
+      \range{pages}{21}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/KWZ8TVRI/Granovetter_1973_The Strength of Weak Ties.pdf
+      \endverb
+      \verb{urlraw}
+      \verb www.jstor.org/stable/2776392
+      \endverb
+      \verb{url}
+      \verb www.jstor.org/stable/2776392
+      \endverb
+    \endentry
+    \entry{grayGoverningOrganizationInterpreting2014}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=86fa2d3799c41d0786bd9a750ce5940b}{%
+           family={Gray},
+           familyi={G\bibinitperiod},
+           given={Garry\bibnamedelima C.},
+           giveni={G\bibinitperiod\bibinitdelim C\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=5b648ffa481f98453b50fdc35816fa98}{%
+           family={Silbey},
+           familyi={S\bibinitperiod},
+           given={Susan\bibnamedelima S.},
+           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {The University of Chicago Press}%
+      }
+      \strng{namehash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{fullhash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{fullhashraw}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{bibnamehash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{authorbibnamehash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{authornamehash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{authorfullhash}{907d2ddffeef65e8d2062fe8397ba203}
+      \strng{authorfullhashraw}{907d2ddffeef65e8d2062fe8397ba203}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Looking inside organizations at the different positions, expertise, and autonomy of the actors, the authors use multisite ethnographic data on safety practices to develop a typology of how the regulator, as the focal actor in the regulatory process, is interpreted within organizations. The findings show that organizational actors express constructions of the regulator as an ally, threat, and obstacle that vary with organizational expertise, authority, and continuity of relationship between the organizational member and the regulator. The article makes three contributions to the current understandings of organizational governance and regulatory compliance, thereby extending both institutional and ecological accounts of organizations’ behavior with respect to their environments. First, the authors document not only variation across organizations but variable compliance within an organization. Second, the variations described do not derive from alternative institutional logics, but from variations in positions, autonomy, and expertise within each organization. From their grounded theory, the authors hypothesize that these constructions carry differential normative interpretations of regulation and probabilities for compliance, and thus the third contribution, the typology, when correlated with organizational hierarchy provides the link between microlevel action and discourse and organizational performance.}
+      \field{issn}{0002-9602}
+      \field{journaltitle}{American Journal of Sociology}
+      \field{number}{1}
+      \field{shortjournal}{American Journal of Sociology}
+      \field{shorttitle}{Governing {{Inside}} the {{Organization}}}
+      \field{title}{Governing {{Inside}} the {{Organization}}: {{Interpreting Regulation}} and {{Compliance}}}
+      \field{urlday}{2}
+      \field{urlmonth}{12}
+      \field{urlyear}{2020}
+      \field{volume}{120}
+      \field{year}{2014}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{96\bibrangedash 145}
+      \range{pages}{50}
+      \verb{doi}
+      \verb 10.1086/677187
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/KSUITZQX/Gray_Silbey_2014_Governing Inside the Organization.pdf;/Users/mlaprise/Zotero/storage/PEIFGA4Q/677187.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.journals.uchicago.edu/doi/10.1086/677187
+      \endverb
+      \verb{url}
+      \verb https://www.journals.uchicago.edu/doi/10.1086/677187
+      \endverb
+    \endentry
+    \entry{huisingNudgeCultureBack2018}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=9285d39bd21e8539006ca30c6cfcba88}{%
+           family={Huising},
+           familyi={H\bibinitperiod},
+           given={Ruthanne},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=5b648ffa481f98453b50fdc35816fa98}{%
+           family={Silbey},
+           familyi={S\bibinitperiod},
+           given={Susan\bibnamedelima S.},
+           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Annual Reviews}%
+      }
+      \strng{namehash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{fullhash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{fullhashraw}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{bibnamehash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{authorbibnamehash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{authornamehash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{authorfullhash}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \strng{authorfullhashraw}{a15f8abdeb64a8e19fe717e4d538f3e6}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{The range of organizational responses to regulatory requirements is often explained by describing the organization as a monolithic actor interacting with external agents. We look inside regulated organizations, recognizing them as a web of transactions and norms, to examine how formal and informal organizational practices transform regulatory requirements into normalized activity. This article identifies four levers used at the coalface—or frontline—of the organization to encourage compliance in organizations: nudge (individual), bureaucracy (roles, rules, and procedures), relational governance (network), and organizational culture (assumptions, values, and artifacts). We map the range of research on coalface governance while displaying the assumptions and implications of each lever often embedded in recommendations to policy makers or organizational managers. We offer this continuum of techniques to invite a richer conversation about ways of pursuing compliance in organizations.}
+      \field{issn}{1550-3585}
+      \field{journaltitle}{Annual Review of Law and Social Science}
+      \field{number}{1}
+      \field{shortjournal}{Annu. Rev. Law. Soc. Sci.}
+      \field{shorttitle}{From {{Nudge}} to {{Culture}} and {{Back Again}}}
+      \field{title}{From {{Nudge}} to {{Culture}} and {{Back Again}}: {{Coalface Governance}} in the {{Regulated Organization}}}
+      \field{urlday}{29}
+      \field{urlmonth}{10}
+      \field{urlyear}{2020}
+      \field{volume}{14}
+      \field{year}{2018}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{91\bibrangedash 114}
+      \range{pages}{24}
+      \verb{doi}
+      \verb 10.1146/annurev-lawsocsci-110615-084716
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/YXIU4QEQ/Huising_Silbey_2018_From Nudge to Culture and Back Again.pdf;/Users/mlaprise/Zotero/storage/NIAEKGN3/annurev-lawsocsci-110615-084716.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.annualreviews.org/doi/10.1146/annurev-lawsocsci-110615-084716
+      \endverb
+      \verb{url}
+      \verb https://www.annualreviews.org/doi/10.1146/annurev-lawsocsci-110615-084716
+      \endverb
+      \keyw{_incl,_lu,_pertinent}
+    \endentry
+    \entry{khanAmazonAntitrustParadox2016}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=2d6debfed949581495d672567a509330}{%
+           family={Khan},
+           familyi={K\bibinitperiod},
+           given={Lina\bibnamedelima M.},
+           giveni={L\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2d6debfed949581495d672567a509330}
+      \strng{fullhash}{2d6debfed949581495d672567a509330}
+      \strng{fullhashraw}{2d6debfed949581495d672567a509330}
+      \strng{bibnamehash}{2d6debfed949581495d672567a509330}
+      \strng{authorbibnamehash}{2d6debfed949581495d672567a509330}
+      \strng{authornamehash}{2d6debfed949581495d672567a509330}
+      \strng{authorfullhash}{2d6debfed949581495d672567a509330}
+      \strng{authorfullhashraw}{2d6debfed949581495d672567a509330}
+      \field{extraname}{1}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Yale Law Journal}
+      \field{langid}{english}
+      \field{number}{3}
+      \field{shortjournal}{Yale L. J.}
+      \field{title}{Amazon's {{Antitrust Paradox}}}
+      \field{urlday}{1}
+      \field{urlmonth}{11}
+      \field{urlyear}{2019}
+      \field{volume}{126}
+      \field{year}{2017}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{710\bibrangedash 805}
+      \range{pages}{96}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/XU6GN8TM/Khan_2016_Amazon's Antitrust Paradox.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://heinonline.org/HOL/P?h=hein.journals/ylr126&i=744
+      \endverb
+      \verb{url}
+      \verb https://heinonline.org/HOL/P?h=hein.journals/ylr126&i=744
+      \endverb
+    \endentry
+    \entry{khanSeparationPlatformsCommerce2019}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=2d6debfed949581495d672567a509330}{%
+           family={Khan},
+           familyi={K\bibinitperiod},
+           given={Lina\bibnamedelima M.},
+           giveni={L\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2d6debfed949581495d672567a509330}
+      \strng{fullhash}{2d6debfed949581495d672567a509330}
+      \strng{fullhashraw}{2d6debfed949581495d672567a509330}
+      \strng{bibnamehash}{2d6debfed949581495d672567a509330}
+      \strng{authorbibnamehash}{2d6debfed949581495d672567a509330}
+      \strng{authornamehash}{2d6debfed949581495d672567a509330}
+      \strng{authorfullhash}{2d6debfed949581495d672567a509330}
+      \strng{authorfullhashraw}{2d6debfed949581495d672567a509330}
+      \field{extraname}{2}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{A handful of digital platforms mediate a growing share of online commerce and communications. By structuring access to markets, these firms function as gatekeepers for billions of dollars in economic activity. One feature dominant digital platforms share is that they have integrated across business lines such that they both operate a platform and market their own goods and services on it. This structure places dominant platforms in direct competition with some of the businesses that depend on them, creating a conflict of interest that platforms can exploit to further entrench their dominance, thwart competition, and stifle innovation. This Article argues that the potential hazards of integration by dominant tech platforms invite recovering structural separations. Separations regimes limit the lines of business in which a firm can engage, either by proscribing entry in certain markets or by requiring that distinct lines of business be operated through separate affiliates. Previously implemented both as a standard regulatory intervention and key antitrust remedy in network industries, structural separations have been largely abandoned. At the same time that lawmakers have weakened or eliminated sector-specific regulatory regimes, judicial interpretation of antitrust law has drastically narrowed the forms of vertical conduct and structures that register as anticompetitive. And when antitrust enforcers have targeted these forms of conduct and structures, they have applied remedies that generally (1) fail to target the underlying source of the problem and (2) overwhelm the institutional capacities of the actors assigned to oversee them. Neglecting structural remedies results in both substantive harms and institutional misalignments—effects that are especially pronounced in digital platform markets. This Article seeks to give structural separations a seat back at the table. Tracing the history of separations reveals that they have been motivated by a host of functional goals, ranging from fair competition and system resiliency to media diversity and administrability. Recalling this broader set of concerns brings into focus the range of factors at stake when dealing with dominant intermediaries and invites consideration of the degree to which separations in platform markets would also respond to a diverse set of problems.}
+      \field{eprinttype}{jstor}
+      \field{issn}{0010-1958}
+      \field{journaltitle}{Columbia Law Review}
+      \field{number}{4}
+      \field{title}{The {{Separation}} of {{Platforms}} and {{Commerce}}}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{119}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{973\bibrangedash 1098}
+      \range{pages}{126}
+      \verb{eprint}
+      \verb 26632275
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/ENDARWW3/Khan - THE SEPARATION OF PLATFORMS AND COMMERCE.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.jstor.org/stable/26632275
+      \endverb
+      \verb{url}
+      \verb https://www.jstor.org/stable/26632275
+      \endverb
+    \endentry
+    \entry{krippnerCapitalizingCrisisPolitical2011}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=543dae3a5002f009711f02a4427e48e4}{%
+           family={Krippner},
+           familyi={K\bibinitperiod},
+           given={Greta\bibnamedelima R.},
+           giveni={G\bibinitperiod\bibinitdelim R\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{location}{1}{%
+        {Cambridge}%
+      }
+      \list{publisher}{1}{%
+        {Harvard University Press}%
+      }
+      \strng{namehash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{fullhash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{fullhashraw}{543dae3a5002f009711f02a4427e48e4}
+      \strng{bibnamehash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{authorbibnamehash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{authornamehash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{authorfullhash}{543dae3a5002f009711f02a4427e48e4}
+      \strng{authorfullhashraw}{543dae3a5002f009711f02a4427e48e4}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-0-674-05887-3}
+      \field{langid}{english}
+      \field{shorttitle}{Capitalizing on {{Crisis}}}
+      \field{title}{Capitalizing on {{Crisis}}: {{The Political Origins}} of the {{Rise}} of {{Finance}}}
+      \field{urlday}{7}
+      \field{urlmonth}{12}
+      \field{urlyear}{2020}
+      \field{year}{2011}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/2TS53MPL/krippnercrisis_conclusion.pdf;/Users/mlaprise/Zotero/storage/94F3QC9K/krippnercrisis_notes.pdf;/Users/mlaprise/Zotero/storage/HPQXWSQY/krippnercrisis_refs.pdf;/Users/mlaprise/Zotero/storage/SWVDXX6H/krippnercrisis_intro.pdf
+      \endverb
+      \verb{urlraw}
+      \verb {"https://www.jstor.org/stable/10.2307/j.ctvjk2x23":["www.jstor.org"]}
+      \endverb
+      \verb{url}
+      \verb %7B%22https://www.jstor.org/stable/10.2307/j.ctvjk2x23%22:%5B%22www.jstor.org%22%5D%7D
+      \endverb
+      \keyw{_source principale,^monograph,finance,financial services industry,monetary policy}
+    \endentry
+    \entry{liMiddlemenPrivateInformation1998}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=6ec14de2d0522b94bfc531aa1d007387}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Yiting},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{fullhash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{fullhashraw}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{bibnamehash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{authorbibnamehash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{authornamehash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{authorfullhash}{6ec14de2d0522b94bfc531aa1d007387}
+      \strng{authorfullhashraw}{6ec14de2d0522b94bfc531aa1d007387}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{In this paper, private information concerning the quality of consumption goods is introduced to motivate the role of intermediation. Agents endogenously choose whether to become middlemen by investing in a technology of verifying quality. It is shown that there exists an equilibrium where middlemen always trade high-quality goods when the private information problem is not severe and the investment cost of quality-testing technology is not too high. When the private information problem is relatively severe, middlemen sometimes trade for low-quality goods. The trade-off to having agents engage in intermediation as opposed to production is considered to determine middlemen’s welfare-improving role. It is found that when exchange is significantly delayed in the sense that people do not execute trades because they cannot recognize the true quality of goods, expert middlemen can improve welfare.}
+      \field{day}{22}
+      \field{issn}{0304-3932}
+      \field{journaltitle}{Journal of Monetary Economics}
+      \field{month}{6}
+      \field{number}{1}
+      \field{shortjournal}{Journal of Monetary Economics}
+      \field{title}{Middlemen and Private Information}
+      \field{urlday}{4}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{volume}{42}
+      \field{year}{1998}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{131\bibrangedash 159}
+      \range{pages}{29}
+      \verb{doi}
+      \verb 10.1016/S0304-3932(98)00017-8
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/G29T95MR/Li - 1998 - Middlemen and private information.pdf;/Users/mlaprise/Zotero/storage/ZAI5YQFY/S0304393298000178.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.sciencedirect.com/science/article/pii/S0304393298000178
+      \endverb
+      \verb{url}
+      \verb https://www.sciencedirect.com/science/article/pii/S0304393298000178
+      \endverb
+      \keyw{_pertinent}
+    \endentry
+    \entry{mackenzieTradingSpeedLight2021}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=dc92b932ce814fe3ff2dce937d79d2c6}{%
+           family={MacKenzie},
+           familyi={M\bibinitperiod},
+           given={Donald\bibnamedelima A.},
+           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Princeton, New Jersey: Princeton University Press}%
+      }
+      \strng{namehash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{fullhash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{fullhashraw}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{bibnamehash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{authorbibnamehash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{authornamehash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{authorfullhash}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \strng{authorfullhashraw}{dc92b932ce814fe3ff2dce937d79d2c6}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-0-691-21138-1}
+      \field{shorttitle}{Trading at the Speed of Light}
+      \field{title}{Trading at the Speed of Light: How Ultrafast Algorithms Are Transforming Financial Markets}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/R8F4SUZL/99125411753206421.html
+      \endverb
+    \endentry
+    \entry{marsdenBrokerageBehaviorRestricted1982}{incollection}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=f5ab503dfd20e150884a612345b87c7f}{%
+           family={Marsden},
+           familyi={M\bibinitperiod},
+           given={Peter\bibnamedelima V.},
+           giveni={P\bibinitperiod\bibinitdelim V\bibinitperiod},
+           givenun=0}}%
+      }
+      \name{editor}{2}{}{%
+        {{hash=f5ab503dfd20e150884a612345b87c7f}{%
+           family={Marsden},
+           familyi={M\bibinitperiod},
+           given={Peter\bibnamedelima V.},
+           giveni={P\bibinitperiod\bibinitdelim V\bibinitperiod}}}%
+        {{hash=d5d44eaf996eeb9880d6c95a1af73c40}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={Nan},
+           giveni={N\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Beverly Hills: Sage Publications}%
+      }
+      \strng{namehash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{fullhash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{fullhashraw}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{bibnamehash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{authorbibnamehash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{authornamehash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{authorfullhash}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{authorfullhashraw}{f5ab503dfd20e150884a612345b87c7f}
+      \strng{editorbibnamehash}{4a66d22eae5c7424b6993f39cc3e02a5}
+      \strng{editornamehash}{4a66d22eae5c7424b6993f39cc3e02a5}
+      \strng{editorfullhash}{4a66d22eae5c7424b6993f39cc3e02a5}
+      \strng{editorfullhashraw}{4a66d22eae5c7424b6993f39cc3e02a5}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Social {{Structure}} and {{Network Analysis}}}
+      \field{isbn}{978-0-8039-1888-7}
+      \field{langid}{english}
+      \field{title}{Brokerage {{Behavior}} in {{Restricted Exchange Networks}}}
+      \field{year}{1982}
+      \field{dateera}{ce}
+      \field{pages}{201\bibrangedash 218}
+      \range{pages}{18}
+      \keyw{Social structure}
+    \endentry
+    \entry{obstfeldBrokerageProcessDecoupling2014}{incollection}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=eac6a46d4a6f70318b936a231860fa2c}{%
+           family={Obstfeld},
+           familyi={O\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1fd697e189cda659215efa8b09d9f4f2}{%
+           family={Borgatti},
+           familyi={B\bibinitperiod},
+           given={Stephen\bibnamedelima P.},
+           giveni={S\bibinitperiod\bibinitdelim P\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=c10a33e75b69590b14f37cea61e86424}{%
+           family={Davis},
+           familyi={D\bibinitperiod},
+           given={Jason},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+      }
+      \name{editor}{5}{}{%
+        {{hash=5b13cbbbf9408ab60ff361d9c9909acd}{%
+           family={Brass},
+           familyi={B\bibinitperiod},
+           given={Daniel\bibnamedelima J.},
+           giveni={D\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=3e35befc16d918f0b7f858f40126d520}{%
+           family={Labianca},
+           familyi={L\bibinitperiod},
+           given={Giuseppe},
+           giveni={G\bibinitperiod}}}%
+        {{hash=e61eddfa58a9f04ce55eb81e7f73808a}{%
+           family={Mehra},
+           familyi={M\bibinitperiod},
+           given={Ajay},
+           giveni={A\bibinitperiod}}}%
+        {{hash=45da1d628314c17dd85ed6579e146311}{%
+           family={Halgin},
+           familyi={H\bibinitperiod},
+           given={Daniel\bibnamedelima S.},
+           giveni={D\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=1fd697e189cda659215efa8b09d9f4f2}{%
+           family={Borgatti},
+           familyi={B\bibinitperiod},
+           given={Stephen\bibnamedelima P.},
+           giveni={S\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Emerald Group Publishing}%
+      }
+      \strng{namehash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{fullhash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{fullhashraw}{638c5c0194b00a2d844203ac913ea423}
+      \strng{bibnamehash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{authorbibnamehash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{authornamehash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{authorfullhash}{638c5c0194b00a2d844203ac913ea423}
+      \strng{authorfullhashraw}{638c5c0194b00a2d844203ac913ea423}
+      \strng{editorbibnamehash}{87bfdaa3313be08a36f39f3501447416}
+      \strng{editornamehash}{87bfdaa3313be08a36f39f3501447416}
+      \strng{editorfullhash}{20d45027afd05a8ed6e539188e25b473}
+      \strng{editorfullhashraw}{20d45027afd05a8ed6e539188e25b473}
+      \field{sortinit}{O}
+      \field{sortinithash}{2cd7140a07aea5341f9e2771efe90aae}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{We argue for a broadened approach to brokerage by distinguishing between brokerage emphasizing a particular structural pattern in which two otherwise disconnected alters are connected through a third party (“brokerage structure”) and the social behavior of third parties (“brokerage process”). We explore a processual view of brokerage by examining three fundamental strategic orientations toward brokerage: conduit, tertius gaudens, and tertius iungens that occur in many different forms and combinations. This processual view is especially relevant in increasingly complex and dynamic environments where brokerage behavior is highly varied, intense, and purposeful, and has theoretical implications for studying multiplexity, heterogeneity, and brokerage intensity.}
+      \field{booktitle}{Research in the {{Sociology}} of {{Organizations}}}
+      \field{day}{15}
+      \field{isbn}{978-1-78350-751-1 978-1-78350-752-8}
+      \field{langid}{english}
+      \field{month}{7}
+      \field{shorttitle}{Brokerage as a {{Process}}}
+      \field{title}{Brokerage as a {{Process}}: {{Decoupling Third Party Action}} from {{Social Network Structure}}}
+      \field{urlday}{7}
+      \field{urlmonth}{7}
+      \field{urlyear}{2022}
+      \field{volume}{40}
+      \field{year}{2014}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{135\bibrangedash 159}
+      \range{pages}{25}
+      \verb{doi}
+      \verb 10.1108/S0733-558X(2014)0000040007
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/A6NXVC2Q/Obstfeld et al. - 2014 - Brokerage as a Process Decoupling Third Party Act.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.emerald.com/insight/content/doi/10.1108/S0733-558X(2014)0000040007/full/html
+      \endverb
+      \verb{url}
+      \verb https://www.emerald.com/insight/content/doi/10.1108/S0733-558X(2014)0000040007/full/html
+      \endverb
+      \keyw{_lu}
+    \endentry
+    \entry{CapitalMarketsIndicative}{online}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=0703705842718f76e6a684a736775baf}{%
+           family={{Parameta Solutions}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {Parameta Solutions}%
+      }
+      \strng{namehash}{0703705842718f76e6a684a736775baf}
+      \strng{fullhash}{0703705842718f76e6a684a736775baf}
+      \strng{fullhashraw}{0703705842718f76e6a684a736775baf}
+      \strng{bibnamehash}{0703705842718f76e6a684a736775baf}
+      \strng{authorbibnamehash}{0703705842718f76e6a684a736775baf}
+      \strng{authornamehash}{0703705842718f76e6a684a736775baf}
+      \strng{authorfullhash}{0703705842718f76e6a684a736775baf}
+      \strng{authorfullhashraw}{0703705842718f76e6a684a736775baf}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{url}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Learn about the OTC market data we offer. As a world-leading provider, we deliver comprehensive global information across all asset classes and regions.}
+      \field{langid}{american}
+      \field{title}{Capital {{Markets Indicative Data}}}
+      \field{urlday}{7}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/USP6JSPR/capital-markets.html
+      \endverb
+      \verb{urlraw}
+      \verb https://www.parametasolutions.com/solutions/capital-markets/
+      \endverb
+      \verb{url}
+      \verb https://www.parametasolutions.com/solutions/capital-markets/
+      \endverb
+    \endentry
+    \entry{pardo-guerraAutomatingFinanceInfrastructures2019}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=13a5d6b5ef55403c4b66241af55eab20}{%
+           family={Pardo-Guerra},
+           familyi={P\bibinithyphendelim G\bibinitperiod},
+           given={Juan\bibnamedelima Pablo},
+           giveni={J\bibinitperiod\bibinitdelim P\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge: Cambridge University Press}%
+      }
+      \strng{namehash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{fullhash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{fullhashraw}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{bibnamehash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{authorbibnamehash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{authornamehash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{authorfullhash}{13a5d6b5ef55403c4b66241af55eab20}
+      \strng{authorfullhashraw}{13a5d6b5ef55403c4b66241af55eab20}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Trading floors are a thing of the past. Thanks to a combination of computers, high-speed networks and algorithms, millions of financial transactions now happen in fractions of a second. This book studies the automation of stock markets in the United Kingdom and the United States of America, identifying the invisible actors, devices, and politics that were central to the creation of electronic trading. In addition to offering a detailed account of how stock exchanges wrestled with technology, the book also invites readers to rethink the nature of markets in modern societies. Markets, it argues, are sites for the creation of relations, and in studying how these relations changed through technology, the book highlights the sources, dynamics, and consequences of automation. In this respect, the book is both a history of automation in finance and a sociological analysis of the way in which automation gradually changed the lives and work of key financial actors.}
+      \field{isbn}{978-1-108-67758-5}
+      \field{langid}{english}
+      \field{pagetotal}{1 online resource (xvi, 357 pages)}
+      \field{shorttitle}{Automating {{Finance}}}
+      \field{title}{Automating {{Finance}}: {{Infrastructures}}, {{Engineers}}, and the {{Making}} of {{Electronic Markets}}}
+      \field{urlday}{5}
+      \field{urlmonth}{7}
+      \field{urlyear}{2022}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://doi.org/10.1017/9781108677585
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1017/9781108677585
+      \endverb
+      \keyw{brokerage (finance),Capital market,Electronic trading of securities,Finance—Technological innovations,Securities—Data processing}
+    \endentry
+    \entry{petryNationalMarketplacesGlobal2021}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=509485595aae11802140ec6d3682b25f}{%
+           family={Petry},
+           familyi={P\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Routledge}%
+      }
+      \strng{namehash}{509485595aae11802140ec6d3682b25f}
+      \strng{fullhash}{509485595aae11802140ec6d3682b25f}
+      \strng{fullhashraw}{509485595aae11802140ec6d3682b25f}
+      \strng{bibnamehash}{509485595aae11802140ec6d3682b25f}
+      \strng{authorbibnamehash}{509485595aae11802140ec6d3682b25f}
+      \strng{authornamehash}{509485595aae11802140ec6d3682b25f}
+      \strng{authorfullhash}{509485595aae11802140ec6d3682b25f}
+      \strng{authorfullhashraw}{509485595aae11802140ec6d3682b25f}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{This paper analyses the role of (stock and derivative) exchanges as powerful actors in global finance. While most IPE accounts of exchanges analyse ‘exchanges as marketplaces’ and focus on equity market trading, they miss how exchanges have fundamentally transformed in the last 25 years. Through marketisation, internationalisation and digitisation, the business model of exchanges has fundamentally changed and led to the emergence of global exchange groups that dominate the exchange industry (CME, ICE, LSE, Cboe, Nasdaq and Deutsche Börse). Thereby, exchanges transformed from national marketplaces to global providers of financial infrastructures. They control the infrastructures that enable the functioning of capital markets: from market data, indices, financial products, trading platforms to post-trading activities such as clearing, exchanges create the rules according to which market transactions take place. This provision of financial infrastructures enables them to shape capital markets and represents a source of structural power, as exchanges potentially influence the actions of companies, investors and states entangled with these infrastructures. By shedding light on exchanges and their changed role and activities within capital markets, this paper makes a case for including exchanges as powerful actors into IPE analyses of global finance and for more closely analysing the structural power of (financial) infrastructure providers in the global economy.}
+      \field{day}{4}
+      \field{issn}{1356-3467}
+      \field{journaltitle}{New Political Economy}
+      \field{month}{7}
+      \field{number}{4}
+      \field{shorttitle}{From {{National Marketplaces}} to {{Global Providers}} of {{Financial Infrastructures}}}
+      \field{title}{From {{National Marketplaces}} to {{Global Providers}} of {{Financial Infrastructures}}: {{Exchanges}}, {{Infrastructures}} and {{Structural Power}} in {{Global Finance}}}
+      \field{urlday}{25}
+      \field{urlmonth}{4}
+      \field{urlyear}{2023}
+      \field{volume}{26}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{574\bibrangedash 597}
+      \range{pages}{24}
+      \verb{doi}
+      \verb 10.1080/13563467.2020.1782368
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/PZS6Q77T/Petry_2021_From National Marketplaces to Global Providers of Financial Infrastructures.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1080/13563467.2020.1782368
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1080/13563467.2020.1782368
+      \endverb
+      \keyw{capital markets,financial infrastructures,global finance,stock exchange,Structural power}
+    \endentry
+    \entry{pistorCodeCapitalHow2019}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=9c1d368712cd8b1f24e00f17934a60ff}{%
+           family={Pistor},
+           familyi={P\bibinitperiod},
+           given={Katharina},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{location}{1}{%
+        {Princeton}%
+      }
+      \list{publisher}{1}{%
+        {Princeton University Press}%
+      }
+      \strng{namehash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{fullhash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{fullhashraw}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{bibnamehash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{authorbibnamehash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{authornamehash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{authorfullhash}{9c1d368712cd8b1f24e00f17934a60ff}
+      \strng{authorfullhashraw}{9c1d368712cd8b1f24e00f17934a60ff}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{A compelling explanation of how the law shapes the distribution of wealth}
+      \field{isbn}{978-0-691-17897-4}
+      \field{langid}{english}
+      \field{title}{The {{Code}} of {{Capital}}: {{How}} the {{Law Creates Wealth}} and {{Inequality}}}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/8BZ7F88Y/the-code-of-capital.html
+      \endverb
+      \keyw{_lu}
+    \endentry
+    \entry{rahmanRisePlatformBusiness2019}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=eaaee1d1dbfe236c2f586a4aa51b2c0e}{%
+           family={Rahman},
+           familyi={R\bibinitperiod},
+           given={K.\bibnamedelimi Sabeel},
+           giveni={K\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=c537f56a6ac61e5e1df016efa334ce43}{%
+           family={Thelen},
+           familyi={T\bibinitperiod},
+           given={Kathleen},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{596c0515fca41b97255b66b48778b566}
+      \strng{fullhash}{596c0515fca41b97255b66b48778b566}
+      \strng{fullhashraw}{596c0515fca41b97255b66b48778b566}
+      \strng{bibnamehash}{596c0515fca41b97255b66b48778b566}
+      \strng{authorbibnamehash}{596c0515fca41b97255b66b48778b566}
+      \strng{authornamehash}{596c0515fca41b97255b66b48778b566}
+      \strng{authorfullhash}{596c0515fca41b97255b66b48778b566}
+      \strng{authorfullhashraw}{596c0515fca41b97255b66b48778b566}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This article explores the changing nature of twenty-first-century capitalism with an emphasis on illuminating the political coalitions and institutional conditions that support and sustain it. Most of the existing literature attributes the changing nature of the firm to developments in markets and technology. By contrast, this article emphasizes the political forces that have driven the transformation of the twentieth-century consolidated firm through the firm as a “network of contracts” and toward the platform firm. Moreover, situating the United States in a comparative perspective highlights the distinctive ways US political-economic institutions have facilitated that transformation and exacerbated the associated inequalities.}
+      \field{day}{1}
+      \field{issn}{0032-3292}
+      \field{journaltitle}{Politics \& Society}
+      \field{langid}{english}
+      \field{month}{6}
+      \field{number}{2}
+      \field{title}{The {{Rise}} of the {{Platform Business Model}} and the {{Transformation}} of {{Twenty-First-Century Capitalism}}}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{47}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{177\bibrangedash 204}
+      \range{pages}{28}
+      \verb{doi}
+      \verb 10.1177/0032329219838932
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0032329219838932
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0032329219838932
+      \endverb
+    \endentry
+    \entry{rossmanObfuscatoryRelationalWork2014}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=6bd8edc122bc9d3609d115acea369067}{%
+           family={Rossman},
+           familyi={R\bibinitperiod},
+           given={Gabriel},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{fullhash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{fullhashraw}{6bd8edc122bc9d3609d115acea369067}
+      \strng{bibnamehash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{authorbibnamehash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{authornamehash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{authorfullhash}{6bd8edc122bc9d3609d115acea369067}
+      \strng{authorfullhashraw}{6bd8edc122bc9d3609d115acea369067}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This article develops a model of how the structure of exchange can manage such disreputable exchanges as the commensuration of sacred for profane. Whereas existing research discusses the rhetorical reframing of exchange, I highlight structures that obfuscate whether an exchange is occurring and thereby mitigate exchange taboos. I identify three such exchange structures: bundling, brokerage, and gift exchange. Bundling uses cross-subsidization across multiple innocuous exchanges to synthesize a taboo exchange. Brokerage finds a third party to accept responsibility for exchange. Gift exchange delays reciprocity and reframes exchanges as expressions of friendship. All three strategies have alternative meanings and so provide plausible deniability to taboo commensuration. The article concludes by arguing that these sorts of exchange structures represent a synthesis of ?nothing but? reductionism and ?hostile worlds? moralism, rather than an alternative to them as Viviana Zelizer suggests.}
+      \field{day}{1}
+      \field{issn}{0735-2751}
+      \field{journaltitle}{Sociological Theory}
+      \field{langid}{english}
+      \field{month}{3}
+      \field{number}{1}
+      \field{title}{Obfuscatory {{Relational Work}} and {{Disreputable Exchange}}}
+      \field{urlday}{16}
+      \field{urlmonth}{12}
+      \field{urlyear}{2022}
+      \field{volume}{32}
+      \field{year}{2014}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{43\bibrangedash 63}
+      \range{pages}{21}
+      \verb{doi}
+      \verb 10.1177/0735275114523418
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/URWSRDWA/Rossman_2014_Obfuscatory Relational Work and Disreputable Exchange.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0735275114523418
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0735275114523418
+      \endverb
+    \endentry
+    \entry{rustMiddlemenMarketMakers2003}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=d21cb42e5da1f3188f3684e88b665332}{%
+           family={Rust},
+           familyi={R\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=612263774ed412030ca4ed3f333832cc}{%
+           family={Hall},
+           familyi={H\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {The University of Chicago Press}%
+      }
+      \strng{namehash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{fullhash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{fullhashraw}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{bibnamehash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{authorbibnamehash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{authornamehash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{authorfullhash}{0fb4355a25e61610ecb5ae3103376bab}
+      \strng{authorfullhashraw}{0fb4355a25e61610ecb5ae3103376bab}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{We present a model in which the microstructure of trade in a commodity or asset is endogenously determined. Producers and consumers of a commodity (or buyers and sellers of an asset) who wish to trade can choose between two competing types of intermediaries: “middlemen” (dealer/brokers) and “market makers” (specialists). Market makers post publicly observable bid and ask prices, whereas the prices quoted by different middlemen are private information that can be obtained only through a costly search process. We consider an initial equilibrium with which there are no market makers but there is free entry of middlemen with heterogeneous transactions costs. We characterize conditions under which entry of a single market maker can be profitable even though it is common knowledge that all surviving middlemen will undercut the market maker’s publicly posted bid and ask prices in the postentry equilibrium. The market maker’s entry induces the surviving middlemen to reduce their bid‐ask spreads, and as a result, all producers and consumers who choose to participate in the market enjoy a strict increase in their expected gains from trade. When there is free entry into market making and search and transactions costs tend to zero, bid‐ask spreads of all market makers and middlemen are forced to zero, and a fully efficient Walrasian equilibrium outcome emerges.}
+      \field{issn}{0022-3808}
+      \field{journaltitle}{Journal of Political Economy}
+      \field{month}{4}
+      \field{number}{2}
+      \field{shorttitle}{Middlemen versus {{Market Makers}}}
+      \field{title}{Middlemen versus {{Market Makers}}: {{A Theory}} of {{Competitive Exchange}}}
+      \field{urlday}{20}
+      \field{urlmonth}{1}
+      \field{urlyear}{2023}
+      \field{volume}{111}
+      \field{year}{2003}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{353\bibrangedash 403}
+      \range{pages}{51}
+      \verb{doi}
+      \verb 10.1086/367684
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/P9MCL2R2/Rust_Hall_2003_Middlemen versus Market Makers.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.journals.uchicago.edu/doi/full/10.1086/367684
+      \endverb
+      \verb{url}
+      \verb https://www.journals.uchicago.edu/doi/full/10.1086/367684
+      \endverb
+    \endentry
+    \entry{sadowskiInternetLandlordsDigital2020}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=23ccfe68e1d2eb3a51c8098124539ebe}{%
+           family={Sadowski},
+           familyi={S\bibinitperiod},
+           given={Jathan},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{fullhash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{fullhashraw}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{bibnamehash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{authorbibnamehash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{authornamehash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{authorfullhash}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \strng{authorfullhashraw}{23ccfe68e1d2eb3a51c8098124539ebe}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Digital platforms are a nearly ubiquitous form of intermediary and infrastructure in society. By positioning platforms in the geographical political economy/ecology literature, this paper provides a critical analysis of platforms as a dominant form of rentier in contemporary capitalism. In doing so, I extend this work on rent theory beyond applications to land and nature so that it also includes platforms and data. I argue that the rapid rise of the “X-as-a-service” business model across nearly all sectors of the economy is creating rentier relations by another name. This model is premised on the platform latching onto and inserting itself into the production, circulation, or consumption process, thus creating opportunities to capture value. To better understand the operations and implications of platforms, I outline three key mechanisms: data extraction, digital enclosure, and capital convergence.}
+      \field{issn}{1467-8330}
+      \field{journaltitle}{Antipode}
+      \field{langid}{english}
+      \field{number}{2}
+      \field{shorttitle}{The {{Internet}} of {{Landlords}}}
+      \field{title}{The {{Internet}} of {{Landlords}}: {{Digital Platforms}} and {{New Mechanisms}} of {{Rentier Capitalism}}}
+      \field{urlday}{16}
+      \field{urlmonth}{12}
+      \field{urlyear}{2022}
+      \field{volume}{52}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{562\bibrangedash 580}
+      \range{pages}{19}
+      \verb{doi}
+      \verb 10.1111/anti.12595
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/8G8XGPTI/Sadowski_2020_The Internet of Landlords.pdf;/Users/mlaprise/Zotero/storage/ZUMAU3DT/anti.html
+      \endverb
+      \verb{urlraw}
+      \verb http://onlinelibrary.wiley.com/doi/abs/10.1111/anti.12595
+      \endverb
+      \verb{url}
+      \verb http://onlinelibrary.wiley.com/doi/abs/10.1111/anti.12595
+      \endverb
+      \keyw{data collection,digital enclosure,digital platforms,internet of things,rent extraction,rentier capitalism}
+    \endentry
+    \entry{simmelConflictWebGroupAffiliations1964}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=09d3a2fcd5a81bcb13fc5c140306af46}{%
+           family={Simmel},
+           familyi={S\bibinitperiod},
+           given={Georg},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \name{translator}{2}{}{%
+        {{hash=7c3a53d4458acd9f48840cdc02ceede4}{%
+           family={Wolff},
+           familyi={W\bibinitperiod},
+           given={Kurt\bibnamedelima H.},
+           giveni={K\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=707b58bf9962c76b2a5a10f1b8b905de}{%
+           family={Bendix},
+           familyi={B\bibinitperiod},
+           given={Reinhard},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {New York: Free Press}%
+      }
+      \strng{namehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{fullhash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{fullhashraw}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{bibnamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorbibnamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authornamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorfullhash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorfullhashraw}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{translatorbibnamehash}{64ebfd93ed94d946a1105e65bea12879}
+      \strng{translatornamehash}{64ebfd93ed94d946a1105e65bea12879}
+      \strng{translatorfullhash}{64ebfd93ed94d946a1105e65bea12879}
+      \strng{translatorfullhashraw}{64ebfd93ed94d946a1105e65bea12879}
+      \field{extraname}{1}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{pagetotal}{195 p.}
+      \field{title}{Conflict; the {{Web}} of {{Group-Affiliations}}}
+      \field{year}{1964}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://search.alexanderstreet.com/view/work/bibliographic_entity%7Cbibliographic_details%7C4709179
+      \endverb
+      \verb{url}
+      \verb https://search.alexanderstreet.com/view/work/bibliographic_entity%7Cbibliographic_details%7C4709179
+      \endverb
+      \keyw{Social conflict,Social groups}
+    \endentry
+    \entry{simmelIndividualitySocialForms1971}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=09d3a2fcd5a81bcb13fc5c140306af46}{%
+           family={Simmel},
+           familyi={S\bibinitperiod},
+           given={Georg},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \name{editor}{1}{}{%
+        {{hash=010dcfc88a2e3eac42262e52b5384fe7}{%
+           family={Levine},
+           familyi={L\bibinitperiod},
+           given={Donald\bibnamedelima N.},
+           giveni={D\bibinitperiod\bibinitdelim N\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Chicago: University of Chicago Press}%
+      }
+      \strng{namehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{fullhash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{fullhashraw}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{bibnamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorbibnamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authornamehash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorfullhash}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{authorfullhashraw}{09d3a2fcd5a81bcb13fc5c140306af46}
+      \strng{editorbibnamehash}{010dcfc88a2e3eac42262e52b5384fe7}
+      \strng{editornamehash}{010dcfc88a2e3eac42262e52b5384fe7}
+      \strng{editorfullhash}{010dcfc88a2e3eac42262e52b5384fe7}
+      \strng{editorfullhashraw}{010dcfc88a2e3eac42262e52b5384fe7}
+      \field{extraname}{2}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{pagetotal}{lxv, 395 p.}
+      \field{title}{On {{Individuality}} and {{Social Forms}}; {{Selected Writings}}}
+      \field{year}{1971}
+      \field{dateera}{ce}
+      \keyw{Social psychology,Sociology}
+    \endentry
+    \entry{spiroExtendedStructuresMediation2013}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=e472167bdc25f3d55d9b9038fdf61be0}{%
+           family={Spiro},
+           familyi={S\bibinitperiod},
+           given={Emma\bibnamedelima S.},
+           giveni={E\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1359b7083beea94b1e5a7b2f8bccdb7e}{%
+           family={Acton},
+           familyi={A\bibinitperiod},
+           given={Ryan\bibnamedelima M.},
+           giveni={R\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=b452fc7781440208fb3d76802a5392fa}{%
+           family={Butts},
+           familyi={B\bibinitperiod},
+           given={Carter\bibnamedelima T.},
+           giveni={C\bibinitperiod\bibinitdelim T\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{fullhash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{fullhashraw}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{bibnamehash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{authorbibnamehash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{authornamehash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{authorfullhash}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \strng{authorfullhashraw}{2789bcdd85d1bb40e0340095cf2e0fa3}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{In this paper we revisit the concept of brokerage in social networks. We elaborate on the concept of brokerage as a process, identifying three distinct classes of brokerage behavior. Based on this process model, we develop a framework for measuring brokerage opportunities in dynamic relational data. Using data on emergent inter-organizational collaborations, we employ the dynamic brokerage framework to examine the relationship between organizational attributes and coordination in the evolving network. Comparing the findings of our process-based definition with traditional, static approaches, we identify important dimensions of organizational action that would be missed by the latter approach.}
+      \field{issn}{03788733}
+      \field{journaltitle}{Social Networks}
+      \field{langid}{english}
+      \field{number}{1}
+      \field{shortjournal}{Social Networks}
+      \field{shorttitle}{Extended {{Structures}} of {{Mediation}}}
+      \field{title}{Extended {{Structures}} of {{Mediation}}: {{Re-Examining Brokerage}} in {{Dynamic Networks}}}
+      \field{urlday}{9}
+      \field{urlmonth}{5}
+      \field{urlyear}{2022}
+      \field{volume}{35}
+      \field{year}{2013}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{130\bibrangedash 143}
+      \range{pages}{14}
+      \verb{doi}
+      \verb 10.1016/j.socnet.2013.02.001
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/89LXDS9E/Spiro et al. - 2013 - Extended structures of mediation Re-examining bro.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://linkinghub.elsevier.com/retrieve/pii/S0378873313000087
+      \endverb
+      \verb{url}
+      \verb https://linkinghub.elsevier.com/retrieve/pii/S0378873313000087
+      \endverb
+    \endentry
+    \entry{stearnsElectronicValueExchange2011}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=513e1b0a9dceb5cb6e53d0c0b20a3508}{%
+           family={Stearns},
+           familyi={S\bibinitperiod},
+           given={David\bibnamedelima L.},
+           giveni={D\bibinitperiod\bibinitdelim L\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {London: Springer}%
+      }
+      \strng{namehash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{fullhash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{fullhashraw}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{bibnamehash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{authorbibnamehash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{authornamehash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{authorfullhash}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \strng{authorfullhashraw}{513e1b0a9dceb5cb6e53d0c0b20a3508}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{isbn}{978-1-283-08232-7}
+      \field{shorttitle}{Electronic {{Value Exchange}}}
+      \field{title}{Electronic {{Value Exchange}}: {{Origins}} of the {{VISA Electronic Payment System}}}
+      \field{year}{2011}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://catalog.princeton.edu/catalog/99125252121406421
+      \endverb
+      \verb{url}
+      \verb https://catalog.princeton.edu/catalog/99125252121406421
+      \endverb
+    \endentry
+    \entry{steffensmeierFenceShadowTwo1986}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=11ab1b63df01186c3b5ca686a0913bd2}{%
+           family={Steffensmeier},
+           familyi={S\bibinitperiod},
+           given={Darrell\bibnamedelima J.},
+           giveni={D\bibinitperiod\bibinitdelim J\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Rowman \& Littlefield}%
+      }
+      \strng{namehash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{fullhash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{fullhashraw}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{bibnamehash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{authorbibnamehash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{authornamehash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{authorfullhash}{11ab1b63df01186c3b5ca686a0913bd2}
+      \strng{authorfullhashraw}{11ab1b63df01186c3b5ca686a0913bd2}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{This book is based on the experiences of a dealer in stolen goods (alias 'Sam Goodman'), whose history serves as a model for understanding the role that fences play in today's society. In his straightforward and colorful analysis of underground life, Steffensmeier analyzes how a fence initiates and sustains relationships with thieves, customers, and other fences, how he sets and negotiates prices, the profits he enjoys, the skills required for his job, and the meaning and rewards of fencing. The author relates the circumstances leading to Sam's 'fall'--his eventual arrest and conviction for receiving stolen property. His field interviews are supplemented with court records and newspaper accounts, interviews of thieves and customers who had contact with Sam, several other fences, and law enforcement officials. In addition to documenting the lifestyle of a fascinating criminal life, the author shows how crime is intricately woven into the fabric of society, in which thieves and fences share many similarities in skills and behavior with those of legitimate businessmen. Sociologists, criminologists, law enforcement officers, and public policy makers will find this book an enlightening and engaging portrayal of the criminal career.}
+      \field{eprinttype}{googlebooks}
+      \field{isbn}{978-0-8476-7495-4}
+      \field{langid}{english}
+      \field{pagetotal}{312}
+      \field{shorttitle}{The {{Fence}}}
+      \field{title}{The {{Fence}}: {{In}} the {{Shadow}} of {{Two Worlds}}}
+      \field{year}{1986}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb 4s1xsM_Emj0C
+      \endverb
+      \keyw{Social Science / Criminology}
+    \endentry
+    \entry{stovelStabilizingBrokerage2011}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=8577179e175a431528c193f628d3ca44}{%
+           family={Stovel},
+           familyi={S\bibinitperiod},
+           given={Katherine},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=12a0f3c6604539df135b92132cfe09cd}{%
+           family={Golub},
+           familyi={G\bibinitperiod},
+           given={Benjamin},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=74d4238ffc23fd2f32398fa30418b3e0}{%
+           family={Milgrom},
+           familyi={M\bibinitperiod},
+           given={Eva\bibnamedelimb M.\bibnamedelimi Meyersson},
+           giveni={E\bibinitperiod\bibinitdelim M\bibinitperiod\bibinitdelim M\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Proceedings of the National Academy of Sciences}%
+      }
+      \strng{namehash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{fullhash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{fullhashraw}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{bibnamehash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{authorbibnamehash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{authornamehash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{authorfullhash}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \strng{authorfullhashraw}{f5861ffd8e58b8ff2b99dcf22d900fb4}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{A variety of social and economic arrangements exist to facilitate the exchange of goods, services, and information over gaps in social structure. Each of these arrangements bears some relationship to the idea of brokerage, but this brokerage is rarely like the pure and formal economic intermediation seen in some modern markets. Indeed, for reasons illuminated by existing sociological and economic models, brokerage is a fragile relationship. In this paper, we review the causes of instability in brokerage and identify three social mechanisms that can stabilize fragile brokerage relationships: social isolation, broker capture, and organizational grafting. Each of these mechanisms rests on the emergence or existence of supporting institutions. We suggest that organizational grafting may be the most stable and effective resolution to the tensions inherent in brokerage, but it is also the most institutionally demanding.}
+      \field{day}{27}
+      \field{issue}{suppl. 4}
+      \field{journaltitle}{Proceedings of the National Academy of Sciences}
+      \field{month}{12}
+      \field{title}{Stabilizing {{Brokerage}}}
+      \field{urlday}{21}
+      \field{urlmonth}{5}
+      \field{urlyear}{2022}
+      \field{volume}{108}
+      \field{year}{2011}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{21326\bibrangedash 21332}
+      \range{pages}{7}
+      \verb{doi}
+      \verb 10.1073/pnas.1100920108
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/2EZR7XIH/Stovel et al_2011_Stabilizing brokerage.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://www.pnas.org/doi/abs/10.1073/pnas.1100920108
+      \endverb
+      \verb{url}
+      \verb https://www.pnas.org/doi/abs/10.1073/pnas.1100920108
+      \endverb
+      \keyw{_pertinent}
+    \endentry
+    \entry{stovelBrokerage2012}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=8577179e175a431528c193f628d3ca44}{%
+           family={Stovel},
+           familyi={S\bibinitperiod},
+           given={Katherine},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=f0eaf5a4248962c9520b26250de6593c}{%
+           family={Shaw},
+           familyi={S\bibinitperiod},
+           given={Lynette},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{fullhash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{fullhashraw}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{bibnamehash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{authorbibnamehash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{authornamehash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{authorfullhash}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \strng{authorfullhashraw}{2749dd5e9048ecc75bb9cb2a479f83a6}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Although sociologists have frequently touched on ideas related to brokerage in their research, brokerage is rarely considered a central concept in the discipline's theoretical or analytic arsenal. Theoretically, brokerage is one of a small number of mechanisms by which disconnected or isolated individuals (or groups) can interact economically, politically, and socially. Across substantive domains, we are particularly struck by a dual aspect of brokerage: On the one hand, brokerage has the capacity to ease social interaction, enhance economic activity, and facilitate political development. On the other hand, brokerage often breeds exploitation, the pursuit of personal profit, corruption, and the accumulation of power; through these and other processes, brokerage can exacerbate existing inequalities. In this review, we make the case for elevating the concept of brokerage to a more prominent place in the sociological canon. Brokerage's significance stems from its potential for macro-level consequences, which are revealed primarily through its impact on the permeability of group boundaries. However, because brokerage is built from informal, personal relationships, understanding it requires close attention to micro-level relations and social psychological processes.}
+      \field{journaltitle}{Annual Review of Sociology}
+      \field{number}{1}
+      \field{title}{Brokerage}
+      \field{urlday}{9}
+      \field{urlmonth}{5}
+      \field{urlyear}{2022}
+      \field{volume}{38}
+      \field{year}{2012}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{139\bibrangedash 158}
+      \range{pages}{20}
+      \verb{doi}
+      \verb 10.1146/annurev-soc-081309-150054
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/W32IL7YC/Stovel_Shaw_2012_Brokerage.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1146/annurev-soc-081309-150054
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1146/annurev-soc-081309-150054
+      \endverb
+      \keyw{_lu,corruption,networks,social integration}
+    \endentry
+    \entry{ARA_FullReport}{misc}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=c1d86940cf67a9392485a9d4cde4b547}{%
+           family={{TP ICAP}},
+           familyi={T\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {London}%
+      }
+      \list{organization}{1}{%
+        {TP ICAP Group plc}%
+      }
+      \strng{namehash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{fullhash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{fullhashraw}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{bibnamehash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{authorbibnamehash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{authornamehash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{authorfullhash}{c1d86940cf67a9392485a9d4cde4b547}
+      \strng{authorfullhashraw}{c1d86940cf67a9392485a9d4cde4b547}
+      \field{sortinit}{T}
+      \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Annual {{Report}} and {{Accounts}} 2025}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/2WXB6KPG/ARA_Full report.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://tpicap.com/tpicap/sites/g/files/escbpb106/files/2026-04/ARA_Full%20report.pdf
+      \endverb
+      \verb{url}
+      \verb https://tpicap.com/tpicap/sites/g/files/escbpb106/files/2026-04/ARA_Full%20report.pdf
+      \endverb
+    \endentry
+    \entry{viljoenRelationalTheoryData2021}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=2,uniquepart=given,hash=a860da512e98ffab9a38018f47f51d76}{%
+           family={Viljoen},
+           familyi={V\bibinitperiod},
+           given={Salome},
+           giveni={S\bibinitperiod},
+           givenun=2}}%
+      }
+      \strng{namehash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{fullhash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{fullhashraw}{a860da512e98ffab9a38018f47f51d76}
+      \strng{bibnamehash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{authorbibnamehash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{authornamehash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{authorfullhash}{a860da512e98ffab9a38018f47f51d76}
+      \strng{authorfullhashraw}{a860da512e98ffab9a38018f47f51d76}
+      \field{sortinit}{V}
+      \field{sortinithash}{afb52128e5b4dc4b843768c0113d673b}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Yale Law Journal}
+      \field{langid}{english}
+      \field{number}{2}
+      \field{shortjournal}{Yale L.J.}
+      \field{title}{A {{Relational Theory}} of {{Data Governance}}}
+      \field{volume}{131}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \field{pages}{573\bibrangedash 654}
+      \range{pages}{82}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/5QKU63KE/Viljoen_2021_A Relational Theory of Data Governance.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://heinonline.org/HOL/P?h=hein.journals/ylr131&i=595
+      \endverb
+      \verb{url}
+      \verb https://heinonline.org/HOL/P?h=hein.journals/ylr131&i=595
+      \endverb
+      \keyw{_à résumer,_pertinent}
+    \endentry
+    \entry{viljoenDesignChoicesMechanism2021}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=2,uniquepart=given,hash=ac2fd2a4955bf16110f3673f865dfbb6}{%
+           family={Viljoen},
+           familyi={V\bibinitperiod},
+           given={Salomé},
+           giveni={S\bibinitperiod},
+           givenun=2}}%
+        {{un=0,uniquepart=base,hash=ed285bb51f2d3a79c88868e2e70219ad}{%
+           family={Goldenfein},
+           familyi={G\bibinitperiod},
+           given={Jake},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=e35c869bbe653084e39f2f5791c9dd2d}{%
+           family={McGuigan},
+           familyi={M\bibinitperiod},
+           given={Lee},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Ltd}%
+      }
+      \strng{namehash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{fullhash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{fullhashraw}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{bibnamehash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{authorbibnamehash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{authornamehash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{authorfullhash}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \strng{authorfullhashraw}{9f1d7f40d76252b6d4cb75daabb055ee}
+      \field{sortinit}{V}
+      \field{sortinithash}{afb52128e5b4dc4b843768c0113d673b}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Mechanism design is a form of optimization developed in economic theory. It casts economists as institutional engineers, choosing an outcome and then arranging a set of market rules and conditions to achieve it. The toolkit from mechanism design is widely used in economics, policymaking, and now in building and managing online environments. Mechanism design has become one of the most pervasive yet inconspicuous influences on the digital mediation of social life. Its optimizing schemes structure online advertising markets and other multi-sided platform businesses. Whatever normative rationales mechanism design might draw on in its economic origins, as its influence has grown and its applications have become more computational, we suggest those justifications for using mechanism design to orchestrate and optimize human interaction are losing traction. In this article, we ask what ideological work mechanism design is doing in economics, computer science, and its applications to the governance of digital platforms. Observing mechanism design in action in algorithmic environments, we argue it has become a tool for producing information domination, distributing social costs in ways that benefit designers, and controlling and coordinating participants in multi-sided platforms.}
+      \field{day}{1}
+      \field{issn}{2053-9517}
+      \field{journaltitle}{Big Data \& Society}
+      \field{langid}{english}
+      \field{month}{7}
+      \field{number}{2}
+      \field{shortjournal}{Big Data \& Society}
+      \field{shorttitle}{Design {{Choices}}}
+      \field{title}{Design {{Choices}}: {{Mechanism Design}} and {{Platform Capitalism}}}
+      \field{urlday}{12}
+      \field{urlmonth}{8}
+      \field{urlyear}{2022}
+      \field{volume}{8}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{20539517211034312}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1177/20539517211034312
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/RJMI6KSS/Viljoen et al_2021_Design choices.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/20539517211034312
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/20539517211034312
+      \endverb
+      \keyw{_pertinent,_source principale,algorithms,digital platforms,labor platforms,Mechanism design,optimization,programmatic advertising}
+    \endentry
+    \entry{VisaAnnualReport}{misc}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=a7f8fa7d4a0d7b3bfa534a1eba01c158}{%
+           family={{Visa Inc.}},
+           familyi={V\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {San Francisco}%
+      }
+      \list{organization}{1}{%
+        {Visa Inc.}%
+      }
+      \strng{namehash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{fullhash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{fullhashraw}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{bibnamehash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{authorbibnamehash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{authornamehash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{authorfullhash}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \strng{authorfullhashraw}{a7f8fa7d4a0d7b3bfa534a1eba01c158}
+      \field{sortinit}{V}
+      \field{sortinithash}{afb52128e5b4dc4b843768c0113d673b}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Visa {{Annual Report}} 2024}
+      \field{year}{2024}
+      \field{dateera}{ce}
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/3D7Q24KE/Visa Annual Report 2024.pdf
+      \endverb
+    \endentry
+    \entry{zelizerPurchaseIntimacy2005}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=756e4b07dd2e91e4e51e380664ffb1c9}{%
+           family={Zelizer},
+           familyi={Z\bibinitperiod},
+           given={Viviana\bibnamedelima A.},
+           giveni={V\bibinitperiod\bibinitdelim A\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{location}{1}{%
+        {Princeton}%
+      }
+      \list{publisher}{1}{%
+        {Princeton University Press}%
+      }
+      \strng{namehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{fullhash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{fullhashraw}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{bibnamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorbibnamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authornamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorfullhash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorfullhashraw}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \field{extraname}{1}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{The {{Purchase}} of {{Intimacy}}}
+      \field{year}{2005}
+      \field{dateera}{ce}
+      \keyw{Couples Finance Personal.,Financial security.,Interpersonal relations Economic aspects.}
+    \endentry
+    \entry{zelizerHowBecameRelational2012}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=756e4b07dd2e91e4e51e380664ffb1c9}{%
+           family={Zelizer},
+           familyi={Z\bibinitperiod},
+           given={Viviana\bibnamedelima A.},
+           giveni={V\bibinitperiod\bibinitdelim A\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Inc}%
+      }
+      \strng{namehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{fullhash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{fullhashraw}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{bibnamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorbibnamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authornamehash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorfullhash}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \strng{authorfullhashraw}{756e4b07dd2e91e4e51e380664ffb1c9}
+      \field{extraname}{2}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{My paper proposes the concept of relational work to explain economic activity. In all economic action, I argue, people engage in the process of differentiating meaningful social relations. For each distinct category of social relations, people erect a boundary, mark the boundary by means of names and practices, establish a set of distinctive understandings that operate within that boundary, designate certain sorts of economic transactions as appropriate for the relation, bar other transactions as inappropriate, and adopt certain media for reckoning and facilitating economic transactions within the relation. I call that process relational work. After identifying specific elements of a relational work approach, the paper focuses on the case of monetary differentiation. It compares a relational work theory of earmarking money with behavioral economics? individually based mental accounting approach.}
+      \field{day}{1}
+      \field{issn}{0032-3292}
+      \field{journaltitle}{Politics \& Society}
+      \field{langid}{english}
+      \field{month}{6}
+      \field{number}{2}
+      \field{title}{How {{I Became}} a {{Relational Economic Sociologist}} and {{What Does That Mean}}?}
+      \field{urlday}{19}
+      \field{urlmonth}{12}
+      \field{urlyear}{2022}
+      \field{volume}{40}
+      \field{year}{2012}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{145\bibrangedash 174}
+      \range{pages}{30}
+      \verb{doi}
+      \verb 10.1177/0032329212441591
+      \endverb
+      \verb{file}
+      \verb /Users/mlaprise/Zotero/storage/MXA8LP5H/Zelizer_2012_How I Became a Relational Economic Sociologist and What Does That Mean.pdf
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1177/0032329212441591
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1177/0032329212441591
+      \endverb
+      \keyw{_lu}
+    \endentry
+    \entry{zhuCompetingComplementorsEmpirical}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=c527382ce6a2bdfc4548a1f28e479d85}{%
+           family={Zhu},
+           familyi={Z\bibinitperiod},
+           given={Feng},
+           giveni={F\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=6e6740416701f771895cca391a2967db}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Qihong},
+           giveni={Q\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{426d19e00c1303d0511aed8df8497046}
+      \strng{fullhash}{426d19e00c1303d0511aed8df8497046}
+      \strng{fullhashraw}{426d19e00c1303d0511aed8df8497046}
+      \strng{bibnamehash}{426d19e00c1303d0511aed8df8497046}
+      \strng{authorbibnamehash}{426d19e00c1303d0511aed8df8497046}
+      \strng{authornamehash}{426d19e00c1303d0511aed8df8497046}
+      \strng{authorfullhash}{426d19e00c1303d0511aed8df8497046}
+      \strng{authorfullhashraw}{426d19e00c1303d0511aed8df8497046}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Research Summary: Platform owners sometimes enter complementors' product spaces and compete against them. Using data from Amazon.com to study Amazon's entry pattern into third-party sellers' product ...}
+      \field{journaltitle}{Strategic Management Journal}
+      \field{langid}{english}
+      \field{number}{10}
+      \field{shorttitle}{Competing with {{Complementors}}}
+      \field{title}{Competing with {{Complementors}}: {{An Empirical Look}} at {{Amazon}}.Com}
+      \field{urlday}{8}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{volume}{39}
+      \field{year}{2018}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \field{pages}{2618\bibrangedash 2642}
+      \range{pages}{25}
+      \verb{doi}
+      \verb 10.1002/smj.2932
+      \endverb
+      \verb{urlraw}
+      \verb https://sms.onlinelibrary.wiley.com/doi/10.1002/smj.2932
+      \endverb
+      \verb{url}
+      \verb https://sms.onlinelibrary.wiley.com/doi/10.1002/smj.2932
+      \endverb
+    \endentry
+    \entry{zuboffAgeSurveillanceCapitalism2019}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=19b83c33a232c9892502d941e4cfcf56}{%
+           family={Zuboff},
+           familyi={Z\bibinitperiod},
+           given={Shoshana},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {New York, NY: PublicAffairs}%
+      }
+      \strng{namehash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{fullhash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{fullhashraw}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{bibnamehash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{authorbibnamehash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{authornamehash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{authorfullhash}{19b83c33a232c9892502d941e4cfcf56}
+      \strng{authorfullhashraw}{19b83c33a232c9892502d941e4cfcf56}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{"Shoshana Zuboff, named "the true prophet of the information age" by the Financial Times, has always been ahead of her time. Her seminal book In the Age of the Smart Machine foresaw the consequences of a then-unfolding era of computer technology. Now, three decades later she asks why the once-celebrated miracle of digital is turning into a nightmare. Zuboff tackles the social, political, business, personal, and technological meaning of "surveillance capitalism" as an unprecedented new market form. It is not simply about tracking us and selling ads, it is the business model for an ominous new marketplace that aims at nothing less than predicting and modifying our everyday behavior--where we go, what we do, what we say, how we feel, who we're with. The consequences of surveillance capitalism for us as individuals and as a society vividly come to life in The Age of Surveillance Capitalism's pathbreaking analysis of power. The threat has shifted from a totalitarian "big brother" state to a universal global architecture of automatic sensors and smart capabilities: A "big other" that imposes a fundamentally new form of power and unprecedented concentrations of knowledge in private companies--free from democratic oversight and control"-- Provided by publisher.}
+      \field{isbn}{978-1-61039-570-0}
+      \field{langid}{english}
+      \field{pagetotal}{1 online resource}
+      \field{shorttitle}{The {{Age}} of {{Surveillance Capitalism}}}
+      \field{title}{The {{Age}} of {{Surveillance Capitalism}}: {{The Fight}} for a {{Human Future}} at the {{New Frontier}} of {{Power}}}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \keyw{Consumer behavior—Data processing,Consumer profiling—Data processing,Information technology—Social aspects,Nonfiction}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

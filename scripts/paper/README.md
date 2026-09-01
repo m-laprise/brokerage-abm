@@ -73,6 +73,13 @@ Local tier (no data access; works from a clone of this repository):
    temporary directory. The results section contains five figures, numbered by
    their order of first citation rather than by their asset filenames. Needs
    only stock Julia and `pdflatex`.
+8. `julia --project --threads=auto scripts/paper/build_manuscript.jl`
+   Inlines the generated results section into the editable manuscript root and
+   writes a submission-ready bundle under `output/manuscript/`. The bundle's
+   `transientbrokerage.tex` contains the complete manuscript with no results
+   `\input`; `references.bib`, all referenced figures, a Biber `.bbl`, and a
+   compile-checked PDF are placed beside it. Run step 7 first whenever any
+   results input or provenance changes.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
 editing `figures.jl` and rerunning steps 5--7 locally. The cluster tier reruns

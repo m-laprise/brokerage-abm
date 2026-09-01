@@ -21,11 +21,12 @@ realized match value, brokered access, outsourcing, and structural centrality.
 ## Results and documentation
 
 - [Generated results section](output/main/results_section.tex)
+- [Complete manuscript](output/manuscript/transientbrokerage.pdf)
 - [Scientific output index](output/README.md), covering the main figures,
   supplementary analyses, and Ridge experiments
-- [Supplementary material](output/supplement/supplement.pdf)
-- [Model specifications](model_specifications.pdf)
-- [Simulation pseudocode](simulation_pseudocode.pdf)
+- [Appendix A: Simulation pseudocode](simulation_pseudocode.pdf)
+- [Appendix B: Model specifications](model_specifications.pdf)
+- [Supplementary Material: Alternative structural measures and Ridge robustness](output/supplement/supplement.pdf)
 
 ## Quick start
 

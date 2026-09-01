@@ -17,16 +17,20 @@ builders reject inputs produced by a different commit.
 
 - [Results section](main/results_section.tex)
 - [Figure 1: Baseline dynamics](main/figs/fig1_dynamics.png)
-- [Figure 2: Matching grid](main/figs/fig2_grid_lines.png)
-- [Figure 3: Position and work](main/figs/fig3_position_work.png)
-- [Figure 4: Structural advantage](main/figs/fig4_advantage.png)
+- [Figure 2: Sources of the broker's ranking advantage](main/figs/fig_information_sources.png)
+- [Figure 3: Matching grid](main/figs/fig2_grid_lines.png)
+- [Figure 4: Position and work](main/figs/fig3_position_work.png)
+- [Figure 5: Structural advantage](main/figs/fig4_advantage.png)
 - Monte Carlo convergence diagnostics: `main/convergence/condition_audit.tsv`
   and `main/convergence/outcome_summary.tsv`. These are reproducibility
   diagnostics and do not appear as paper figures or appendix analyses.
 
-## Supplementary appendix
+## Manuscript appendices and Supplementary Material
 
-- [Supplementary Material](supplement/supplement.pdf)
+- [Complete manuscript](manuscript/transientbrokerage.pdf)
+- [Appendix A: Simulation pseudocode](../simulation_pseudocode.pdf)
+- [Appendix B: Model specifications](../model_specifications.pdf)
+- [Supplementary Material: Alternative structural measures and Ridge robustness](supplement/supplement.pdf)
 - [Figure S1](supplement/figs/supp_S1_grid_lines.png)
 - [Figure S2](supplement/figs/supp_S2_position.png)
 - [Figure S3](supplement/figs/supp_S3_advantage.png)
