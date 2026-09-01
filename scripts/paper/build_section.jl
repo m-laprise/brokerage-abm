@@ -38,7 +38,7 @@ const ABLATION_VALS = normpath(
 const FIGMETA = joinpath(GENERATED, "figmeta.tex")
 const CAPS = joinpath(PAPER, "captions.tex")
 const OUT = joinpath(GENERATED, "results_section.tex")
-const REPORTING_PROVENANCE = reporting_git_provenance(
+const REPORTING_PROVENANCE = manuscript_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
 
@@ -140,13 +140,16 @@ end
 flat = replace(src, r"\\pv\{([^}]+)\}" => m -> defs[m[5:(end - 1)]])
 occursin("\\pv{", flat) && fail("unflattened \\pv reference remains")
 
+source_state = REPORTING_PROVENANCE.source_clean ?
+               "clean manuscript sources" :
+               "uncommitted manuscript/build changes included"
 header = """
 % results_section.tex: GENERATED, do not edit.
 % Built by scripts/paper/build_section.jl on $(Dates.format(now(), "yyyy-mm-dd HH:MM"))
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
 % sweep $SWEEP; analysis commit $ANALYSIS_COMMIT;
-% manuscript commit $(REPORTING_PROVENANCE.commit); clean manuscript sources.
+% manuscript commit $(REPORTING_PROVENANCE.commit); $source_state.
 $(FIXTURE_NOTE)% Every number was computed from the saved sweep data by the reporting scripts.
 """
 mkpath(GENERATED)

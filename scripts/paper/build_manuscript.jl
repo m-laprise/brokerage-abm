@@ -39,7 +39,7 @@ const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
 const SOURCE_GRAPHICSPATH = "\\graphicspath{{output/main/}}"
 const BUNDLE_GRAPHICSPATH = "\\graphicspath{{./}}"
-const MANUSCRIPT_PROVENANCE = reporting_git_provenance(ROOT)
+const MANUSCRIPT_PROVENANCE = manuscript_git_provenance(ROOT)
 
 fail(message) = error("manuscript build failed: $message")
 
@@ -83,10 +83,13 @@ flattened = replace(flattened, SOURCE_BIBLIOGRAPHY => BUNDLE_BIBLIOGRAPHY)
 flattened = replace(flattened, SOURCE_GRAPHICSPATH => BUNDLE_GRAPHICSPATH)
 occursin(INPUT_MARKER, flattened) && fail("results input was not flattened")
 
+source_state = MANUSCRIPT_PROVENANCE.source_clean ?
+               "clean manuscript sources" :
+               "uncommitted manuscript/build changes included"
 header = """
 % $(basename(OUTPUT_TEX)): GENERATED, do not edit.
 % Built by scripts/paper/build_manuscript.jl on $(now()).
-% Manuscript commit: $(MANUSCRIPT_PROVENANCE.commit); clean sources.
+% Manuscript commit: $(MANUSCRIPT_PROVENANCE.commit); $source_state.
 % The editable root is paper/$(basename(SOURCE)); the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 

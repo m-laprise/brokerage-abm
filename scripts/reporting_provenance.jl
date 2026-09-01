@@ -3,23 +3,28 @@
 
 Commit-provenance helpers shared by scientific reporting scripts. Generated files
 under `output/` are excluded from the cleanliness check because each reporting
-stage updates them. Source, specification, test, and paper files must match the
-current manuscript or rendering commit exactly. Retained analysis inputs may
-record an earlier ancestor commit, which remains explicit in downstream
-provenance.
+stage updates them. Scientific analysis inputs must match a recorded commit.
+Manuscript builders may include explicitly identified, uncommitted presentation
+changes, which remain marked as dirty in downstream provenance. Retained analysis
+inputs may record an earlier ancestor commit.
 """
 
 """
-    reporting_git_provenance(path; require_clean=true)
+    reporting_git_provenance(path; require_clean=true, allowed_dirty_paths=())
 
 Return the repository root and current Git commit. When `require_clean` is
-true, fail if any path outside the top-level `output/` directory differs from
-the commit.
+true, fail if any path outside the top-level `output/` directory and
+`allowed_dirty_paths` differs from the commit. `source_clean` still reports
+whether all non-output files match the commit.
 """
-function reporting_git_provenance(path; require_clean::Bool=true)
+function reporting_git_provenance(
+    path;
+    require_clean::Bool=true,
+    allowed_dirty_paths=(),
+)
     root = readchomp(`git -C $path rev-parse --show-toplevel`)
     commit = readchomp(`git -C $root rev-parse HEAD`)
-    status_command = Cmd([
+    status_args = [
         "git",
         "-C",
         root,
@@ -29,17 +34,49 @@ function reporting_git_provenance(path; require_clean::Bool=true)
         "--",
         ".",
         ":(exclude)output",
-    ])
-    source_status = strip(read(status_command, String))
+    ]
+    source_status = strip(read(Cmd(status_args), String))
     source_clean = isempty(source_status)
-    if require_clean && !source_clean
+    permitted_args = copy(status_args)
+    append!(permitted_args, [":(exclude)$dirty_path" for dirty_path in allowed_dirty_paths])
+    unpermitted_status = strip(read(Cmd(permitted_args), String))
+    if require_clean && !isempty(unpermitted_status)
         error(
             "reporting source does not match commit $commit; commit or remove " *
-            "these non-output changes before generating scientific artifacts:\n" *
-            source_status,
+            "these non-output, non-presentation changes before generating " *
+            "scientific artifacts:\n" * unpermitted_status,
         )
     end
-    return (; root, commit, short_commit=first(commit, 7), source_clean)
+    return (;
+        root,
+        commit,
+        short_commit=first(commit, 7),
+        source_clean,
+        source_status,
+    )
+end
+
+const MANUSCRIPT_ITERATION_PATHS = (
+    "paper",
+    "scripts/paper/build_section.jl",
+    "scripts/paper/build_supplement.jl",
+    "scripts/paper/build_manuscript.jl",
+    "scripts/reporting_provenance.jl",
+    "test/test_reporting_provenance.jl",
+)
+
+"""
+    manuscript_git_provenance(path)
+
+Return provenance for a manuscript build while allowing uncommitted paper and
+manuscript-builder edits. Changes to analysis code, specifications, tests, or
+other source files still stop the build, except for this helper's focused test.
+"""
+function manuscript_git_provenance(path)
+    return reporting_git_provenance(
+        path;
+        allowed_dirty_paths=MANUSCRIPT_ITERATION_PATHS,
+    )
 end
 
 """

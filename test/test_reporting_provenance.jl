@@ -24,5 +24,18 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
         dirty = reporting_git_provenance(repository; require_clean=false)
         @test !dirty.source_clean
         @test_throws ErrorException reporting_git_provenance(repository)
+
+        permitted = reporting_git_provenance(
+            repository;
+            allowed_dirty_paths=("source.txt",),
+        )
+        @test !permitted.source_clean
+        @test occursin("source.txt", permitted.source_status)
+
+        write(joinpath(repository, "analysis.jl"), "uncommitted\n")
+        @test_throws ErrorException reporting_git_provenance(
+            repository;
+            allowed_dirty_paths=("source.txt",),
+        )
     end
 end

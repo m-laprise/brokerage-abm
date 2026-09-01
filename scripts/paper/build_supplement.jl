@@ -28,7 +28,7 @@ const RIDGE_VALS = normpath(
 )
 const FIGDIR = joinpath(GENERATED, "figs")
 const PDF = joinpath(GENERATED, "supplement.pdf")
-const REPORTING_PROVENANCE = reporting_git_provenance(
+const REPORTING_PROVENANCE = manuscript_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
 

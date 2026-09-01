@@ -1,6 +1,6 @@
 % brokers_who_do_not_bridge_without_appendices.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_manuscript.jl on 2026-09-01T05:31:18.598.
-% Manuscript commit: 4af70121b2359b7c4498eb1885cdf6503c6a1e59; clean sources.
+% Built by scripts/paper/build_manuscript.jl on 2026-09-01T05:40:42.695.
+% Manuscript commit: c4a355d3fa41aee2772e8217e1bd89d99bad1059; uncommitted manuscript/build changes included.
 % The editable root is paper/brokers_who_do_not_bridge_without_appendices.tex; the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 
@@ -224,11 +224,11 @@ Important models in the economics literature have focused on the attributional c
 
 % Generated from paper/section_source.tex by scripts/paper/build_section.jl.
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 05:30
+% Built by scripts/paper/build_section.jl on 2026-09-01 05:40
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
 % sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1e5487884bf82e80a3a232f4c769c66404;
-% manuscript commit 4af70121b2359b7c4498eb1885cdf6503c6a1e59; clean manuscript sources.
+% manuscript commit c4a355d3fa41aee2772e8217e1bd89d99bad1059; uncommitted manuscript/build changes included.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -377,7 +377,7 @@ produce extreme negative values when that variance is small. This volatility doe
 not affect model behavior or the conclusions based on ranking, matching, and
 realized output because $R^2$ is diagnostic only and never enters a decision rule.
 
-\emph{Results}. All results are computed from a parameter sweep of the
+\emph{Simulation design and analysis}. All results are computed from a parameter sweep of the
 simulated market. A regime is one scientifically distinct parameter configuration;
 duplicate grid coordinates and inactive parameters do not create additional
 regimes. In the baseline regime,
@@ -387,7 +387,9 @@ initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
 self-search pool size $n_{\mathrm{strangers}}=10$. The simulation retains all
 periods, but time-series displays begin at $t=30$ to omit the initialization
 transient. This display cutoff does not change the simulation or the late-period
-estimands. Around this baseline, I vary one parameter at a time
+estimands.
+
+Around this baseline, I vary one parameter at a time
 ($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
 $N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
 $\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
@@ -401,7 +403,9 @@ $\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
 $\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
 one-at-a-time levels. The design comprises 98 regimes. Repeated grid
 coordinates that resolve to the same configuration belong to one regime,
-including $\rho=1$ coordinates where $\delta$ is inactive. There are
+including $\rho=1$ coordinates where $\delta$ is inactive.
+
+There are
 20 independent seeds generally and
 50 at the baseline (1990 runs in total). Within each
 regime, outcomes are averaged over a fixed time window within each seed and
@@ -409,6 +413,7 @@ then across seeds. Late means use the final 20 periods ($t\in[481,500]$) for all
 reported levels unless noted otherwise; early means use $t\in[50,70]$ to quantify
 within-run drift. Cross-regime summaries give each regime equal weight. Remaining
 baseline parameter values are given in Appendix~B~\S9.
+
 Monte Carlo convergence was assessed by comparing estimates from the first 10
 seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
 baseline, and by computing Student-$t$ 95\% intervals from seed-level
