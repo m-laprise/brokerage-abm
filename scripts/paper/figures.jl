@@ -61,7 +61,8 @@ const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
 )["figdata"]
 const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/figures.jl"),
 )
 const DATA_ANALYSIS_COMMIT = validate_analysis_commit(
     REPORTING_PROVENANCE,
@@ -134,7 +135,7 @@ end
 
 function fig_information_sources()
     models = (
-        (key="pair", label="Paired\nRidge", color=:black),
+        (key="pair", label="Base\nRidge", color=:black),
         (key="size_matched", label="Size-\nmatched", color=:darkorange),
         (key="single_principal", label="One\nendpoint", color=:seagreen),
         (key="additive", label="Additive", color=:steelblue),
@@ -177,7 +178,7 @@ function fig_information_sources()
     )
     ax_baseline = Axis(
         fig[1, 1];
-        title="A. Baseline change from paired Ridge",
+        title="A. Baseline change from base Ridge",
         ylabel="Change in rank-correlation difference\n(broker minus principal)",
         xticks=(1:length(variants), [model.label for model in variants]),
         axis_style...,

@@ -524,7 +524,7 @@
       \field{journaltitle}{Research in Organizational Behavior}
       \field{langid}{english}
       \field{shortjournal}{Research in Organizational Behavior}
-      \field{title}{The {{Network Structure Of Social Capital}}}
+      \field{title}{The {{Network Structure of Social Capital}}}
       \field{urlday}{11}
       \field{urlmonth}{4}
       \field{urlyear}{2026}
@@ -894,7 +894,6 @@
       \field{labeltitlesource}{shorttitle}
       \field{isbn}{978-0-19-024669-3}
       \field{langid}{english}
-      \field{pagetotal}{366 pages}
       \field{shorttitle}{Between {{Truth}} and {{Power}}}
       \field{title}{Between {{Truth}} and {{Power}}: {{The Legal Constructions}} of {{Informational Capitalism}}}
       \field{year}{2019}
@@ -931,7 +930,6 @@
       \field{edition}{1st ed.}
       \field{isbn}{978-0-8156-0172-2}
       \field{langid}{english}
-      \field{pagetotal}{xii, 191 p.}
       \field{series}{The {{Frank W}}. {{Abrams}} Lectures}
       \field{title}{The {{Asymmetric Society}}}
       \field{year}{1982}
@@ -1452,7 +1450,6 @@
       \field{eprinttype}{googlebooks}
       \field{isbn}{978-0-8133-1657-4}
       \field{langid}{english}
-      \field{pagetotal}{304}
       \field{shorttitle}{The {{Panoptic Sort}}}
       \field{title}{The {{Panoptic Sort}}: {{A Political Economy}} of {{Personal Information}}}
       \field{year}{1993}
@@ -2159,7 +2156,6 @@
       \field{abstract}{Trading floors are a thing of the past. Thanks to a combination of computers, high-speed networks and algorithms, millions of financial transactions now happen in fractions of a second. This book studies the automation of stock markets in the United Kingdom and the United States of America, identifying the invisible actors, devices, and politics that were central to the creation of electronic trading. In addition to offering a detailed account of how stock exchanges wrestled with technology, the book also invites readers to rethink the nature of markets in modern societies. Markets, it argues, are sites for the creation of relations, and in studying how these relations changed through technology, the book highlights the sources, dynamics, and consequences of automation. In this respect, the book is both a history of automation in finance and a sociological analysis of the way in which automation gradually changed the lives and work of key financial actors.}
       \field{isbn}{978-1-108-67758-5}
       \field{langid}{english}
-      \field{pagetotal}{1 online resource (xvi, 357 pages)}
       \field{shorttitle}{Automating {{Finance}}}
       \field{title}{Automating {{Finance}}: {{Infrastructures}}, {{Engineers}}, and the {{Making}} of {{Electronic Markets}}}
       \field{urlday}{5}
@@ -2546,7 +2542,6 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
-      \field{pagetotal}{195 p.}
       \field{title}{Conflict; the {{Web}} of {{Group-Affiliations}}}
       \field{year}{1964}
       \field{dateera}{ce}
@@ -2597,7 +2592,6 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
-      \field{pagetotal}{lxv, 395 p.}
       \field{title}{On {{Individuality}} and {{Social Forms}}; {{Selected Writings}}}
       \field{year}{1971}
       \field{dateera}{ce}
@@ -2736,7 +2730,6 @@
       \field{eprinttype}{googlebooks}
       \field{isbn}{978-0-8476-7495-4}
       \field{langid}{english}
-      \field{pagetotal}{312}
       \field{shorttitle}{The {{Fence}}}
       \field{title}{The {{Fence}}: {{In}} the {{Shadow}} of {{Two Worlds}}}
       \field{year}{1986}
@@ -2914,21 +2907,21 @@
     \endentry
     \entry{viljoenRelationalTheoryData2021}{article}{}{}
       \name{author}{1}{}{%
-        {{un=2,uniquepart=given,hash=a860da512e98ffab9a38018f47f51d76}{%
+        {{un=0,uniquepart=base,hash=ac2fd2a4955bf16110f3673f865dfbb6}{%
            family={Viljoen},
            familyi={V\bibinitperiod},
-           given={Salome},
+           given={Salomé},
            giveni={S\bibinitperiod},
-           givenun=2}}%
+           givenun=0}}%
       }
-      \strng{namehash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{fullhash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{fullhashraw}{a860da512e98ffab9a38018f47f51d76}
-      \strng{bibnamehash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{authorbibnamehash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{authornamehash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{authorfullhash}{a860da512e98ffab9a38018f47f51d76}
-      \strng{authorfullhashraw}{a860da512e98ffab9a38018f47f51d76}
+      \strng{namehash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{fullhash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{fullhashraw}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{bibnamehash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{authorbibnamehash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{authornamehash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{authorfullhash}{ac2fd2a4955bf16110f3673f865dfbb6}
+      \strng{authorfullhashraw}{ac2fd2a4955bf16110f3673f865dfbb6}
       \field{sortinit}{V}
       \field{sortinithash}{afb52128e5b4dc4b843768c0113d673b}
       \field{extradatescope}{labelyear}
@@ -2958,12 +2951,12 @@
     \endentry
     \entry{viljoenDesignChoicesMechanism2021}{article}{}{}
       \name{author}{3}{}{%
-        {{un=2,uniquepart=given,hash=ac2fd2a4955bf16110f3673f865dfbb6}{%
+        {{un=0,uniquepart=base,hash=ac2fd2a4955bf16110f3673f865dfbb6}{%
            family={Viljoen},
            familyi={V\bibinitperiod},
            given={Salomé},
            giveni={S\bibinitperiod},
-           givenun=2}}%
+           givenun=0}}%
         {{un=0,uniquepart=base,hash=ed285bb51f2d3a79c88868e2e70219ad}{%
            family={Goldenfein},
            familyi={G\bibinitperiod},
@@ -3187,7 +3180,7 @@
       \field{langid}{english}
       \field{number}{10}
       \field{shorttitle}{Competing with {{Complementors}}}
-      \field{title}{Competing with {{Complementors}}: {{An Empirical Look}} at {{Amazon}}.Com}
+      \field{title}{Competing with {{Complementors}}: {{An Empirical Look}} at {{Amazon.com}}}
       \field{urlday}{8}
       \field{urlmonth}{6}
       \field{urlyear}{2026}
@@ -3236,7 +3229,6 @@
       \field{abstract}{"Shoshana Zuboff, named "the true prophet of the information age" by the Financial Times, has always been ahead of her time. Her seminal book In the Age of the Smart Machine foresaw the consequences of a then-unfolding era of computer technology. Now, three decades later she asks why the once-celebrated miracle of digital is turning into a nightmare. Zuboff tackles the social, political, business, personal, and technological meaning of "surveillance capitalism" as an unprecedented new market form. It is not simply about tracking us and selling ads, it is the business model for an ominous new marketplace that aims at nothing less than predicting and modifying our everyday behavior--where we go, what we do, what we say, how we feel, who we're with. The consequences of surveillance capitalism for us as individuals and as a society vividly come to life in The Age of Surveillance Capitalism's pathbreaking analysis of power. The threat has shifted from a totalitarian "big brother" state to a universal global architecture of automatic sensors and smart capabilities: A "big other" that imposes a fundamentally new form of power and unprecedented concentrations of knowledge in private companies--free from democratic oversight and control"-- Provided by publisher.}
       \field{isbn}{978-1-61039-570-0}
       \field{langid}{english}
-      \field{pagetotal}{1 online resource}
       \field{shorttitle}{The {{Age}} of {{Surveillance Capitalism}}}
       \field{title}{The {{Age}} of {{Surveillance Capitalism}}: {{The Fight}} for a {{Human Future}} at the {{New Frontier}} of {{Power}}}
       \field{year}{2019}

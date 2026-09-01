@@ -58,6 +58,7 @@ end
 
 const MANUSCRIPT_ITERATION_PATHS = (
     "paper",
+    "scripts/paper/figures.jl",
     "scripts/paper/build_section.jl",
     "scripts/paper/build_supplement.jl",
     "scripts/paper/build_manuscript.jl",
