@@ -2,9 +2,11 @@
     scripts/paper/build_manuscript.jl
 
 Create a submission-ready manuscript bundle from the editable TeX root and the
-generated results section. The output is a single, complete manuscript TeX file
-with the results section inlined, plus its bibliography, referenced figures,
-Biber output, and a compile-checked PDF under `output/manuscript/`.
+generated results section. The output is a single manuscript TeX file with the
+results section inlined, plus its bibliography, referenced figures, Biber output,
+and a compile-checked PDF under `output/manuscript/`. The builder also writes a
+complete working-paper PDF containing the manuscript, Appendix A, Appendix B,
+and the Supplementary Material.
 
 Run `scripts/paper/build_section.jl` first whenever the results prose, values,
 captions, figures, or analysis provenance changes. This script never edits or
@@ -23,6 +25,10 @@ const RESULTS = joinpath(MAIN_OUTPUT, "results_section.tex")
 const BIBLIOGRAPHY = joinpath(PAPER, "references.bib")
 const OUTPUT = joinpath(ROOT, "output", "manuscript")
 const OUTPUT_TEX = joinpath(OUTPUT, "transientbrokerage.tex")
+const PSEUDOCODE = joinpath(ROOT, "simulation_pseudocode.pdf")
+const SPECIFICATIONS = joinpath(ROOT, "model_specifications.pdf")
+const SUPPLEMENT = joinpath(ROOT, "output", "supplement", "supplement.pdf")
+const COMPLETE_PDF = joinpath(OUTPUT, "transientbrokerage_complete.pdf")
 const INPUT_MARKER = "\\input{output/main/results_section.tex}"
 const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
@@ -31,7 +37,14 @@ const BUNDLE_GRAPHICSPATH = "\\graphicspath{{./}}"
 
 fail(message) = error("manuscript build failed: $message")
 
-for path in (SOURCE, RESULTS, BIBLIOGRAPHY)
+for path in (
+    SOURCE,
+    RESULTS,
+    BIBLIOGRAPHY,
+    PSEUDOCODE,
+    SPECIFICATIONS,
+    SUPPLEMENT,
+)
     isfile(path) || fail("missing $path")
 end
 
@@ -125,8 +138,26 @@ mktempdir() do build
     end
 end
 
+pdfunite = Sys.which("pdfunite")
+isnothing(pdfunite) && fail("pdfunite is required to assemble the complete PDF")
+
+components = [
+    joinpath(OUTPUT, "transientbrokerage.pdf"),
+    PSEUDOCODE,
+    SPECIFICATIONS,
+    SUPPLEMENT,
+]
+mktempdir() do build
+    combined = joinpath(build, "transientbrokerage_complete.pdf")
+    process = run(ignorestatus(Cmd([pdfunite, components..., combined])); wait=true)
+    success(process) || fail("pdfunite failed while assembling the complete PDF")
+    isfile(combined) || fail("pdfunite did not create the complete PDF")
+    cp(combined, COMPLETE_PDF; force=true)
+end
+
 println("wrote complete manuscript bundle to $OUTPUT")
 println("  transientbrokerage.tex: flattened full manuscript")
 println("  references.bib: $(count(line -> startswith(line, '@'), eachline(BIBLIOGRAPHY))) entries")
 println("  figures: $(length(figure_paths))")
 println("  compile check: OK")
+println("  transientbrokerage_complete.pdf: manuscript + Appendices A--B + Supplementary Material")

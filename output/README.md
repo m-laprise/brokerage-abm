@@ -27,7 +27,8 @@ builders reject inputs produced by a different commit.
 
 ## Manuscript appendices and Supplementary Material
 
-- [Complete manuscript](manuscript/transientbrokerage.pdf)
+- [Main manuscript](manuscript/transientbrokerage.pdf)
+- [Complete working paper with appendices](manuscript/transientbrokerage_complete.pdf)
 - [Appendix A: Simulation pseudocode](../simulation_pseudocode.pdf)
 - [Appendix B: Model specifications](../model_specifications.pdf)
 - [Supplementary Material: Alternative structural measures and Ridge robustness](supplement/supplement.pdf)
@@ -51,6 +52,12 @@ builders reject inputs produced by a different commit.
 - [Research note: broker exploitation and principal learning](ridge/ablations/explore_exploit_research_note.md),
   a hand-authored hypothesis and proposed experimental design, not a generated
   result or manuscript claim
+
+## Research notes
+
+- [High-value follow-up experiments](research_notes/high_value_followup_experiments.md),
+  a prioritized to-do memo covering principal learning by tenure, friction-free
+  outsourcing, and a no-broker counterfactual
 
 ## Canonical generators
 

@@ -1,8 +1,8 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 00:38
+% Built by scripts/paper/build_section.jl on 2026-09-01 04:30
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit 6f66339; clean sources.
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1; clean sources.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -47,22 +47,6 @@ satisfaction score for each channel; principals who have never used the
 broker rely on its reputation (average satisfaction of current clients).
 After each period, each agent exits with probability $\eta$ and is
 replaced by a fresh entrant.
-
-The schematic below summarizes initialization and the within-period sequence;
-the mechanisms are described in detail afterward.
-
-\begin{center}
-\centering
-\includegraphics[width=\linewidth]{figs/model_overview.pdf}
-\begin{minipage}{0.96\linewidth}
-\small\textbf{Model overview.} Initialization creates the period-0 market
-state. Each period, principals choose a search channel, eligible prediction
-models update, and the two channels construct separate candidate
-rankings. All offers then enter a shared market. Realized matches update
-histories, network ties, satisfaction, and broker reputation. Measures are
-recorded before turnover, after which the next period begins.
-\end{minipage}
-\end{center}
 
 \emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
 fixed type, a vector of observable characteristics. A realized match
@@ -151,8 +135,8 @@ paths between principals that run through the broker (Brandes 2001;
 Freeman 1977), as the standard \emph{whole-network} measure of brokerage
 potential. The results would be substantively similar if examining the
 ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); an alternative set of
-figures to that effect is included as Supplementary Material. The access
+1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S4
+report those analyses. The access
 fraction is the share of brokered matches in which the counterparty was not
 already tied to the demander. Prediction quality is measured on deterministic
 random-partner holdout samples evaluated against noiseless true output. Holdout
@@ -309,6 +293,8 @@ The ordering advantage does not depend on neural-network learning. When Ridge
 regression replaces both neural networks, the broker-minus-principal rank gap is
 0.335 at the baseline, has a median of 0.342 across
 the 98 regimes, and is positive in all 98.
+Supplementary Figure S5 reports the pattern across regimes and the
+$\rho\times\delta$ design.
 The paired-Ridge broker still has more observations and retains more information
 about each pair than a principal. Three additional Ridge experiments impose the
 restrictions described above. Because each restriction changes later matching and

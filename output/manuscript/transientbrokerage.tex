@@ -1,5 +1,5 @@
 % transientbrokerage.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_manuscript.jl on 2026-09-01T00:40:07.911.
+% Built by scripts/paper/build_manuscript.jl on 2026-09-01T04:43:28.370.
 % The editable root is paper/transientbrokerage.tex; the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 
@@ -16,10 +16,12 @@
 \PassOptionsToPackage{hyphens}{url}
 \documentclass[
 ]{article}
+\usepackage[letterpaper,margin=1.25in]{geometry}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx,booktabs}
 \usepackage[font=small,labelfont=bf]{caption}
+\usepackage{fancyhdr}
 \graphicspath{{./}}
 \setcounter{secnumdepth}{5}
 \usepackage{iftex}
@@ -72,12 +74,22 @@
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 
+\newcommand{\latestcompleteversionurl}{https://raw.githubusercontent.com/m-laprise/brokerage-abm/main/output/manuscript/transientbrokerage_complete.pdf}
+\fancypagestyle{workingpaperfirst}{%
+  \fancyhf{}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+  \fancyfoot[C]{\footnotesize This version: \today. Get the latest version: \href{\latestcompleteversionurl}{\textcolor{blue}{link}}.}
+  \fancyfoot[R]{\footnotesize\thepage}
+}
+
 \title{Brokers Who Do Not Bridge: When Assessment, Not Access, Shapes Broker Advantage}
 \author{Marie-Lou Laprise}
 \date{}
 
 \begin{document}
 \maketitle
+\thispagestyle{workingpaperfirst}
 \begin{abstract}
 Structural theories describe economic brokerage as an opportune but fragile position bridging gaps between otherwise disconnected actors. In that view, brokering can undermine trust or eliminate the gaps that generate its value, and brokers need supporting institutions or deeper interpersonal ties to stabilize their role. Yet many corporate actors in positions of brokerage, from Visa to Amazon, have risen in market power, profit, and prominence even as networks transformed around them. When can brokering strengthen rather than undermine a broker's advantage?
 
@@ -119,6 +131,7 @@ I develop an agent-based model (ABM) of brokerage in a general matching market a
 The rest of this article proceeds as follows. Section II reviews structural and processual theories of brokerage and their blind spots. Section III reconceptualizes brokerage as outsourced relational work and traces how this work is transformed when performed at scale by corporate actors. Section IV presents the ABM and its results illustrating how a broker produces and sustains their advantage through this work. Section V builds on this foundation to theorize one possible trajectory that can follow from the broker advantage, transient brokerage, and the conditions under which a broker can become a principal. Section VI discusses scope conditions and implications for the political economy of corporate intermediation, and Section VII concludes.
 
 \section{Current Theories of Brokerage Do Not Explain Capture by the Broker}
+\label{sec:brokerage-theory}
 
 Brokerage tends to emerge in markets where information is scarce or complex, participants are few, transactions are intricate, or institutions are poorly developed \autocite{stovelStabilizingBrokerage2011}. These conditions make participants hard to find, resources hard to value, or transactions hard to structure. They also make the intermediation work of a broker valuable. Real estate, mortgage, stock, and commodity markets are common examples of markets with many active brokers. Brokerage may also be helpful in circumstances where tight-knit, closed groups monopolize resources or information, and outsiders cannot easily access them \autocite[140]{stovelBrokerage2012}. Brokerage can maintain or reinforce group boundaries, or it can blur or collapse them \autocite{stovelBrokerage2012}, with consequences for social segregation, social integration, and relations between groups or communities \autocite{galsterWordsDeedsRacial2005}.
 
@@ -166,7 +179,7 @@ In brokered transactions, brokers take on the work of constructing a shared real
 
 For the broker, this vicarious work requires another layer of relational work to negotiate brokerage relations with its clients. Brokerage corresponds with a distinct relational package. Not all intermediation is brokerage. In the relational package of economic brokerage, the broker performs a matching service for others, usually for a fee, commission, or retainer. Brokers bundle various services and amenities as part of that package: they take on the efforts of search and negotiation, they provide access to otherwise inaccessible counterparties, they share with their clients their expertise and the benefits of the private information they hold about quality, pricing, and availability, and they document and facilitate transactions, which often require logistical, bureaucratic, or regulatory work.
 
-The middleman, catalyst, and coordination brokerage described in Section 2 are not exclusive categories of brokers, but rather, components of the work of brokering, which involves a bit of each in varying proportions. An important part of brokers' relational matching is to facilitate interaction (middleman brokerage), but this work also directly impacts interpersonal relations and local networks, often in an enduring way, by creating new and lasting ties (catalyst brokerage) or by reorganizing local networks (coordination brokerage).
+The middleman, catalyst, and coordination brokerage described in Section~\ref{sec:brokerage-theory} are not exclusive categories of brokers, but rather, components of the work of brokering, which involves a bit of each in varying proportions. An important part of brokers' relational matching is to facilitate interaction (middleman brokerage), but this work also directly impacts interpersonal relations and local networks, often in an enduring way, by creating new and lasting ties (catalyst brokerage) or by reorganizing local networks (coordination brokerage).
 
 Brokerage inherits the dual character of relational work, which can both foster and reduce informational asymmetry when constructing shared understandings while maintaining strategic opacities \autocite[138]{blockRelationalWorkMarket2012}. In performing relational work on behalf of others, the broker simultaneously clarifies and obscures: it transmits enough information to make a transaction legible and a match viable and conceals enough to justify its fee and preserve its advantage. The same opacity can do social as well as economic work. Rossman \autocite*{rossmanObfuscatoryRelationalWork2014} shows how brokerage functions as obfuscatory relational work that manages the taboos around disreputable exchange. Outsourcing relational work provides cover to parties in morally fraught matches. What the broker withholds is also the raw material of its later advantage: information it keeps from circulating, accumulates, and, under the right conditions, eventually monetizes.
 
@@ -210,10 +223,10 @@ Important models in the economics literature have focused on the attributional c
 
 % Generated from paper/section_source.tex by scripts/paper/build_section.jl.
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 00:38
+% Built by scripts/paper/build_section.jl on 2026-09-01 04:30
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
-% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit 6f66339; clean sources.
+% sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1; clean sources.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
@@ -258,22 +271,6 @@ satisfaction score for each channel; principals who have never used the
 broker rely on its reputation (average satisfaction of current clients).
 After each period, each agent exits with probability $\eta$ and is
 replaced by a fresh entrant.
-
-The schematic below summarizes initialization and the within-period sequence;
-the mechanisms are described in detail afterward.
-
-\begin{center}
-\centering
-\includegraphics[width=\linewidth]{figs/model_overview.pdf}
-\begin{minipage}{0.96\linewidth}
-\small\textbf{Model overview.} Initialization creates the period-0 market
-state. Each period, principals choose a search channel, eligible prediction
-models update, and the two channels construct separate candidate
-rankings. All offers then enter a shared market. Realized matches update
-histories, network ties, satisfaction, and broker reputation. Measures are
-recorded before turnover, after which the next period begins.
-\end{minipage}
-\end{center}
 
 \emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
 fixed type, a vector of observable characteristics. A realized match
@@ -362,8 +359,8 @@ paths between principals that run through the broker (Brandes 2001;
 Freeman 1977), as the standard \emph{whole-network} measure of brokerage
 potential. The results would be substantively similar if examining the
 ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); an alternative set of
-figures to that effect is included as Supplementary Material. The access
+1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S4
+report those analyses. The access
 fraction is the share of brokered matches in which the counterparty was not
 already tied to the demander. Prediction quality is measured on deterministic
 random-partner holdout samples evaluated against noiseless true output. Holdout
@@ -520,6 +517,8 @@ The ordering advantage does not depend on neural-network learning. When Ridge
 regression replaces both neural networks, the broker-minus-principal rank gap is
 0.335 at the baseline, has a median of 0.342 across
 the 98 regimes, and is positive in all 98.
+Supplementary Figure S5 reports the pattern across regimes and the
+$\rho\times\delta$ design.
 The paired-Ridge broker still has more observations and retains more information
 about each pair than a principal. Three additional Ridge experiments impose the
 restrictions described above. Because each restriction changes later matching and
@@ -722,6 +721,7 @@ centrality.
 
 
 \section{Transient brokerage and its conditions of possibility}
+\label{sec:transient-brokerage}
 
 Outsourced relational work performed at scale by corporate brokers creates the conditions under which the broker can transition from intermediary to principal. The broker dismantles the relational package previously negotiated with its clients and replaces it with a new configuration organized around the broker's ownership of the resources it used to intermediate (\emph{resource capture}), or the monetization of the information generated through prior matching activity (\emph{data enclosure}).
 
@@ -747,11 +747,11 @@ In summary, three elements enable capture or enclosure: a matching problem that 
 
 Within the agent-based model, the broker's centrality is a product of its relational work. The broker is central because many principals outsource to it repeatedly, which they do because its assessments are good. Its centrality rises and falls with outsourcing and satisfaction, not with exogenous features of the initial graph.
 
-With the production of structure, two patterns emerge that pre-existing theory may not have predicted. The first is that the broker tends to be most central exactly where it bridges least in practice. Across the regimes examined, centrality is negatively associated with the access fraction (\textbf{Figure 3}): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
+With the production of structure, two patterns emerge that pre-existing theory may not have predicted. The first is that the broker tends to be most central exactly where it bridges least in practice. Across the regimes examined, centrality is negatively associated with the access fraction (Figure~\ref{fig:position}): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
 
 The second pattern is about the sustainability of brokerage. A long-standing expectation in the tradition is that brokerage tends to be self-undermining \autocite{burtStructuralHolesSocial1992,burtBridgeDecay2002a,stovelStabilizingBrokerage2011}. Each successful introduction densifies the network and dissolves the structural hole that gave the broker its advantage. Where the work is assessment, however, it leaves the network no denser than it found it. Across the simulations, access work is low and declining over time, so the broker\textquotesingle s structural advantage tends to persist. Self-liquidation is a feature of access brokerage. Meanwhile, the assessment-heavy brokerage characteristic of complementarity-based matching markets is more durable.
 
-The results also suggest a precise mechanism for the decoupling of structural and informational advantage posited in Section 4. The two answer to different features of the matching problem. The broker's structural prominence tracks the composition of match value, rising as matching becomes more complementarity-driven, while its prediction edge tracks the complexity of the complementarity component, which can vary independently. A broker can be highly central despite a modest informational lead or hold a decisive informational lead from an unremarkable position. Betweenness centrality is best understood not as a static measure of opportunity but as a product of the relational work the broker performs.
+The results also suggest a precise mechanism for the decoupling of structural and informational advantage posited in Section~\ref{sec:transient-brokerage}. The two answer to different features of the matching problem. The broker's structural prominence tracks the composition of match value, rising as matching becomes more complementarity-driven, while its prediction edge tracks the complexity of the complementarity component, which can vary independently. A broker can be highly central despite a modest informational lead or hold a decisive informational lead from an unremarkable position. Betweenness centrality is best understood not as a static measure of opportunity but as a product of the relational work the broker performs.
 
 \subsection{Scope conditions and generalizability}
 

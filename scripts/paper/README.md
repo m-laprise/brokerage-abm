@@ -78,7 +78,10 @@ Local tier (no data access; works from a clone of this repository):
    writes a submission-ready bundle under `output/manuscript/`. The bundle's
    `transientbrokerage.tex` contains the complete manuscript with no results
    `\input`; `references.bib`, all referenced figures, a Biber `.bbl`, and a
-   compile-checked PDF are placed beside it. Run step 7 first whenever any
+   compile-checked main PDF are placed beside it. It also uses `pdfunite` to
+   create `transientbrokerage_complete.pdf`, containing the main manuscript,
+   Appendix A (simulation pseudocode), Appendix B (model specifications), and
+   the Supplementary Material, in that order. Run step 7 first whenever any
    results input or provenance changes.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
