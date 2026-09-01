@@ -1,204 +1,86 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 05:40
+% Built by scripts/paper/build_section.jl on 2026-09-01 06:27
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
 % sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1e5487884bf82e80a3a232f4c769c66404;
-% manuscript commit c4a355d3fa41aee2772e8217e1bd89d99bad1059; uncommitted manuscript/build changes included.
+% manuscript commit 7203c0640aefd23919b7d3571a59ee4bb3722c4f; uncommitted manuscript/build changes included.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
-\section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
+\section{How Brokers Accumulate Informational and Structural Advantage: A Formal Illustration}
 
 \subsection{Model and Methods}
 
-To formalize and illustrate the theory developed in this article, this
-section describes an ABM of brokerage in a general matching market and
-presents the results of exploratory computational simulations. Their
-purpose is not to prove or disprove the theory, but to operationalize
-it, explore the dynamics it entails while providing concrete
-illustrations to the reader, and generate falsifiable propositions that
-future empirical work can use as hypotheses.
+I use an agent-based model (ABM) to formalize the theory and examine its
+feedback mechanisms among heterogeneous, boundedly informed actors. The model
+is a formal illustration, not a test of the theory. Complete pseudocode and
+specifications appear in Appendices A and B. The public Julia repository
+(\texttt{https://github.com/m-laprise/brokerage-abm}) contains the code and
+scripts needed to reproduce the simulations, statistics, figures, and text.
 
-The theory makes claims about trajectories and feedback among
-heterogeneous, boundedly informed actors interacting repeatedly, making
-the ABM a natural tool to make its mechanisms explicit and sharpen its
-propositions.
+\emph{Market and matching}. Many principals and one broker occupy an undirected
+network (Appendix B \S\S4, 6--7). Each period, principals seek pairwise matches
+either through self-search or through the broker. They choose between channels
+using satisfaction with past outcomes net of search costs or broker fees. A
+completed match creates a direct tie that persists until either party exits;
+each principal exits with probability $\eta$ and is replaced by a new entrant.
 
-The model is domain-agnostic and represents any market in which a broker
-facilitates pairwise matches and accumulates cross-market data from
-doing so. All agents use heuristic decision rules, and no agent is
-perfectly rational. One period equals one full update of the simulation
-loop; each period could be taken to represent one calendar month, one
-week, or one day, for instance, depending on the pace of the market that
-one wants to represent.
+Each principal has a fixed vector of observable characteristics. Match output
+combines general quality, which depends on each party separately, and
+complementarity, which depends on how their types interact (Appendix B \S2). The
+mixing weight $\rho$ ranges from pure complementarity at $\rho=0$ to pure general
+quality at $\rho=1$. The parameter $\delta$ determines how sharply
+complementarity changes across a boundary in type-pair space and therefore how
+difficult that component is to learn. Because $\delta$ acts only on
+complementarity, it has no effect when $\rho=1$.
 
-Pseudo-code and complete specifications for the model are included as
-\textbf{Appendix A and B}, respectively, and the code base for the project,
-implemented in Julia, is publicly available at
-\texttt{https://github.com/m-laprise/brokerage-abm}. It includes the
-scripts needed to reproduce the experiments that generated the data
-analyzed in this section, extract every number mentioned, create the
-figures and tables, and generate the results section in its entirety.
+\emph{Learning and information}. Principals observe their own matches, each
+partner's type, and realized output. The broker observes both parties' types and
+outcomes for all matches it mediates (Appendix A \S3; Appendix B \S3). Each uses
+a small neural network to predict match output. The broker pools observations
+across clients and represents both parties symmetrically, whereas each principal
+learns only from its own history. Predicted values rank candidates; tied
+predictions are ordered uniformly at random. Offers are made to the highest-ranked
+candidates whose predicted output exceeds the reservation threshold. Further
+search, training, and match-formation details appear in Appendices A and B.
 
-\emph{Setup}. Many principals and a single broker, connected through an
-undirected network, inhabit the market. Each period, a principal draws a
-demand for new pairwise matches. Principals seeking matches search on
-their own for counterparties (self-search channel) or outsource to the
-broker (broker channel). The decision is made by comparing a running
-satisfaction score for each channel; principals who have never used the
-broker rely on its reputation (average satisfaction of current clients).
-After each period, each agent exits with probability $\eta$ and is
-replaced by a fresh entrant.
+I repeat the complete design with Ridge regression replacing both neural
+networks. Principals use candidate characteristics, while the broker uses
+symmetric additive and bilinear pair features. Penalties were selected on 10
+baseline calibration seeds excluded from reporting (Appendix B \S3). Three
+additional Ridge versions isolate the broker's data advantage by limiting its
+sample size, retaining only one party's characteristics from each match, or
+omitting interactions between the two parties' characteristics.
 
-\emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
-fixed type, a vector of observable characteristics. A realized match
-between two principals yields an output equal to a fixed function of the
-two parties' types plus noise. The signal is unknown to everyone and
-must be learned. It has two parts, combined by a mixing weight $\rho$. The
-first is a general-quality term computed as the average of the two
-parties' quality scores, which depend on their type alone: a
-high-quality agent is high-quality for everyone. The second is a
-complementarity term that depends on the interaction of the two types:
-even two high-quality agents can make a bad match. At $\rho=1$ match value
-is pure general quality, at $\rho=0$ it is pure complementarity.
+\emph{Measurement}. Broker betweenness centrality measures the share of shortest
+paths between principals that pass through the broker (Brandes 2001; Freeman
+1977). The access fraction is the share of brokered matches between principals
+who were not already tied. Supplementary Figures S1--S3 reproduce the structural
+analyses using Burt's constraint and effective size. Prediction quality is
+evaluated on random-partner holdout samples. Spearman rank correlation measures
+candidate ordering and reproduces the random ordering of tied predictions.
+Holdout $R^2$ measures level accuracy but is diagnostic only. It can become
+extremely negative when holdout-output variance is small and never enters a
+decision rule (Appendix B \S8).
 
-\emph{Difficulty of the matching problem} (Appendix B \S2c). The parameter
-$\delta$ determines how difficult the complementarity component is to learn. A
-pair's smooth interaction, $\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j$, is
-multiplied by $1+\delta$ on one side of a sharp boundary in type-pair space and
-by $1-\delta$ on the other. At $\delta=0$ the boundary has no effect. As
-$\delta$ increases, crossing it changes match value more sharply, so a learner
-must recover both the smooth interaction and which side of the boundary a pair
-occupies. The parameter acts only on complementarity and has no effect at
-$\rho=1$, where match value is pure general quality.
+\emph{Simulation design and analysis}. At the baseline, $N=1{,}000$ principals
+interact for $T=500$ periods with $\rho=0.5$, $\delta=0.5$, and $\eta=0.02$.
+One-at-a-time changes and eight two-parameter grids vary the matching problem,
+turnover, market size, reservation threshold, initial network, broker roster,
+and self-search pool (Appendix B \S9). The design contains 98 unique
+regimes after duplicate coordinates and inactive parameters are consolidated.
+There are 20 independent seeds per regime and
+50 at the baseline (1990 runs total).
 
-\emph{Data collection and learning} (Appendix A \S3, algorithms 2--4;
-Appendix B \S3). Principals record their own match history, with the type
-of each partner and the realized output of the pairing, brokered or not.
-The broker records the matches it mediates, with the type of both
-parties and the realized outputs, across all clients. Principals and the
-broker each fit a small neural network to their data using gradient
-descent, to learn to predict match output. At every period for the
-broker, and every other period for the principals, agents train on
-observations from the recent past to update their prediction function.
-To respect the symmetry of the unordered pairs in its training data, the
-broker uses as input a symmetric feature vector built from the type
-vectors.
-
-As a robustness experiment, I repeat the complete design with Ridge regression
-replacing both neural networks. Principals regress output on the candidate's
-type; the broker uses the same symmetric additive and bilinear pair features as
-in the main model. Histories, training window, observation cap, fitting cadence,
-and reporting seeds are unchanged. Calibration on 10 baseline seeds excluded from
-reporting selected $\lambda_a=0.003$ for principals and
-$\lambda_b=0.001$ for the broker. This tests whether neural-network flexibility
-is necessary for the broker's ranking advantage. It does not yet distinguish
-whether that advantage comes from how much data the broker has or what those data
-contain.
-
-To identify what about the broker's data produces this advantage, I run three
-additional Ridge versions at the baseline and on the $\rho\times\delta$ design.
-One limits the broker to no more observations than a typical principal. Another
-retains information about only one randomly selected party from each past match.
-The third retains both parties but omits the interaction between their types.
-Principal learning and all other settings are unchanged.
-
-\emph{Search and match formation} (Appendix B \S\S6--7). Self-search draws on
-known network neighbors and a small random pool of strangers; brokered
-search, on the broker's standing roster and current clients. Predicted values
-rank potential candidates; ties are ordered uniformly at random, so a constant
-predictor still produces a random ranking. Offers are made to the top candidates.
-For known partners, principals use the mean of their past experiences with them as
-the predicted value. Offers above the reservation threshold are accepted. When a
-match is made, its output is realized and both parties form a direct tie. Ties
-persist until one of the agents exits.
-
-\emph{Economics} (Appendix B \S4). A match's realized output is its per-period
-value to each party. All quantities (reservation threshold, fees, search
-costs) are in common monetary units and are calibrated relative to the
-average match output over many random pairs. Every agent shares a
-reservation threshold (or outside option): offers are made or accepted
-only when predicted outputs exceed it. Self-search has a cost for each
-requested position whether filled or not, whereas the broker's fee is
-charged only on successful placements; both are an equal amount.
-Satisfaction scores net out costs or fees.
-
-These modeling choices are the formal counterpart of the theoretical
-claims made above. Decomposing match output into general-quality and
-complementarity separates the attributional channel from the relational
-one. A principal learns from its own matches and observes only its
-counterpart's type, while the broker pools mediated matches across clients and
-observes both parties' types in each match.
-
-\emph{Measurement} (Appendix B \S8). Diagnostic measures are recorded every
-period. In this article, structural position is measured as the broker's
-betweenness centrality in the graph, that is, the share of shortest
-paths between principals that run through the broker (Brandes 2001;
-Freeman 1977), as the standard \emph{whole-network} measure of brokerage
-potential. The results would be substantively similar if examining the
-ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S3
-report those analyses, with the baseline time paths in Supplementary Figure S2.
-The access
-fraction is the share of brokered matches in which the counterparty was not
-already tied to the demander. Prediction quality is measured on deterministic
-random-partner holdout samples evaluated against noiseless true output. Holdout
-evaluation reproduces the model's candidate-ranking behavior, including random
-ordering of tied predictions. Spearman rank correlation measures
-whether predictions order possible matches correctly, while $R^2$
-measures level accuracy. The reported difference in holdout rank correlation
-subtracts the principal value from the broker value. $R^2$ varies much more because its finite-holdout denominator
-is the variance of noiseless holdout outputs, so modest prediction errors can
-produce extreme negative values when that variance is small. This volatility does
-not affect model behavior or the conclusions based on ranking, matching, and
-realized output because $R^2$ is diagnostic only and never enters a decision rule.
-
-\emph{Simulation design and analysis}. All results are computed from a parameter sweep of the
-simulated market. A regime is one scientifically distinct parameter configuration;
-duplicate grid coordinates and inactive parameters do not create additional
-regimes. In the baseline regime,
-$N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
-$\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
-initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
-self-search pool size $n_{\mathrm{strangers}}=10$. The simulation retains all
-periods, but time-series displays begin at $t=30$ to omit the initialization
-transient. This display cutoff does not change the simulation or the late-period
-estimands.
-
-Around this baseline, I vary one parameter at a time
-($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
-$N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
-$\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
-$\alpha_R\in\{0.1,0.2,0.4\}$, and
-$n_{\mathrm{strangers}}\in\{0,10,50\}$) and I sweep eight two-parameter
-grids: the six pairwise combinations of $\{\rho,\eta,N,f_r\}$ and the
-$\rho\times\delta$ grid over their full one-at-a-time levels, plus a focused
-$\rho\times f_r$ refinement over
-$\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
-$\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
-$\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
-one-at-a-time levels. The design comprises 98 regimes. Repeated grid
-coordinates that resolve to the same configuration belong to one regime,
-including $\rho=1$ coordinates where $\delta$ is inactive.
-
-There are
-20 independent seeds generally and
-50 at the baseline (1990 runs in total). Within each
-regime, outcomes are averaged over a fixed time window within each seed and
-then across seeds. Late means use the final 20 periods ($t\in[481,500]$) for all
-reported levels unless noted otherwise; early means use $t\in[50,70]$ to quantify
-within-run drift. Cross-regime summaries give each regime equal weight. Remaining
-baseline parameter values are given in Appendix~B~\S9.
-
-Monte Carlo convergence was assessed by comparing estimates from the first 10
-seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
-baseline, and by computing Student-$t$ 95\% intervals from seed-level
-late-window means. Across the 14 non-$R^2$ outcomes shown in
-the figures, median relative interval half-widths across conditions ranged from
-0.4\% to 9.8\%; median relative
-nested-seed changes ranged from 0.1\% to
-3.1\%. Relative precision uses the absolute
-full-sample estimate as its denominator; regimes whose 95\% interval contains
-zero are assessed from their absolute intervals instead.
+Reported late levels average periods $t\in[481,500]$ within each seed and then
+across seeds; early levels use $t\in[50,70]$. Cross-regime summaries give each
+regime equal weight. Time-series figures begin at $t=30$ to omit the
+initialization transient, without changing the simulations or estimands. Monte
+Carlo convergence was assessed by nested-seed comparisons and Student-$t$ 95\%
+intervals. Across the 14 non-$R^2$ figure outcomes, median
+relative interval half-widths ranged from 0.4\% to
+9.8\%, and median nested-seed changes ranged from
+0.1\% to 3.1\%. Regimes whose
+interval contains zero are assessed from absolute intervals instead.
 
 \subsection{The Broker Primarily Provides Assessment, Not Access}
 
@@ -363,8 +245,7 @@ from 0.85 at $\rho=0$ to 0.13 at $\rho=1$, while the access
 fraction rises from 0.10 to 0.17 (late means along the
 one-at-a-time sweep, $\delta=0.5$). The $\rho\times\eta$ grid shows the same
 relationship at every turnover rate: moving from $\rho=0$ to $\rho=0.85$ raises
-access and lowers centrality. When complementarity dominates, the broker is more
-central even though more of its matches re-pair principals who are already tied.
+access and lowers centrality.
 
 Difficulty changes the broker's informational advantage only when complementarity
 contributes substantially to match value. Under pure complementarity, increasing
@@ -417,19 +298,17 @@ and principal degree falls in 80 of them
 enough to offset turnover. The broker's structural advantage therefore does not
 self-liquidate.
 
-Assessment and access explain the composition pattern above. An access match
-creates a direct tie between previously unconnected principals and can remove the
-broker from their shortest path. An assessment match reuses an existing tie, so the
-broker can serve the market without directly densifying the principal network.
-As matching shifts toward general quality, brokered access becomes more common,
-the principal network becomes denser, and broker betweenness falls sharply even
-though outsourcing remains high. The broker's access work therefore creates
-alternative paths even while principals continue to rely heavily on its services.
-Figure~\ref{fig:position} separates this composition pattern from turnover.
-Holding $\rho$ fixed, increasing turnover raises access and centrality at every
-tested $\rho$. The access fraction therefore has no uniform association with
-centrality. Turnover creates network gaps; matching composition determines how
-often brokerage closes them with direct ties.
+The distinction between assessment and access explains this relationship. An
+access match creates a direct tie between previously unconnected principals and
+can remove the broker from their shortest path. An assessment match reuses an
+existing tie, so the broker can serve the market without directly densifying the
+principal network.
+This explains why complementarity-heavy matching can sustain high broker
+centrality while most brokered matches reuse existing ties. Figure~\ref{fig:position}
+isolates a distinct turnover effect. Holding $\rho$ fixed, increasing turnover
+raises access and centrality at every tested $\rho$. The access fraction therefore
+has no uniform association with centrality. Turnover creates network gaps;
+matching composition determines how often brokerage closes them with direct ties.
 
 The turnover effect is substantial but nonlinear. Holding other parameters at
 baseline, increasing $\eta$ from 0 to 0.03 lowers late mean principal degree from
@@ -497,18 +376,19 @@ future empirical research. These propositions extend the model's implications
 beyond the simulated setting:
 
 \noindent\textbf{P1.} In complex matching markets, brokers add value primarily by
-assessing complementarity among reachable counterparties, not by bridging
-disconnected parties.
+assessing reachable counterparties rather than by bridging disconnected parties;
+this advantage is greater when match quality depends more heavily on
+complementarity.
 
 \noindent\textbf{P2.} A broker's betweenness centrality is produced by outsourcing
 volume and client satisfaction, it tracks how much complementarity matters to match
 value, and assessment-heavy brokers tend to retain or gain centrality as networks
 evolve.
 
-\noindent\textbf{P3.} Bridging position and bridging behavior are generally
-negatively related across markets: the most central brokers tend to do less
-bridging, except where turnover continually creates new network gaps for them to
-bridge.
+\noindent\textbf{P3.} Holding market turnover constant, bridging position and
+bridging behavior are negatively related: assessment-heavy brokers tend to be
+more central while doing less bridging. Higher turnover can raise both access
+and centrality by continually creating new network gaps.
 
 \noindent\textbf{P4.} Broker predictive advantage tracks the complexity of learning
 the complementarities relevant to match value, and it can diverge from structural

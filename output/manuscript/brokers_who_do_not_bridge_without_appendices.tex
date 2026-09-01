@@ -1,6 +1,6 @@
 % brokers_who_do_not_bridge_without_appendices.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_manuscript.jl on 2026-09-01T05:40:42.695.
-% Manuscript commit: c4a355d3fa41aee2772e8217e1bd89d99bad1059; uncommitted manuscript/build changes included.
+% Built by scripts/paper/build_manuscript.jl on 2026-09-01T06:27:57.685.
+% Manuscript commit: 7203c0640aefd23919b7d3571a59ee4bb3722c4f; uncommitted manuscript/build changes included.
 % The editable root is paper/brokers_who_do_not_bridge_without_appendices.tex; the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 
@@ -58,8 +58,26 @@
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\usepackage[style=authoryear-comp]{biblatex}
+\usepackage[
+  style=authoryear-comp,
+  date=year,
+  doi=false,
+  isbn=false,
+  eprint=false
+]{biblatex}
 \addbibresource{references.bib}
+\AtEveryBibitem{%
+  \clearfield{issn}%
+  \ifentrytype{online}{}{%
+    \ifentrytype{misc}{}{%
+      \clearfield{url}%
+      \clearfield{urldate}%
+      \clearfield{urlyear}%
+      \clearfield{urlmonth}%
+      \clearfield{urlday}%
+    }%
+  }%
+}
 \renewcommand{\thesection}{\Roman{section}}
 \renewcommand{\thesubsection}{\Alph{subsection}}
 \usepackage{bookmark}
@@ -109,11 +127,11 @@ If that is the case, then how have so many corporate actors in positions of brok
 
 Recent work by Ronald S. Burt, building on the tradition of structural-hole brokerage theory, has shown one important reason why the broker fragility narrative fails: many bridging ties are not weak and fragile, but rather strong high-trust ties forged through interpersonal history, and they provide a robust and enduring advantage to the broker who relies on them \autocite{burtFragileBrokerage,burtStrongBridgesTrust2026a}. However, this is not the full story.
 
-Some brokers leverage their role to become principals rather than remain only intermediaries. In so doing, they stabilize their advantage and consolidate power while brokering becomes secondary or even disappears entirely. I call this \emph{transient brokerage}, a phenomenon which current theories of brokerage do not satisfactorily predict or explain. Transient brokerage highlights how brokering sometimes declines or disappears because of the broker's power, not its fragility.
+Some brokers leverage their role to become principals rather than remain only intermediaries. In so doing, they stabilize their advantage and consolidate power while brokering becomes secondary or even disappears entirely. I call this \emph{transient brokerage}, a phenomenon that current theories of brokerage do not satisfactorily predict or explain. Transient brokerage highlights how brokering sometimes declines or disappears because of the broker's power, not its fragility.
 
 To explain transient brokerage, this article redefines brokerage as \emph{outsourced relational work}: the broker constructs viable matches between parties who cannot easily find or evaluate each other. This relational work generates an informational byproduct that the broker can leverage. Structural position provides the access that feeds learning, but while each successful match between previously unconnected parties can erode the broker's structural advantage by densifying the network \autocite[356]{burtNetworkStructureSocial2000}, it also strengthens the broker's informational position. The broker accumulates knowledge of what makes pairings successful.
 
-In that way, the broker converts structural capital into informational capital through the act of brokering. This is particularly true for corporate brokers, who operate at scale and whose relational work benefits from legal privileges conferred by the corporate form. Depending on the market in which the broker operates, the nature of the matching problem, and the relations between the actors involved, the broker's information advantage can support a transition from intermediation to capture. The broker dismantles the relational package that was negotiated with its principals and converts vicarious relational work into personal economic advantage. If successful, \textbf{the broker becomes a principal} \textbf{selling} \textbf{the resource it once intermediated} \textbf{or} \textbf{monetizing data and analytics}. \emph{Corporate} relational work is a particularly advantageous basis for such capture. This explains the rise in prominence of some firms acting as brokers
+In that way, the broker converts structural capital into informational capital through the act of brokering. This is particularly true for corporate brokers, who operate at scale and whose relational work benefits from legal privileges conferred by the corporate form. Depending on the market in which the broker operates, the nature of the matching problem, and the relations between the actors involved, the broker's information advantage can support a transition from intermediation to capture. The broker dismantles the relational package that was negotiated with its principals and converts vicarious relational work into personal economic advantage. If successful, \textbf{the broker becomes a principal} \textbf{selling} \textbf{the resource it once intermediated} \textbf{or} \textbf{monetizing data and analytics}. \emph{Corporate} relational work is a particularly advantageous basis for such capture. This explains the rise in prominence of some firms acting as brokers.
 
 This article shows how the broker builds and sustains an informational advantage, through social theory illustrated by computational simulations, and explains how this advantage can then enable the broker to transition from intermediary to principal. It attempts to answer three questions about brokerage, generating propositions to be tested in future empirical work:
 
@@ -129,7 +147,7 @@ This article shows how the broker builds and sustains an informational advantage
 
 I develop an agent-based model (ABM) of brokerage in a general matching market and use it to formalize and illustrate how brokers create and preserve an informational advantage through repeated matchmaking. The simulations show how several simple elements interact to produce non-obvious dynamics, and they complicate the expectation that brokers densify networks around them and erode their own position. The results suggest that brokerage can provide assessment rather than access and that clients continue outsourcing even when they can reach counterparties themselves. A broker's structural prominence can be produced endogenously by its success in the work it performs, centrality is separate from actual bridging behavior, and a broker need not liquidate its own structural position. A broker can be highly central while engaging in little to no bridging. The results recast betweenness centrality not as a neutral measure of a broker's strength grounded in network topology, but as a product of the kind and quality of its relational work.
 
-The rest of this article proceeds as follows. Section II reviews structural and processual theories of brokerage and their blind spots. Section III reconceptualizes brokerage as outsourced relational work and traces how this work is transformed when performed at scale by corporate actors. Section IV presents the ABM and its results illustrating how a broker produces and sustains their advantage through this work. Section V builds on this foundation to theorize one possible trajectory that can follow from the broker advantage, transient brokerage, and the conditions under which a broker can become a principal. Section VI discusses scope conditions and implications for the political economy of corporate intermediation, and Section VII concludes.
+The rest of this article proceeds as follows. Section II reviews structural and processual theories of brokerage and their blind spots. Section III reconceptualizes brokerage as outsourced relational work and traces how this work is transformed when performed at scale by corporate actors. Section IV presents the ABM and its results illustrating how a broker produces and sustains its advantage through this work. Section V builds on this foundation to theorize one possible trajectory that can follow from the broker advantage, transient brokerage, and the conditions under which a broker can become a principal. Section VI discusses scope conditions and implications for the political economy of corporate intermediation, and Section VII concludes.
 
 \section{Current Theories of Brokerage Do Not Explain Capture by the Broker}
 \label{sec:brokerage-theory}
@@ -224,206 +242,88 @@ Important models in the economics literature have focused on the attributional c
 
 % Generated from paper/section_source.tex by scripts/paper/build_section.jl.
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-01 05:40
+% Built by scripts/paper/build_section.jl on 2026-09-01 06:27
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge and ablation values + figmeta.tex;
 % sweep 2026-08-30_e5b9858_combined_20_baseline50; analysis commit c75e9d1e5487884bf82e80a3a232f4c769c66404;
-% manuscript commit c4a355d3fa41aee2772e8217e1bd89d99bad1059; uncommitted manuscript/build changes included.
+% manuscript commit 7203c0640aefd23919b7d3571a59ee4bb3722c4f; uncommitted manuscript/build changes included.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
-\section{ABM Results: The Broker's Advantage in a Simulated Matching Market}
+\section{How Brokers Accumulate Informational and Structural Advantage: A Formal Illustration}
 
 \subsection{Model and Methods}
 
-To formalize and illustrate the theory developed in this article, this
-section describes an ABM of brokerage in a general matching market and
-presents the results of exploratory computational simulations. Their
-purpose is not to prove or disprove the theory, but to operationalize
-it, explore the dynamics it entails while providing concrete
-illustrations to the reader, and generate falsifiable propositions that
-future empirical work can use as hypotheses.
+I use an agent-based model (ABM) to formalize the theory and examine its
+feedback mechanisms among heterogeneous, boundedly informed actors. The model
+is a formal illustration, not a test of the theory. Complete pseudocode and
+specifications appear in Appendices A and B. The public Julia repository
+(\texttt{https://github.com/m-laprise/brokerage-abm}) contains the code and
+scripts needed to reproduce the simulations, statistics, figures, and text.
 
-The theory makes claims about trajectories and feedback among
-heterogeneous, boundedly informed actors interacting repeatedly, making
-the ABM a natural tool to make its mechanisms explicit and sharpen its
-propositions.
+\emph{Market and matching}. Many principals and one broker occupy an undirected
+network (Appendix B \S\S4, 6--7). Each period, principals seek pairwise matches
+either through self-search or through the broker. They choose between channels
+using satisfaction with past outcomes net of search costs or broker fees. A
+completed match creates a direct tie that persists until either party exits;
+each principal exits with probability $\eta$ and is replaced by a new entrant.
 
-The model is domain-agnostic and represents any market in which a broker
-facilitates pairwise matches and accumulates cross-market data from
-doing so. All agents use heuristic decision rules, and no agent is
-perfectly rational. One period equals one full update of the simulation
-loop; each period could be taken to represent one calendar month, one
-week, or one day, for instance, depending on the pace of the market that
-one wants to represent.
+Each principal has a fixed vector of observable characteristics. Match output
+combines general quality, which depends on each party separately, and
+complementarity, which depends on how their types interact (Appendix B \S2). The
+mixing weight $\rho$ ranges from pure complementarity at $\rho=0$ to pure general
+quality at $\rho=1$. The parameter $\delta$ determines how sharply
+complementarity changes across a boundary in type-pair space and therefore how
+difficult that component is to learn. Because $\delta$ acts only on
+complementarity, it has no effect when $\rho=1$.
 
-Pseudo-code and complete specifications for the model are included as
-\textbf{Appendix A and B}, respectively, and the code base for the project,
-implemented in Julia, is publicly available at
-\texttt{https://github.com/m-laprise/brokerage-abm}. It includes the
-scripts needed to reproduce the experiments that generated the data
-analyzed in this section, extract every number mentioned, create the
-figures and tables, and generate the results section in its entirety.
+\emph{Learning and information}. Principals observe their own matches, each
+partner's type, and realized output. The broker observes both parties' types and
+outcomes for all matches it mediates (Appendix A \S3; Appendix B \S3). Each uses
+a small neural network to predict match output. The broker pools observations
+across clients and represents both parties symmetrically, whereas each principal
+learns only from its own history. Predicted values rank candidates; tied
+predictions are ordered uniformly at random. Offers are made to the highest-ranked
+candidates whose predicted output exceeds the reservation threshold. Further
+search, training, and match-formation details appear in Appendices A and B.
 
-\emph{Setup}. Many principals and a single broker, connected through an
-undirected network, inhabit the market. Each period, a principal draws a
-demand for new pairwise matches. Principals seeking matches search on
-their own for counterparties (self-search channel) or outsource to the
-broker (broker channel). The decision is made by comparing a running
-satisfaction score for each channel; principals who have never used the
-broker rely on its reputation (average satisfaction of current clients).
-After each period, each agent exits with probability $\eta$ and is
-replaced by a fresh entrant.
+I repeat the complete design with Ridge regression replacing both neural
+networks. Principals use candidate characteristics, while the broker uses
+symmetric additive and bilinear pair features. Penalties were selected on 10
+baseline calibration seeds excluded from reporting (Appendix B \S3). Three
+additional Ridge versions isolate the broker's data advantage by limiting its
+sample size, retaining only one party's characteristics from each match, or
+omitting interactions between the two parties' characteristics.
 
-\emph{Nature of the matching problem} (Appendix B \S2). Each principal has a
-fixed type, a vector of observable characteristics. A realized match
-between two principals yields an output equal to a fixed function of the
-two parties' types plus noise. The signal is unknown to everyone and
-must be learned. It has two parts, combined by a mixing weight $\rho$. The
-first is a general-quality term computed as the average of the two
-parties' quality scores, which depend on their type alone: a
-high-quality agent is high-quality for everyone. The second is a
-complementarity term that depends on the interaction of the two types:
-even two high-quality agents can make a bad match. At $\rho=1$ match value
-is pure general quality, at $\rho=0$ it is pure complementarity.
+\emph{Measurement}. Broker betweenness centrality measures the share of shortest
+paths between principals that pass through the broker (Brandes 2001; Freeman
+1977). The access fraction is the share of brokered matches between principals
+who were not already tied. Supplementary Figures S1--S3 reproduce the structural
+analyses using Burt's constraint and effective size. Prediction quality is
+evaluated on random-partner holdout samples. Spearman rank correlation measures
+candidate ordering and reproduces the random ordering of tied predictions.
+Holdout $R^2$ measures level accuracy but is diagnostic only. It can become
+extremely negative when holdout-output variance is small and never enters a
+decision rule (Appendix B \S8).
 
-\emph{Difficulty of the matching problem} (Appendix B \S2c). The parameter
-$\delta$ determines how difficult the complementarity component is to learn. A
-pair's smooth interaction, $\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j$, is
-multiplied by $1+\delta$ on one side of a sharp boundary in type-pair space and
-by $1-\delta$ on the other. At $\delta=0$ the boundary has no effect. As
-$\delta$ increases, crossing it changes match value more sharply, so a learner
-must recover both the smooth interaction and which side of the boundary a pair
-occupies. The parameter acts only on complementarity and has no effect at
-$\rho=1$, where match value is pure general quality.
+\emph{Simulation design and analysis}. At the baseline, $N=1{,}000$ principals
+interact for $T=500$ periods with $\rho=0.5$, $\delta=0.5$, and $\eta=0.02$.
+One-at-a-time changes and eight two-parameter grids vary the matching problem,
+turnover, market size, reservation threshold, initial network, broker roster,
+and self-search pool (Appendix B \S9). The design contains 98 unique
+regimes after duplicate coordinates and inactive parameters are consolidated.
+There are 20 independent seeds per regime and
+50 at the baseline (1990 runs total).
 
-\emph{Data collection and learning} (Appendix A \S3, algorithms 2--4;
-Appendix B \S3). Principals record their own match history, with the type
-of each partner and the realized output of the pairing, brokered or not.
-The broker records the matches it mediates, with the type of both
-parties and the realized outputs, across all clients. Principals and the
-broker each fit a small neural network to their data using gradient
-descent, to learn to predict match output. At every period for the
-broker, and every other period for the principals, agents train on
-observations from the recent past to update their prediction function.
-To respect the symmetry of the unordered pairs in its training data, the
-broker uses as input a symmetric feature vector built from the type
-vectors.
-
-As a robustness experiment, I repeat the complete design with Ridge regression
-replacing both neural networks. Principals regress output on the candidate's
-type; the broker uses the same symmetric additive and bilinear pair features as
-in the main model. Histories, training window, observation cap, fitting cadence,
-and reporting seeds are unchanged. Calibration on 10 baseline seeds excluded from
-reporting selected $\lambda_a=0.003$ for principals and
-$\lambda_b=0.001$ for the broker. This tests whether neural-network flexibility
-is necessary for the broker's ranking advantage. It does not yet distinguish
-whether that advantage comes from how much data the broker has or what those data
-contain.
-
-To identify what about the broker's data produces this advantage, I run three
-additional Ridge versions at the baseline and on the $\rho\times\delta$ design.
-One limits the broker to no more observations than a typical principal. Another
-retains information about only one randomly selected party from each past match.
-The third retains both parties but omits the interaction between their types.
-Principal learning and all other settings are unchanged.
-
-\emph{Search and match formation} (Appendix B \S\S6--7). Self-search draws on
-known network neighbors and a small random pool of strangers; brokered
-search, on the broker's standing roster and current clients. Predicted values
-rank potential candidates; ties are ordered uniformly at random, so a constant
-predictor still produces a random ranking. Offers are made to the top candidates.
-For known partners, principals use the mean of their past experiences with them as
-the predicted value. Offers above the reservation threshold are accepted. When a
-match is made, its output is realized and both parties form a direct tie. Ties
-persist until one of the agents exits.
-
-\emph{Economics} (Appendix B \S4). A match's realized output is its per-period
-value to each party. All quantities (reservation threshold, fees, search
-costs) are in common monetary units and are calibrated relative to the
-average match output over many random pairs. Every agent shares a
-reservation threshold (or outside option): offers are made or accepted
-only when predicted outputs exceed it. Self-search has a cost for each
-requested position whether filled or not, whereas the broker's fee is
-charged only on successful placements; both are an equal amount.
-Satisfaction scores net out costs or fees.
-
-These modeling choices are the formal counterpart of the theoretical
-claims made above. Decomposing match output into general-quality and
-complementarity separates the attributional channel from the relational
-one. A principal learns from its own matches and observes only its
-counterpart's type, while the broker pools mediated matches across clients and
-observes both parties' types in each match.
-
-\emph{Measurement} (Appendix B \S8). Diagnostic measures are recorded every
-period. In this article, structural position is measured as the broker's
-betweenness centrality in the graph, that is, the share of shortest
-paths between principals that run through the broker (Brandes 2001;
-Freeman 1977), as the standard \emph{whole-network} measure of brokerage
-potential. The results would be substantively similar if examining the
-ego-network measures of Burt's constraint and effective size (Borgatti
-1997; Burt 1992; Everett and Borgatti 2020); Supplementary Figures S1--S3
-report those analyses, with the baseline time paths in Supplementary Figure S2.
-The access
-fraction is the share of brokered matches in which the counterparty was not
-already tied to the demander. Prediction quality is measured on deterministic
-random-partner holdout samples evaluated against noiseless true output. Holdout
-evaluation reproduces the model's candidate-ranking behavior, including random
-ordering of tied predictions. Spearman rank correlation measures
-whether predictions order possible matches correctly, while $R^2$
-measures level accuracy. The reported difference in holdout rank correlation
-subtracts the principal value from the broker value. $R^2$ varies much more because its finite-holdout denominator
-is the variance of noiseless holdout outputs, so modest prediction errors can
-produce extreme negative values when that variance is small. This volatility does
-not affect model behavior or the conclusions based on ranking, matching, and
-realized output because $R^2$ is diagnostic only and never enters a decision rule.
-
-\emph{Simulation design and analysis}. All results are computed from a parameter sweep of the
-simulated market. A regime is one scientifically distinct parameter configuration;
-duplicate grid coordinates and inactive parameters do not create additional
-regimes. In the baseline regime,
-$N=1{,}000$ agents interact for $T=500$ periods with matching-function parameters
-$\rho=0.5$ and $\delta=0.5$, turnover $\eta=0.02$, reservation threshold $f_r=0.6$,
-initial network degree $k_G=6$, broker roster share $\alpha_R=0.2$, and
-self-search pool size $n_{\mathrm{strangers}}=10$. The simulation retains all
-periods, but time-series displays begin at $t=30$ to omit the initialization
-transient. This display cutoff does not change the simulation or the late-period
-estimands.
-
-Around this baseline, I vary one parameter at a time
-($\rho\in\{0,0.3,0.5,0.7,0.85,1\}$, $\eta\in\{0,0.001,0.01,0.02,0.03\}$,
-$N\in\{500,1000,1500\}$, $f_r\in\{0.4,0.6,0.9,1.2\}$,
-$\delta\in\{0,0.25,0.5,0.75,1\}$, $k_G\in\{4,12\}$,
-$\alpha_R\in\{0.1,0.2,0.4\}$, and
-$n_{\mathrm{strangers}}\in\{0,10,50\}$) and I sweep eight two-parameter
-grids: the six pairwise combinations of $\{\rho,\eta,N,f_r\}$ and the
-$\rho\times\delta$ grid over their full one-at-a-time levels, plus a focused
-$\rho\times f_r$ refinement over
-$\rho\in\{0.7,0.85,1\}$ and $f_r\in\{0.9,1.05,1.2\}$. In the six general grids,
-$\rho\times\eta$ and $\rho\times N$ use $\rho\in\{0,0.5,0.85,1\}$,
-$\rho\times f_r$ uses $\rho\in\{0,0.5,1\}$, and the remaining axes reuse their
-one-at-a-time levels. The design comprises 98 regimes. Repeated grid
-coordinates that resolve to the same configuration belong to one regime,
-including $\rho=1$ coordinates where $\delta$ is inactive.
-
-There are
-20 independent seeds generally and
-50 at the baseline (1990 runs in total). Within each
-regime, outcomes are averaged over a fixed time window within each seed and
-then across seeds. Late means use the final 20 periods ($t\in[481,500]$) for all
-reported levels unless noted otherwise; early means use $t\in[50,70]$ to quantify
-within-run drift. Cross-regime summaries give each regime equal weight. Remaining
-baseline parameter values are given in Appendix~B~\S9.
-
-Monte Carlo convergence was assessed by comparing estimates from the first 10
-seeds with all 20 seeds generally, and the first 20 with all 50 seeds at the
-baseline, and by computing Student-$t$ 95\% intervals from seed-level
-late-window means. Across the 14 non-$R^2$ outcomes shown in
-the figures, median relative interval half-widths across conditions ranged from
-0.4\% to 9.8\%; median relative
-nested-seed changes ranged from 0.1\% to
-3.1\%. Relative precision uses the absolute
-full-sample estimate as its denominator; regimes whose 95\% interval contains
-zero are assessed from their absolute intervals instead.
+Reported late levels average periods $t\in[481,500]$ within each seed and then
+across seeds; early levels use $t\in[50,70]$. Cross-regime summaries give each
+regime equal weight. Time-series figures begin at $t=30$ to omit the
+initialization transient, without changing the simulations or estimands. Monte
+Carlo convergence was assessed by nested-seed comparisons and Student-$t$ 95\%
+intervals. Across the 14 non-$R^2$ figure outcomes, median
+relative interval half-widths ranged from 0.4\% to
+9.8\%, and median nested-seed changes ranged from
+0.1\% to 3.1\%. Regimes whose
+interval contains zero are assessed from absolute intervals instead.
 
 \subsection{The Broker Primarily Provides Assessment, Not Access}
 
@@ -588,8 +488,7 @@ from 0.85 at $\rho=0$ to 0.13 at $\rho=1$, while the access
 fraction rises from 0.10 to 0.17 (late means along the
 one-at-a-time sweep, $\delta=0.5$). The $\rho\times\eta$ grid shows the same
 relationship at every turnover rate: moving from $\rho=0$ to $\rho=0.85$ raises
-access and lowers centrality. When complementarity dominates, the broker is more
-central even though more of its matches re-pair principals who are already tied.
+access and lowers centrality.
 
 Difficulty changes the broker's informational advantage only when complementarity
 contributes substantially to match value. Under pure complementarity, increasing
@@ -642,19 +541,17 @@ and principal degree falls in 80 of them
 enough to offset turnover. The broker's structural advantage therefore does not
 self-liquidate.
 
-Assessment and access explain the composition pattern above. An access match
-creates a direct tie between previously unconnected principals and can remove the
-broker from their shortest path. An assessment match reuses an existing tie, so the
-broker can serve the market without directly densifying the principal network.
-As matching shifts toward general quality, brokered access becomes more common,
-the principal network becomes denser, and broker betweenness falls sharply even
-though outsourcing remains high. The broker's access work therefore creates
-alternative paths even while principals continue to rely heavily on its services.
-Figure~\ref{fig:position} separates this composition pattern from turnover.
-Holding $\rho$ fixed, increasing turnover raises access and centrality at every
-tested $\rho$. The access fraction therefore has no uniform association with
-centrality. Turnover creates network gaps; matching composition determines how
-often brokerage closes them with direct ties.
+The distinction between assessment and access explains this relationship. An
+access match creates a direct tie between previously unconnected principals and
+can remove the broker from their shortest path. An assessment match reuses an
+existing tie, so the broker can serve the market without directly densifying the
+principal network.
+This explains why complementarity-heavy matching can sustain high broker
+centrality while most brokered matches reuse existing ties. Figure~\ref{fig:position}
+isolates a distinct turnover effect. Holding $\rho$ fixed, increasing turnover
+raises access and centrality at every tested $\rho$. The access fraction therefore
+has no uniform association with centrality. Turnover creates network gaps;
+matching composition determines how often brokerage closes them with direct ties.
 
 The turnover effect is substantial but nonlinear. Holding other parameters at
 baseline, increasing $\eta$ from 0 to 0.03 lowers late mean principal degree from
@@ -722,18 +619,19 @@ future empirical research. These propositions extend the model's implications
 beyond the simulated setting:
 
 \noindent\textbf{P1.} In complex matching markets, brokers add value primarily by
-assessing complementarity among reachable counterparties, not by bridging
-disconnected parties.
+assessing reachable counterparties rather than by bridging disconnected parties;
+this advantage is greater when match quality depends more heavily on
+complementarity.
 
 \noindent\textbf{P2.} A broker's betweenness centrality is produced by outsourcing
 volume and client satisfaction, it tracks how much complementarity matters to match
 value, and assessment-heavy brokers tend to retain or gain centrality as networks
 evolve.
 
-\noindent\textbf{P3.} Bridging position and bridging behavior are generally
-negatively related across markets: the most central brokers tend to do less
-bridging, except where turnover continually creates new network gaps for them to
-bridge.
+\noindent\textbf{P3.} Holding market turnover constant, bridging position and
+bridging behavior are negatively related: assessment-heavy brokers tend to be
+more central while doing less bridging. Higher turnover can raise both access
+and centrality by continually creating new network gaps.
 
 \noindent\textbf{P4.} Broker predictive advantage tracks the complexity of learning
 the complementarities relevant to match value, and it can diverge from structural
@@ -749,13 +647,13 @@ These configurations are two qualitatively different forms of capture, which can
 
 What makes capture possible, I suggest, is primarily the broker's information advantage, not its structural position. Structural and informational advantages are decoupled, and capture may occur even if the broker's centrality is declining. This is because constructing viable relational packages generates an informational byproduct that the broker can leverage. Two features of the broker's informational landscape, established through repeated matchmaking at scale, facilitate capture: cumulative knowledge of complementarities coming from the \emph{outsourced} nature of its relational work, and information infrastructures arising from its \emph{corporate} nature; both of which, other actors cannot easily replicate.
 
-\emph{(i) The role of complementarity information.} The broker's vicarious work generates knowledge of how different parties pair together, what kinds of matches succeed across the market, and what relational packages support different transactions. For regular market actors, this complementarity information is hard to replicate. Unlike attributional information about the general quality of counterparties, which any actor with sufficient market exposure can in principle acquire, complementarity information is generated through the repeated observation of various pairings. The broker holds it because it does the matching for a variety of clients; clients, who experience only their own matches, do not---unless they purchase or otherwise acquire it. Complementarity information supports resource capture, because it allows the broker to identify which resources or counterparties are most likely to generate profitable matches, so that it can capture them strategically and offload them gainfully. Complementarity information also supports data capture because it can be packaged into prediction or analytics products and services.
+\emph{(i) The role of complementarity information.} The broker's vicarious work generates knowledge of how different parties pair together, what kinds of matches succeed across the market, and what relational packages support different transactions. For regular market actors, this complementarity information is hard to replicate. Unlike attributional information about the general quality of counterparties, which any actor with sufficient market exposure can in principle acquire, complementarity information is generated through the repeated observation of various pairings. The broker holds it because it does the matching for a variety of clients; clients, who experience only their own matches, do not---unless they purchase or otherwise acquire it. Complementarity information supports resource capture, because it allows the broker to identify which resources or counterparties are most likely to generate profitable matches, so that it can capture them strategically and offload them gainfully. Complementarity information also supports data enclosure because it can be packaged into prediction or analytics products and services.
 
 \emph{(ii) The role of information infrastructures.} The corporate broker's information infrastructure explains \emph{how} its information advantage can be preserved and converted. The taxonomies, classification systems, contractual templates, and algorithmic sorting procedures that the broker develops to perform vicarious work at scale and in a distributed manner, through the everyday work of its employees and representatives, are also the infrastructures through which capture can be realized. They can be repurposed to route resources to the broker itself, to put these resources back in circulation profitably, or to organize data into a marketable product. Moreover, the corporate form gives the broker the legal privileges required to build, own, and protect these infrastructures over time \autocite{colemanAsymmetricSociety1982,pistorCodeCapitalHow2019}.
 
 These features, and transient brokerage itself, can be found in a wide variety of real-life markets. To make things more concrete, I provide two examples below, one for each configuration.
 
-\emph{Dealers in collectible markets}. Collectors of art, fine wine, rare books, or similar specialty goods may seek trades through broker dealers who know the market. Each collector has distinct tastes and holdings; match quality depends on multidimensional complementarity between what one party has and what another wants. Dealers accumulate knowledge of collector preferences across transactions, and they may decide to leverage it and start holding inventory, for instance, by launching and operating a gallery.
+\emph{Dealers in collectible markets}. Collectors of art, fine wine, rare books, or similar specialty goods may seek trades through broker-dealers who know the market. Each collector has distinct tastes and holdings; match quality depends on multidimensional complementarity between what one party has and what another wants. Dealers accumulate knowledge of collector preferences across transactions, and they may decide to leverage it and start holding inventory, for instance, by launching and operating a gallery.
 
 \emph{Interdealer brokerage in over-the-counter (OTC) financial markets}. Interdealer brokers (IDBs) are specialized intermediaries in OTC financial markets (e.g. bond markets, foreign exchange, commodities). IDBs help institutions like banks and dealers conclude large, complicated, or anonymous transactions in the absence of a centralized trading place. They solve a hard matching problem: the right counterparty for a trade depends on inventory positions and risk appetites that parties wish to keep secret. IDBs must know who wants what at any given moment, they negotiate price across hidden order interest, they preserve anonymity until execution, and they manage long-term relationships with clients to remain included in the order flow. The complementarity information they accumulate, about who will absorb what positions at what price under what conditions, is substantial. Resource capture, however, faces regulatory and reputational hurdles. Instead, IDBs have monetized accumulated information through data divisions that package historical OTC pricing and other data products, and sell them to the same dealers whose trades generated the data and to a wider set of buy-side firms and regulators \autocites[see e.g.][]{CapitalMarketsIndicative,ARA_FullReport}.
 
@@ -767,11 +665,11 @@ In summary, three elements enable capture or enclosure: a matching problem that 
 
 Within the agent-based model, the broker's centrality is a product of its relational work. The broker is central because many principals outsource to it repeatedly, which they do because its assessments are good. Its centrality rises and falls with outsourcing and satisfaction, not with exogenous features of the initial graph.
 
-With the production of structure, two patterns emerge that pre-existing theory may not have predicted. The first is that the broker tends to be most central exactly where it bridges least in practice. Across the regimes examined, centrality is negatively associated with the access fraction (Figure~\ref{fig:position}): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
+With the production of structure, two patterns emerge that pre-existing theory may not have predicted. The first is that the broker tends to be most central exactly where it bridges least in practice. Across variation in matching composition at a fixed turnover rate, centrality is negatively associated with the access fraction (Figure~\ref{fig:position}): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
 
 The second pattern is about the sustainability of brokerage. A long-standing expectation in the tradition is that brokerage tends to be self-undermining \autocite{burtStructuralHolesSocial1992,burtBridgeDecay2002a,stovelStabilizingBrokerage2011}. Each successful introduction densifies the network and dissolves the structural hole that gave the broker its advantage. Where the work is assessment, however, it leaves the network no denser than it found it. Across the simulations, access work is low and declining over time, so the broker\textquotesingle s structural advantage tends to persist. Self-liquidation is a feature of access brokerage. Meanwhile, the assessment-heavy brokerage characteristic of complementarity-based matching markets is more durable.
 
-The results also suggest a precise mechanism for the decoupling of structural and informational advantage posited in Section~\ref{sec:transient-brokerage}. The two answer to different features of the matching problem. The broker's structural prominence tracks the composition of match value, rising as matching becomes more complementarity-driven, while its prediction edge tracks the complexity of the complementarity component, which can vary independently. A broker can be highly central despite a modest informational lead or hold a decisive informational lead from an unremarkable position. Betweenness centrality is best understood not as a static measure of opportunity but as a product of the relational work the broker performs.
+The results also suggest a precise mechanism for the decoupling of structural and informational advantage posited in Section~\ref{sec:transient-brokerage}. The two advantages respond to different features of the matching problem. The broker's structural prominence tracks the composition of match value, rising as matching becomes more complementarity-driven, while its prediction edge tracks the complexity of the complementarity component, which can vary independently. A broker can be highly central despite a modest informational lead or hold a decisive informational lead from an unremarkable position. Betweenness centrality is best understood not as a static measure of opportunity but as a product of the relational work the broker performs.
 
 \subsection{Scope Conditions and Generalizability}
 
@@ -779,7 +677,7 @@ The concept of transient brokerage applies most directly to matching markets in 
 
 The dynamics of transient brokerage also depend on the nature of the brokered resource and the institutional environment. In a goods market where items are bulky and physical delivery is required, the costs and logistics of capture look very different, compared to a market for services, or a market where goods are virtual or ownership passes without physical possession. In some markets, regulation may slow or prevent capture. Market structure matters as well. The model considered in this article features a single broker. With multiple brokers competing for the same clients or matches, the cross-market data pool is fragmented, and each broker may accumulate a smaller informational advantage, unless one or a few dominate the others. A systematic treatment of broker competition is deferred to future work.
 
-Transient brokerage is relevant to a particular configuration of brokerage, in which matching problem, corporate form, and information accumulation give rise to a distinctive trajectory. The sociological literature has used brokerage to describe a wide range of phenomena, from immigrant children translating for their parents to marriage matchmakers and political brokers. The relational-work view of brokerage developed in this article can be applied to what many of these so-called brokers do. Without the repeat-player structure of corporate brokerage, the legal and infrastructural architecture of the firm, and an economic matching problem complex enough to sustain an informational advantage, however, the pathway to capture is not the same.
+Transient brokerage is relevant to a particular configuration of brokerage, in which the matching problem, corporate form, and information accumulation give rise to a distinctive trajectory. The sociological literature has used brokerage to describe a wide range of phenomena, from immigrant children translating for their parents to marriage matchmakers and political brokers. The relational-work view of brokerage developed in this article can be applied to what many of these so-called brokers do. Without the repeat-player structure of corporate brokerage, the legal and infrastructural architecture of the firm, and an economic matching problem complex enough to sustain an informational advantage, however, the pathway to capture is not the same.
 
 These scope conditions point to candidate domains in which to validate the theoretical propositions. Real estate and various types of financial intermediation, including interdealer brokerage, combine complex matching, corporate repeat-player brokers, and meaningful complementarity information. Import-export management and data markets also share many of these features.
 
@@ -787,7 +685,7 @@ These scope conditions point to candidate domains in which to validate the theor
 
 The corporate broker is a vehicle for the accumulation of information generated by the interactions between others, and the principals whose matching activity produced the information do not participate in the profits. The asymmetries that make capture possible are not just a byproduct of a broker's size or expertise. They are legally constituted. Corporate brokers assemble cross-market data and build classification systems and information infrastructures under the legal protections of the corporate form, which allows vicarious relational work to solidify into a durable informational moat. Whether a broker can convert its informational position into resource ownership or data provision depends on the institutional environment as much as on network position.
 
-The simulations make the distributional stakes of transient brokerage concrete. When the broker becomes a principal, it changes who gets connected to whom. The principals observe many fewer matches than they otherwise would, and most matches in the market teach them nothing at all. The informational asymmetry that makes capture possible is widened by capture itself: the broker takes control not only of the resource but of the data its placement generates. Transient brokerage shifts how value is distributed, channeling the returns of participants' collective relational activity to the corporations who record and mine the data it generates.
+When the broker becomes a principal, it changes who gets connected to whom. The principals observe many fewer matches than they otherwise would, and most matches in the market teach them nothing at all. The informational asymmetry that makes capture possible is widened by capture itself: the broker takes control not only of the resource but of the data its placement generates. Transient brokerage shifts how value is distributed, channeling the returns of participants' collective relational activity to the corporations who record and mine the data it generates.
 
 Capture by corporate brokers has become more common since the 1980s alongside three transformations that have reshaped market intermediation: the turn to finance, which expanded the share of economic activity routed through specialized intermediaries \autocite{carruthersFinancializationInstitutionalFoundations2015,krippnerCapitalizingCrisisPolitical2011}; the digital turn, which dramatically lowered the cost of accumulating, storing, and analyzing the data that brokerage generates while also expanding the demand for predictive analytics \autocite{cohenTruthPowerLegal2019,gandyPanopticSortPolitical1993}; and the rise of platform capitalism, which produced multi-sided market operators that own the relational infrastructure of matching while monetizing the data it generates \autocite{sadowskiInternetLandlordsDigital2020,viljoenDesignChoicesMechanism2021}. Transient brokerage is one of the mechanisms that link these transformations together and contributes to a broader shift in how value is extracted from economic activity.
 
@@ -811,7 +709,7 @@ For example, Amazon operates as both a marketplace for third-party sellers and a
 
 \subsection{Future Directions}
 
-Two main directions warrant future work. On the modeling side, the ABM developed here is exploratory. It has many interacting components and considerable researcher degrees of freedom in its specification, and it carries the usual caveats of this kind of hand-crafted simulation: its results illustrate the theory rather than establish it. Systematic investigation of the parameter space, the decision rules, and the model's sensitivity to them may surface dynamics that the results presented in this article do not reveal. The research capture and data enclosure mechanisms are introduced theoretically but not formalized; they are a natural next step for an extension. On the theoretical side, the framework does not yet fully address how platforms and algorithmic marketplaces reshape the dynamics of brokerage by automating the vicarious relational work that brokers historically performed. Both directions point toward the same underlying question about the impact of the digital turn on brokerage, the institutions that rely on it, and the actors that perform it or benefit from it.
+Two main directions warrant future work. On the modeling side, the ABM developed here is exploratory. It has many interacting components and considerable researcher degrees of freedom in its specification, and it carries the usual caveats of this kind of hand-crafted simulation: its results illustrate the theory rather than establish it. Systematic investigation of the parameter space, the decision rules, and the model's sensitivity to them may surface dynamics that the results presented in this article do not reveal. The resource capture and data enclosure mechanisms are introduced theoretically but not formalized; they are a natural next step for an extension. On the theoretical side, the framework does not yet fully address how platforms and algorithmic marketplaces reshape the dynamics of brokerage by automating the vicarious relational work that brokers historically performed. Both directions point toward the same underlying question about the impact of the digital turn on brokerage, the institutions that rely on it, and the actors that perform it or benefit from it.
 
 The digital turn has brought about a series of transformations. The informational byproduct of relational matching has come to rival the value of the matches themselves. Relational work is increasingly performed for the data it generates and increasingly performed by machines rather than people. The informational asymmetry between brokers and their principals has widened. Existing relational packages are being dismantled to extract value from the information and infrastructures associated with them. These shifts redraw the boundaries on which brokerage rests: between internalized and outsourced relational work, and between vicarious and personal relational work. Brokerage becomes a transient position, held so long as brokering remains more profitable than capture.
 

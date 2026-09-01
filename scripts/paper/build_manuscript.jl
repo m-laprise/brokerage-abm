@@ -39,6 +39,9 @@ const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
 const SOURCE_GRAPHICSPATH = "\\graphicspath{{output/main/}}"
 const BUNDLE_GRAPHICSPATH = "\\graphicspath{{./}}"
+const FORMAL_ILLUSTRATION_SECTION =
+    "\\section{How Brokers Accumulate Informational and Structural Advantage: " *
+    "A Formal Illustration}"
 const MANUSCRIPT_PROVENANCE = manuscript_git_provenance(ROOT)
 
 fail(message) = error("manuscript build failed: $message")
@@ -63,8 +66,8 @@ length(findall(SOURCE_BIBLIOGRAPHY, source)) == 1 ||
     fail("editable root must contain exactly one repo-local bibliography declaration")
 length(findall(SOURCE_GRAPHICSPATH, source)) == 1 ||
     fail("editable root must contain exactly one repo-local graphics path")
-occursin(r"\\section\{ABM Results:", results) ||
-    fail("generated fragment does not contain the ABM results section")
+occursin(FORMAL_ILLUSTRATION_SECTION, results) ||
+    fail("generated fragment does not contain the formal-illustration section")
 occursin("% manuscript commit $(MANUSCRIPT_PROVENANCE.commit)", results) ||
     fail("generated results section does not match the current manuscript commit")
 
