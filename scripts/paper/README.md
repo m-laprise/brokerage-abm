@@ -171,10 +171,9 @@ Local tier (no data access; works from a clone):
 The first three figures each redo a main-text structural-advantage analysis for
 constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
 the baseline time path and the relationship with access across regimes; **S3**
-shows the ranking and output differences against each measure. **S4** shows the paired-Ridge
-broker-minus-principal difference in holdout rank correlation across all
-effective realizations and across
-the rho x delta grid.
+shows the ranking and output differences against each measure. **S4** shows the
+paired-Ridge broker-minus-principal difference in holdout rank correlation across
+all effective realizations and across the rho x delta grid.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 Generated artifacts are under `output/supplement/`. LaTeX auxiliary files are
