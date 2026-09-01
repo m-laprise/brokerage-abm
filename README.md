@@ -1,9 +1,6 @@
-# BrokerageABM: Brokerage in Matching Markets
+# Brokerage-ABM: Brokerage in Matching Markets
 
 Replication code for an agent-based study of brokerage in matching markets.
-The model examines when brokers create value by finding new counterparties,
-when they create value by assessing possible matches, and how their information
-and services shape their network position over time.
 
 ## The model
 
@@ -29,11 +26,6 @@ realized match value, brokered access, outsourcing, and structural centrality.
 - [Supplementary material](output/supplement/supplement.pdf)
 - [Model specifications](model_specifications.pdf)
 - [Simulation pseudocode](simulation_pseudocode.pdf)
-
-The canonical editable sources are
-[`model_specifications.tex`](model_specifications.tex),
-[`simulation_pseudocode.tex`](simulation_pseudocode.tex), and the TeX files in
-[`paper/`](paper/).
 
 ## Quick start
 
