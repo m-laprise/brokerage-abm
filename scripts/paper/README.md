@@ -20,9 +20,12 @@ The reporting root must contain 20 seeds for every effective realization and
 50 seeds for the baseline, for 1,990 runs in total. The data extractors check
 this seed plan before writing outputs. Every reporting stage also requires all
 source, paper, specification, and test files to match the current Git commit.
-Generated files under `output/` may differ. Each derived dataset and provenance
-file records the analysis commit, and downstream stages reject inputs produced
-by another commit.
+Generated files under `output/` may differ. Data-derived inputs retain the clean
+analysis commit that produced them. Figure renderers and manuscript builders may
+consume inputs from an earlier ancestor analysis commit, while recording the
+current rendering or manuscript commit separately. This permits rapid iteration
+on prose, captions, and presentation without relabeling or recomputing unchanged
+scientific results.
 
 1. `julia --project --threads=auto scripts/paper/stats.jl`
    Computes every statistic quoted in the section and writes `output/main/values.tex`

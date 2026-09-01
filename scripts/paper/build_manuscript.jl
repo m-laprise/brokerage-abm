@@ -17,6 +17,8 @@ Usage: julia --project --threads=auto scripts/paper/build_manuscript.jl
 
 using Dates: now
 
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
+
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const PAPER = joinpath(ROOT, "paper")
 const MAIN_OUTPUT = joinpath(ROOT, "output", "main")
@@ -37,6 +39,7 @@ const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
 const SOURCE_GRAPHICSPATH = "\\graphicspath{{output/main/}}"
 const BUNDLE_GRAPHICSPATH = "\\graphicspath{{./}}"
+const MANUSCRIPT_PROVENANCE = reporting_git_provenance(ROOT)
 
 fail(message) = error("manuscript build failed: $message")
 
@@ -62,6 +65,8 @@ length(findall(SOURCE_GRAPHICSPATH, source)) == 1 ||
     fail("editable root must contain exactly one repo-local graphics path")
 occursin(r"\\section\{ABM Results:", results) ||
     fail("generated fragment does not contain the ABM results section")
+occursin("% manuscript commit $(MANUSCRIPT_PROVENANCE.commit)", results) ||
+    fail("generated results section does not match the current manuscript commit")
 
 figure_paths = unique([
     match[1] for
@@ -81,6 +86,7 @@ occursin(INPUT_MARKER, flattened) && fail("results input was not flattened")
 header = """
 % $(basename(OUTPUT_TEX)): GENERATED, do not edit.
 % Built by scripts/paper/build_manuscript.jl on $(now()).
+% Manuscript commit: $(MANUSCRIPT_PROVENANCE.commit); clean sources.
 % The editable root is paper/$(basename(SOURCE)); the results provenance is
 % recorded in the inlined output/main/results_section.tex header below.
 

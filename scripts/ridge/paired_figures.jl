@@ -73,6 +73,7 @@ const DELTA_COLORS = Dict(
 )
 
 function validate_inputs()
+    analysis_commits = String[]
     for (label, data, expected_model) in (("NN", NN, "nn"), ("Ridge", RIDGE, "ridge"))
         meta = data["meta"]
         counts = meta["condition_seed_counts"]
@@ -83,8 +84,14 @@ function validate_inputs()
             error("unexpected $label seed plan")
         lowercase(String(meta["learning_model"])) == expected_model ||
             error("unexpected $label learning model")
-        meta["analysis_git_commit"] == REPORTING_PROVENANCE.commit ||
-            error("$label figure data were extracted by a different analysis commit")
+        push!(
+            analysis_commits,
+            validate_analysis_commit(
+                REPORTING_PROVENANCE,
+                meta["analysis_git_commit"];
+                artifact="$label figure data",
+            ),
+        )
         meta["analysis_source_clean"] == true ||
             error("$label figure data were extracted from dirty analysis sources")
     end
@@ -95,6 +102,8 @@ function validate_inputs()
     nn_grid = Set((cell["rho"], cell["delta"]) for cell in NN["grid_cells"])
     ridge_grid = Set((cell["rho"], cell["delta"]) for cell in RIDGE["grid_cells"])
     nn_grid == ridge_grid || error("NN and Ridge rho-by-delta grids differ")
+    length(unique(analysis_commits)) == 1 ||
+        error("NN and Ridge figure data use different analysis commits")
     return nothing
 end
 
@@ -497,8 +506,9 @@ function write_provenance()
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "source=scripts/ridge/paired_figures.jl")
-        println(io, "analysis_commit=$(REPORTING_PROVENANCE.commit)")
-        println(io, "analysis_source_clean=$(REPORTING_PROVENANCE.source_clean)")
+        println(io, "data_analysis_commit=$(NN[\"meta\"][\"analysis_git_commit\"])")
+        println(io, "rendering_commit=$(REPORTING_PROVENANCE.commit)")
+        println(io, "rendering_source_clean=$(REPORTING_PROVENANCE.source_clean)")
         println(io, "nn_sweep=$(NN["meta"]["sweep"])")
         println(io, "nn_manifest=$(NN["meta"]["manifest_hash"])")
         println(io, "ridge_sweep=$(RIDGE["meta"]["sweep"])")
