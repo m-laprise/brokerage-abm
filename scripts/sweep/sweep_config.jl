@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 7
+const SWEEP_SCHEMA_VERSION = 8
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -51,13 +51,14 @@ const SWEEP_RIDGE_BROKER_VARIANT = Symbol(
     get(ENV, "BROKERAGE_ABM_RIDGE_BROKER_VARIANT", "pair")
 )
 const SWEEP_SCOPE = Symbol(get(ENV, "BROKERAGE_ABM_SWEEP_SCOPE", "full"))
+const SWEEP_CONSTANT_SIGNAL_SCALE = SWEEP_SCOPE == :constant_scale
 
 SWEEP_LEARNING_MODEL in (:nn, :ridge) || error("invalid sweep learning model")
 SWEEP_RIDGE_LAMBDA_AGENT > 0.0 || error("agent Ridge penalty must be positive")
 SWEEP_RIDGE_LAMBDA_BROKER > 0.0 || error("broker Ridge penalty must be positive")
 SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||
     error("invalid sweep Ridge broker variant")
-SWEEP_SCOPE in (:full, :rho_delta) || error("invalid sweep scope")
+SWEEP_SCOPE in (:full, :rho_delta, :constant_scale) || error("invalid sweep scope")
 isempty(SWEEP_SEEDS) && error("sweep must include at least one seed")
 length(SWEEP_BASELINE_SEEDS) < length(SWEEP_SEEDS) &&
     error("baseline seed set cannot be smaller than the general seed set")
@@ -212,16 +213,17 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    build_cells() -> Vector{Dict{Symbol,Any}}
+    build_cells([scope]) -> Vector{Dict{Symbol,Any}}
 
 Ordered list of grid coordinates. OAT coordinates come first (in `OAT_AXES` order), then
 phase cells (in `PHASE_PAIRS` order). Each cell points to the canonical result
 directory for its model realization.
 """
-function build_cells()
+function build_cells(scope::Symbol=SWEEP_SCOPE)
+    scope in (:full, :rho_delta, :constant_scale) || error("invalid sweep scope")
     cells = Dict{Symbol,Any}[]
 
-    if SWEEP_SCOPE == :rho_delta
+    if scope in (:rho_delta, :constant_scale)
         push!(
             cells,
             Dict{Symbol,Any}(
@@ -233,23 +235,26 @@ function build_cells()
                 :reldir => BASELINE_RELDIR,
             ),
         )
-        pr = only(pair for pair in PHASE_PAIRS if pair.name == "rho_delta")
-        for (xi, xv) in enumerate(pr.xvals), (yi, yv) in enumerate(pr.yvals)
-            push!(
-                cells,
-                Dict{Symbol,Any}(
-                    :kind => "phase",
-                    :pair => pr.name,
-                    :xkey => string(pr.xkey),
-                    :xval => xv,
-                    :xi => xi,
-                    :ykey => string(pr.ykey),
-                    :yval => yv,
-                    :yi => yi,
-                    :params => Dict{Symbol,Any}(pr.xkey => xv, pr.ykey => yv),
-                    :reldir => "phase/$(pr.name)/cells/$(xi - 1)_$(yi - 1)",
-                ),
-            )
+        pair_names = scope == :rho_delta ? ("rho_delta",) : ("rho_delta", "rho_eta")
+        for pair_name in pair_names
+            pr = only(pair for pair in PHASE_PAIRS if pair.name == pair_name)
+            for (xi, xv) in enumerate(pr.xvals), (yi, yv) in enumerate(pr.yvals)
+                push!(
+                    cells,
+                    Dict{Symbol,Any}(
+                        :kind => "phase",
+                        :pair => pr.name,
+                        :xkey => string(pr.xkey),
+                        :xval => xv,
+                        :xi => xi,
+                        :ykey => string(pr.ykey),
+                        :yval => yv,
+                        :yi => yi,
+                        :params => Dict{Symbol,Any}(pr.xkey => xv, pr.ykey => yv),
+                        :reldir => "phase/$(pr.name)/cells/$(xi - 1)_$(yi - 1)",
+                    ),
+                )
+            end
         end
         return link_result_cells!(cells)
     end

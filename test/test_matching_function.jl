@@ -5,6 +5,7 @@ using BrokerageABM: match_output, match_output!, match_signal, match_signal!
 using BrokerageABM: regime_gain, regime_gain!
 using StableRNGs: StableRNG
 using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
+using Statistics: mean, std
 
 @testset "Matching Function" begin
     d = 8
@@ -21,10 +22,18 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         sigma_eps::Float64=0.25,
         env_seed::Int=42,
         geo_seed::Int=11,
+        constant_signal_scale::Bool=false,
     )
         geo = BrokerageABM.generate_curve_geometry(d, d, StableRNG(geo_seed))
         return generate_matching_env(
-            d, rho, delta, sigma_eps, types, StableRNG(env_seed); curve_geo=geo
+            d,
+            rho,
+            delta,
+            sigma_eps,
+            types,
+            StableRNG(env_seed);
+            curve_geo=geo,
+            constant_signal_scale,
         )
     end
 
@@ -37,6 +46,45 @@ using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
         @test length(env.c) == d
         @test size(env.A) == (d, d)
         @test size(env.B) == (d, d)
+        @test env.signal_scale == 1.0
+        @test env.signal_shift == 0.0
+    end
+
+    @testset "constant signal scale preserves rankings and baseline moments" begin
+        types = test_agent_types(d, 60, StableRNG(510))
+        reference = test_env(types; rho=0.5, delta=0.5)
+        raw = test_env(types; rho=0.0, delta=1.0)
+        scaled = test_env(types; rho=0.0, delta=1.0, constant_signal_scale=true)
+        baseline_scaled = test_env(types; rho=0.5, delta=0.5, constant_signal_scale=true)
+        pairs = [(i, j) for j in 2:length(types) for i in 1:(j - 1)]
+        reference_values = [match_signal(types[i], types[j], reference) for (i, j) in pairs]
+        raw_values = [match_signal(types[i], types[j], raw) for (i, j) in pairs]
+        scaled_values = [match_signal(types[i], types[j], scaled) for (i, j) in pairs]
+
+        @test scaled.signal_scale > 0.0
+        @test mean(scaled_values) ≈ mean(reference_values) atol = 1e-12
+        @test std(scaled_values; corrected=false) ≈ std(reference_values; corrected=false) atol =
+            1e-12
+        @test scaled_values ≈ scaled.signal_shift .+ scaled.signal_scale .* raw_values atol =
+            1e-12
+        @test sortperm(scaled_values) == sortperm(raw_values)
+        @test baseline_scaled.signal_scale == 1.0
+        @test baseline_scaled.signal_shift == 0.0
+        @test all(pairs) do (i, j)
+            match_signal(types[i], types[j], baseline_scaled) ==
+            match_signal(types[i], types[j], reference)
+        end
+    end
+
+    @testset "constant-scale baseline preserves the trajectory" begin
+        common = (
+            N=20, k=4, T=3, E_init=1, train_steps=1, eta=0.0, rho=0.5, delta=0.5, seed=511
+        )
+        _, original = run_simulation(default_params(; common...))
+        _, controlled = run_simulation(
+            default_params(; common..., constant_signal_scale=true)
+        )
+        @test isequal(original, controlled)
     end
 
     @testset "curve_geo path decouples c and A, while B depends on realized types" begin

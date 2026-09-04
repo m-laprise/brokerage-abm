@@ -9,7 +9,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test SWEEP_SCHEMA_VERSION == 7
+    @test SWEEP_SCHEMA_VERSION == 8
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
@@ -17,6 +17,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
     @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full
+    @test !SWEEP_CONSTANT_SIGNAL_SCALE
     @test ETA_VALS == [0.0, 0.001, 0.01, 0.02, 0.03]
     @test length(cells) == 161
     @test count(c -> c[:kind] == "oat", cells) == 31
@@ -109,6 +110,21 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
         end
         @test length(unique(c[:condition_index] for c in refs)) == 10
     end
+end
+
+@testset "constant-scale targeted design" begin
+    cells = build_cells(:constant_scale)
+    conditions = result_cells(cells)
+    entries = build_entries(cells)
+    plot_jobs = build_plot_jobs(cells)
+
+    @test length(cells) == 51
+    @test length(conditions) == 42
+    @test length(entries) == 840
+    @test length(plot_jobs) == 3
+    @test Set(cell[:pair] for cell in cells if cell[:kind] == "phase") ==
+        Set(["rho_delta", "rho_eta"])
+    @test_throws ErrorException build_cells(:invalid)
 end
 
 @testset "rho=1 effective realization is delta-invariant" begin

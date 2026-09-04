@@ -60,7 +60,7 @@ function configure_micro_state!(state)
     end
 
     state.env = MatchingEnv(
-        2, 0.0, zeros(2), Matrix{Float64}(I, 2, 2), zeros(2, 2), 0.0, 0.0
+        2, 0.0, zeros(2), Matrix{Float64}(I, 2, 2), zeros(2, 2), 0.0, 0.0, 1.0, 0.0
     )
     state.cal = CalibrationConstants(2.0, 1.2, 0.2, 0.2)
 

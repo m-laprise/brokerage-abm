@@ -93,6 +93,7 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :constant_signal_scale => SWEEP_CONSTANT_SIGNAL_SCALE,
         :scope => SWEEP_SCOPE,
     )
 
@@ -118,6 +119,7 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :constant_signal_scale => SWEEP_CONSTANT_SIGNAL_SCALE,
         :scope => SWEEP_SCOPE,
     )
 

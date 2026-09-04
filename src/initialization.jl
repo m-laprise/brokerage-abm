@@ -85,6 +85,7 @@ function generate_matching_dgp(params::ModelParams, rng::AbstractRNG)
         rng;
         sigma_x=params.sigma_x,
         curve_geo=geo,
+        constant_signal_scale=params.constant_signal_scale,
     )
     return (; curve_geo=geo, agent_types, env)
 end

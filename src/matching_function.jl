@@ -19,6 +19,9 @@ Observable output: q = Q + f(x_i, x_j) + ε, where Q is a constant offset and
 using LinearAlgebra: dot, mul!, norm, tr
 using Random: AbstractRNG
 
+const SIGNAL_SCALE_REFERENCE_RHO = 0.5
+const SIGNAL_SCALE_REFERENCE_DELTA = 0.5
+
 """
     type_second_moment(agent_types) -> Matrix{Float64}
 
@@ -97,7 +100,8 @@ function construct_regime_operator(
 end
 
 """
-    generate_matching_env(d, rho, delta, sigma_eps, agent_types, rng; sigma_x, curve_geo) -> MatchingEnv
+    generate_matching_env(d, rho, delta, sigma_eps, agent_types, rng;
+                          sigma_x, curve_geo, constant_signal_scale) -> MatchingEnv
 
 Build the matching environment:
 - Ideal type `c` drawn as a perturbation of a fresh random curve position from
@@ -105,6 +109,10 @@ Build the matching environment:
 - A = M_A'M_A (SPD interaction matrix)
 - B = symmetric regime operator, orthogonalized against A under the empirical
   type second moment
+
+When `constant_signal_scale` is true, a positive affine transformation gives
+the signal the baseline mean and population standard deviation over all pairs
+of distinct initial principals. It does not change pair rankings.
 """
 function generate_matching_env(
     d::Int,
@@ -115,6 +123,7 @@ function generate_matching_env(
     rng::AbstractRNG;
     sigma_x::Float64=0.5,
     curve_geo::CurveGeometry,
+    constant_signal_scale::Bool=false,
 )::MatchingEnv
     sigma_per_dim = sigma_x / sqrt(d)
 
@@ -134,7 +143,75 @@ function generate_matching_env(
     # boundary weakly aligned with the payoff geometry by construction.
     B = construct_regime_operator(A, agent_types, rng)
 
-    return MatchingEnv(d, rho, c, A, B, delta, sigma_eps)
+    affine = if constant_signal_scale
+        constant_signal_affine(agent_types, c, A, B, rho, delta)
+    else
+        (; scale=1.0, shift=0.0)
+    end
+    return MatchingEnv(d, rho, c, A, B, delta, sigma_eps, affine.scale, affine.shift)
+end
+
+"""
+    constant_signal_affine(agent_types, c, A, B, rho, delta)
+
+Return the positive affine transformation that gives the current match signal
+the mean and population standard deviation of the baseline signal over feasible
+initial pairs. The baseline transformation is exactly the identity.
+"""
+function constant_signal_affine(
+    agent_types::Vector{Vector{Float64}},
+    c::Vector{Float64},
+    A::Matrix{Float64},
+    B::Matrix{Float64},
+    rho::Float64,
+    delta::Float64,
+)
+    rho == SIGNAL_SCALE_REFERENCE_RHO &&
+        delta == SIGNAL_SCALE_REFERENCE_DELTA &&
+        return (; scale=1.0, shift=0.0)
+
+    n_agents = length(agent_types)
+    n_pairs = n_agents * (n_agents - 1) ÷ 2
+    quality_scores = [dot(x, c) for x in agent_types]
+    Ax = Vector{Float64}(undef, length(c))
+    Bx = similar(Ax)
+    current_sum = 0.0
+    current_sum_sq = 0.0
+    reference_sum = 0.0
+    reference_sum_sq = 0.0
+
+    @inbounds for j in 2:n_agents
+        xj = agent_types[j]
+        mul!(Ax, A, xj)
+        mul!(Bx, B, xj)
+        for i in 1:(j - 1)
+            xi = agent_types[i]
+            quality = 0.5 * (quality_scores[i] + quality_scores[j])
+            base_interaction = dot(xi, Ax)
+            regime = sign(dot(xi, Bx))
+            current =
+                rho * quality + (1.0 - rho) * (1.0 + delta * regime) * base_interaction
+            reference =
+                SIGNAL_SCALE_REFERENCE_RHO * quality +
+                (1.0 - SIGNAL_SCALE_REFERENCE_RHO) *
+                (1.0 + SIGNAL_SCALE_REFERENCE_DELTA * regime) *
+                base_interaction
+            current_sum += current
+            current_sum_sq += current^2
+            reference_sum += reference
+            reference_sum_sq += reference^2
+        end
+    end
+
+    current_mean = current_sum / n_pairs
+    reference_mean = reference_sum / n_pairs
+    current_var = current_sum_sq / n_pairs - current_mean^2
+    reference_var = reference_sum_sq / n_pairs - reference_mean^2
+    current_var > 0.0 || error("current match signal has zero variance")
+    reference_var > 0.0 || error("baseline match signal has zero variance")
+    scale = sqrt(reference_var / current_var)
+    shift = reference_mean - scale * current_mean
+    return (; scale, shift)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -178,7 +255,8 @@ function match_signal(xi::AbstractVector, xj::AbstractVector, env::MatchingEnv):
     base_interaction = dot(xi, env.A * xj)
     g = regime_gain(xi, xj, env)
     interaction = (1.0 - env.rho) * g * base_interaction
-    return quality + interaction
+    signal = quality + interaction
+    return env.signal_shift + env.signal_scale * signal
 end
 
 """In-place `match_signal` using pre-allocated buffers for Ax_j and Bx_j."""
@@ -194,7 +272,8 @@ function match_signal!(
     base_interaction = dot(xi, Ax_buf)
     g = regime_gain!(Bx_buf, xi, xj, env)
     interaction = (1.0 - env.rho) * g * base_interaction
-    return quality + interaction
+    signal = quality + interaction
+    return env.signal_shift + env.signal_scale * signal
 end
 
 """

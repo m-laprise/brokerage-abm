@@ -72,13 +72,15 @@ function main()
         ridge_lambda_agent=SWEEP_RIDGE_LAMBDA_AGENT,
         ridge_lambda_broker=SWEEP_RIDGE_LAMBDA_BROKER,
         ridge_broker_variant=SWEEP_RIDGE_BROKER_VARIANT,
+        constant_signal_scale=SWEEP_CONSTANT_SIGNAL_SCALE,
         params...,
     )
 
     println(
         "RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
         "r_frac=$(p.reservation_frac), learner=$(p.learning_model), " *
-        "broker_variant=$(p.ridge_broker_variant), threads=$(Threads.nthreads()))",
+        "broker_variant=$(p.ridge_broker_variant), constant_scale=$(p.constant_signal_scale), " *
+        "threads=$(Threads.nthreads()))",
     )
 
     t0 = time()
@@ -110,6 +112,9 @@ function main()
         "ridge_lambda_agent" => p.ridge_lambda_agent,
         "ridge_lambda_broker" => p.ridge_lambda_broker,
         "ridge_broker_variant" => string(p.ridge_broker_variant),
+        "constant_signal_scale" => p.constant_signal_scale,
+        "signal_scale" => state.env.signal_scale,
+        "signal_shift" => state.env.signal_shift,
     )
     for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
         haskey(e, k) && (config[string(k)] = e[k])

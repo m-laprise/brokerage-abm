@@ -48,6 +48,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :delta => 0.5,
         :sigma_x => 0.5,
         :sigma_eps => 0.10,
+        :constant_signal_scale => false,
         # Match accounting
         :K => 5,
         :p_demand => 0.50,
@@ -92,6 +93,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:delta],
         defaults[:sigma_x],
         defaults[:sigma_eps],
+        defaults[:constant_signal_scale],
         defaults[:K],
         defaults[:p_demand],
         defaults[:k],

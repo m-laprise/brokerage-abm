@@ -318,8 +318,7 @@ end
 # Matching environment and calibration
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Matching environment: ideal type c, SPD interaction matrix A, symmetric regime
-operator B, and noise scale."""
+"""Matching environment, including an optional affine rescaling of match signal."""
 struct MatchingEnv
     d::Int
     rho::Float64
@@ -328,6 +327,8 @@ struct MatchingEnv
     B::Matrix{Float64}       # symmetric regime operator, weighted-orthogonalized against A
     delta::Float64            # gain strength
     sigma_eps::Float64        # match output noise SD
+    signal_scale::Float64      # optional positive match-signal scale
+    signal_shift::Float64      # optional match-signal shift
 end
 
 """Output-scale constants derived from Monte Carlo calibration."""
@@ -480,6 +481,7 @@ struct ModelParams
     delta::Float64               # regime gain strength (default 0.5)
     sigma_x::Float64             # type noise scale (default 0.5)
     sigma_eps::Float64           # match output noise SD (default 0.10)
+    constant_signal_scale::Bool  # rescale signal to baseline moments (default false)
 
     # Match accounting
     K::Int                       # maximum active demands per period (default 5)

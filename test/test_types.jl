@@ -28,6 +28,7 @@ using LinearAlgebra: norm
         @test p.ridge_lambda_agent == 0.001
         @test p.ridge_lambda_broker == 0.001
         @test p.ridge_broker_variant == :pair
+        @test !p.constant_signal_scale
         @test p.network_measure_interval == 20
         @test p.T == 500
     end
@@ -59,12 +60,15 @@ using LinearAlgebra: norm
     end
 
     @testset "default_params with overrides" begin
-        p = default_params(; seed=99, N=200, K=10, delta=0.75, roster_frac=0.40)
+        p = default_params(;
+            seed=99, N=200, K=10, delta=0.75, roster_frac=0.40, constant_signal_scale=true
+        )
         @test p.seed == 99
         @test p.N == 200
         @test p.K == 10
         @test p.delta == 0.75
         @test p.roster_frac == 0.40
+        @test p.constant_signal_scale
     end
 
     @testset "default_params rejects unknown kwargs" begin
