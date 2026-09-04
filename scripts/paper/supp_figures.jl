@@ -108,7 +108,7 @@ function measseries(key)
         [summary.upper for summary in summaries],
     )
 end
-# autoscaled y-limits over the DISPLAYED window only (x >= TSTART), padded both ends
+# Autoscaled y-limits over the displayed window only, padded at both ends.
 function ywin(curves...)
     v = Float64[]
     for (xs, _, lower, upper) in curves

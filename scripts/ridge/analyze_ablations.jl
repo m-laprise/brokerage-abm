@@ -1,7 +1,7 @@
 """
     scripts/ridge/analyze_ablations.jl
 
-Compare the three Ridge broker ablations with the paired-Ridge reference over
+Compare the three Ridge broker ablations with the base Ridge reference over
 the baseline and rho-by-delta design. Each effective model realization receives
 one observation. Baseline seed contrasts use all 50 common seeds, and all other
 condition contrasts use their 20 common seeds.
@@ -16,6 +16,8 @@ Required environment:
 Detailed outputs are written to `output/ridge/ablations/results/`. Seed-level
 inputs for the compact main-text figure are written to
 `output/ridge/ablations/figdata.jld2`.
+
+Usage: julia --project --threads=auto scripts/ridge/analyze_ablations.jl
 """
 
 using CairoMakie
@@ -193,7 +195,7 @@ function results_by_design(dataset::SweepDataset)
 end
 
 function validate_design(pair::SweepDataset, datasets)
-    length(pair.results) == 98 || error("expected 98 paired-Ridge effective realizations")
+    length(pair.results) == 98 || error("expected 98 base Ridge effective realizations")
     pair_by_design = results_by_design(pair)
     datasets_by_design = Dict(
         variant.key => results_by_design(datasets[variant.key]) for variant in VARIANTS
@@ -213,7 +215,7 @@ function validate_design(pair::SweepDataset, datasets)
             error("$(variant.label) effective design differs")
         for realization_key in reference_keys
             haskey(pair_by_design, realization_key) ||
-                error("paired-Ridge reference lacks an ablation realization")
+                error("base Ridge reference lacks an ablation realization")
             pair_result = pair_by_design[realization_key]
             result = by_design[realization_key]
             for parameter in DESIGN_KEYS
@@ -225,7 +227,7 @@ function validate_design(pair::SweepDataset, datasets)
             result.seeds == expected_seeds ||
                 error("unexpected $(variant.label) seed set for $(result.rel)")
             all(seed in pair_result.seeds for seed in result.seeds) ||
-                error("paired-Ridge reference lacks common seeds for $(result.rel)")
+                error("base Ridge reference lacks common seeds for $(result.rel)")
         end
     end
     reference_dataset = datasets[first(VARIANTS).key]

@@ -1,8 +1,7 @@
 #!/bin/bash
-# Sweep progress monitor — run detached in tmux (see submit.sh notes). Appends one
-# status line every INTERVAL seconds to <sweep_dir>/logs/monitor.log AND the pane.
-# Ground-truth progress = completed shards on disk (each unique
-# (condition,seed) task writes one seed_*.jld2); queue state is informational.
+# Sweep progress monitor for a detached tmux session. Appends one status line to
+# the pane and `<sweep_dir>/logs/monitor.log` at each interval. Completed shards
+# determine progress; queue state is informational.
 #   bash monitor.sh <sweep_dir> [interval_seconds=300]
 set -u
 SWEEP_DIR="${1:?usage: monitor.sh <sweep_dir> [interval_s]}"

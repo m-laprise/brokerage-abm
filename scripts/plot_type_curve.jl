@@ -5,9 +5,7 @@ Visualize the agent type curve on the unit sphere. Samples smooth curve
 positions and noisy agent types, then plots three orthogonal projections
 with depth color-coding.
 
-Adapted from v0.1 plot_firm_curve_3d.jl for the unimodal agent model.
-
-Usage: julia --project scripts/plot_type_curve.jl
+Usage: julia --project --threads=auto scripts/plot_type_curve.jl
 """
 
 using BrokerageABM
@@ -19,7 +17,7 @@ using StableRNGs: StableRNG
 const OUTDIR = joinpath(@__DIR__, "..", "data", "figures")
 mkpath(OUTDIR)
 
-# Use d=3 for visualization (projections are trivial)
+# Use three dimensions to display all coordinates directly.
 d = 3; s = 3; sigma_x = 0.5
 rng = StableRNG(42)
 geo = generate_curve_geometry(d, s, rng)

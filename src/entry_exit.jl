@@ -76,7 +76,7 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
 
     agent = state.agents[agent_id]
 
-    # Reset all fields
+    # Clear entrant-specific state.
     agent.type .= new_type
     empty!(agent.active_matches)
     agent.history_count = 0
@@ -85,7 +85,7 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     # The entrant's empty initialization history is its period-0 boundary.
     push!(agent.obs_period_marks, 0)
 
-    # Re-initialize neural network
+    # Reinitialize prediction models and buffers.
     agent.nn = init_neural_net(d, agent_hidden_width(p), rng)
     agent.nn_grad = NNGradBuffers(agent.nn)
     fill!(agent.predict_buf, 0.0)
@@ -95,7 +95,7 @@ function enter_agent!(state::ModelState, agent_id::Int, rng::AbstractRNG)
     fill!(agent.partner_sum, 0.0)
     fill!(agent.partner_count, 0)
 
-    # Reset satisfaction
+    # Reset experience flags and tenure.
     agent.tried_broker = false
     agent.periods_alive = 0
 

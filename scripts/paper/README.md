@@ -2,9 +2,7 @@
 
 Backs the paper's results section.
 
-Generated paper outputs are intentionally absent until the pipeline is regenerated
-from a complete reporting sweep. The former temporary single-model fixtures were
-removed because they were not scientific results.
+Generate paper outputs from a complete reporting sweep.
 
 **No script hard-codes or handwrites any number or result.** Every emitted
 value (statistics, counts, figure data, display scales) is derived from the raw data
@@ -35,7 +33,7 @@ scientific results.
    seed-level baseline series and seed-level late-window values each figure
    consumes. Ensemble and condition means are retained for convenience, but
    uncertainty is reconstructed from the saved seed values.
-   Run the same extractor against the paired-Ridge sweep with
+   Run the same extractor against the base Ridge sweep with
    `BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2`; the exact
    command is given below.
 3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
@@ -93,34 +91,19 @@ editing `figures.jl` and rerunning steps 5--7 locally. The cluster tier reruns
 only when the underlying numbers change: a new sweep, or a figure needing a
 metric not yet extracted, which `figdata.jl` must then be taught to include.
 
-Word export (optional). To produce an editable `.docx` of the section for
-co-authors or track-changes, convert the generated fragment with pandoc:
-
-```
-pandoc output/main/results_section.tex -f latex -o results_section.docx \
-  --resource-path=output/main
-```
-
-Pandoc reads the flattened fragment directly: math becomes native Word equations,
-the `booktabs` tables become Word tables, and the figures in `output/main/figs/` are
-embedded (hence `--resource-path=output/main`). Run steps 4--7 first. The `.docx`
-reflects whatever is in `results_section.tex`. Needs only pandoc (>= 3),
-no LibreOffice.
-Document styling such as fonts can be set with a pandoc `--reference-doc`.
-
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 (figure titles and captions). Generated artifacts are under `output/main/`.
 
-## Paired-Ridge figure supplement
+## Base Ridge figure supplement
 
-The paired-Ridge report reproduces the full content of Main Figures 1--4 with
-NN and paired Ridge in the same assets and shared axes. Direct NN-Ridge and
+The base Ridge report reproduces the full content of Main Figures 1--4 with
+NN and base Ridge in the same assets and shared axes. Direct NN-Ridge and
 ablation contrasts use intervals on common-seed differences. To create its compact
 Ridge input dataset on the cluster, point the general extractor at the paired
 Ridge sweep and a separate output file:
 
 ```bash
-BROKERAGE_ABM_SWEEP_DIR=<paired-ridge-sweep> \
+BROKERAGE_ABM_SWEEP_DIR=<base-ridge-sweep> \
 BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2 \
   julia --project --threads=auto scripts/paper/figdata.jl
 ```
@@ -134,7 +117,7 @@ julia --project --threads=auto scripts/ridge/build_reports.jl
 
 The figure renderer validates that both datasets contain the same 98 effective
 realizations and the 20-seed general, 50-seed baseline reporting plan. Outputs
-are under `output/ridge/paired/figures/` and are embedded in the paired-Ridge
+are under `output/ridge/paired/figures/` and are embedded in the base Ridge
 report.
 
 ## Supplementary Material

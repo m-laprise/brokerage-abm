@@ -4,7 +4,9 @@
 Print descriptive statistics from a completed single-model sweep. No simulation
 is run. All summaries use the same early and late windows as the paper pipeline.
 
-Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/diagnostics/summary_stats.jl
+Usage:
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
+    julia --project --threads=auto scripts/diagnostics/summary_stats.jl
 """
 
 using Statistics

@@ -89,14 +89,9 @@ Symbol & Dimension/domain & Definition \\
 
 \section{State, Notation, and Matching Function}
 
-\diag{Blue notation, equations, and algorithm lines are diagnostics-only
-measures. They are recorded for $\mathcal M$ or downstream figures,
-exploration scripts, and analyses; they do not enter transition, choice,
-learning, or matching rules.}
+\diag{Blue notation, equations, and algorithm lines are diagnostics-only measures. They are recorded for $\mathcal M$ or downstream figures, exploration scripts, and analyses; they do not enter transition, choice, learning, or matching rules.}
 
-For any matrix $Z$, $Z_{\cdot\ell}$ denotes column $\ell$ and
-$Z_{\cdot L}$ denotes the submatrix with ordered column-index set $L$.
-For a vector $z$, $z_L$ denotes the corresponding subvector.
+For any matrix $Z$, $Z_{\cdot\ell}$ denotes column $\ell$ and $Z_{\cdot L}$ denotes the submatrix with ordered column-index set $L$. For a vector $z$, $z_L$ denotes the corresponding subvector.
 
 \begingroup
 \small
@@ -201,9 +196,7 @@ X^t,G^t,\\
 \end{aligned}
 \right).
 \]
-This tuple includes fixed realized model objects and all variables needed for
-later transitions. Implementation-only scratch buffers and diagnostic-only
-counters are omitted.
+This tuple includes fixed realized model objects and all variables needed for later transitions. Implementation-only scratch buffers and diagnostic-only counters are omitted.
 
 The matching function is
 \[
@@ -232,17 +225,14 @@ g(x_i,x_j)=1+\delta\,\operatorname{sign}(x_i^\top Bx_j).
 
 \section{Learning and Prediction}
 
-Let $\mathsf L\in\{\mathrm{NN},\mathrm{Ridge}\}$ select the learning function.
-The default is $\mathsf L=\mathrm{NN}$. Both branches use the same histories,
-period window, and observation cap. Inputs remain on their raw DGP scale.
+Let $\mathsf L\in\{\mathrm{NN},\mathrm{Ridge}\}$ select the learning function. The default is $\mathsf L=\mathrm{NN}$. Both branches use the same histories, period window, and observation cap. Inputs remain on their raw DGP scale.
 
 For any one-hidden-layer predictor with input dimension $p_{\mathrm{in}}$ and hidden width $h$,
 \[
 \mathrm{NN}_{\Theta}(\xi)=w_2^\top\relu(W_1\xi+b_1)+b_2,\qquad
 \Theta=(W_1,b_1,w_2,b_2),
 \]
-where $\xi\in\R^{p_{\mathrm{in}}}$, $W_1\in\R^{h\times p_{\mathrm{in}}}$,
-$b_1,w_2\in\R^h$, and $b_2\in\R$.
+where $\xi\in\R^{p_{\mathrm{in}}}$, $W_1\in\R^{h\times p_{\mathrm{in}}}$, $b_1,w_2\in\R^h$, and $b_2\in\R$.
 \[
 d_b=d+\frac{d(d+1)}{2},\qquad
 \psi_b(x_i,x_j)=
@@ -251,8 +241,7 @@ x_i+x_j;\;
 \operatorname{vech}\!\left(\frac{x_ix_j^\top+x_jx_i^\top}{2}\right)
 \right].
 \]
-Agent networks use $(p_{\mathrm{in}},h)=(d,2d)$; the broker network uses
-$(p_{\mathrm{in}},h)=(d_b,8d)$.
+Agent networks use $(p_{\mathrm{in}},h)=(d,2d)$; the broker network uses $(p_{\mathrm{in}},h)=(d_b,8d)$.
 
 \[
 \psi_b(x_i,x_j)=\psi_b(x_j,x_i)
@@ -287,16 +276,12 @@ $r_\ell$ & $\{1,2\}$ & Endpoint retained once when broker observation $\ell$ is 
 \caption{\procTrainNN}
 \label{alg:trainnn}
 \begin{algorithmic}[1]
-\Require Network parameters $\Theta$, inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$,
-steps $E$, learning rate $\eta_{\mathrm{lr}}$, persistent Adam state $(m,v,\tau)$.
+\Require Network parameters $\Theta$, inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, steps $E$, learning rate $\eta_{\mathrm{lr}}$, persistent Adam state $(m,v,\tau)$.
 \For{$e=1,\ldots,E$}
-    \State $g\gets\nabla_{\Theta}\mathcal L(\Theta)$, \quad
-    $\mathcal L(\Theta)= n^{-1}\sum_{\ell=1}^n
-    \left(\mathrm{NN}_{\Theta}(\Xi_{\mathrm{tr},\cdot\ell})-y_{\mathrm{tr},\ell}\right)^2$
+    \State $g\gets\nabla_{\Theta}\mathcal L(\Theta)$, \quad $\mathcal L(\Theta)= n^{-1}\sum_{\ell=1}^n \left(\mathrm{NN}_{\Theta}(\Xi_{\mathrm{tr},\cdot\ell})-y_{\mathrm{tr},\ell}\right)^2$
     \State $\tau\gets\tau+1$
     \State $m\gets\beta_1 m+(1-\beta_1)g$, \quad $v\gets\beta_2 v+(1-\beta_2)\,g\odot g$
-    \State $\Theta\gets\Theta-\eta_{\mathrm{lr}}\,
-    \dfrac{m/(1-\beta_1^{\tau})}{\sqrt{v/(1-\beta_2^{\tau})}+\epsilon}$
+    \State $\Theta\gets\Theta-\eta_{\mathrm{lr}}\, \dfrac{m/(1-\beta_1^{\tau})}{\sqrt{v/(1-\beta_2^{\tau})}+\epsilon}$
 \EndFor
 \State \Return $\Theta,(m,v,\tau)$
 \end{algorithmic}
@@ -306,24 +291,19 @@ steps $E$, learning rate $\eta_{\mathrm{lr}}$, persistent Adam state $(m,v,\tau)
 \caption{\procFitPredictor}
 \label{alg:fitpredictor}
 \begin{algorithmic}[1]
-\Require Learning function $\mathsf L$, parameters $\Theta$, raw inputs
-$\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets
-$y_{\mathrm{tr}}\in\R^n$, learner-specific Ridge penalty $\lambda$, and fitting parameters.
+\Require Learning function $\mathsf L$, parameters $\Theta$, raw inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, learner-specific Ridge penalty $\lambda$, and fitting parameters.
 \If{$\mathsf L=\mathrm{NN}$}
     \State $E\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta/n_{\mathrm{total}}\rceil\}$.
     \State $(\Theta,\mathcal O)\gets\Call{\procTrainNN}{\Theta,\Xi_{\mathrm{tr}},y_{\mathrm{tr}},E,\eta_{\mathrm{lr}},\mathcal O}$.
 \Else
-    \State $(\alpha,\beta)\gets\displaystyle\arg\min_{a,b}
-    \left\{n^{-1}\sum_{\ell=1}^n(a+b^\top\Xi_{\mathrm{tr},\cdot\ell}-y_{\mathrm{tr},\ell})^2
-    +\lambda\|b\|_2^2\right\}$.
+    \State $(\alpha,\beta)\gets\displaystyle\arg\min_{a,b} \left\{n^{-1}\sum_{\ell=1}^n(a+b^\top\Xi_{\mathrm{tr},\cdot\ell}-y_{\mathrm{tr},\ell})^2 +\lambda\|b\|_2^2\right\}$.
     \State $\Theta\gets(\alpha,\beta)$.
 \EndIf
 \State \Return $\Theta$ and, for NN, $\mathcal O$.
 \end{algorithmic}
 \end{breakablealgorithm}
 
-The agent input is always the prospective partner type. The broker Ridge
-training input for observation $\ell$ is
+The agent input is always the prospective partner type. The broker Ridge training input for observation $\ell$ is
 \[
 z_{b\ell}=\begin{cases}
 \psi_b(x_{1\ell},x_{2\ell}), & a_b\in\{\mathrm{pair},\mathrm{size\mbox{-}matched}\},\\
@@ -331,10 +311,7 @@ x_{r_\ell,\ell}, & a_b=\mathrm{single\mbox{-}principal},\\
 x_{1\ell}+x_{2\ell}, & a_b=\mathrm{additive}.
 \end{cases}
 \]
-For size-matched history, uniformly sample without replacement from the
-broker's windowed and capped observations. Its sample size is the smaller of
-the broker sample size and the nearest-integer median agent sample size among
-agents with nonempty histories, with half-integers rounded up.
+For size-matched history, uniformly sample without replacement from the broker's windowed and capped observations. Its sample size is the smaller of the broker sample size and the nearest-integer median agent sample size among agents with nonempty histories, with half-integers rounded up.
 
 Prediction is modular:
 \[
@@ -352,11 +329,9 @@ and
 g_b(x_i)+g_b(x_j)-\bar y_{b,\mathrm{tr}}, & \mathsf L=\mathrm{Ridge},\ a_b=\mathrm{single\mbox{-}principal},
 \end{cases}
 \]
-where $g_b(x)=\alpha_b+\gamma_b^\top x$. Before any Ridge fit,
-$\alpha=Q$, slopes are zero, and $\bar y_{b,\mathrm{tr}}=Q$.
+where $g_b(x)=\alpha_b+\gamma_b^\top x$. Before any Ridge fit, $\alpha=Q$, slopes are zero, and $\bar y_{b,\mathrm{tr}}=Q$.
 
-Within period-level routines, state variables without a superscript refer to
-their current-period values.
+Within period-level routines, state variables without a superscript refer to their current-period values.
 
 \begin{breakablealgorithm}
 \caption{\procTrainPredictors}
@@ -366,26 +341,16 @@ their current-period values.
 \For{$i=1,\ldots,N$ in parallel}
     \State $n_i\gets n_i^t$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
-        \State Let $P_i\gets|\mathbf p_i|$ and
-        $b_i\gets0$ if $P_i\le W_p$, otherwise
-        $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$.
-        If $|L_i|>M$, keep $M$ spaced indices across $L_i$, including its first
-        and last indices (or only its last index when $M=1$).
+        \State Let $P_i\gets|\mathbf p_i|$ and $b_i\gets0$ if $P_i\le W_p$, otherwise $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$. If $|L_i|>M$, keep $M$ spaced indices across $L_i$, including its first and last indices (or only its last index when $M=1$).
         \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
         \State $\Theta_i\gets\Call{\procFitPredictor}{\mathsf L,\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},\lambda_a,\Delta_i,n_i,\vartheta}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
 \State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
 \If{$n_b>0$ and $\Delta_b>0$}
-    \State Let $P_b\gets|\mathbf p_b|$ and
-    $b_b\gets0$ if $P_b\le W_p$, otherwise
-    $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$.
-    If $|L_b|>M$, keep $M$ spaced indices across $L_b$, including its first and
-    last indices (or only its last index when $M=1$).
-    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{size\mbox{-}matched}$,
-    replace $L_b$ by the uniform size-matched sample defined above.
-    \State Construct $Z_{b,\mathrm{tr}}=[z_{b\ell}]_{\ell\in L_b}$ and
-    $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
+    \State Let $P_b\gets|\mathbf p_b|$ and $b_b\gets0$ if $P_b\le W_p$, otherwise $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$. If $|L_b|>M$, keep $M$ spaced indices across $L_b$, including its first and last indices (or only its last index when $M=1$).
+    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{size\mbox{-}matched}$, replace $L_b$ by the uniform size-matched sample defined above.
+    \State Construct $Z_{b,\mathrm{tr}}=[z_{b\ell}]_{\ell\in L_b}$ and $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
     \State $\Theta_b\gets\Call{\procFitPredictor}{\mathsf L,\Theta_b,Z_{b,\mathrm{tr}},y_{b,\mathrm{tr}},\lambda_b,\Delta_b,n_b,\vartheta}$; $\Delta_b\gets0$.
 \EndIf
 \end{algorithmic}
@@ -433,22 +398,15 @@ $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachme
 \begin{algorithmic}[1]
 \Require State $S$, agent slot $i$, period counter $t$, parameters $\vartheta$.
 \Ensure Agent slot $i$ is initialized in $S$.
-\State Draw $u_i\sim\mathrm{Unif}[0,1]$ and
-$\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
+\State Draw $u_i\sim\mathrm{Unif}[0,1]$ and $\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
 \State $x_i^t\gets(\gamma(u_i)+\epsilon_i)/\|\gamma(u_i)+\epsilon_i\|_2$.
-\State Reset $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ to zero observations, $\bar q_{i\cdot}^t$, $C_{i\cdot}^t$,
-$\chi_i^t$, $M_i^t$, and $\Delta_i^t$.
-\State Initialize the selected predictor to the constant $Q$: for NN, draw
-$W_{1i}^t$ with He initialization and set $b_{1i}^t=0$, $w_{2i}^t=0$,
-$b_{2i}^t=Q$, $\mathcal O_i^t=0$; for Ridge, set $\alpha_i^t=Q$ and
-$\beta_i^t=0$.
+\State Reset $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ to zero observations, $\bar q_{i\cdot}^t$, $C_{i\cdot}^t$, $\chi_i^t$, $M_i^t$, and $\Delta_i^t$.
+\State Initialize the selected predictor to the constant $Q$: for NN, draw $W_{1i}^t$ with He initialization and set $b_{1i}^t=0$, $w_{2i}^t=0$, $b_{2i}^t=Q$, $\mathcal O_i^t=0$; for Ridge, set $\alpha_i^t=Q$ and $\beta_i^t=0$.
 \If{$t=0$}
     \State $s_i^t\gets(0,0)$.
 \Else
-    \State Remove $i$ from $\mathrm{Roster}^t$, $D^t$, and $M_j^t$ for all $j$;
-    delete all incident edges in $G^t$; set $\bar q_{ji}^t,C_{ji}^t\gets0$ for all $j\ne i$.
-    \State Sample $\mathcal V_i^{\mathrm{ent}}\subset[N]\setminus\{i\}$ without replacement,
-    $|\mathcal V_i^{\mathrm{ent}}|=\min(\lfloor k_G/2\rfloor,N-1)$, with
+    \State Remove $i$ from $\mathrm{Roster}^t$, $D^t$, and $M_j^t$ for all $j$; delete all incident edges in $G^t$; set $\bar q_{ji}^t,C_{ji}^t\gets0$ for all $j\ne i$.
+    \State Sample $\mathcal V_i^{\mathrm{ent}}\subset[N]\setminus\{i\}$ without replacement, $|\mathcal V_i^{\mathrm{ent}}|=\min(\lfloor k_G/2\rfloor,N-1)$, with
     \[
     \pi_{ij}^{\mathrm{ent}}
     \propto \exp\{-\|x_i^t-x_j^t\|_2^2\}.
@@ -472,17 +430,13 @@ $\beta_i^t=0$.
 \begin{algorithmic}[1]
 \Require Parameters $\vartheta$ and seed.
 \Ensure Initial state $S^0$.
-\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{1,\ldots,5\}$ and phases
-$\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
+\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{1,\ldots,5\}$ and phases $\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
 \State Allocate empty agent and broker containers in $S^0$ and store $\gamma$.
 \For{$i=1,\ldots,N$}
     \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
 \EndFor
-\State Draw $u_c\sim\mathrm{Unif}[0,1]$ and
-$\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set
-$c\gets\gamma(u_c)+\epsilon_c$ without re-normalizing.
-\State Draw $A_0\in\R^{d\times d}$ iid standard normal and set
-$A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
+\State Draw $u_c\sim\mathrm{Unif}[0,1]$ and $\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set $c\gets\gamma(u_c)+\epsilon_c$ without re-normalizing.
+\State Draw $A_0\in\R^{d\times d}$ iid standard normal and set $A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
 \State $\Sigma_x\gets N^{-1}\sum_i x_i^0(x_i^0)^\top$.
 \State Draw symmetric zero-trace $B_0$ and set
 \[
@@ -491,44 +445,30 @@ B_{\mathrm{raw}}\gets B_0-
 B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \]
 \State Calibrate $(\bar q_{\mathrm{cal}},r,\phi,c_s)$.
-\State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and
-rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
-\State Initialize $\mathcal H_b^0$ and the selected broker predictor to the
-constant $Q$ using the corresponding NN or Ridge initialization above; set
-$\mathrm{rep}_b^0=0$.
-\State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with
-$|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all roster members.
+\State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
+\State Initialize $\mathcal H_b^0$ and the selected broker predictor to the constant $Q$ using the corresponding NN or Ridge initialization above; set $\mathrm{rep}_b^0=0$.
+\State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with $|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all roster members.
 \For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
-    \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and
-    $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update
-    $\bar q_{ij}^0,C_{ij}^0,\bar q_{ji}^0,C_{ji}^0$.
+    \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update $\bar q_{ij}^0,C_{ij}^0,\bar q_{ji}^0,C_{ji}^0$.
 \EndFor
-\State Let $\mathcal B_{\mathrm{seed}}\gets
-\{\{i,j\}\in\EG^0:i,j\in\mathrm{Roster}^0\}$; shuffle and keep at most 100 edges.
+\State Let $\mathcal B_{\mathrm{seed}}\gets \{\{i,j\}\in\EG^0:i,j\in\mathrm{Roster}^0\}$; shuffle and keep at most 100 edges.
 \For{each $\{i,j\}\in\mathcal B_{\mathrm{seed}}$}
     \State Append $(x_i^0,x_j^0,q_{ij})$ to $\mathcal H_b^0$; increment $n_b^0$.
-    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{single\mbox{-}principal}$,
-    draw and store $r_\ell\sim\mathrm{Unif}\{1,2\}$ for this observation.
+    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{single\mbox{-}principal}$, draw and store $r_\ell\sim\mathrm{Unif}\{1,2\}$ for this observation.
 \EndFor
 \If{$n_b^0>0$}
     \State Set $\mathrm{rep}_b^0$ to mean broker seed output.
 \Else
     \State Set $\mathrm{rep}_b^0\gets0$.
 \EndIf
-\State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and
-$s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
-\State Set $\mathbf p_i^0\gets(n_i^0)$ for every agent and
-$\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set
-$\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
+\State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
+\State Set $\mathbf p_i^0\gets(n_i^0)$ for every agent and $\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set $\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
 \For{each $i$ with $n_i^0>0$}
-    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$;
-    $\Delta_i^0\gets0$.
+    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
 \EndFor
 \If{$n_b^0>0$}
-    \State $Z_{b,\mathrm{seed}}\gets[z_{b\ell}]_{\ell=1}^{n_b^0}$,
-    $y_{b,\mathrm{seed}}\gets y_b^0$.
-    \State $\Theta_b^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_b^0,Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}},\lambda_b,n_b^0,n_b^0,\vartheta}$;
-    $\Delta_b^0\gets0$.
+    \State $Z_{b,\mathrm{seed}}\gets[z_{b\ell}]_{\ell=1}^{n_b^0}$, $y_{b,\mathrm{seed}}\gets y_b^0$.
+    \State $\Theta_b^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_b^0,Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}},\lambda_b,n_b^0,n_b^0,\vartheta}$; $\Delta_b^0\gets0$.
 \EndIf
 \State \Return $S^0$.
 \end{algorithmic}
@@ -574,14 +514,10 @@ $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
 \label{alg:period}
 \begin{algorithmic}[1]
 \Require Previous state $S^{t-1}$, period $t$, parameters $\vartheta$.
-\Ensure Updated state $S^t$, accepted records $\mathcal R^t$, and
-\diag{pre-turnover measure row $Y^t$}.
+\Ensure Updated state $S^t$, accepted records $\mathcal R^t$, and \diag{pre-turnover measure row $Y^t$}.
 \State Clear accumulators, set $M_i^t\gets\emptyset$ for all $i$, and set $D^t\gets\emptyset$.
-\State Refresh roster: remove each roster member with probability
-$p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$.
-\State $\EG^t\gets
-(\EG^t\setminus\{\{i,N+1\}:i\in[N]\})
-\cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\}$.
+\State Refresh roster: remove each roster member with probability $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$.
+\State $\EG^t\gets (\EG^t\setminus\{\{i,N+1\}:i\in[N]\}) \cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\}$.
 \State $\mathcal D^t\gets\emptyset$.
 \For{$i=1,\ldots,N$}
     \State Draw $d_i^t\sim\mathrm{Binomial}(K,p_{\mathrm{demand}})$.
@@ -593,9 +529,7 @@ $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$
         \EndIf
     \EndIf
 \EndFor
-\State $\EG^t\gets
-(\EG^t\setminus\{\{i,N+1\}:i\in[N]\})
-\cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\cup D^t\}$.
+\State $\EG^t\gets (\EG^t\setminus\{\{i,N+1\}:i\in[N]\}) \cup\{\{i,N+1\}:i\in\mathrm{Roster}^t\cup D^t\}$.
 \State $\Call{\procTrainPredictors}{S,t,\vartheta}$.
 \State $\mathcal R^t\gets\Call{\procOfferMarket}{S,\mathcal D^t,\vartheta}$.
 \State Synchronize broker-node edges to $\mathrm{Roster}^t$, $D^t$, and current broker-channel matches.
@@ -609,8 +543,7 @@ $p_{\mathrm{roster}}$, then replenish uniformly to size $\lceil\alpha_R N\rceil$
     \State \diag{Recompute broker betweenness, Burt constraint, and effective size on the post-matching, pre-turnover graph $G^t$.}
 \EndIf
 \State \diag{$Y^t\gets\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ on the post-matching, pre-turnover state.}
-\State Append $n_i^t$ to $\mathbf p_i^t$ for every agent and append $n_b^t$ to
-$\mathbf p_b^t$, recording the end-of-period training-window boundaries.
+\State Append $n_i^t$ to $\mathbf p_i^t$ for every agent and append $n_b^t$ to $\mathbf p_b^t$, recording the end-of-period training-window boundaries.
 \For{$i=1,\ldots,N$}
     \If{agent $i$ exits with probability $\eta_{\mathrm{exit}}$}
         \State $\Call{\procInitializeAgent}{S^t,i,t,\vartheta}$.
@@ -651,9 +584,7 @@ The symmetric broker score is
 \[
 v_b^t(i,j)=\Call{\procPredictBroker}{i,j}.
 \]
-Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node.
-The self-search proposal score is defined for every graph neighbor and for the
-non-neighbors in the demander-specific stranger pool:
+Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node. The self-search proposal score is defined for every graph neighbor and for the non-neighbors in the demander-specific stranger pool:
 \[
 v_{i\to j}^{\mathrm{self},t}=
 \begin{cases}
@@ -663,9 +594,7 @@ v_{i\to j}^{\mathrm{self},t}=
 \bot, & \text{otherwise}.
 \end{cases}
 \]
-Thus direct pair means replace predictor extrapolations when pair-specific
-experience exists; $\bot$ denotes no valid self-search score. The receiver-side
-acceptance score for a one-sided offer is
+Thus direct pair means replace predictor extrapolations when pair-specific experience exists; $\bot$ denotes no valid self-search score. The receiver-side acceptance score for a one-sided offer is
 \[
 w_{j\leftarrow i}^t=
 \begin{cases}
@@ -674,10 +603,7 @@ w_{j\leftarrow i}^t=
 \end{cases}
 \]
 
-The market creates at most $d_i^t$ outgoing offers from demander $i$.
-Receivers have no per-period capacity constraint; acceptance is pairwise, so a
-receiver may accept multiple offers in the same period. A demanded position can
-remain unmatched if no acceptable offer is formed.
+The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers have no per-period capacity constraint; acceptance is pairwise, so a receiver may accept multiple offers in the same period. A demanded position can remain unmatched if no acceptable offer is formed.
 
 \begin{breakablealgorithm}
 \caption{\procAddOffer}
@@ -704,15 +630,11 @@ remain unmatched if no acceptable offer is formed.
 \State For all $(i,z_i,d_i)\in\mathcal D^t$, set residual offer quota $\Omega_i\gets d_i$.
 \State $O^t\gets\emptyset$, $\mathcal P_O^t\gets\emptyset$, $\mathcal R^t\gets\emptyset$.
 \For{each $(i,\mathrm{self},d_i)\in\mathcal D^t$ with $\Omega_i>0$}
-    \State Draw $U_i^t\subset[N]$ uniformly without replacement,
-    $|U_i^t|=\min(n_{\mathrm{strangers}},N)$.
-    \State $\mathcal U_i^{\mathrm{self}}\gets
-    \mathcal N_G^t(i)
-    \cup (U_i^t\setminus\mathcal N_G^t(i))$.
+    \State Draw $U_i^t\subset[N]$ uniformly without replacement, $|U_i^t|=\min(n_{\mathrm{strangers}},N)$.
+    \State $\mathcal U_i^{\mathrm{self}}\gets \mathcal N_G^t(i) \cup (U_i^t\setminus\mathcal N_G^t(i))$.
     \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t$.
     \State Draw independent $u_{i\to j}^{\mathrm{self}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
-    \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r}
-    (-v_{i\to j}^{\mathrm{self},t},u_{i\to j}^{\mathrm{self}})$.
+    \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r} (-v_{i\to j}^{\mathrm{self},t},u_{i\to j}^{\mathrm{self}})$.
     \For{the first $\min(\Omega_i,|\mathcal I_i^{\mathrm{self}}|)$ agents $j$ in $\mathcal I_i^{\mathrm{self}}$}
         \State $\Call{\procAddOffer}{O^t,\mathcal P_O^t,i,j,\mathrm{self},v_{i\to j}^{\mathrm{self},t}}$.
     \EndFor
@@ -754,21 +676,17 @@ remain unmatched if no acceptable offer is formed.
 \caption{\procFinalizeMatch}
 \label{alg:finalizematch}
 \begin{algorithmic}[1]
-\Require State $S$, accepted-record list $\mathcal R^t$, offer
-$o=(i,j,z,v)$, optional reverse offer $o'$.
+\Require State $S$, accepted-record list $\mathcal R^t$, offer $o=(i,j,z,v)$, optional reverse offer $o'$.
 \If{$j\in M_i^t$}
     \State \Return.
 \EndIf
 \State Draw $q_{ij}^t=Q+f(x_i^t,x_j^t)+\varepsilon$, $\varepsilon\sim \mathcal N(0,\sigma_\varepsilon^2)$.
-\State Append columns $x_j^t$ to $\Xi_i$ and $x_i^t$ to $\Xi_j$; append
-$q_{ij}^t$ to $y_i$ and $y_j$; increment $n_i$ and $n_j$.
+\State Append columns $x_j^t$ to $\Xi_i$ and $x_i^t$ to $\Xi_j$; append $q_{ij}^t$ to $y_i$ and $y_j$; increment $n_i$ and $n_j$.
 \State Update $\bar q_{ij},C_{ij}$ and $\bar q_{ji},C_{ji}$.
 \State Add edge $(i,j)$ to $G^t$; add $j$ to $M_i^t$ and $i$ to $M_j^t$.
 \If{$z=\mathrm{broker}$ or $(o'\ne\emptyset$ and $o'.z=\mathrm{broker})$}
-    \State Append the two party types $x_i^t$ and $x_j^t$ to
-    $X_{b,1}$ and $X_{b,2}$; append $q_{ij}^t$ to $y_b$; increment $n_b$.
-    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{single\mbox{-}principal}$,
-    draw and store $r_\ell\sim\mathrm{Unif}\{1,2\}$ for this observation.
+    \State Append the two party types $x_i^t$ and $x_j^t$ to $X_{b,1}$ and $X_{b,2}$; append $q_{ij}^t$ to $y_b$; increment $n_b$.
+    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{single\mbox{-}principal}$, draw and store $r_\ell\sim\mathrm{Unif}\{1,2\}$ for this observation.
     \State $z^\star\gets\mathrm{broker}$.
 \Else
     \State $z^\star\gets\mathrm{self}$.
@@ -793,10 +711,8 @@ $\mathbf{1}\{\cdot\}$ & indicator & Equals $1$ when its condition is true and $0
 \begin{algorithmic}[1]
 \Require State $S$, demand records $\mathcal D^t$, accepted records $\mathcal R^t$.
 \For{each $(i,z_i,d_i)\in\mathcal D^t$}
-    \State $Y_i\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}}
-    \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i\}\,\zeta.q$.
-    \State $n_{i,b}\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}}
-    \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i,\ o.z=\mathrm{broker}\}$.
+    \State $Y_i\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}} \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i\}\,\zeta.q$.
+    \State $n_{i,b}\gets \sum_{\zeta\in\mathcal R^t}\sum_{o\in\{\zeta.o_1,\zeta.o_2\}} \mathbf{1}\{o\ne\emptyset,\ o.\mathrm{from}=i,\ o.z=\mathrm{broker}\}$.
     \If{$z_i=\mathrm{self}$}
         \State $\tilde q_i^t\gets Y_i/d_i-c_s$.
     \Else
@@ -808,17 +724,6 @@ $\mathbf{1}\{\cdot\}$ & indicator & Equals $1$ when its condition is true and $0
 \end{breakablealgorithm}
 
 \paragraph{\diag{\procCollectMeasures.}}
-\diag{$\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ is a pure measure-collection
-function called after matching and before entry/exit turnover. It records demand, outsourcing, accepted matches, realized output,
-selected-sample prediction quality, deterministic holdout prediction quality,
-broker access and assessment counts, satisfaction, reputation, roster size,
-broker access size, agent-node degree summaries excluding the broker node,
-and cached broker network measures. The measures themselves do not feed
-back into $S^{t+1}$. For rank correlation, predicted values first produce a
-strict ranking: equal predictions are ordered uniformly at random, independently
-for the agent and broker, while equal realized outputs retain average ranks.
-Spearman correlation is computed only after this predicted ranking is formed.
-The same rule is used for each holdout candidate set and for pooled accepted
-directed offers within each selected-offer channel.}
+\diag{$\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ is a pure measure-collection function called after matching and before entry/exit turnover. It records demand, outsourcing, accepted matches, realized output, selected-sample prediction quality, deterministic holdout prediction quality, broker access and assessment counts, satisfaction, reputation, roster size, broker access size, agent-node degree summaries excluding the broker node, and cached broker network measures. The measures themselves do not feed back into $S^{t+1}$. For rank correlation, predicted values first produce a strict ranking: equal predictions are ordered uniformly at random, independently for the agent and broker, while equal realized outputs retain average ranks. Spearman correlation is computed only after this predicted ranking is formed. The same rule is used for each holdout candidate set and for pooled accepted directed offers within each selected-offer channel.}
 
 \end{document}

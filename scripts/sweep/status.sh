@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-shot status snapshot for the sweep (used by the agent's heartbeat checks).
+# Print a one-shot sweep status summary.
 #   bash status.sh <sweep_dir>
 set -u
 SWEEP_DIR="${1:?usage: status.sh <sweep_dir>}"
@@ -30,7 +30,7 @@ if [ -n "${COMPUTE_JOBID:-}" ]; then
     [ -n "$bad" ] && { echo "NON-SUCCESS TASKS:"; echo "$bad" | sed 's/^/  /'; }
 fi
 
-# scan stderr of THIS run's tasks only (avoid stale logs from cancelled jobs)
+# Scan stderr for the current run only, excluding logs from cancelled jobs.
 scan_glob="$SWEEP_DIR/logs/${COMPUTE_JOBID:-NONE}_*.err"
 errs=$(grep -liE 'ERROR:|Stacktrace|signal \(|Out of memory|Killed' $scan_glob 2>/dev/null | head -6)
 [ -n "$errs" ] && { echo "STDERR with error signatures (current run):"; echo "$errs" | sed 's/^/  /'; }
@@ -51,4 +51,4 @@ if [ -n "${PLOT_JOBID:-}" ]; then
     [ -n "$perr" ] && { echo "PLOT STDERR errors:"; echo "$perr" | sed 's/^/  /'; }
     echo "  summary.jld2: $(find "$SWEEP_DIR" -name 'summary.jld2' 2>/dev/null | wc -l)/7 phase grids"
 fi
-exit 0   # always succeed: a clean scan (no errors) must not look like a failed heartbeat
+exit 0   # Status reporting is non-blocking.

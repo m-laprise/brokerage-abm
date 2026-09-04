@@ -1,8 +1,7 @@
 #!/bin/bash
-# Setup job: resolve + instantiate + precompile the project ONCE under the
-# pinned Julia, so the shared depot cache is warm and per-array-task startup is
-# amortized (Enzyme/CairoMakie are expensive to precompile). Run before the
-# compute array. Args: $1 = repo root.
+# Instantiate and precompile the project once under the pinned Julia version.
+# Run before the compute array so its tasks share the compiled depot cache.
+# Argument: $1 = repository root.
 #SBATCH --job-name=brokerage_abm_setup
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
@@ -21,17 +20,16 @@ export JULIA_PKG_PRECOMPILE_AUTO=0
 export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
 # Multiversioned precompile: one portable cache with optimized code paths for the
 # cpu partition's mixed CPUs (Intel Cascade/Ice Lake = skylake-avx512; AMD Genoa
-# = znver3-compatible), plus a generic baseline so it loads on ANY node. Must be
-# IDENTICAL in slurm_sweep.sh / slurm_plot.sh so all jobs share this cache slug.
+# = znver3-compatible), plus a generic baseline that loads on every node. Keep
+# this value identical in slurm_sweep.sh and slurm_plot.sh so jobs share the cache.
 export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
 
 cd "$REPO"
 echo "host=$(hostname) julia=$(julia --version) cpus=${SLURM_CPUS_PER_TASK:-?} depot=$JULIA_DEPOT_PATH"
 
-# Registry update + resolve + download are done first on a network node (see
-# submit.sh `resolve` stage / orchestrator), so here we only instantiate (a fast
-# no-op if already downloaded, no internet needed) and run the compute-heavy
-# precompile.
+# The `submit.sh resolve` stage updates the registry, resolves dependencies, and
+# downloads packages on a networked node. This stage instantiates the resolved
+# environment and precompiles it for compute jobs.
 julia --project --threads="${SLURM_CPUS_PER_TASK:-8}" -e '
     using Pkg
     Pkg.instantiate()

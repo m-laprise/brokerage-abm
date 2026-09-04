@@ -11,70 +11,33 @@
 Broker centrality and access fraction
 \end{ptitle}
 \begin{pcaption}{position}
-Left: broker betweenness centrality and access fraction over time at the
-baseline, as \pv{rollWin}-observation rolling ensemble means over
-seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every
-\pv{betwInterval} periods. Right: all 20 combinations in the $\rho\times\eta$
-grid, with other parameters held at baseline, including $\delta=0.5$, each shown
-as a late-window mean over that regime's seeds. Color identifies turnover $\eta$,
-marker shape identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on
-both axes.
-Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary
-$\rho=1$, where complementarity is absent, is shown unconnected. Time-series
-panels begin at $t=\pv{axisStart}$ to omit the
-initialization transient.
+Left: broker betweenness centrality and access fraction over time at the baseline, as \pv{rollWin}-observation rolling ensemble means over seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every \pv{betwInterval} periods. Right: all 20 combinations in the $\rho\times\eta$ grid, with other parameters held at baseline, including $\delta=0.5$, each shown as a late-window mean over that regime's seeds. Color identifies turnover $\eta$, marker shape identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes. Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary $\rho=1$, where complementarity is absent, is shown unconnected. Time-series panels begin at $t=\pv{axisStart}$ to omit the initialization transient.
 \end{pcaption}
 
 \begin{ptitle}{information}
 Sources of the broker's ranking advantage
 \end{ptitle}
 \begin{pcaption}{information}
-Panel A shows each Ridge restriction's change in the broker-minus-principal
-difference in holdout rank correlation at the baseline, calculated as the
-restriction minus the base Ridge specification. Negative values indicate that
-the restriction reduces the broker's ranking advantage. Points are mean
-common-seed differences; whiskers are paired 95\% Monte Carlo intervals over 50
-seeds. Panel B shows the broker-minus-principal difference in holdout rank
-correlation under the base Ridge specification
-and each restriction across the \pv{ablationConditionN} regimes in the
-$\rho\times\delta$ design, including the baseline. Thin lines connect estimates
-for the same regime across Ridge variants, small points are regime means, diamonds
-are medians, and the horizontal line marks zero.
+Panel A shows each Ridge restriction's change in the broker-minus-principal difference in holdout rank correlation at the baseline, calculated as the restriction minus the base Ridge specification. Negative values indicate that the restriction reduces the broker's ranking advantage. Points are mean common-seed differences; whiskers are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the broker-minus-principal difference in holdout rank correlation under the base Ridge specification and each restriction across the \pv{ablationConditionN} regimes in the $\rho\times\delta$ design, including the baseline. Thin lines connect estimates for the same regime across Ridge variants, small points are regime means, diamonds are medians, and the horizontal line marks zero.
 \end{pcaption}
 
 \begin{ptitle}{grid}
 Outcomes across the matching problem ($\rho\times\delta$)
 \end{ptitle}
 \begin{pcaption}{grid}
-Six outcomes across the $\rho\times\delta$ grid; one line per difficulty level
-$\delta$, each spanning $\rho=0$ through $0.85$. The pure-quality boundary
-$\rho=1$, where $\delta$ has no effect, is one separate regime shown once and
-unconnected. The figure therefore displays all 26 regimes in the design. Each
-marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte
-Carlo intervals.
-The reported difference in holdout rank correlation is broker minus principal;
-the output gap is broker
-channel minus self-search.
+Six outcomes across the $\rho\times\delta$ grid; one line per difficulty level $\delta$, each spanning $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where $\delta$ has no effect, is one separate regime shown once and unconnected. The figure therefore displays all 26 regimes in the design. Each marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte Carlo intervals. The reported difference in holdout rank correlation is broker minus principal; the output gap is broker channel minus self-search.
 \end{pcaption}
 
 \begin{ptitle}{advantage}
 Ranking and output differences by centrality and access
 \end{ptitle}
 \begin{pcaption}{advantage}
-Difference in holdout rank correlation (broker minus principal) and output gap
-(broker channel minus self-search) against broker betweenness centrality and
-access fraction; one dot for each of the \pv{nRegimes} effective regimes, each a
-late-window mean over its seeds. Color identifies matching composition $\rho$.
+Difference in holdout rank correlation (broker minus principal) and output gap (broker channel minus self-search) against broker betweenness centrality and access fraction; one dot for each of the \pv{nRegimes} effective regimes, each a late-window mean over its seeds. Color identifies matching composition $\rho$.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}
 Baseline dynamics
 \end{ptitle}
 \begin{pcaption}{dynamics}
-Lines are \pv{rollWin}-observation rolling ensemble means over seeds at the
-baseline regime; shaded ribbons are pointwise 95\% Monte Carlo intervals. Some
-intervals are narrower than the plotted lines and therefore are not separately
-visible. Broker betweenness centrality is measured every \pv{betwInterval}
-periods; the other outcomes are measured every period. Axes start at
-$t=\pv{axisStart}$ to omit the initialization transient.
+Lines are \pv{rollWin}-observation rolling ensemble means over seeds at the baseline regime; shaded ribbons are pointwise 95\% Monte Carlo intervals. Some intervals are narrower than the plotted lines and therefore are not separately visible. Broker betweenness centrality is measured every \pv{betwInterval} periods; the other outcomes are measured every period. Axes start at $t=\pv{axisStart}$ to omit the initialization transient.
 \end{pcaption}

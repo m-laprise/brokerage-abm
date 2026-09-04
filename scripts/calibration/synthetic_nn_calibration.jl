@@ -1,10 +1,11 @@
 """
 synthetic_nn_calibration.jl
 
-Isolate NN learning from simulation dynamics. Generate synthetic (x_i, x_j, q)
-data from the DGP at the default env, train broker-style NNs with varying
-hyperparameters, measure held-out R². This establishes the achievable R² as
-a function of data size, width, activation, learning rate, and training steps.
+Evaluate neural-network learning outside the simulation. The script generates
+synthetic pair data from the matching function and reports held-out R² across
+tested sample sizes, widths, activations, learning rates, and step counts.
+
+Usage: julia --project --threads=auto scripts/calibration/synthetic_nn_calibration.jl
 """
 
 using Random, Statistics, LinearAlgebra, Printf
@@ -142,7 +143,7 @@ end
 # ── Scan 1: data size x width x activation, at "good" lr/steps ──────────────
 function scan_data_width_act()
     println("\n══ SCAN 1: n_train × width × activation (lr=0.01, 5000 steps, λ=0.01) ══")
-    println("Q: how much do width and activation matter with symmetric broker features?")
+    println("Width and activation comparison with symmetric broker features")
     @printf "%-8s %-6s %-5s %8s %8s %8s\n" "n_train" "width" "act" "R²" "bias" "MSE"
     println(repeat("-", 55))
     for n in [100, 200, 500, 2000, 10000]
@@ -160,7 +161,7 @@ end
 function scan_lr_steps()
     h = broker_hidden_width(8)
     println("\n══ SCAN 2: lr × n_steps (n_train=2000, h=$(h), ReLU, λ=0.01) ══")
-    println("Q: is 200 steps/period enough at lr=0.01; should we go higher?")
+    println("Learning-rate and step-count comparison")
     @printf "%-8s %-10s %8s %8s\n" "lr" "n_steps" "R²" "bias"
     println(repeat("-", 38))
     for lr in [0.003, 0.01, 0.03, 0.1]

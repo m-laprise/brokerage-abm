@@ -31,15 +31,14 @@ builders reject inputs produced by a different commit.
 - [Complete working paper with appendices](manuscript/brokers_who_do_not_bridge_with_appendices.pdf)
 - [Appendix A: Simulation pseudocode](../simulation_pseudocode.pdf)
 - [Appendix B: Model specifications](../model_specifications.pdf)
-- [Supplementary Material: Alternative structural measures and Ridge robustness](supplement/supplement.pdf)
+- [Supplementary Material: Alternative structural measures](supplement/supplement.pdf)
 - [Figure S1](supplement/figs/supp_S1_grid_lines.png)
 - [Figure S2](supplement/figs/supp_S2_position.png)
 - [Figure S3](supplement/figs/supp_S3_advantage.png)
-- [Figure S4: Paired-Ridge robustness](supplement/figs/supp_S4_ridge_robustness.png)
 
 ## Ridge experiments
 
-- [Paired-Ridge report](ridge/paired/ridge_experiment.pdf)
+- [Base Ridge report](ridge/paired/ridge_experiment.pdf)
 - [Figure R1: Baseline dynamics](ridge/paired/figures/figR1_dynamics.png)
 - [Figure R2: Matching grid](ridge/paired/figures/figR2_grid_lines.png)
 - [Figure R3: Position and work](ridge/paired/figures/figR3_position_work.png)
@@ -66,7 +65,7 @@ builders reject inputs produced by a different commit.
   `ridge_supplement.jl`, and `build_supplement.jl`
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and
   `analyze_ablations.jl`
-- Paired-Ridge figures: `scripts/ridge/paired_figures.jl`
+- Base Ridge figures: `scripts/ridge/paired_figures.jl`
 - Ridge reports: `scripts/ridge/build_reports.jl`
 
 The model specification and simulation pseudocode remain canonical at the

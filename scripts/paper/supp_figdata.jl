@@ -1,24 +1,10 @@
 """
     scripts/paper/supp_figdata.jl
 
-Cluster-side extract for the SUPPLEMENTARY figure pipeline. Standalone twin of
-scripts/paper/figdata.jl: it reads the full sweep (BROKERAGE_ABM_SWEEP_DIR) and writes
-output/supplement/figdata.jld2, the small derived dataset from which
-scripts/paper/supp_figures.jl renders the supplement figures (S1-S3) locally,
-with no access to the sweep. This script shares no state with the results-section
-pipeline, so the two can be regenerated independently of each other.
-
-The main results use broker BETWEENNESS centrality as the structural-advantage
-measure. The supplement reproduces the same analyses with the broker's two other
-saved ego-network measures: Burt's aggregate CONSTRAINT and Burt's EFFECTIVE
-SIZE (src/measures.jl). Both are recomputed for the broker node every
-network_measure_interval (20) periods, exactly like betweenness, so the
-per-period series carry a fresh value only on multiples of that interval (held
-constant in between); the renderer selects those measurement periods.
-
-No hard-coded results: every stored value is computed from the saved sweep data
-at run time. Literal constants are selection/window conventions only (the late
-window, the OAT regime list), kept identical to figdata.jl.
+Extract the supplementary figure dataset from a completed sweep. The output,
+`output/supplement/figdata.jld2`, contains seed-level constraint and effective
+size summaries used by `scripts/paper/supp_figures.jl`. The script reads saved
+data only and can be run independently of the main figure pipeline.
 
 Contents of supp_figdata.jld2 (single key "figdata", a Dict):
   period      per-period time axis of the baseline runs
@@ -32,7 +18,9 @@ Contents of supp_figdata.jld2 (single key "figdata", a Dict):
   regime_cells rho, late means, and seed values per effective realization
   meta        sweep id, generation time, generating script
 
-Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/supp_figdata.jl
+Usage:
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
+    julia --project --threads=auto scripts/paper/supp_figdata.jl
 """
 
 using JLD2, DataFrames, Statistics, Dates
@@ -49,7 +37,7 @@ const OUTFILE = normpath(
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
-const LATE_WIDTH = 20   # final-period window, the headline statistic (matches figdata.jl)
+const LATE_WIDTH = 20   # final-period summary window, matching figdata.jl
 const SWEEP = load_sweep_dataset(ROOT)
 const BASELINE_REL = "oat/rho=0.5"
 length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")

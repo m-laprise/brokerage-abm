@@ -10,8 +10,7 @@ initialization. B is a symmetric regime operator constructed to be weakly
 aligned with A under the realized type distribution. All types are on the unit
 sphere. Quality is a dot product with ideal type c. Interaction is a bilinear
 form through A, modulated by a regime-dependent gain determined by B. The gain
-creates two regimes (high-gain 1+δ, low-gain 1-δ) that produce a genuine
-informational gap between single-agent and cross-agent data.
+defines high-gain `(1+δ)` and low-gain `(1-δ)` regimes.
 
 Observable output: q = Q + f(x_i, x_j) + ε, where Q is a constant offset and
 ε ~ N(0, σ_ε²) is match noise.
@@ -119,7 +118,7 @@ function generate_matching_env(
 )::MatchingEnv
     sigma_per_dim = sigma_x / sqrt(d)
 
-    # Ideal type c: perturbation of a fresh random curve position per spec.
+    # Draw the ideal type by perturbing a fresh random curve position.
     @assert curve_geo.d == d "curve_geo.d must equal d"
     ref = curve_point(rand(rng), curve_geo)
     c = ref .+ sigma_per_dim .* randn(rng, d)

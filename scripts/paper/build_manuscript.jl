@@ -6,7 +6,8 @@ generated results section. The output is a single manuscript TeX file with the
 results section inlined, plus its bibliography, referenced figures, Biber output,
 and a compile-checked PDF under `output/manuscript/`. The builder also writes a
 complete working-paper PDF containing the manuscript, Appendix A, Appendix B,
-and the Supplementary Material.
+and the Supplementary Material. The generated TeX omits the editable source's
+file-specific header.
 
 Run `scripts/paper/build_section.jl` first whenever the results prose, values,
 captions, figures, or analysis provenance changes. This script never edits or
@@ -34,6 +35,10 @@ const PSEUDOCODE = joinpath(ROOT, "simulation_pseudocode.pdf")
 const SPECIFICATIONS = joinpath(ROOT, "model_specifications.pdf")
 const SUPPLEMENT = joinpath(ROOT, "output", "supplement", "supplement.pdf")
 const COMPLETE_PDF = joinpath(OUTPUT, COMPLETE_STEM * ".pdf")
+const EDITABLE_ROOT_NOTICE =
+    "% Editable root for the complete manuscript. The results section is generated\n" *
+    "% separately and included below. Use scripts/paper/build_manuscript.jl to create\n" *
+    "% the flattened, submission-ready TeX bundle under output/manuscript/.\n\n"
 const INPUT_MARKER = "\\input{output/main/results_section.tex}"
 const SOURCE_BIBLIOGRAPHY = "\\addbibresource{paper/references.bib}"
 const BUNDLE_BIBLIOGRAPHY = "\\addbibresource{references.bib}"
@@ -60,6 +65,8 @@ end
 source = read(SOURCE, String)
 results = read(RESULTS, String)
 
+startswith(source, EDITABLE_ROOT_NOTICE) ||
+    fail("editable root must begin with its source-file notice")
 length(findall(INPUT_MARKER, source)) == 1 ||
     fail("editable root must contain exactly one $INPUT_MARKER")
 length(findall(SOURCE_BIBLIOGRAPHY, source)) == 1 ||
@@ -81,7 +88,8 @@ for relative_path in figure_paths
         fail("missing generated figure $relative_path")
 end
 
-flattened = replace(source, INPUT_MARKER => results)
+flattened = replace(source, EDITABLE_ROOT_NOTICE => ""; count=1)
+flattened = replace(flattened, INPUT_MARKER => results)
 flattened = replace(flattened, SOURCE_BIBLIOGRAPHY => BUNDLE_BIBLIOGRAPHY)
 flattened = replace(flattened, SOURCE_GRAPHICSPATH => BUNDLE_GRAPHICSPATH)
 occursin(INPUT_MARKER, flattened) && fail("results input was not flattened")

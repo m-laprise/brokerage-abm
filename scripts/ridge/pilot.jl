@@ -1,7 +1,7 @@
 """
     pilot.jl
 
-Run one baseline simulation with paired Ridge learning and save the complete
+Run one baseline simulation with base Ridge learning and save the complete
 period table plus a compact early/late summary. Pilot and calibration jobs use
 this common driver.
 
@@ -11,6 +11,8 @@ Environment overrides:
   BROKERAGE_ABM_RIDGE_PILOT_SEED    seed (default 1)
   BROKERAGE_ABM_RIDGE_PILOT_T       periods (default 500)
   BROKERAGE_ABM_RIDGE_PILOT_DIR     output directory (required)
+
+Usage: julia --project --threads=auto scripts/ridge/pilot.jl
 """
 
 Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --threads=auto"

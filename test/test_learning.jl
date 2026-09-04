@@ -541,10 +541,4 @@ using Statistics: mean
         @test broker.n_new_obs == 0
         @test broker.nn.W1 != w1_before
     end
-
-    # Weight decay removed: the NN has no explicit L2 regularization. With MSE
-    # targets of zero the weights still trend toward zero via pure gradient
-    # descent, but that's a property of the optimization target, not of a
-    # separate decay term. See scan results showing λ had no measurable effect
-    # at tested scales; decay removed for simplicity.
 end

@@ -1,17 +1,13 @@
 """
     param_sweep.jl
 
-Reproduces the training-schedule sensitivity sweep behind the chosen defaults
-(train_window_periods=40, train_max_obs=2000, train_steps=100); see
-`broker_learning_investigation.md`. One-at-a-time around a center, N=1000, multi
-seed. Reports gain recovery βg, broker_holdout_rank, and rank_gap (broker−agent)
-as mean[min,max] over seeds, plus the per-cell wall-time (runs are sequential, so
-wall-times are clean and comparable). The optimizer cost scales ~cap×steps; wp is
-~free (the broker is capped).
+Run a one-at-a-time sensitivity analysis of the training-window length,
+observation cap, and neural-network step count. Reports gain recovery, holdout
+rank correlation, the broker-minus-principal rank difference, and runtime.
 
 Usage:
     julia --project --threads=auto scripts/diagnostics/param_sweep.jl
-Env overrides for a fast check: SWEEP_QUICK=1 (1 seed, 2 small cells), SWEEP_T, SWEEP_N.
+Environment overrides: `SWEEP_QUICK=1`, `SWEEP_T`, and `SWEEP_N`.
 """
 
 include(joinpath(@__DIR__, "broker_learning_common.jl"))
@@ -22,7 +18,7 @@ const QUICK = haskey(ENV, "SWEEP_QUICK")
 const N = parse(Int, get(ENV, "SWEEP_N", QUICK ? "200" : "1000"))
 const T = parse(Int, get(ENV, "SWEEP_T", QUICK ? "40" : "80"))
 const SEEDS = QUICK ? (42,) : (42, 43, 44)
-# (cap, wp, steps); center = (2000, 20, 100). steps / cap / wp swept one at a time.
+# Tuples contain observation cap, window periods, and update steps.
 const CELLS = QUICK ? [(2000, 20, 50), (2000, 20, 100)] :
     [(2000, 20, 50), (2000, 20, 100), (2000, 20, 200),   # steps
      (1000, 20, 100), (4000, 20, 100),                   # cap

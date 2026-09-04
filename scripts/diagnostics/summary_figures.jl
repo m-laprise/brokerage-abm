@@ -4,7 +4,9 @@
 Render diagnostic figures from a completed single-model sweep. This script reads
 saved data only and does not run simulations.
 
-Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/diagnostics/summary_figures.jl
+Usage:
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
+    julia --project --threads=auto scripts/diagnostics/summary_figures.jl
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))

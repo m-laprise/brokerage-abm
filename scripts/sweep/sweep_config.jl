@@ -3,19 +3,19 @@
 
 Single source of truth for the parameter sweep.
 
-Defines the OAT axes, the phase-diagram pairs, the baseline, the seed list, and
+Defines the OAT axes, the two-parameter grids, the baseline, the seed list, and
 the storage layout. Grid coordinates that resolve to the same effective model
 realization share one canonical result directory. Expands all of that into:
 
   * `build_cells()`   -> ordered grid coordinates with canonical result references,
   * `build_entries()` -> ordered unique (condition, seed) *jobs* (one per array
                          task), each with a 0-based `index`,
-  * `build_plot_jobs()` -> the ordered list of per-cell / per-pair plot jobs.
+  * `build_plot_jobs()` -> the ordered list of per-cell and per-grid plot jobs.
 
 This file has no package dependencies, so it can be `include`d from the manifest
 generator, the per-task runner, the plotting script, and the isolated test
 environment alike. It also provides a minimal JSON emitter so `manifest.json` is
-a real, human/report-readable file without adding a JSON package to the project.
+human-readable without adding a JSON package to the project.
 The machine-read mirror is `manifest.jld2`, written from the identical in-memory
 structure so the two cannot drift.
 """
@@ -91,8 +91,8 @@ const ETA_VALS = [0.0, 0.001, 0.01, 0.02, 0.03]
 const N_VALS = [500, 1000, 1500]
 const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 
-# Matching complexity (delta = regime-gain strength, the operator behind the
-# fundamental information gap of §1e) and network density (k_G = initial degree).
+# Matching difficulty (`delta`, the regime-gain strength) and network density
+# (`k`, the initial degree).
 # The matching-problem grid uses the same six rho levels as the OAT sweep and
 # five delta levels over its full allowed range. At rho=1, delta drops out of
 # match output exactly; those grid coordinates therefore share one realized result.
@@ -101,9 +101,8 @@ const K_VALS = [4, 12]
 const ROSTER_FRAC_VALS = [0.10, 0.20, 0.40]
 const N_STRANGERS_VALS = [0, 10, 50]
 
-# Focused refinement around the only old-fixture corner where the agent network
-# densified. This grid is intentionally local rather than a global refinement of
-# rho and the reservation threshold.
+# Focused grid at high rho and high reservation thresholds. It is intentionally
+# local rather than a global refinement of both parameters.
 const RHO_R_CORNER_VALS = [0.70, 0.85, 1.0]
 const R_CORNER_VALS = [0.90, 1.05, 1.20]
 
@@ -118,7 +117,7 @@ const OAT_AXES = [
     (label="n_strangers", key=:n_strangers, vals=N_STRANGERS_VALS),
 ]
 
-# Phase-diagram pairs (§2b): the first six are all pairwise combinations of
+# Two-parameter grids: the first six are all pairwise combinations of
 # {rho, eta, N, r}; the last two are targeted refinements.
 const PHASE_PAIRS = [
     (name="rho_eta", xkey=:rho, xvals=RHO_EXTENDED_VALS, ykey=:eta, yvals=ETA_VALS),

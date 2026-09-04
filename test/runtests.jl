@@ -1,6 +1,6 @@
 using Test
 
-@testset "BrokerageABM v0.3" begin
+@testset "BrokerageABM" begin
     include("test_types.jl")
     include("test_matching_function.jl")
     include("test_learning.jl")

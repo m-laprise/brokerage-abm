@@ -1,8 +1,8 @@
 """
     types.jl
 
-Agent types, model state, and supporting structs for BrokerageABM v0.3.
-Unimodal matching market: N agents + 1 broker on a single network G.
+Core model types and reusable state for a market with `N` principals and one
+broker on a single network.
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -31,10 +31,7 @@ mutable struct NNGradBuffers
     dtheta::Vector{Float64}
 
     # Adam optimizer state, sized lazily to the packed parameter count and
-    # persisted across training periods. Warm-starting the moment estimates
-    # alongside the weights mirrors the spec's per-period warm start; the
-    # per-parameter second moment is what lets training recover the
-    # low-curvature interaction/gain directions that vanilla GD starves.
+    # persisted across training periods with the network weights.
     m::Vector{Float64}                # first moment (mean of gradients)
     v::Vector{Float64}                # second moment (mean of squared gradients)
     adam_t::Base.RefValue{Int}        # Adam timestep for bias correction
@@ -471,12 +468,12 @@ CachedNetworkMeasures() = CachedNetworkMeasures(0.0, 1.0, 0.0)
 # Model parameters
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Immutable simulation parameters for the unimodal matching model."""
+"""Immutable simulation parameters."""
 struct ModelParams
     # Population and types
     N::Int                       # agent count (default 1000)
-    d::Int                       # type dimensionality (fixed at 8)
-    s::Int                       # active dimensions of type curve (default 8; swept {2,4,6,8})
+    d::Int                       # type dimensionality (default 8)
+    s::Int                       # active dimensions of type curve (default 8)
 
     # Matching function
     rho::Float64                 # quality-interaction mixing weight (default 0.50)
@@ -539,7 +536,7 @@ Base.@kwdef mutable struct SearchWorkspace
     # Neighbor bitset: nbr_mask[j] = true iff j is a neighbor of the current agent.
     # Length N+1 (extra slot for the broker node). Reset after each self-search call.
     nbr_mask::Vector{Bool} = Bool[]
-    # Tracks which indices we set in nbr_mask this call, so we can clear only those.
+    # Indices set in nbr_mask during the current call, for sparse clearing.
     nbr_marked::Vector{Int} = Int[]
     period_strangers::Vector{Int} = Int[]
     # Sorted greedy: (negated value, random tie key, flat index), sorted in-place.

@@ -1,7 +1,7 @@
 """
     benchmark.jl
 
-Performance benchmarking and profiling for BrokerageABM v0.3.
+Performance benchmarking and profiling for BrokerageABM.
 Each benchmark sample uses fresh setup so mutating workloads do not decay into
 no-op timings across repetitions.
 
@@ -50,7 +50,7 @@ function state_with_pending_broker_training(params::ModelParams; burnin::Int = 1
 end
 
 println("=" ^ 80)
-println("BENCHMARK: BrokerageABM v0.3 (post-calibration)")
+println("BENCHMARK: BrokerageABM")
 println("=" ^ 80)
 
 # ─────────────────────────────────────────────────────────────────────────────

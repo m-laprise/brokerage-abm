@@ -1,21 +1,12 @@
 """
     sweep_plot.jl  (one task = one OAT cell, or one phase pair)
 
-Dependent aggregation + plotting job. Loads the per-seed shards written by
-sweep_run.jl and produces the sweep figures + aggregate `data.jld2` files. It
-does NOT re-simulate. Modeled on the exploration scripts (which run their own
-sims in one pass); the figure functions here are adapted to consume saved shards.
+Aggregate per-seed shards from `sweep_run.jl` and render sweep figures without
+rerunning simulations.
 
 Plot-job kinds (from `manifest.jld2` `plot_jobs`):
-  * "oat_cell"   — one OAT cell: aggregate its planned seed shards -> data.jld2,
-                   seed-banded dynamics panel + extended network-stats figure.
-  * "phase_pair" — one pair: aggregate every grid point's shards ->
-                   per-grid-point data.jld2 + tail-averaged summary.jld2 +
-                   one heatmap per steady-state metric (generalized X x Y).
-
-Extends the exploration-script blueprints: the network-stats figure adds
-the broker's Burt `constraint` and `effective_size`; the heatmaps generalize to
-arbitrary X x Y pairs and add `constraint`/`effective_size`.
+  * `oat_cell`: aggregate one OAT cell and render its dynamics and network figures.
+  * `phase_pair`: aggregate one two-parameter grid and render its metric heatmaps.
 
 Usage:
   BROKERAGE_ABM_SWEEP_DIR=... SLURM_ARRAY_TASK_ID=<i> julia --project --threads=auto scripts/sweep/sweep_plot.jl
@@ -27,8 +18,7 @@ Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --th
 include(joinpath(@__DIR__, "sweep_config.jl"))
 include(joinpath(@__DIR__, "..", "figure_style.jl"))
 
-# Note: deliberately does NOT load BrokerageABM — plotting only needs the
-# saved DataFrames, and avoiding it keeps Enzyme out of the (many) plot jobs.
+# Plotting uses saved DataFrames and does not load BrokerageABM or Enzyme.
 using DataFrames: DataFrame
 using Statistics: mean
 using JLD2: jldsave, jldopen
@@ -150,7 +140,7 @@ maxabs_or_one(M) = (
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Dynamics panel (5x4) — ported from explore_model.jl::plot_ensemble
+# Dynamics panel (5x4)
 # ─────────────────────────────────────────────────────────────────────────────
 
 function plot_dynamics(mdfs, suptitle, outpath; T_burn=SWEEP_T_BURN, window=20)
@@ -398,7 +388,7 @@ function plot_dynamics(mdfs, suptitle, outpath; T_burn=SWEEP_T_BURN, window=20)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Network-stats figure — ported + EXTENDED with broker constraint/effective_size
+# Network statistics figure
 # ─────────────────────────────────────────────────────────────────────────────
 
 function plot_network_stats(
@@ -474,8 +464,7 @@ function plot_network_stats(
         strokecolor=:gray35,
     )
 
-    # Row 2: broker structural-advantage diagnostics (H1.3) — betweenness +
-    # Burt constraint + effective size (the extension required by §2a).
+    # Row 2: broker betweenness, Burt constraint, and effective size.
     Label(
         fig[2, 0],
         "Broker";
@@ -526,7 +515,7 @@ function plot_network_stats(
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Steady-state metrics + generalized heatmaps (phase diagrams)
+# Late-period metrics and two-parameter grid heatmaps
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Tail-averaged (period > T_burn) steady-state metrics for a grid cell's seeds."""
@@ -671,7 +660,7 @@ function do_phase_pair(sweepdir, job, expected_provenance)
         cell = load_cell(resultdir, expected_provenance, ref[:seeds])
         isempty(cell.mdfs) && continue
         nfound += 1
-        write_cell_data(celldir, cell, ref)         # grid view of canonical shards (§4)
+        write_cell_data(celldir, cell, ref)         # Grid view of canonical shards.
         results[xi, yi] = steady_state_metrics(cell.mdfs, SWEEP_T_BURN)
     end
     println("phase $(job[:pair]): $nfound/$(nx * ny) grid points with data")

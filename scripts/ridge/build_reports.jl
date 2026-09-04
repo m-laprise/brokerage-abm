@@ -1,7 +1,7 @@
 """
     scripts/ridge/build_reports.jl
 
-Compile the paired-Ridge and Ridge-ablation TeX sources under `paper/` and
+Compile the base Ridge and Ridge-ablation TeX sources under `paper/` and
 write the report PDFs under `output/ridge/`. LaTeX auxiliary files are created
 in temporary directories and discarded.
 

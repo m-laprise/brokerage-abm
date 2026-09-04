@@ -1,28 +1,12 @@
 """
     stage3_endogenous_data.jl
 
-STAGE 3 — Does the LIVE broker receive enough useful data to learn the
-interaction endogenously?
+Compare the broker's endogenously selected match history with an equal-sized
+uniform pair sample. The script evaluates the production-trained broker on a
+uniform holdout, describes coverage and regime balance, and compares fresh
+vanilla-GD fits while holding sample size and optimization fixed.
 
-Stages 1–2 use clean, well-spread pairs. The live broker instead sees only the
-pairs that were actually matched through it — an endogenously *selected* sample
-(offers it predicted to be good and that were accepted). Selection can starve
-the interaction signal in two ways:
-  1. Coverage — matched pairs may cluster in type space, collapsing the
-     effective rank of the feature second moment, so A / the regime structure is
-     under-identified.
-  2. Regime balance — if matches concentrate on one side of x_i'B x_j > 0, the
-     broker rarely sees the contrast that distinguishes the two gain regimes,
-     so the gating term is unidentifiable from its data alone.
-
-We run the real ABM, snapshot the broker's recorded history (party 1 types,
-party 2 types, and output),
-and (a) characterize that sample vs a uniform pool draw, and (b) train a broker
-net on the endogenous history vs an equal-sized uniform sample under identical
-optimization, comparing gain recovery (βg). If uniform ≫ endogenous, the deficit
-is data/selection, not the learning function.
-
-Usage: julia --project scripts/diagnostics/stage3_endogenous_data.jl
+Usage: julia --project --threads=auto scripts/diagnostics/stage3_endogenous_data.jl
 """
 
 include("broker_learning_common.jl")
@@ -32,8 +16,7 @@ using BrokerageABM: initialize_model, step_period!
 const SEED = 42
 const T = 200
 
-"""Effective rank of a Gram/second-moment matrix via the participation ratio
-(Σλ)² / Σλ²  — a continuous count of dominant directions."""
+"""Effective rank of a second-moment matrix, `(Σλ)² / Σλ²`."""
 function effective_rank(M::Matrix{Float64})
     λ = eigvals(Symmetric(M))
     λ = max.(λ, 0.0)
@@ -54,7 +37,7 @@ end
 
 function run_stage3()
     println("="^110)
-    println("STAGE 3: Endogenous data sufficiency (live ABM, T=$T, default params)")
+    println("STAGE 3: Endogenous training-data comparison (T=$T, baseline parameters)")
     println("="^110)
 
     p = default_params(; seed=SEED, T=T)
@@ -68,12 +51,12 @@ function run_stage3()
     n_e = size(Xi_e, 2)
     println("\nBroker endogenous history: $n_e observations after $T periods.")
 
-    # Reference: uniform draw from the realized type pool, same env
+    # Uniform reference sample from the realized type pool and matching environment.
     rng = StableRNG(SEED + 3)
     pool = [state.agents[i].type for i in 1:p.N]
     Xi_u, Xj_u = sample_pairs(env, pool, n_e, rng; source=:pool)
 
-    # ── (a) Distributional comparison ──
+    # ── Distributional comparison ──
     ce = decompose(env, Xi_e, Xj_e)
     cu = decompose(env, Xi_u, Xj_u)
     Ze = broker_features(Xi_e, Xj_e)
@@ -93,27 +76,23 @@ function run_stage3()
     @printf("%-34s %12.3f %12.3f\n", "mean x'Bx", mean(ce.bxj), mean(cu.bxj))
     @printf("%-34s %12.3f %12.3f\n", "std  x'Bx", std(ce.bxj), std(cu.bxj))
 
-    # ── (b) Train on each sample under identical optimization, score on a
-    #        common uniform holdout ──
+    # ── Fit each sample identically and score on a common uniform holdout ──
     Xi_te, Xj_te = sample_pairs(env, pool, 4000, StableRNG(SEED + 99); source=:pool)
     cte = decompose(env, Xi_te, Xj_te)
     Zte = broker_features(Xi_te, Xj_te)
     h = broker_hidden_width(p.d)
 
-    # ── (a′) MOST DIRECT TEST: evaluate the ACTUAL live broker net ──
-    # state.broker.nn is what the live model trained endogenously over T periods
-    # (per-period adaptive-floor GD, sliding window, warm-started). Score it on
-    # the common uniform holdout. This is the headline answer to "does the live
-    # broker actually learn the gain?" — no retraining, no idealization.
-    println("\n### Live broker net (state.broker.nn) on uniform holdout — the actual endogenous learner")
+    # Evaluate the production-trained broker, which uses persistent Adam state
+    # and the period-based training window, on the common uniform holdout.
+    println("\n### Production-trained broker on the uniform holdout")
     live_pred = predict_nn_cols(state.broker.nn, Zte)
     m_live = evaluate(live_pred, cte)
-    print_row("  LIVE broker.nn", m_live)
+    print_row("  production broker", m_live)
     go_live = gain_only_r2(live_pred, cte)
     @printf("      └ gain-only: βgain=%.3f, frac pred-var on gain dir=%.3f | cor(core,gain)=%+.3f\n",
             go_live.beta_gain, go_live.frac_pred_var_on_gain, core_gain_cor(cte))
     rows_live = residual_by_boundary(live_pred, cte; nbins=6)
-    print_boundary_table("LIVE broker.nn", rows_live)
+    print_boundary_table("production broker", rows_live)
 
     function train_on(Z, y; steps=2000, lr=p.eta_lr)
         nn = init_neural_net(db, h, StableRNG(SEED + 5); b2_init=Q_OFFSET)
@@ -129,10 +108,9 @@ function run_stage3()
     print_row("  uniform sample (noiseless)", train_on(Zu, cu.target))
 
     println("\n" * "="^110)
-    println("READING: a low high-gain fraction far from 0.5, or much lower var(gain)/effective rank")
-    println("on the endogenous sample, means selection starves the gating signal. If uniform data")
-    println("recovers βg≈1 but endogenous data does not at the SAME size+optimization, the binding")
-    println("constraint is data selection — not the learning function or the schedule.")
+    println("INTERPRETATION: differences between the fresh fits isolate the effect of the")
+    println("training sample under the tested optimizer. The production-trained fit provides")
+    println("the corresponding result under the simulation training procedure.")
     println("="^110)
 end
 

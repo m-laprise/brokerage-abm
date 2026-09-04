@@ -18,7 +18,7 @@ using Enzyme: Enzyme
 
 const NN_AD_BACKEND = AutoEnzyme(; mode=Enzyme.Reverse)
 
-# Adam optimizer hyperparameters (standard defaults).
+# Adam optimizer hyperparameters.
 const ADAM_BETA1 = 0.9
 const ADAM_BETA2 = 0.999
 const ADAM_EPS = 1e-8
@@ -183,9 +183,9 @@ function predict_nn_batch!(
     w2 = nn.w2;
     b2 = nn.b2
 
-    # H[:,1:n] = W1 * Z[:,1:n]  — use gemm on contiguous column block
+    # Use gemm for H[:,1:n] = W1 * Z[:,1:n] on a contiguous column block.
     # BLAS gemm: C = alpha*A*B + beta*C.  A is h x d_in, B is d_in x n.
-    # We call gemm! directly to avoid SubArray overhead from views.
+    # Call gemm! directly to avoid SubArray overhead from views.
     BLAS.gemm!('N', 'N', 1.0, nn.W1, view(Z_buf, :, 1:n), 0.0, view(H_buf, :, 1:n))
 
     # H += b1 (broadcast), then ReLU in place
@@ -571,7 +571,7 @@ end
     train_step_prefix_adam!(nn, grad, X, q, n, lr)
 
 One Adam step on the first `n` columns/elements of contiguous training buffers
-`X` and `q`. This is the live-model optimizer for both agents and the broker; it
+`X` and `q`. This is the simulation optimizer for both agents and the broker; it
 shares the exact loss (`nn_loss_theta`) and Enzyme gradient path with the vanilla
 GD step, swapping only the parameter update rule (`apply_nn_adam!`).
 """
@@ -704,7 +704,7 @@ end
 # Agent training
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Minimum GD steps per training period."""
+"""Minimum neural-network update steps per training period."""
 const ADAPTIVE_FLOOR = 50
 
 """Minimum capacity jump for agent training scratch after initialization."""

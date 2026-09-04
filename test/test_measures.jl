@@ -203,7 +203,7 @@ using Statistics: mean
         add_edge!(G, 5, 7);
         add_edge!(G, 6, 7)
         bc4 = compute_betweenness(G, 4)
-        # Node 4 is on ALL 9 cross-clique shortest paths (3×3 pairs)
+        # Node 4 is on all nine cross-clique shortest paths (3×3 pairs).
         # plus paths within each clique that route through 4 (none, since cliques are complete)
         # and paths between 3 and {5,6,7} and between {1,2,3} and 5
         # Exact: node 4 is on all s-t paths where s∈{1,2,3} and t∈{5,6,7} (9 pairs)

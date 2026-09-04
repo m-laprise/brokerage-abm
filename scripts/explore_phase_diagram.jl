@@ -1,7 +1,7 @@
 """
     explore_phase_diagram.jl
 
-2D parameter sweep producing heatmaps of steady-state metrics.
+Two-parameter sweep producing heatmaps of late-period metrics.
 Sweeps one of: rho x s (default), rho x eta, rho x delta, rho x snr.
 
 Data cached as JLD2; pass --rerun to force re-simulation.

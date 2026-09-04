@@ -160,7 +160,7 @@ for c in configs
         plot_regime(G; meta...)
     end
 
-    # Quick stats
+    # Summary statistics
     vals = [F[i, j] for j in 2:p.N for i in 1:(j-1)]
     svals = svdvals(F)
     cumvar = cumsum(svals .^ 2) ./ sum(svals .^ 2)

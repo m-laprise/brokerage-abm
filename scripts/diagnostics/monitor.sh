@@ -1,7 +1,5 @@
 #!/bin/bash
-# Lightweight progress monitor for long-running background diagnostics.
-# Runs in a tmux session and appends a status snapshot at a configurable interval.
-# Its output is intentionally kept out of the assistant's context.
+# Append status snapshots for long-running diagnostics at a configurable interval.
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

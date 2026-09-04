@@ -1,19 +1,19 @@
 """
-    sweep_manifest.jl  (Step 0)
+    sweep_manifest.jl
 
 Expand the sweep specification into grid coordinates, effective realizations,
 and the ordered list of unique (condition, seed) jobs. Run once before the
 compute array.
 
 Writes, under `BROKERAGE_ABM_SWEEP_DIR`:
-  * `manifest.json`  — human/report-readable source of truth (spec, provenance,
+  * `manifest.json`: human-readable source of truth (specification, provenance,
                        grid references, every entry, every plot job).
-  * `manifest.jld2`  — identical structure, read natively by sweep_run.jl /
+  * `manifest.jld2`: identical structure, read natively by sweep_run.jl and
                        sweep_plot.jl (avoids a JSON dependency at run time).
-  * `manifest.sha256`— sha256 of manifest.json (the `manifest_hash` recorded in
+  * `manifest.sha256`: SHA-256 of manifest.json (the `manifest_hash` recorded in
                        every shard).
 
-Prints `NRUNS=<n>` and `NPLOT=<n>` on their own lines for the orchestrator.
+Prints `NRUNS=<n>` and `NPLOT=<n>` on separate lines for `submit.sh`.
 
 Usage:
   BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep/<tag> julia --project --threads=auto scripts/sweep/sweep_manifest.jl
@@ -96,7 +96,7 @@ function main()
         :scope => SWEEP_SCOPE,
     )
 
-    # Spec block for the report agent (what was swept, at a glance).
+    # Compact description of the realized sweep design.
     spec = Dict{Symbol,Any}(
         :baseline => Dict(pairs(SWEEP_BASELINE)..., :T => SWEEP_T, :T_burn => SWEEP_T_BURN),
         :oat_axes => [

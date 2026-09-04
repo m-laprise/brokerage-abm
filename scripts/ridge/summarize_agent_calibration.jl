@@ -7,6 +7,8 @@ calibration seeds of the late-period mean agent holdout rank correlation.
 
 Required environment:
   BROKERAGE_ABM_RIDGE_AGENT_CALIBRATION_DIR  directory containing pilot JLD2 files
+
+Usage: julia --project --threads=auto scripts/ridge/summarize_agent_calibration.jl
 """
 
 using DataFrames: DataFrame, eachrow, groupby, names

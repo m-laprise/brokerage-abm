@@ -1,9 +1,9 @@
 """
     scripts/ridge/paired_figures.jl
 
-Render the four comparative figure counterparts for the paired-Ridge
+Render the four comparative figure counterparts for the base Ridge
 supplement. The figures reproduce the content and conventions of Main Figures
-1--4, but place the NN and paired-Ridge results in the same asset with shared
+1--4, but place the NN and base Ridge results in the same asset with shared
 axes. This makes visual comparisons meaningful without changing the main
 figures.
 
@@ -51,7 +51,7 @@ const REPORTING_PROVENANCE = reporting_git_provenance(REPO_ROOT)
 
 const NN = load(NN_PATH)["figdata"]
 const RIDGE = load(RIDGE_PATH)["figdata"]
-const MODELS = ((label="NN", data=NN), (label="Paired Ridge", data=RIDGE))
+const MODELS = ((label="NN", data=NN), (label="Base Ridge", data=RIDGE))
 const ROLLW = 5
 const BETWINT = 20
 const TSTART = 30
@@ -378,7 +378,7 @@ function figure_r2()
             axislegend(axis, "Difficulty"; position=:lb, LEG_KW...)
     end
     Label(fig[1:2, 0], "NN"; rotation=pi / 2, fontsize=20, font=:bold)
-    Label(fig[3:4, 0], "Paired Ridge"; rotation=pi / 2, fontsize=20, font=:bold)
+    Label(fig[3:4, 0], "Base Ridge"; rotation=pi / 2, fontsize=20, font=:bold)
     colgap!(fig.layout, 14)
     rowgap!(fig.layout, 10)
     save_figure("figR2_grid_lines.png", fig)
@@ -506,7 +506,7 @@ function write_provenance()
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "source=scripts/ridge/paired_figures.jl")
-        println(io, "data_analysis_commit=$(NN[\"meta\"][\"analysis_git_commit\"])")
+        println(io, "data_analysis_commit=$(NN["meta"]["analysis_git_commit"])")
         println(io, "rendering_commit=$(REPORTING_PROVENANCE.commit)")
         println(io, "rendering_source_clean=$(REPORTING_PROVENANCE.source_clean)")
         println(io, "nn_sweep=$(NN["meta"]["sweep"])")
@@ -519,7 +519,7 @@ function write_provenance()
         println(io, "rolling_window=$ROLLW")
         println(io, "network_measure_interval=$BETWINT")
         println(io, "display_start=$TSTART")
-        println(io, "axes=shared between NN and paired Ridge within each figure")
+        println(io, "axes=shared between NN and base Ridge within each figure")
     end
     return nothing
 end
@@ -532,7 +532,7 @@ function main()
     figure_r3()
     figure_r4()
     write_provenance()
-    println("wrote paired-Ridge figure set to $OUT_DIR")
+    println("wrote base Ridge figure set to $OUT_DIR")
     return nothing
 end
 

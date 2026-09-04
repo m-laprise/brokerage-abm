@@ -13,6 +13,8 @@ No raw sweep access is required. Every reported value is computed from the
 retained seed-level figure data. The input and output paths can be overridden
 with `BROKERAGE_ABM_RIDGE_FIGDATA_PATH` and
 `BROKERAGE_ABM_RIDGE_PAPER_VALUES_PATH`.
+
+Usage: julia --project --threads=auto scripts/paper/ridge_supplement.jl
 """
 
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))

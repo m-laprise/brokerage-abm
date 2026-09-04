@@ -1,7 +1,8 @@
-generated=2026-09-01T04:30:39.785
+generated=2026-09-04T11:05:03.387
 source=scripts/ridge/paired_figures.jl
-analysis_commit=c75e9d1e5487884bf82e80a3a232f4c769c66404
-analysis_source_clean=true
+data_analysis_commit=c75e9d1e5487884bf82e80a3a232f4c769c66404
+rendering_commit=eb7d4f54f36ee9d4d45ae9c6e328d8c32a85e7df
+rendering_source_clean=false
 nn_sweep=2026-08-30_e5b9858_combined_20_baseline50
 nn_manifest=832649d803422e8b73ab4d6d9610ac9977b7e5212ddcf5287404c7eac9cf4dd7
 ridge_sweep=2026-08-29_d1db7c3_ridge_pair_lambda_a0.003_lambda_b0.001
@@ -12,4 +13,4 @@ baseline_seeds=50
 rolling_window=5
 network_measure_interval=20
 display_start=30
-axes=shared between NN and paired Ridge within each figure
+axes=shared between NN and base Ridge within each figure

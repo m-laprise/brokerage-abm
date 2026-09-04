@@ -1,8 +1,6 @@
 #!/bin/bash
-# Compute array: one task per unique (condition, seed). The job array IS the multi-node
-# parallelism (each task is an independent single-node process; SLURM packs
-# tasks onto free cores). Submit with the array range + throttle + log paths on
-# the command line, e.g.:
+# Compute array with one independent task per unique condition and seed. Submit
+# with the array range, throttle, and log paths on the command line:
 #   sbatch --array=0-$((NRUNS - 1))%200 \
 #          --output=$LOGDIR/%A_%a.out --error=$LOGDIR/%A_%a.err \
 #          slurm_sweep.sh <repo_root> <sweep_dir>

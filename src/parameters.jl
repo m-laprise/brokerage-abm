@@ -1,18 +1,16 @@
 """
     parameters.jl
 
-Default parameter construction and validation for BrokerageABM v0.3.
+Default parameter construction and validation.
 """
 
-"""Constant offset added to match output so calibrated quality is positive."""
+"""Constant offset included in match output and output-scale calibration."""
 const Q_OFFSET = 1.0
 
 # Shared friction rate as a share of the calibration mean q_cal, independent of
-# the reservation r: phi = c_s = search_cost_rate * q_cal. The broker fee is thus
-# a commission on match value; 0.05 (5%) is a standard brokerage commission. Both
-# channels use the same level, but the self-search cost is per demanded
-# relationship position while the broker fee is contingent on realized
-# placements.
+# the reservation r: phi = c_s = search_cost_rate * q_cal. Both channels use the
+# same calibrated amount. The self-search cost applies to each demanded
+# relationship position, while the broker fee applies to each realized placement.
 const SEARCH_COST_RATE_BASE = 0.05
 
 """
@@ -66,8 +64,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :ridge_lambda_agent => 0.001,
         :ridge_lambda_broker => 0.001,
         :ridge_broker_variant => :pair,
-        # Neural network (Adam optimizer; lr 0.01 is the standard Adam scale and
-        # the value validated in scripts/diagnostics for gain recovery)
+        # Neural network
         :eta_lr => 0.01,
         :E_init => 200,
         :train_window_periods => 40,

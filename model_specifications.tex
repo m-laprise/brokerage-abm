@@ -48,16 +48,11 @@ Each agent \(i\) is characterized by:
 
 \begin{itemize}
 \tightlist
-\item
-  \textbf{Type} \(\mathbf{x}_i \in \mathbb{R}^d\): a fixed vector of observable characteristics, drawn as specified below and used by the matching function (§2).
-\item
-  \textbf{Current-period matches} \(M_i^t\): active bilateral relationships involving \(i\) in period \(t\). Each counterparty can appear at most once in \(M_i^t\); incoming accepted offers are not capped.
-\item
-  \textbf{Active demand bound} \(K\): the maximum number of active demands an agent can initiate in a period (default \(K = 5\); §6).
-\item
-  \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3a).
-\item
-  \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
+\item \textbf{Type} \(\mathbf{x}_i \in \mathbb{R}^d\): a fixed vector of observable characteristics, drawn as specified below and used by the matching function (§2).
+\item \textbf{Current-period matches} \(M_i^t\): active bilateral relationships involving \(i\) in period \(t\). Each counterparty can appear at most once in \(M_i^t\); incoming accepted offers are not capped.
+\item \textbf{Active demand bound} \(K\): the maximum number of active demands an agent can initiate in a period (default \(K = 5\); §6).
+\item \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3a).
+\item \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
 \end{itemize}
 
 \subsubsection{Agent Types}\label{agent-types}
@@ -82,14 +77,10 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \begin{itemize}
 \tightlist
-\item
-  \textbf{Experience history} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}\): (party 1 type, party 2 type, realized match output) triples from mediated matches (§3c). The party labels have no directional meaning because the broker's pair features are symmetric.
-\item
-  \textbf{Roster} \(\text{Roster}^t\): the broker's standing access base (§6b).
-\item
-  \textbf{Current clients} \(D^t\): agents who outsource to the broker in period \(t\) (§6b).
-\item
-  \textbf{Reputation} \(\text{rep}^t\): the average broker satisfaction of current clients (§7).
+\item \textbf{Experience history} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}\): (party 1 type, party 2 type, realized match output) triples from mediated matches (§3c). The party labels have no directional meaning because the broker's pair features are symmetric.
+\item \textbf{Roster} \(\text{Roster}^t\): the broker's standing access base (§6b).
+\item \textbf{Current clients} \(D^t\): agents who outsource to the broker in period \(t\) (§6b).
+\item \textbf{Reputation} \(\text{rep}^t\): the average broker satisfaction of current clients (§7).
 \end{itemize}
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
@@ -277,10 +268,8 @@ The self-search cost and broker fee share one calibrated level:
 
 \begin{itemize}
 \tightlist
-\item
-  \textbf{Self-search} costs \(c_s\) on each requested self-search position, whether or not it is filled.
-\item
-  \textbf{Brokerage} charges \(\phi\) only on successful brokered placements.
+\item \textbf{Self-search} costs \(c_s\) on each requested self-search position, whether or not it is filled.
+\item \textbf{Brokerage} charges \(\phi\) only on successful brokered placements.
 \end{itemize}
 
 \subsection{5. Network Structure and Turnover}\label{network-structure-and-turnover}
@@ -350,19 +339,12 @@ All self-search and broker offers enter one shared market, grouped by unordered 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
-\item
-  If pair \(\{i,j\}\) contains reciprocal offers \(i \to j\) and \(j \to i\), the relationship is accepted automatically.
-\item
-  If pair \(\{i,j\}\) contains one directed offer \(i \to j\), receiver \(j\) evaluates \(i\) using \(\bar{q}_{ji}\) for known partners and \(\hat{q}_j(\mathbf{x}_i)\) otherwise. The offer is accepted iff this value exceeds \(r\).
-\item
-  Each accepted unordered pair forms at most one current-period relationship.
+\item If pair \(\{i,j\}\) contains reciprocal offers \(i \to j\) and \(j \to i\), the relationship is accepted automatically.
+\item If pair \(\{i,j\}\) contains one directed offer \(i \to j\), receiver \(j\) evaluates \(i\) using \(\bar{q}_{ji}\) for known partners and \(\hat{q}_j(\mathbf{x}_i)\) otherwise. The offer is accepted iff this value exceeds \(r\).
+\item Each accepted unordered pair forms at most one current-period relationship.
 \end{enumerate}
 
-\textbf{At market finalization, for each accepted match:}
-1. Realized output is drawn: \(q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}\).
-2. Both parties add the observation to their histories: \(i\) adds \((\mathbf{x}_j, q_{ij})\) to \(\mathcal{H}_{i}\); \(j\) adds \((\mathbf{x}_i, q_{ij})\) to \(\mathcal{H}_{j}\).
-3. If either directed offer used the broker channel, the broker adds \((\mathbf{x}_i, \mathbf{x}_j, q_{ij})\) to \(\mathcal{H}_b\) once.
-4. An edge is added between \(i\) and \(j\) in \(G\) (if not already present).
+\textbf{At market finalization, for each accepted match:} 1. Realized output is drawn: \(q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}\). 2. Both parties add the observation to their histories: \(i\) adds \((\mathbf{x}_j, q_{ij})\) to \(\mathcal{H}_{i}\); \(j\) adds \((\mathbf{x}_i, q_{ij})\) to \(\mathcal{H}_{j}\). 3. If either directed offer used the broker channel, the broker adds \((\mathbf{x}_i, \mathbf{x}_j, q_{ij})\) to \(\mathcal{H}_b\) once. 4. An edge is added between \(i\) and \(j\) in \(G\) (if not already present).
 
 A demander can have at most \(d_i\) outgoing offers, but can receive any number of acceptable incoming offers. Thus \(K\) is an active-demand bound, not a capacity constraint on receiving offers.
 
@@ -411,10 +393,8 @@ Each agent with \(d_i > 0\) compares:
 
 \begin{itemize}
 \tightlist
-\item
-  \textbf{\(\text{score}_{\text{self}}\)} \(= s_{i,\text{self}}^t\)
-\item
-  \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^t\) if the agent has tried the broker, otherwise \(\text{rep}_b^t\).
+\item \textbf{\(\text{score}_{\text{self}}\)} \(= s_{i,\text{self}}^t\)
+\item \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^t\) if the agent has tried the broker, otherwise \(\text{rep}_b^t\).
 \end{itemize}
 
 The agent chooses the higher-score channel. Ties are resolved by fair coin flip.

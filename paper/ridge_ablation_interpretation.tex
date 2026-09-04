@@ -1,7 +1,7 @@
 At the baseline, every ablation reduces the broker's ranking advantage. The
 size-matched broker-minus-principal difference in holdout rank correlation is
 \rav{size_matchedBaseline_rank_gap}, a paired change of
-\rav{size_matchedBaselineDelta_rank_gap} from paired Ridge (95\% Monte Carlo
+\rav{size_matchedBaselineDelta_rank_gap} from base Ridge (95\% Monte Carlo
 interval [\rav{size_matchedBaselineDeltaLower_rank_gap},
 \rav{size_matchedBaselineDeltaUpper_rank_gap}]). The single-principal and
 additive differences are \rav{single_principalBaseline_rank_gap} and
@@ -15,7 +15,7 @@ additive differences are \rav{single_principalBaseline_rank_gap} and
 
 The size-matched contrast is consistent across the design. Its
 broker-minus-principal difference in holdout rank correlation is lower than
-paired Ridge in all \rav{nConditions} effective realizations. The
+base Ridge in all \rav{nConditions} effective realizations. The
 median change is \rav{size_matchedDeltaMedian_rank_gap}, and its 10th and 90th
 percentiles are \rav{size_matchedDeltaQ10_rank_gap} and
 \rav{size_matchedDeltaQ90_rank_gap}. The difference nevertheless remains positive in
@@ -25,7 +25,7 @@ broker holdout rank correlation changes by
 \rav{size_matchedDeltaMedian_broker_holdout_rank}, while the median principal
 holdout rank correlation changes by
 \rav{size_matchedDeltaMedian_agent_holdout_rank}. The principal holdout rank correlation
-also exceeds paired Ridge in all \rav{size_matchedGreaterN_agent_holdout_rank}
+also exceeds base Ridge in all \rav{size_matchedGreaterN_agent_holdout_rank}
 realizations under size matching, all
 \rav{single_principalGreaterN_agent_holdout_rank} under single-principal
 history, and \rav{additiveGreaterN_agent_holdout_rank} under additive Ridge.
@@ -45,7 +45,7 @@ rises from
 \rav{additiveRho0p85_rank_gap} at $\rho=0.85$ and
 \rav{additiveRho1_rank_gap} at $\rho=1$. At $\rho=1$, where $\delta$ drops out
 and the additive representation is correctly aligned with the production
-function, additive Ridge exceeds the paired-Ridge difference of
+function, additive Ridge exceeds the corresponding base Ridge difference of
 \rav{pairRho1_rank_gap}. The latter result is consistent with a finite-sample
 cost from unnecessary bilinear regressors, but this contrast alone
 does not establish that mechanism because matching and agent learning also

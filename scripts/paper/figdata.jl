@@ -27,7 +27,9 @@ Contents of figdata.jld2 (single key "figdata", a Dict):
   regime_cells   rho, delta, late means, and seed values per effective realization
   meta           sweep id, generation time, generating script
 
-Usage: BROKERAGE_ABM_SWEEP_DIR=<sweep root> julia --project scripts/paper/figdata.jl
+Usage:
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
+    julia --project --threads=auto scripts/paper/figdata.jl
 """
 
 using JLD2, DataFrames, Statistics, Dates
@@ -45,7 +47,7 @@ const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE)
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
-const LATE_WIDTH = 20   # final-period window, the headline statistic
+const LATE_WIDTH = 20   # final-period summary window
 const FIG3_RHO_VALUES = [0.0, 0.5, 0.85, 1.0]
 const FIG3_ETA_VALUES = [0.0, 0.001, 0.01, 0.02, 0.03]
 const SWEEP = load_sweep_dataset(ROOT)

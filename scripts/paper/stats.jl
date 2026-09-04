@@ -8,12 +8,12 @@ files and their config metadata at run time. Literal constants below are selecti
 conventions only (window bounds, baseline parameter values, display rounding).
 
 Conventions:
-  late mean  = time average over the final 20 periods (headline statistic)
+  late mean  = time average over the final 20 periods
   early mean = time average over t in [50, 70]
   "across regimes" = unweighted mean over effective model realizations
   (each realization first averaged over its planned seeds)
 
-Usage: julia --project scripts/paper/stats.jl
+Usage: julia --project --threads=auto scripts/paper/stats.jl
 """
 
 using Statistics, Printf, Dates

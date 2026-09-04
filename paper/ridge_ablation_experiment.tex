@@ -25,7 +25,7 @@
 \paragraph{Question and design.}
 These ablations probe three components of the broker's learning setup under
 Ridge learning. They do not provide an additive decomposition of the broker's
-advantage. The paired-Ridge reference pools the broker's mediated-match
+advantage. The base Ridge reference pools the broker's mediated-match
 history and uses additive and bilinear pair features. \emph{Size-matched pooled
 history} retains these features but uses the smaller of the broker's available
 sample and the median agent fitting-sample size. \emph{Single-principal history}
@@ -155,10 +155,10 @@ receives one observation.
 \includegraphics[width=\linewidth]{../output/ridge/ablations/results/ridge_ablations.png}
 \caption{Ridge broker restrictions. Panel A shows the baseline
 broker-minus-principal difference in holdout rank correlation over time under
-paired Ridge and the three restrictions. Lines are ensemble means over 50 common
+base Ridge and the three restrictions. Lines are ensemble means over 50 common
 seeds; ribbons are pointwise 95\% Monte Carlo intervals. Panels B--D show each
-restriction's paired change from paired Ridge across the 26 effective regimes,
-against that regime's paired-Ridge mean. Whiskers are paired 95\% Monte Carlo
+restriction's paired change from base Ridge across the 26 effective regimes,
+against that regime's base Ridge mean. Whiskers are paired 95\% Monte Carlo
 intervals for the mean seed-level change, and dashed lines mark no change.}
 \label{fig:ridge-ablations}
 \end{figure}

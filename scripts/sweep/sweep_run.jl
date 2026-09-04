@@ -1,15 +1,11 @@
 """
     sweep_run.jl  (one array task = one unique (condition, seed))
 
-Map `\$SLURM_ARRAY_TASK_ID` -> entry in `manifest.jld2` -> `default_params(...)`
--> `run_simulation` -> write the per-seed shard. Lean by design: no CairoMakie,
-no plotting — figures are a separate dependent job (sweep_plot.jl).
+Map `\$SLURM_ARRAY_TASK_ID` to a manifest entry, run its simulation, and write
+the per-seed shard. Plotting runs separately in `sweep_plot.jl`.
 
-Each shard `seed_<s>.jld2` stores the COMPLETE per-period metrics DataFrame
-(every column, every period — the raw source of truth, §4), the final agent
-degree vector (for the network-stats histogram), the resolved config, and full
-provenance (git commit, julia version, Manifest hash, manifest hash, schema
-version).
+Each `seed_<s>.jld2` shard stores all per-period metrics, the final principal
+degree vector, the resolved configuration, and provenance hashes.
 
 Idempotent: a task whose shard already exists with a matching git commit +
 schema version is skipped. Pass `--rerun` to force recompute.

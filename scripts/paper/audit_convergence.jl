@@ -23,6 +23,10 @@ Optional environment:
   BROKERAGE_ABM_CONVERGENCE_DIR
 
 The default output directory is `output/main/convergence/`.
+
+Usage:
+  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
+    julia --project --threads=auto scripts/paper/audit_convergence.jl
 """
 
 using DataFrames: DataFrame

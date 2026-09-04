@@ -1,8 +1,8 @@
 """
     initialization.jl
 
-Model initialization: agent types, matching environment, network, broker, history seeding,
-and neural network initial training.
+Initialize agent types, the matching environment, the network, the broker,
+histories, and the selected prediction models.
 """
 
 using LinearAlgebra: norm, normalize, dot
@@ -93,9 +93,6 @@ function initialize_model(params::ModelParams)::ModelState
     # ── Agent types ──
     geo = generate_curve_geometry(d, p.s, rng)
     agent_types = generate_agent_types(N, geo, p.sigma_x, rng)
-
-    # ── Ideal type c ──
-    # (perturbation of a random curve position)
 
     # ── Matching environment (A, B, c) ──
     env = generate_matching_env(

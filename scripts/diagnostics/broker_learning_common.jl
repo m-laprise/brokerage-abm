@@ -1,26 +1,16 @@
 """
     broker_learning_common.jl
 
-Shared harness for the staged broker-learning diagnostics. The goal across the
-stages is to separate three questions about whether the broker can learn the
-*interaction* term of the matching function:
+Shared functions for diagnostics of broker learning. The matching signal is
+decomposed as:
 
     f(x_i,x_j) = ρ·½(x_i'c + x_j'c)              ← quality   (linear, additive)
                + (1-ρ)·x_i'A x_j                  ← core      (symmetric bilinear)
                + (1-ρ)·δ·sign(x_i'B x_j)·x_i'A x_j ← gain      (regime-gated, discontinuous)
 
-The broker's symmetric feature map spans `quality` and `core` exactly (a linear
-readout recovers them). The *gain* term is a product of `sign(quadratic)` and a
-`quadratic`; it is discontinuous across the regime boundary `x_i'B x_j = 0` and
-is NOT in the linear span of the features. It is also the only term where the
-broker's cross-agent data should give it an edge over single-agent learners.
-
-So the headline question is operationalized as: **how much of the `gain`
-component does a fitted predictor reproduce?** We measure this with a component
-regression (regress predictions on the true components; the coefficient on
-`gain` is ~1 if recovered, ~0 if ignored) plus per-regime bias and overall R².
-
-This file only defines reusable pieces. Each stage script includes it.
+The symmetric pair features span the `quality` and `core` components linearly.
+The discontinuous `gain` component is not in their linear span. The diagnostics
+report component-regression coefficients, per-regime bias, and overall R².
 """
 
 using BrokerageABM
@@ -57,8 +47,8 @@ using DifferentiationInterface: gradient!, Constant
     make_env(; d, s, rho, delta, sigma_eps, sigma_x, seed, n_pool) -> (env, pool, geo)
 
 Build a matching environment and a pool of `n_pool` agent types drawn from the
-same sinusoidal-curve distribution the live model uses. Sampling pairs from
-`pool` reproduces the support the broker would actually encounter; for full
+same sinusoidal-curve distribution used by the simulation. Sampling pairs from
+`pool` reproduces the support the broker would encounter; for full
 sphere coverage, draw uniform unit vectors instead (see `sample_pairs`).
 """
 function make_env(;
@@ -90,8 +80,8 @@ end
     sample_pairs(env, pool, n, rng; source) -> (Xi, Xj)
 
 Sample `n` ordered type pairs as two `d×n` matrices. `source`:
-- `:pool`    — both endpoints drawn from the realized type pool (model support)
-- `:sphere`  — both endpoints uniform on the unit sphere (full coverage)
+- `:pool`: both endpoints drawn from the realized type pool
+- `:sphere`: both endpoints drawn uniformly from the unit sphere
 """
 function sample_pairs(
     env::MatchingEnv, pool::Vector{Vector{Float64}}, n::Int, rng::AbstractRNG; source::Symbol=:pool
@@ -172,7 +162,7 @@ function broker_features(Xi::Matrix{Float64}, Xj::Matrix{Float64})
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Metrics: the headline is gain recovery via component regression
+# Component-recovery metrics
 # ─────────────────────────────────────────────────────────────────────────────
 
 r2(pred, truth) = 1 - sum(abs2, pred .- truth) / sum(abs2, truth .- mean(truth))
@@ -180,18 +170,16 @@ r2(pred, truth) = 1 - sum(abs2, pred .- truth) / sum(abs2, truth .- mean(truth))
 """
     component_regression(pred, comps) -> (; b0, bq, bc, bg, resid_frac_gain)
 
-Regress predictions on `[1, quality, core, gain]`. A predictor that perfectly
-reproduces a component has coefficient ~1 on it. `bg` (the gain coefficient) is
-the headline: ~1 = gain recovered, ~0 = gain ignored. `resid_frac_gain` is the
-fraction of the prediction-residual variance (pred - target) explained by gain,
-i.e. how much of the model's error is structured gain it failed to track.
+Regress predictions on `[1, quality, core, gain]`. A coefficient near one means
+that the corresponding component is recovered. `resid_frac_gain` is the share
+of prediction-residual variance explained by the gain component.
 """
 function component_regression(pred::Vector{Float64}, comps)
     n = length(pred)
     D = hcat(ones(n), comps.quality, comps.core, comps.gain)
     β = D \ pred
     resid = pred .- comps.target
-    # how much of resid is explained by the gain direction
+    # Share of residual variance aligned with the gain component.
     g = comps.gain .- mean(comps.gain)
     rr = resid .- mean(resid)
     denom = sum(abs2, rr)
@@ -212,7 +200,7 @@ function regime_metrics(pred::Vector{Float64}, comps)
     return out
 end
 
-"""Fraction of target variance carried by each component (and its cov share)."""
+"""Component variances divided by target variance."""
 function variance_shares(comps)
     vt = var(comps.target)
     return (;
@@ -284,30 +272,15 @@ function print_row(label, m)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Strong optimizer (Adam) — representational ceiling probe
-#
-# Stage 1's core risk is conflating REPRESENTATION ("can the function class
-# express the gain term?") with OPTIMIZATION ("can vanilla GD find it?"). Vanilla
-# full-batch GD at a fixed lr is a weak optimizer for sharpening the steep ramp a
-# ReLU net needs to approximate the discontinuous gain term, so a low βg under
-# the model's own GD does NOT prove a representational gap.
-#
-# `train_nn_adam!` reuses the model's EXACT Enzyme gradient of the EXACT loss
-# (`nn_loss_theta`) and the same parameter packing, swapping only the update rule
-# for Adam. So it is an apples-to-apples ceiling for the *architecture + feature
-# map*: if Adam (long) drives βg→1, the representation is fine and the live
-# shortfall is optimizer/schedule (Stage 2) or data (Stage 3); if Adam also
-# plateaus well below 1, the gap is representational.
+# Full-batch Adam comparison
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
     train_nn_adam!(nn, grad, X, q, n_steps, lr; β1, β2, ϵ) -> Nothing
 
-Full-batch Adam on the same packed-parameter loss the model trains with. The raw
-gradient is computed via the model's `gradient!`/Enzyme path into `grad.dtheta`;
-we overwrite `grad.dtheta` in place with the Adam step and reuse the model's
-`apply_nn_gradient!` to write it back, so the only difference from the live
-`train_step_prefix!` is the optimizer.
+Fit with full-batch Adam using the production loss, gradient, and parameter
+packing. Unlike production training, this diagnostic initializes fresh moment
+state and does not use the rolling-window schedule.
 """
 function train_nn_adam!(
     nn::NeuralNet,
@@ -355,7 +328,7 @@ function train_nn_adam!(
     return nothing
 end
 
-"""Fit a broker NN on features `Z`→`y` with Adam (strong-optimizer ceiling)."""
+"""Fit a broker network on feature columns `Z` and targets `y` with full-batch Adam."""
 function fit_broker_adam(
     Z, y, h::Int; steps::Int=4000, lr::Float64=0.01, seed::Int=1, b2_init::Float64=Q_OFFSET
 )
@@ -367,18 +340,15 @@ function fit_broker_adam(
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Decisive representation diagnostics
+# Residual diagnostics
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
     residual_by_boundary(pred, comps; nbins) -> Vector{NamedTuple}
 
-Bin holdout points by distance to the regime boundary |x_iʹB x_j| and report mean
-|residual| per bin. The discontinuity in the gain term lives at x_iʹB x_j = 0, so
-if the predictor's error is *concentrated in the smallest-|bxj| bin* and falls
-away as |bxj| grows, the error is the regime jump itself (a representational
-signature). If |residual| is roughly flat across bins, the shortfall is global
-underfitting (optimization), not the discontinuity.
+Bin holdout observations by distance to the regime boundary
+`|x_i' B x_j| = 0` and report mean absolute residuals. Concentration near zero
+is consistent with prediction error around the regime boundary.
 """
 function residual_by_boundary(pred::Vector{Float64}, comps; nbins::Int=6)
     a = abs.(comps.bxj)
@@ -402,7 +372,7 @@ end
 
 """Print a residual-by-boundary table (closest-to-boundary bin first)."""
 function print_boundary_table(label, rows)
-    println("  $label — mean|residual| by distance to regime boundary |x'Bx|:")
+    println("  $label: mean|residual| by distance to regime boundary |x'Bx|:")
     @printf("    %-8s %10s %10s %8s %12s %12s\n", "bin", "lo|bxj|", "hi|bxj|", "n", "mae", "|gain|")
     for r in rows
         @printf("    %-8d %10.4f %10.4f %8d %12.4f %12.4f\n", r.bin, r.lo, r.hi, r.n, r.mae, r.mae_gain)

@@ -81,7 +81,7 @@ export BROKERAGE_ABM_BASELINE_N_SEEDS=50
 
 ## Ridge experiments
 
-The reported paired-Ridge sweep uses the same full design and seed plan as the
+The reported base Ridge sweep uses the same full design and seed plan as the
 NN sweep:
 
 ```bash

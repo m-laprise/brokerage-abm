@@ -1,32 +1,8 @@
 using Test
 using BrokerageABM
 
-# Deterministic trajectory fingerprint: verify that a fixed-seed simulation
-# reproduces the approved output values. This catches accidental changes to
-# simulation dynamics or RNG consumption; it is not a scientific performance
-# benchmark.
-# Baseline refreshed on 2026-06-03 after approved learning and initialization
-# changes: symmetric broker pair features, hidden widths derived from d
-# including agent width 2d, DI/Enzyme gradients, full initial agent neighbor
-# history seeding, and broker seed history from existing roster-roster ties
-# without adding edges.
-# Baseline refreshed on 2026-06-04 after approved correctness fixes: each
-# self-search demander samples an independent stranger pool, and period metrics
-# are recorded before entry/exit turnover.
-# Baseline refreshed on 2026-06-06 after the approved broker-learning fix: Adam
-# optimizer (lr 0.01) in place of vanilla GD, and a period-based training window
-# in place of the 500-observation window. Refreshed again the same day after
-# tuning the now-parameterized schedule to its cost/benefit knees:
-# train_window_periods=40, train_max_obs=2000, train_steps=100 (per-period step
-# count decoupled from the window/cap and set over full history).
-# Baseline refreshed on 2026-06-07 after decoupling the frictions and reservation
-# from the surplus scale (phi = c_s = lambda_c * q_cal, r = reservation_frac *
-# q_cal) and setting lambda_c = 0.05 (5% commission).
-# Fingerprint refreshed on 2026-08-28 after approved initialization, rolling-window,
-# and unmatched-neighbor evaluation changes.
-# Fingerprint refreshed on 2026-08-28 after the approved prediction-ranking
-# correction: agents and the broker now order exact prediction ties randomly
-# before market selection and rank-correlation assessment.
+# Fixed-seed trajectory fingerprint for detecting unintended changes to model
+# behavior or random-number consumption. This is not a performance benchmark.
 @testset "Regression Baseline" begin
     using Statistics: mean
 

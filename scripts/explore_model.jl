@@ -56,7 +56,7 @@ function has_final_agent_degrees(final_agent_degrees, n_seeds::Int, N::Int)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Dynamics figure (5×4 panel, matching v0.1 quality)
+# Dynamics figure (5×4 panels)
 # ─────────────────────────────────────────────────────────────────────────────
 
 function plot_ensemble(

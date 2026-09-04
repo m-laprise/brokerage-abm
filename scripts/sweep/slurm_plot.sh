@@ -1,11 +1,10 @@
 #!/bin/bash
-# Dependent plotting array: one task per OAT cell or phase pair.
+# Dependent plotting array with one task per OAT cell or two-parameter grid.
 # Submit after the compute array with a dependency + array range + log paths:
 #   sbatch --dependency=afterany:<compute_jobid> --array=0-25%24 \
 #          --output=$LOGDIR/plot_%A_%a.out --error=$LOGDIR/plot_%A_%a.err \
 #          slurm_plot.sh <repo_root> <sweep_dir>
-# afterany (not afterok) so plotting proceeds even if a few compute tasks fail;
-# each plot task tolerates missing shards and the report agent lists gaps.
+# Use afterany so aggregation can report missing shards after partial compute failure.
 # Args: $1 = repo root, $2 = sweep dir (exported as BROKERAGE_ABM_SWEEP_DIR).
 #SBATCH --job-name=brokerage_abm_plot
 #SBATCH --partition=cpu

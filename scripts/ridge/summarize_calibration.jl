@@ -8,6 +8,8 @@ secondary checks.
 
 Required environment:
   BROKERAGE_ABM_RIDGE_CALIBRATION_DIR  directory containing pilot JLD2 files
+
+Usage: julia --project --threads=auto scripts/ridge/summarize_calibration.jl
 """
 
 using DataFrames: DataFrame, eachrow, groupby, names
@@ -30,16 +32,8 @@ function run_summary(path)
     rows = df[in.(df.period, Ref(LATE_PERIODS)), :]
     agent_rank = finite_mean(rows.agent_holdout_rank)
     broker_rank = finite_mean(rows.broker_holdout_rank)
-    # The completed joint calibration predates the separate provenance fields.
-    # Accept those artifacts while new reproductions record both penalties.
-    lambda_agent = Float64(
-        haskey(config, "ridge_lambda_agent") ?
-        config["ridge_lambda_agent"] : config["ridge_lambda"]
-    )
-    lambda_broker = Float64(
-        haskey(config, "ridge_lambda_broker") ?
-        config["ridge_lambda_broker"] : config["ridge_lambda"]
-    )
+    lambda_agent = Float64(config["ridge_lambda_agent"])
+    lambda_broker = Float64(config["ridge_lambda_broker"])
     lambda_agent == lambda_broker || error("joint calibration requires equal penalties: $path")
     return (
         lambda=lambda_agent,

@@ -1,7 +1,7 @@
 """
     scripts/ridge/analyze_sweep.jl
 
-Compare the paired-Ridge reporting sweep with the canonical NN reporting sweep.
+Compare the base Ridge reporting sweep with the canonical NN reporting sweep.
 The analysis gives each effective model realization one observation. Comparisons
 use the planned seeds common to both sweeps: 50 at baseline and 20 elsewhere.
 
@@ -11,6 +11,8 @@ Required environment:
   BROKERAGE_ABM_RIDGE_SWEEP_DIR
 
 Outputs are written to `output/ridge/paired/results/`.
+
+Usage: julia --project --threads=auto scripts/ridge/analyze_sweep.jl
 """
 
 using CairoMakie
@@ -285,7 +287,7 @@ function comparison_figure(nn, ridge, rows)
             position;
             title=title,
             xlabel="NN condition mean",
-            ylabel="Paired Ridge - NN",
+            ylabel="Base Ridge - NN",
             limits=(nothing, (ylo - ypad, yhi + ypad)),
         )
         hlines!(ax, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.5)

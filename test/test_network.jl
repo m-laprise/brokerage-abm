@@ -44,7 +44,7 @@ using LinearAlgebra: normalize
         rng = StableRNG(42)
         G = build_network(N, 6, 0.1, rng)
         types = [normalize(randn(rng, 8)) for _ in 1:N]
-        # Build minimal Agent structs for the new add_entrant_edges! signature
+        # Build the minimal agent fixture required by `add_entrant_edges!`.
         d = 8
         h_agent = agent_hidden_width(d)
         mock_agents = [

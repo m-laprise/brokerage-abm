@@ -1,19 +1,18 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Sweep orchestrator (staged).
+# Staged sweep submission driver.
 #
 # Canonical flow (smoke-test then submit):
-#   ./submit.sh resolve          # LOGIN node: registry update + resolve + download
-#   ./submit.sh setup            # sbatch compute: precompile only; wait for it
+#   ./submit.sh resolve          # login node: registry update, resolve, and download
+#   ./submit.sh setup            # submit precompilation and wait for completion
 #   ./submit.sh manifest         # srun compute: write manifest.{json,jld2}+counts.env
-#   ./submit.sh smoke [idx]      # run ONE array task (default 0); inspect output
-#   ./submit.sh compute          # submit the full compute array  (prints JOBID)
+#   ./submit.sh smoke [idx]      # run one array task (default 0), then inspect it
+#   ./submit.sh compute          # submit the full compute array and print its job ID
 #   ./submit.sh plot             # submit the dependent plot array (afterany)
 #   ./submit.sh status           # squeue for this user's sweep jobs
 #
-# Cluster compute nodes are assumed to have NO internet: every network/IO step (registry update,
-# resolve, package download) happens in `resolve` on the login node; only the
-# compute-heavy precompile/simulation run under sbatch/srun.
+# The `resolve` stage performs network operations on the login node. Precompilation
+# and simulation run on compute nodes through `sbatch` or `srun`.
 #
 # Cluster settings come from the environment (BROKERAGE_ABM_ACCOUNT,
 # BROKERAGE_ABM_DATA_ROOT). Override via env: BROKERAGE_ABM_DATA_ROOT,
@@ -71,14 +70,14 @@ load_julia() {
 stage="${1:-help}"
 case "$stage" in
   resolve)
-    # LOGIN-NODE network step (compute nodes have no internet): update the
+    # Login-node network step: update the
     # General registry, check Project/Manifest consistency, and download every
     # pinned package into the shared depot. Manifest.toml is committed, so any
     # resolver change is an error requiring local review. Network/IO only; the
     # compute-heavy precompile is the `setup` stage.
     load_julia
     cd "$REPO"
-    # JULIA_PKG_PRECOMPILE_AUTO=0: keep the compute-heavy precompile OUT of the
+    # JULIA_PKG_PRECOMPILE_AUTO=0 keeps compute-heavy precompilation out of the
     # login node. A fresh shared depot has no registry, so add General once.
     JULIA_PKG_PRECOMPILE_AUTO=0 julia --project --threads=auto -e '
         using Pkg
