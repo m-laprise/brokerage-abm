@@ -57,11 +57,20 @@ function reporting_git_provenance(
 end
 
 const MANUSCRIPT_ITERATION_PATHS = (
-    "paper",
+    "paper/manuscript.tex",
+    "paper/section_source.tex",
+    "paper/captions.tex",
+    "paper/supplement.tex",
+    "paper/references.bib",
+    "paper/ridge",
     "scripts/paper/figures.jl",
+    "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",
     "scripts/paper/build_supplement.jl",
     "scripts/paper/build_manuscript.jl",
+    "scripts/paper/build_appendices.jl",
+    "scripts/paper/build_publication.jl",
+    "scripts/ridge/build_reports.jl",
     "scripts/reporting_provenance.jl",
     "test/test_reporting_provenance.jl",
 )
@@ -69,9 +78,10 @@ const MANUSCRIPT_ITERATION_PATHS = (
 """
     manuscript_git_provenance(path)
 
-Return provenance for a manuscript build while allowing uncommitted paper and
-manuscript-builder edits. Changes to analysis code, specifications, tests, or
-other source files still stop the build, except for this helper's focused test.
+Return provenance for a manuscript build while allowing explicitly listed prose,
+figure-presentation, and builder edits. Changes to analysis code, model
+specifications, tests, or other source files still stop the build, except for
+this helper's focused test.
 """
 function manuscript_git_provenance(path)
     return reporting_git_provenance(

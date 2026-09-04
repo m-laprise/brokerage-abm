@@ -37,5 +37,26 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
             repository;
             allowed_dirty_paths=("source.txt",),
         )
+
+        mkpath(joinpath(repository, "paper", "appendices"))
+        write(joinpath(repository, "paper", "manuscript.tex"), "manuscript\n")
+        write(
+            joinpath(repository, "paper", "appendices", "model_specifications.tex"),
+            "specifications\n",
+        )
+        run(`git -C $repository add paper`)
+        run(`git -C $repository commit -q -m paper`)
+        write(joinpath(repository, "source.txt"), "committed\n")
+        write(joinpath(repository, "analysis.jl"), "")
+        run(`git -C $repository add source.txt analysis.jl`)
+        run(`git -C $repository commit -q -m cleanup`)
+
+        write(joinpath(repository, "paper", "manuscript.tex"), "revised manuscript\n")
+        @test !manuscript_git_provenance(repository).source_clean
+        write(
+            joinpath(repository, "paper", "appendices", "model_specifications.tex"),
+            "revised specifications\n",
+        )
+        @test_throws ErrorException manuscript_git_provenance(repository)
     end
 end

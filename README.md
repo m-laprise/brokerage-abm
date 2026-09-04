@@ -25,9 +25,9 @@ realized match value, brokered access, outsourcing, and structural centrality.
 - [Complete working paper with appendices](output/manuscript/brokers_who_do_not_bridge_with_appendices.pdf)
 - [Scientific output index](output/README.md), covering the main figures,
   supplementary analyses, and Ridge experiments
-- [Appendix A: Simulation pseudocode](simulation_pseudocode.pdf)
-- [Appendix B: Model specifications](model_specifications.pdf)
-- [Supplementary Material: Alternative structural measures and Ridge robustness](output/supplement/supplement.pdf)
+- [Appendix A: Simulation pseudocode](output/appendices/simulation_pseudocode.pdf)
+- [Appendix B: Model specifications](output/appendices/model_specifications.pdf)
+- [Supplementary Material: Model diagnostics and structural robustness](output/supplement/supplement.pdf)
 
 ## Quick start
 
@@ -45,8 +45,7 @@ data:
 julia --project --threads=auto scripts/explore_model.jl --baseline --rerun
 ```
 
-The outputs are written under `data/figures/exploration/` and
-`data/sims/exploration/`.
+The outputs are written under `runs/exploration/`.
 
 ## Repository structure
 
@@ -58,7 +57,9 @@ The outputs are written under `data/figures/exploration/` and
 | `scripts/sweep/` | Reproducible SLURM sweep pipeline and [operating guide](scripts/sweep/README.md) |
 | `scripts/paper/` | Statistical reporting and figure pipeline, with a [reproduction guide](scripts/paper/README.md) |
 | `scripts/ridge/` | Ridge experiments, ablations, calibration, and reports |
-| `paper/` | Hand-edited TeX sources |
+| `paper/` | Hand-edited manuscript, report, and appendix sources |
+| `notes/` | Hand-authored research notes |
+| `runs/` | Ignored raw simulation runs and local exploratory artifacts |
 | `output/` | Generated results, figures, reports, and provenance records |
 
 ## Study design and reproducibility

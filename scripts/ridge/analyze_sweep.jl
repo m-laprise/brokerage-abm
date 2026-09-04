@@ -10,7 +10,7 @@ Required environment:
   BROKERAGE_ABM_NN_SWEEP_DIR
   BROKERAGE_ABM_RIDGE_SWEEP_DIR
 
-Outputs are written to `output/ridge/paired/results/`.
+Outputs are written to `output/ridge/paired/analysis/`.
 
 Usage: julia --project --threads=auto scripts/ridge/analyze_sweep.jl
 """
@@ -32,7 +32,10 @@ const RIDGE_ROOT = get(ENV, "BROKERAGE_ABM_RIDGE_SWEEP_DIR") do
     error("BROKERAGE_ABM_RIDGE_SWEEP_DIR is required")
 end
 const OUT_DIR = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "results")
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "analysis")
+)
+const FIGURE_DIR = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "figures")
 )
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
@@ -312,13 +315,14 @@ function comparison_figure(nn, ridge, rows)
     paired_difference_plot(
         fig[1, 3], :output_gap, "C. Broker channel minus self-search output gap"
     )
-    save(joinpath(OUT_DIR, "ridge_comparison.png"), fig; px_per_unit=2)
+    save(joinpath(FIGURE_DIR, "ridge_comparison.png"), fig; px_per_unit=2)
     return nothing
 end
 
 function main()
     provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
     mkpath(OUT_DIR)
+    mkpath(FIGURE_DIR)
     nn = load_comparison_sweep(NN_ROOT)
     ridge = load_comparison_sweep(RIDGE_ROOT)
     validate_comparison(nn, ridge)

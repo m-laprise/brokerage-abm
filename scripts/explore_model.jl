@@ -16,8 +16,7 @@ Usage: julia --project --threads=auto scripts/explore_model.jl
 Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --threads=auto"
 
 using BrokerageABM
-using BrokerageABM:
-    generate_matching_env, generate_curve_geometry, generate_agent_types
+using BrokerageABM: generate_matching_env, generate_curve_geometry, generate_agent_types
 using DataFrames: DataFrame
 using LinearAlgebra: svdvals
 using StableRNGs: StableRNG
@@ -27,8 +26,8 @@ using Statistics: mean
 include(joinpath(@__DIR__, "exploration_common.jl"))
 include(joinpath(@__DIR__, "figure_style.jl"))
 
-const OUTDIR = joinpath(@__DIR__, "..", "data", "figures", "exploration")
-const DATADIR = joinpath(@__DIR__, "..", "data", "sims", "exploration")
+const OUTDIR = joinpath(@__DIR__, "..", "runs", "exploration", "figures")
+const DATADIR = joinpath(@__DIR__, "..", "runs", "exploration", "simulations")
 const NETWORK_DEGREE_STATS_VERSION = 3
 mkpath(OUTDIR)
 mkpath(DATADIR)

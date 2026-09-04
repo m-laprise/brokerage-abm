@@ -17,8 +17,8 @@ effective size:
   S6  rank-correlation difference and output gap against each measure, colored by rho
       (the advantage analysis, with the alternative measures in place of betweenness)
 
-The script reads only `output/supplement/dgp_figdata.jld2` and
-`output/supplement/figdata.jld2`. It performs no simulation and writes
+The script reads only `output/supplement/dgp_figure_data.jld2` and
+`output/supplement/structural_figure_data.jld2`. It performs no simulation and writes
 print-resolution PNGs plus the display-convention keys used by the captions.
 
 Usage: julia --project --threads=auto scripts/paper/supp_figures.jl
@@ -29,7 +29,7 @@ include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
 
-const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figs"))
+const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figures"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
 # Display conventions, quoted in the supplement captions via the keys emitted to
@@ -62,25 +62,27 @@ const EFFS = ("effective_size", "Broker effective size")
 const CELLKEY = Dict("constraint" => "constraint", "effective_size" => "effsize")
 
 const STRUCTURAL_FD = JLD2.load(
-    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2"))
+    normpath(
+        joinpath(
+            @__DIR__, "..", "..", "output", "supplement", "structural_figure_data.jld2"
+        ),
+    ),
 )["figdata"]
 const DGP_FD = JLD2.load(
-    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figdata.jld2"))
+    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figure_data.jld2"))
 )["figdata"]
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
     allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/supp_figures.jl"),
 )
-const DATA_ANALYSIS_COMMITS = [
-    validate_analysis_commit(
-        REPORTING_PROVENANCE,
-        dataset["meta"]["analysis_git_commit"];
-        artifact="$label figure data",
-    ) for (label, dataset) in (("DGP", DGP_FD), ("structural", STRUCTURAL_FD))
-]
-length(unique(DATA_ANALYSIS_COMMITS)) == 1 ||
-    error("supplement figure datasets record different analysis commits")
-const DATA_ANALYSIS_COMMIT = only(unique(DATA_ANALYSIS_COMMITS))
+const DGP_ANALYSIS_COMMIT = validate_analysis_commit(
+    REPORTING_PROVENANCE, DGP_FD["meta"]["analysis_git_commit"]; artifact="DGP figure data"
+)
+const STRUCTURAL_ANALYSIS_COMMIT = validate_analysis_commit(
+    REPORTING_PROVENANCE,
+    STRUCTURAL_FD["meta"]["analysis_git_commit"];
+    artifact="structural figure data",
+)
 all(
     dataset["meta"]["analysis_source_clean"] == true for dataset in (DGP_FD, STRUCTURAL_FD)
 ) || error("supplement figure data were generated from dirty analysis sources")
@@ -140,7 +142,7 @@ function draw_interval_series!(axis, series; color=COL_GAP)
 end
 
 # ── S1: realized types around the latent type curve ──
-function supp_S1_type_geometry()
+function type_geometry()
     geometry = DGP_FD["type_geometry"]
     curve = geometry["curve_projection"]
     types = geometry["type_projection"]
@@ -195,11 +197,11 @@ function supp_S1_type_geometry()
         width=16,
     )
     colgap!(fig.layout, 14)
-    savefig("supp_S1_type_geometry.png", fig)
+    savefig("type_geometry.png", fig)
 end
 
 # ── S2: conditional match-value surfaces ──
-function supp_S2_dgp_structure()
+function match_value_surfaces()
     heatmaps = DGP_FD["heatmaps"]
     conditions = DGP_FD["heatmap_conditions"]
     matrices = [
@@ -267,7 +269,7 @@ function supp_S2_dgp_structure()
     rowsize!(panels, 3, Relative(0.46))
     colgap!(panels, 12)
     rowgap!(panels, 12)
-    savefig("supp_S2_dgp_structure.png", fig)
+    savefig("match_value_surfaces.png", fig)
 end
 
 function spectrum_interval(matrix, component)
@@ -280,7 +282,7 @@ function spectrum_interval(matrix, component)
 end
 
 # ── S3: singular spectra and 90%-energy effective dimension ──
-function supp_S3_dgp_dimension()
+function effective_dimensionality()
     displayed_rhos = [0.0, 0.5, 0.85, 1.0]
     components = 1:SPECTRUM_COMPONENTS
     fig = Figure(; size=(1390, 480))
@@ -387,11 +389,11 @@ function supp_S3_dgp_dimension()
     )
     Legend(fig[1, 3], rank_axis, "Difficulty"; LEG_KW...)
     colgap!(fig.layout, 16)
-    savefig("supp_S3_dgp_dimension.png", fig)
+    savefig("effective_dimensionality.png", fig)
 end
 
 # ── S4: each measure vs rho across the grid, one line per delta ──
-function supp_S4_grid_lines()
+function alternative_measures_grid()
     gc = STRUCTURAL_FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gc]))
     boundary_cells = [c for c in gc if c["rho"] == 1.0]
@@ -472,12 +474,12 @@ function supp_S4_grid_lines()
         ci == 1 && axislegend(ax, "Difficulty"; position=:rt, LEG_KW...)
     end
     colgap!(fig.layout, 16)
-    savefig("supp_S4_grid_lines.png", fig)
+    savefig("alternative_measures_grid.png", fig)
 end
 
 # ── S5: measure over time at baseline (left) + vs access fraction across regimes
 #    (right); constraint (top), effective size (bottom) ──
-function supp_S5_position()
+function alternative_measures_position()
     cells = STRUCTURAL_FD["oat_cells"]
     ac = [c["access"] for c in cells]
     fig = Figure(; size=(1180, 860))
@@ -515,11 +517,11 @@ function supp_S5_position()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("supp_S5_position.png", fig)
+    savefig("alternative_measures_position.png", fig)
 end
 
 # ── S6: rank-correlation difference and output gap against each measure ──
-function supp_S6_advantage()
+function alternative_measures_advantage()
     bc = STRUCTURAL_FD["regime_cells"]
     rho = [c["rho"] for c in bc]
     xs = [(CONSTR[2], [c["constraint"] for c in bc]), (EFFS[2], [c["effsize"] for c in bc])]
@@ -564,18 +566,18 @@ function supp_S6_advantage()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("supp_S6_advantage.png", fig)
+    savefig("alternative_measures_advantage.png", fig)
 end
 
 foreach(
     function_name -> function_name(),
     (
-        supp_S1_type_geometry,
-        supp_S2_dgp_structure,
-        supp_S3_dgp_dimension,
-        supp_S4_grid_lines,
-        supp_S5_position,
-        supp_S6_advantage,
+        type_geometry,
+        match_value_surfaces,
+        effective_dimensionality,
+        alternative_measures_grid,
+        alternative_measures_position,
+        alternative_measures_advantage,
     ),
 )
 # emit the display-convention keys quoted by the supplement captions
@@ -586,11 +588,12 @@ open(
         io,
         "% supp_figmeta.tex: generated by scripts/paper/supp_figures.jl. Do not edit by hand.",
     )
-    println(io, "% Data analysis commit: $DATA_ANALYSIS_COMMIT")
+    println(io, "% DGP data analysis commit: $DGP_ANALYSIS_COMMIT")
+    println(io, "% Structural data analysis commit: $STRUCTURAL_ANALYSIS_COMMIT")
     println(io, "% Rendering commit: $(REPORTING_PROVENANCE.commit)")
     println(
         io,
-        "% Display conventions used to render output/supplement/figs/, quoted in captions via \\pv keys.",
+        "% Display conventions used to render output/supplement/figures/, quoted in captions via \\pv keys.",
     )
     println(io, "\\pvDefine{suppRollWin}{$ROLLW}")
     println(io, "\\pvDefine{suppMeasInterval}{$MEASINT}")

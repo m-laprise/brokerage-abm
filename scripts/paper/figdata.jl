@@ -3,7 +3,7 @@
 
 Cluster-side extract for the figure pipeline. Reads the full sweep
 (`BROKERAGE_ABM_SWEEP_DIR`) and writes the small derived dataset from which
-the figure renderer operates. The default output is `output/main/figdata.jld2`;
+the figure renderer operates. The default output is `output/main/figure_data.jld2`;
 set `BROKERAGE_ABM_FIGDATA_PATH` to generate a counterpart for another sweep.
 The renderer then works locally with no access to the sweep. No hard-coded
 results: every stored value is computed from the saved sweep data at run time.
@@ -11,7 +11,7 @@ results: every stored value is computed from the saved sweep data at run time.
 Rerun only when the underlying numbers change (a new sweep, or a figure needing a
 metric not yet extracted); styling iteration needs only figures.jl.
 
-Contents of figdata.jld2 (single key "figdata", a Dict):
+Contents of figure_data.jld2 (single key "figdata", a Dict):
   period         per-period time axis of the baseline runs
   series         per-period ensemble means at the baseline, retained for
                  convenience
@@ -41,7 +41,7 @@ const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const DEFAULT_OUTFILE = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2")
+    joinpath(@__DIR__, "..", "..", "output", "main", "figure_data.jld2")
 )
 const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE))
 const REPORTING_PROVENANCE = reporting_git_provenance(

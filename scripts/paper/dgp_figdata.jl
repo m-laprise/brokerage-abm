@@ -10,7 +10,7 @@ curve into three dimensions. S2 displays five distinct matching conditions for
 100 principals sampled at evenly spaced general-quality ranks; S3 uses all 1,000
 principals.
 
-The output, `output/supplement/dgp_figdata.jld2`, contains the centered conditional
+The output, `output/supplement/dgp_figure_data.jld2`, contains the centered conditional
 type-geometry projection used in S1, conditional match-value matrices used in S2,
 normalized singular spectra and seed-level 90%-energy effective ranks used in S3,
 and complete generation provenance.
@@ -31,7 +31,7 @@ include(joinpath(@__DIR__, "..", "sweep", "sweep_config.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const REPO = normpath(joinpath(@__DIR__, "..", ".."))
-const OUTFILE = joinpath(REPO, "output", "supplement", "dgp_figdata.jld2")
+const OUTFILE = joinpath(REPO, "output", "supplement", "dgp_figure_data.jld2")
 const DGP_N = 1000
 const DGP_SEEDS = collect(1:50)
 const HEATMAP_N = 100

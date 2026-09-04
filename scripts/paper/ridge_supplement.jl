@@ -2,12 +2,12 @@
     scripts/paper/ridge_supplement.jl
 
 Emit the small set of base Ridge values quoted in the paper. The input is
-`output/ridge/paired/figdata.jld2`, extracted from the complete base Ridge sweep
+`output/ridge/paired/figure_data.jld2`, extracted from the complete base Ridge sweep
 by `scripts/paper/figdata.jl`.
 
 Outputs:
 
-  * `output/ridge/paired/results/paper_values.tex`
+  * `output/ridge/paired/analysis/paper_values.tex`
 
 No raw sweep access is required. Every reported value is computed from the
 retained seed-level figure data. The input and output paths can be overridden
@@ -28,12 +28,12 @@ const REPO = normpath(joinpath(@__DIR__, "..", ".."))
 const INPUT = get(
     ENV,
     "BROKERAGE_ABM_RIDGE_FIGDATA_PATH",
-    joinpath(REPO, "output", "ridge", "paired", "figdata.jld2"),
+    joinpath(REPO, "output", "ridge", "paired", "figure_data.jld2"),
 )
 const VALUES = get(
     ENV,
     "BROKERAGE_ABM_RIDGE_PAPER_VALUES_PATH",
-    joinpath(REPO, "output", "ridge", "paired", "results", "paper_values.tex"),
+    joinpath(REPO, "output", "ridge", "paired", "analysis", "paper_values.tex"),
 )
 const BASELINE_REL = "oat/rho=0.5"
 

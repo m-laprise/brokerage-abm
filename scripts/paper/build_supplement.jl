@@ -4,7 +4,7 @@
 Compile the standalone Supplementary Material to
 `output/supplement/supplement.pdf`. Inputs are the hand-edited
 `paper/supplement.tex`, generated `output/supplement/figmeta.tex`, and the
-figures in `output/supplement/figs/`.
+figures in `output/supplement/figures/`.
 
 The build fails on a missing input, an undefined `\\pv` value, an unused display
 convention, a missing figure, or a LaTeX error.
@@ -22,7 +22,7 @@ const PAPER = normpath(joinpath(@__DIR__, "..", "..", "paper"))
 const GENERATED = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement"))
 const SRC = joinpath(PAPER, "supplement.tex")
 const FIGMETA = joinpath(GENERATED, "figmeta.tex")
-const FIGDIR = joinpath(GENERATED, "figs")
+const FIGDIR = joinpath(GENERATED, "figures")
 const PDF = joinpath(GENERATED, "supplement.pdf")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
@@ -32,15 +32,18 @@ fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
 
 isfile(SRC) || fail("missing $SRC")
 isfile(FIGMETA) || fail("missing $FIGMETA (run scripts/paper/supp_figures.jl first)")
-analysis_commits = [
-    validate_analysis_commit(
-        REPORTING_PROVENANCE,
-        recorded_analysis_commit(provenance_file);
-        artifact=basename(provenance_file),
-    ) for provenance_file in (FIGMETA,)
-]
-length(unique(analysis_commits)) == 1 ||
-    fail("supplement inputs record different analysis commits")
+figmeta_source = read(FIGMETA, String)
+analysis_commits = Dict{String,String}()
+for label in ("DGP", "Structural")
+    match_result = match(
+        Regex("(?im)^%\\s*$label data analysis commit:\\s*([0-9a-f]{7,40})\\s*\$"),
+        figmeta_source,
+    )
+    isnothing(match_result) && fail("figmeta.tex records no $label analysis commit")
+    analysis_commits[lowercase(label)] = validate_analysis_commit(
+        REPORTING_PROVENANCE, match_result[1]; artifact="$label supplement figure data"
+    )
+end
 
 defs = Set{String}()
 figmeta_defs = Set{String}()
@@ -98,7 +101,8 @@ mktempdir() do build
     errors == 0 || fail("$errors LaTeX errors while building the supplement")
     cp(joinpath(build, "supplement.pdf"), PDF; force=true)
     open(joinpath(GENERATED, "provenance.txt"), "w") do io
-        println(io, "analysis_commit=$(only(unique(analysis_commits)))")
+        println(io, "dgp_analysis_commit=$(analysis_commits["dgp"])")
+        println(io, "structural_analysis_commit=$(analysis_commits["structural"])")
         println(io, "manuscript_commit=$(REPORTING_PROVENANCE.commit)")
         println(io, "manuscript_source_clean=$(REPORTING_PROVENANCE.source_clean)")
     end

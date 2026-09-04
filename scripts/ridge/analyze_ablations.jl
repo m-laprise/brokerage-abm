@@ -13,9 +13,9 @@ Required environment:
   BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR
   BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR
 
-Detailed outputs are written to `output/ridge/ablations/results/`. Seed-level
+Detailed outputs are written to `output/ridge/ablations/analysis/`. Seed-level
 inputs for the compact main-text figure are written to
-`output/ridge/ablations/figdata.jld2`.
+`output/ridge/ablations/figure_data.jld2`.
 
 Usage: julia --project --threads=auto scripts/ridge/analyze_ablations.jl
 """
@@ -58,11 +58,14 @@ const VARIANTS = (
     ),
 )
 const OUT_DIR = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "results")
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "analysis")
+)
+const FIGURE_DIR = normpath(
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figures")
 )
 const PAPER_VALUES = joinpath(OUT_DIR, "paper_values.tex")
 const FIGDATA = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figdata.jld2")
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figure_data.jld2")
 )
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
@@ -319,7 +322,7 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
             fontsize=14,
         )
     end
-    save(joinpath(OUT_DIR, "ridge_ablations.png"), fig; px_per_unit=2)
+    save(joinpath(FIGURE_DIR, "ridge_ablations.png"), fig; px_per_unit=2)
     return nothing
 end
 
@@ -434,13 +437,14 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
     end
     colgap!(fig.layout, 16)
     rowgap!(fig.layout, 12)
-    save(joinpath(OUT_DIR, "ridge_ablation_grid.png"), fig; px_per_unit=2)
+    save(joinpath(FIGURE_DIR, "ridge_ablation_grid.png"), fig; px_per_unit=2)
     return nothing
 end
 
 function main()
     provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
     mkpath(OUT_DIR)
+    mkpath(FIGURE_DIR)
     pair = load_sweep_dataset(PAIR_ROOT)
     datasets = Dict(variant.key => load_sweep_dataset(variant.root) for variant in VARIANTS)
     design = validate_design(pair, datasets)

@@ -11,7 +11,7 @@
 \usepackage[letterpaper,margin=1in]{geometry}
 \usepackage{amsmath,amssymb,graphicx}
 \usepackage[font=small,labelfont=bf]{caption}
-\graphicspath{{../output/supplement/figs/}}
+\graphicspath{{../output/supplement/figures/}}
 
 % Supplement figure numbering: S1, S2, ...
 \renewcommand{\thefigure}{S\arabic{figure}}
@@ -43,21 +43,21 @@ Figure S1 illustrates the baseline type distribution. Figures S2--S3 describe th
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S1_type_geometry.png}
+\includegraphics[width=\linewidth]{type_geometry.png}
 \caption{Three views of the baseline type distribution for all \pv{suppDgpN} principals in realization \pv{suppDgpHeatmapSeed}. Principal types are drawn around a smooth latent curve and projected to the unit sphere in the model's eight-dimensional type space. For visualization, the figure projects both the realized types and the noiseless curve onto the curve's first three principal components. Gray points are realized principal types, the colored line is the latent curve, and color records position along that curve. The projection is used only for visualization; matching and learning use the complete eight-dimensional type vectors.}
 \label{fig:supp-type-geometry}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S2_dgp_structure.png}
+\includegraphics[width=\linewidth]{match_value_surfaces.png}
 \caption{Centered conditional match value for \pv{suppDgpHeatmapN} principal types selected at evenly spaced general-quality ranks from a $\pv{suppDgpN}$-principal realization (seed \pv{suppDgpHeatmapSeed}). Columns vary the composition of match value; rows compare baseline difficulty ($\delta=0.5$) with high difficulty ($\delta=1$). Because $\delta$ is inactive at $\rho=1$, that boundary condition is shown once. The realized types and matching-function objects $c$, $A$, and $B$ are identical across panels. General quality increases from left to right and from bottom to top. Each symmetric matrix is shown once in its upper triangle; the diagonal is excluded because principals cannot match with themselves. All panels use the same off-diagonal color scale. The matrices exclude match noise and are centered by subtracting their grand mean.}
 \label{fig:supp-dgp-structure}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S3_dgp_dimension.png}
+\includegraphics[width=\linewidth]{effective_dimensionality.png}
 \caption{Dimensionality of the centered conditional match-value matrix over \pv{suppDgpSeeds} independently generated sets of principal types and matching-function objects. Left: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$. Each value is divided within its realization by the largest singular value, $\sigma_1$. Lines are means across the \pv{suppDgpSeeds} realizations and ribbons are pointwise 95\% Monte Carlo intervals. Right: within each realization, the minimum number of singular components needed to capture \pv{suppDgpRankEnergyPercent}\% of match-value variation. Markers are means across the \pv{suppDgpSeeds} realizations and whiskers are 95\% Monte Carlo intervals. The pure-quality boundary $\rho=1$, where $\delta$ is inactive, is shown once and unconnected.}
 \label{fig:supp-dgp-dimension}
 \end{figure}
@@ -69,21 +69,21 @@ Figures S4--S6 reproduce the main structural analyses using the broker's two oth
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S4_grid_lines.png}
+\includegraphics[width=\linewidth]{alternative_measures_grid.png}
 \caption{Broker Burt constraint (left) and broker effective size (right) across the $\rho\times\delta$ grid. Lines for each difficulty level $\delta$ span $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where $\delta$ is inactive, is shown once and unconnected. Markers are late-window means over seeds and whiskers are 95\% Monte Carlo intervals.}
 \label{fig:supp-grid}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S5_position.png}
+\includegraphics[width=\linewidth]{alternative_measures_position.png}
 \caption{Broker Burt constraint (top) and broker effective size (bottom). Left: each measure over time at the baseline, shown as a \pv{suppRollWin}-observation rolling ensemble mean over seeds with pointwise 95\% Monte Carlo intervals. Network measures are computed every \pv{suppMeasInterval} periods. Right: each measure against the access fraction, with one late-window regime mean per one-at-a-time regime. Time starts at $t=\pv{suppAxisStart}$ to omit the initialization transient.}
 \label{fig:supp-position}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{supp_S6_advantage.png}
+\includegraphics[width=\linewidth]{alternative_measures_advantage.png}
 \caption{Difference in holdout rank correlation (broker minus principal, top) and output gap (broker channel minus self-search, bottom) against broker Burt constraint (left) and broker effective size (right). Each point is one regime's late-window mean across seeds, colored by $\rho$.}
 \label{fig:supp-advantage}
 \end{figure}

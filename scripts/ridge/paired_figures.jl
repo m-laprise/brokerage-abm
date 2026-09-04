@@ -9,8 +9,8 @@ figures.
 
 Inputs default to:
 
-  output/main/figdata.jld2
-  output/ridge/paired/figdata.jld2
+  output/main/figure_data.jld2
+  output/ridge/paired/figure_data.jld2
 
 Set `BROKERAGE_ABM_NN_FIGDATA` or `BROKERAGE_ABM_RIDGE_FIGDATA` to override an
 input. Set `BROKERAGE_ABM_RIDGE_FIGURE_DIR` to override the output directory.
@@ -30,14 +30,14 @@ const NN_PATH = normpath(
     get(
         ENV,
         "BROKERAGE_ABM_NN_FIGDATA",
-        joinpath(REPO_ROOT, "output", "main", "figdata.jld2"),
+        joinpath(REPO_ROOT, "output", "main", "figure_data.jld2"),
     ),
 )
 const RIDGE_PATH = normpath(
     get(
         ENV,
         "BROKERAGE_ABM_RIDGE_FIGDATA",
-        joinpath(REPO_ROOT, "output", "ridge", "paired", "figdata.jld2"),
+        joinpath(REPO_ROOT, "output", "ridge", "paired", "figure_data.jld2"),
     ),
 )
 const OUT_DIR = normpath(
@@ -260,7 +260,7 @@ function figure_r1()
     rowsize!(fig.layout, 2, Relative(0.5))
     colgap!(fig.layout, 10)
     rowgap!(fig.layout, 10)
-    save_figure("figR1_dynamics.png", fig)
+    save_figure("baseline_dynamics.png", fig)
 end
 
 const GRID_KEYS = [
@@ -381,7 +381,7 @@ function figure_r2()
     Label(fig[3:4, 0], "Base Ridge"; rotation=pi / 2, fontsize=20, font=:bold)
     colgap!(fig.layout, 14)
     rowgap!(fig.layout, 10)
-    save_figure("figR2_grid_lines.png", fig)
+    save_figure("matching_grid.png", fig)
 end
 
 function figure_r3()
@@ -432,7 +432,7 @@ function figure_r3()
     rowsize!(fig.layout, 2, Relative(0.5))
     colgap!(fig.layout, 16)
     rowgap!(fig.layout, 12)
-    save_figure("figR3_position_work.png", fig)
+    save_figure("centrality_and_access.png", fig)
 end
 
 function figure_r4()
@@ -499,11 +499,11 @@ function figure_r4()
     )
     colgap!(fig.layout, 10)
     rowgap!(fig.layout, 10)
-    save_figure("figR4_advantage.png", fig)
+    save_figure("structural_advantage.png", fig)
 end
 
 function write_provenance()
-    open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
+    open(joinpath(dirname(OUT_DIR), "figure_provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "source=scripts/ridge/paired_figures.jl")
         println(io, "data_analysis_commit=$(NN["meta"]["analysis_git_commit"])")

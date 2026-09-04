@@ -2,7 +2,7 @@
     step.jl
 
 Main simulation loop: one period of the model, matching
-`simulation_pseudocode.tex` (`PeriodUpdate`).
+`paper/appendices/simulation_pseudocode.tex` (`PeriodUpdate`).
 
 Flow: reset current matches and roster overlay; draw demand and channel choices;
 train predictors; run the shared offer market; update satisfaction, reputation,

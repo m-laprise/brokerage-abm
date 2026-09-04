@@ -29,12 +29,12 @@ scientific results.
    Computes every statistic quoted in the section and writes `output/main/values.tex`
    (one `\pvDefine{key}{value}` per quoted number).
 2. `julia --project --threads=auto scripts/paper/figdata.jl`
-   Extracts the figure-input dataset to `output/main/figdata.jld2`: the
+   Extracts the figure-input dataset to `output/main/figure_data.jld2`: the
    seed-level baseline series and seed-level late-window values each figure
    consumes. Ensemble and condition means are retained for convenience, but
    uncertainty is reconstructed from the saved seed values.
    Run the same extractor against the base Ridge sweep with
-   `BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2`; the exact
+   `BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figure_data.jld2`; the exact
    command is given below.
 3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
    Writes the reproducible seed-convergence audit to
@@ -49,16 +49,16 @@ scientific results.
    `BROKERAGE_ABM_RIDGE_SIZE_MATCHED_SWEEP_DIR`,
    `BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR`, and
    `BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR`. It writes the detailed ablation
-   report inputs under `output/ridge/ablations/results/`, the small set of
+   report inputs under `output/ridge/ablations/analysis/`, the small set of
    main-text values in `paper_values.tex`, and the seed-level main-figure data
-   in `output/ridge/ablations/figdata.jld2`.
+   in `output/ridge/ablations/figure_data.jld2`.
 
 Local tier (no data access; works from a clone of this repository):
 
 5. `julia --project --threads=auto scripts/paper/figures.jl`
    Renders the five results assets at print resolution, including the two-panel
-   information-source figure. It reads only `output/main/figdata.jld2` and
-   `output/ridge/ablations/figdata.jld2`; it also writes
+   information-source figure. It reads only `output/main/figure_data.jld2` and
+   `output/ridge/ablations/figure_data.jld2`; it also writes
    `output/main/figmeta.tex` (the display conventions quoted in captions:
    rolling window, measurement interval, axis start).
 6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
@@ -74,17 +74,21 @@ Local tier (no data access; works from a clone of this repository):
    temporary directory. The results section contains five figures, numbered by
    their order of first citation rather than by their asset filenames. Needs
    only stock Julia and `pdflatex`.
-8. `julia --project --threads=auto scripts/paper/build_manuscript.jl`
-   Inlines the generated results section into the editable manuscript root and
-   writes a submission-ready bundle under `output/manuscript/`. The bundle's
-   `brokers_who_do_not_bridge_without_appendices.tex` contains the main
-   manuscript with no results
-   `\input`; `references.bib`, all referenced figures, a Biber `.bbl`, and a
-   compile-checked main PDF are placed beside it. It also uses `pdfunite` to
+8. `julia --project --threads=auto scripts/paper/build_appendices.jl`
+   Compiles the two sources under `paper/appendices/` into standalone review PDFs
+   under `output/appendices/`, without leaving LaTeX auxiliary files in the repository.
+9. `julia --project --threads=auto scripts/paper/build_manuscript.jl`
+   Compiles `paper/manuscript.tex` against the generated results and figures,
+   writing only the two manuscript PDFs under `output/manuscript/`. It uses `pdfunite` to
    create `brokers_who_do_not_bridge_with_appendices.pdf`, containing the main manuscript,
    Appendix A (simulation pseudocode), Appendix B (model specifications), and
-   the Supplementary Material, in that order. Run step 7 first whenever any
+   the Supplementary Material, in that order. Run steps 7--8 first whenever any
    results input or provenance changes.
+
+After the retained datasets, analysis outputs, and generated values exist,
+running `julia --project --threads=auto scripts/paper/build_publication.jl`
+performs the raw-data-free rendering and publication-build steps in dependency
+order.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
 editing `figures.jl` and rerunning steps 5--7 locally. The cluster tier reruns
@@ -104,7 +108,7 @@ Ridge sweep and a separate output file:
 
 ```bash
 BROKERAGE_ABM_SWEEP_DIR=<base-ridge-sweep> \
-BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figdata.jld2 \
+BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figure_data.jld2 \
   julia --project --threads=auto scripts/paper/figdata.jl
 ```
 
@@ -130,17 +134,17 @@ retains seed-level inputs for both sets of figures.
 Cluster tier (run on a compute node):
 
 1. `julia --project --threads=auto scripts/paper/dgp_figdata.jl`
-   Generates `output/supplement/dgp_figdata.jld2` from the production
+   Generates `output/supplement/dgp_figure_data.jld2` from the production
    initialization code. Within each of 50 DGP seeds, 1,000 realized types and the
    matching-function objects are fixed across the effective current
-   `rho`-by-`delta` grid. The retained data include centered conditional-value
-   a three-component projection of the realized type distribution for S1,
+   `rho`-by-`delta` grid. The retained data include a three-component projection
+   of the realized type distribution for S1, centered conditional-value
    matrices for the five distinct conditions and 100 principals displayed in S2,
    normalized full-population singular spectra, and seed-level 90%-energy
    effective dimensions for S3. This stage does not run simulation periods or draw
    match noise.
 2. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
-   Extracts the supplement's figure-input dataset to `output/supplement/figdata.jld2`:
+   Extracts the supplement's figure-input dataset to `output/supplement/structural_figure_data.jld2`:
    the seed-level baseline constraint/effective-size series, the one-at-a-time
    and grid late values, and the per-realization late values S4--S6 consume. This
    step needs the sweep and `BROKERAGE_ABM_SWEEP_DIR`.
@@ -149,8 +153,8 @@ Local tier (no data access; works from a clone):
 
 3. `julia --project --threads=auto scripts/paper/supp_figures.jl`
    Renders Supplementary Figures S1--S6 from the two retained datasets and writes
-   `output/supplement/figmeta.tex`, which records their shared analysis commit and
-   the display conventions quoted in the captions.
+   `output/supplement/figmeta.tex`, which records each dataset's analysis commit
+   and the display conventions quoted in the captions.
 4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex`. Caption values are resolved
    from generated `\pv` definitions, so no result is hand-written. The builder

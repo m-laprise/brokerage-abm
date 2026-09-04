@@ -8,7 +8,7 @@
 \usepackage{float}
 \usepackage[T1]{fontenc}
 
-\input{../output/ridge/paired/results/values.tex}
+\input{../../output/ridge/paired/analysis/values.tex}
 
 \title{Base Ridge Learning Experiment}
 \author{}
@@ -162,7 +162,7 @@ only one endpoint type per fitting row, and removing bilinear pair features.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR1_dynamics.png}
+\includegraphics[width=\linewidth]{../../output/ridge/paired/figures/baseline_dynamics.png}
 \caption{Baseline dynamics under NN and base Ridge. Rows identify the
 learning system. Panels show matches per agent, mean and median agent-network
 degree, broker betweenness centrality, access fraction, and outsourcing rate.
@@ -175,7 +175,7 @@ period. Axes begin at period 30 and are shared across learning systems.}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR2_grid_lines.png}
+\includegraphics[width=\linewidth]{../../output/ridge/paired/figures/matching_grid.png}
 \caption{Outcomes across the $\rho\times\delta$ matching grid under NN (top
 two rows) and base Ridge (bottom two rows). Each line is a value of $\delta$;
 lines span $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where
@@ -187,7 +187,7 @@ same vertical scale. Whiskers are 95\% Monte Carlo intervals.}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR3_position_work.png}
+\includegraphics[width=\linewidth]{../../output/ridge/paired/figures/centrality_and_access.png}
 \caption{Broker position and access under NN and base Ridge. Left panels show
 five-observation rolling ensemble means at the baseline. Right panels show one
 point per one-at-a-time regime, using late-window seed means. Ribbons are
@@ -199,7 +199,7 @@ panels use shared axes.}
 \clearpage
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../output/ridge/paired/figures/figR4_advantage.png}
+\includegraphics[width=\linewidth]{../../output/ridge/paired/figures/structural_advantage.png}
 \caption{Broker-minus-principal differences in holdout rank correlation and
 brokered-minus-self output gaps against broker
 betweenness centrality and access fraction under NN and base Ridge. Each
@@ -210,7 +210,7 @@ and Ridge panels use shared axes; color denotes $\rho$.}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../output/ridge/paired/results/ridge_comparison.png}
+\includegraphics[width=\linewidth]{../../output/ridge/paired/figures/ridge_comparison.png}
 \caption{Direct comparison of NN and base Ridge. Panel A shows broker and principal
 holdout rank correlation over time under NN and base Ridge at the baseline.
 Lines are ensemble means over 50 common seeds; ribbons are pointwise 95\% Monte

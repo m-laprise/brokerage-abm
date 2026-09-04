@@ -96,7 +96,8 @@ end
 """
     initialize_model(params) -> ModelState
 
-Complete model initialization following `simulation_pseudocode.tex` (`Initialize`):
+Complete model initialization following `paper/appendices/simulation_pseudocode.tex`
+(`Initialize`):
 1. Agent types on sinusoidal curve
 2. Matching function (c, A, B)
 3. Calibration (q_cal, r, phi, c_s)

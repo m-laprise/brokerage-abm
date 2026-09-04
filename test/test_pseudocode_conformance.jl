@@ -13,7 +13,7 @@ using LinearAlgebra: I, norm
 using StableRNGs: StableRNG
 using Statistics: mean
 
-# Mechanism-level conformance tests for `simulation_pseudocode.tex`. Small,
+# Mechanism-level conformance tests for `paper/appendices/simulation_pseudocode.tex`. Small,
 # deterministic fixtures make initialization, matching, updating, and metrics
 # auditable independently of regression and distributional tests.
 

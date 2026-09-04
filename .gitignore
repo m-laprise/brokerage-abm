@@ -1,6 +1,5 @@
 plans/
-data/
-archive/*/data/
+runs/
 archived_reports/
 CLAUDE.md
 AGENTS.md
@@ -35,16 +34,16 @@ docs/site/
 # Generated diagnostic outputs (reproducible by re-running the scripts)
 scripts/diagnostics/_results/
 scripts/diagnostics/adv_results/
-output/main/convergence/condition_audit.tsv
 *.jld2
 # SLURM job logs
 *.out
 *.err
 # LaTeX auxiliary artifacts
 paper/_build/
-paper/*.aux
+paper/**/*.aux
 # Figure-input datasets are generated outputs, but kept for local rendering.
-!output/main/figdata.jld2
-!output/supplement/figdata.jld2
-!output/supplement/dgp_figdata.jld2
-!output/ridge/paired/figdata.jld2
+!output/main/figure_data.jld2
+!output/supplement/structural_figure_data.jld2
+!output/supplement/dgp_figure_data.jld2
+!output/ridge/paired/figure_data.jld2
+!output/ridge/ablations/figure_data.jld2

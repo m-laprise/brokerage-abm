@@ -14,13 +14,13 @@ I use an agent-based model (ABM) to formalize the theory. The model is a formal 
 
 \emph{Market and matching}. Principals are the market participants seeking partners. Many principals and one broker occupy an undirected network (Appendix B \S\S4, 6--7). Each period, principals seek pairwise matches either through self-search or through the broker. They choose between channels using satisfaction with past outcomes net of search costs or broker fees. A completed match creates a direct tie that persists until either party exits; each principal exits with probability $\eta$ and is replaced by a new entrant.
 
-Each principal has a fixed vector of observable characteristics, which defines its type. Match output combines general quality, which depends on each party separately, and complementarity, which depends on how their types interact (Appendix B \S2). The mixing weight $\rho$ ranges from pure complementarity at $\rho=0$ to pure general quality at $\rho=1$. On one side of a boundary in type-pair space, $\delta$ multiplies the complementarity contribution by $1+\delta$; on the other, it multiplies it by $1-\delta$. Larger values therefore create a sharper change in output across the boundary, making complementarity harder to learn. Because $\delta$ acts only on complementarity, it has no effect when $\rho=1$.
+Each principal has a fixed vector of observable characteristics, which defines its type. Match output combines general quality, which depends on each party separately, and complementarity, which depends on how their types interact (Appendix B \S2). The mixing weight $\rho$ ranges from pure complementarity at $\rho=0$ to pure general quality at $\rho=1$. On one side of a boundary in type-pair space, $\delta$ multiplies the complementarity contribution by $1+\delta$; on the other, it multiplies it by $1-\delta$. Larger values therefore create a sharper change in output across the boundary, making complementarity harder to learn. Because $\delta$ acts only on complementarity, it has no effect when $\rho=1$. Supplementary Figures S1--S3 visualize the type distribution, the resulting match-value function, and its effective dimensionality.
 
 \emph{Learning and information}. Principals observe their own matches, each partner's type, and realized output. The broker observes both parties' types and outcomes for all matches it mediates (Appendix A \S3; Appendix B \S3). Each uses a small neural network to predict match output. The broker pools observations across clients and constructs its inputs so that reversing the order of the two parties does not change the prediction, whereas each principal learns only from its own history. Predicted values rank candidates; tied predictions are ordered uniformly at random. Offers are made to the highest-ranked candidates whose predicted output exceeds the reservation threshold. Further search, training, and match-formation details appear in Appendices A and B.
 
 I repeat the complete design with Ridge regression replacing both neural networks. Principals use candidate characteristics, while the broker uses the characteristics of both parties and interactions between those characteristics, without privileging either party. Penalties were selected on 10 baseline calibration seeds excluded from reporting (Appendix B \S3). Three additional Ridge versions isolate the broker's data advantage by limiting it to the same number of observations as a typical principal, retaining only one party's characteristics from each match, or omitting interactions between the two parties' characteristics.
 
-\emph{Measurement}. Broker betweenness centrality measures the share of shortest paths between principals that pass through the broker (Brandes 2001; Freeman 1977). The access fraction is the share of brokered matches between principals who were not already tied. Supplementary Figures S1--S3 reproduce the structural analyses using Burt's constraint and effective size. Prediction quality is evaluated on separate samples of randomly selected potential partners. Rank correlation measures how well predicted values order those partners and reproduces the random ordering of tied predictions. Holdout $R^2$ measures how closely predicted output levels match true output levels, but is diagnostic only. It can become extremely negative when true outputs in an evaluation sample vary little and never enters a decision rule (Appendix B \S8).
+\emph{Measurement}. Broker betweenness centrality measures the share of shortest paths between principals that pass through the broker (Brandes 2001; Freeman 1977). The access fraction is the share of brokered matches between principals who were not already tied. Supplementary Figures S4--S6 reproduce the structural analyses using Burt's constraint and effective size. Prediction quality is evaluated on separate samples of randomly selected potential partners. Rank correlation measures how well predicted values order those partners and reproduces the random ordering of tied predictions. Holdout $R^2$ measures how closely predicted output levels match true output levels, but is diagnostic only. It can become extremely negative when true outputs in an evaluation sample vary little and never enters a decision rule (Appendix B \S8).
 
 \emph{Simulation design and analysis}. At the baseline, $N=1{,}000$ principals interact for $T=500$ periods with $\rho=0.5$, $\delta=0.5$, and $\eta=0.02$. One-at-a-time (OAT) sweeps and eight two-parameter grids vary the matching problem, turnover, market size, reservation threshold, initial network, broker roster, and self-search pool (Appendix B \S9). The design contains 98 unique regimes after duplicate coordinates and inactive parameters are consolidated. There are 20 independent seeds per regime and 50 at the baseline (1990 runs total).
 
@@ -32,7 +32,7 @@ Across the tested regimes, the broker is usually the dominant channel in the mar
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\linewidth]{figs/fig1_dynamics.png}
+\includegraphics[width=0.75\linewidth]{figures/baseline_dynamics.png}
 \caption{\textbf{Baseline dynamics.} Lines are 5-observation rolling ensemble means over seeds at the baseline regime; shaded ribbons are pointwise 95\% Monte Carlo intervals. Some intervals are narrower than the plotted lines and therefore are not separately visible. Broker betweenness centrality is measured every 20 periods; the other outcomes are measured every period. Axes start at $t=30$ to omit the initialization transient.}
 \label{fig:dynamics}
 \end{figure}
@@ -77,7 +77,7 @@ The information retained in each observation also matters. When the broker retai
 
 \begin{figure}
 \centering
-\includegraphics[width=0.94\linewidth]{figs/fig_information_sources.png}
+\includegraphics[width=0.94\linewidth]{figures/information_sources.png}
 \caption{\textbf{Sources of the broker's ranking advantage.} Panel A shows each Ridge restriction's change in the broker-minus-principal difference in holdout rank correlation at the baseline, calculated as the restriction minus the base Ridge specification. Negative values indicate that the restriction reduces the broker's ranking advantage. Points are mean common-seed differences; whiskers are paired 95\% Monte Carlo intervals over 50 seeds. Panel B shows the broker-minus-principal difference in holdout rank correlation under the base Ridge specification and each restriction across the 26 regimes in the $\rho\times\delta$ design, including the baseline. Thin lines connect estimates for the same regime across Ridge variants, small points are regime means, diamonds are medians, and the horizontal line marks zero.}
 \label{fig:information-sources}
 \end{figure}
@@ -93,7 +93,7 @@ The broker's realized output advantage is greatest when match value depends on c
 
 \begin{figure}
 \centering
-\includegraphics[width=\linewidth]{figs/fig2_grid_lines.png}
+\includegraphics[width=\linewidth]{figures/matching_grid.png}
 \caption{\textbf{Outcomes across the matching problem ($\rho\times\delta$).} Six outcomes across the $\rho\times\delta$ grid; one line per difficulty level $\delta$, each spanning $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where $\delta$ has no effect, is one separate regime shown once and unconnected. The figure therefore displays all 26 regimes in the design. Each marker is a late-window mean over that regime's seeds; whiskers are 95\% Monte Carlo intervals. The reported difference in holdout rank correlation is broker minus principal; the output gap is broker channel minus self-search.}
 \label{fig:grid}
 \end{figure}
@@ -108,7 +108,7 @@ The turnover effect is substantial but nonlinear. Holding other parameters at ba
 
 \begin{figure}
 \centering
-\includegraphics[width=\linewidth]{figs/fig3_position_work.png}
+\includegraphics[width=\linewidth]{figures/centrality_and_access.png}
 \caption{\textbf{Broker centrality and access fraction.} Left: broker betweenness centrality and access fraction over time at the baseline, as 5-observation rolling ensemble means over seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every 20 periods. Right: all 20 combinations in the $\rho\times\eta$ grid, with other parameters held at baseline, including $\delta=0.5$, each shown as a late-window mean over that regime's seeds. Color identifies turnover $\eta$, marker shape identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes. Within each $\eta$, lines connect $\rho=0,0.5,0.85$. The pure-quality boundary $\rho=1$, where complementarity is absent, is shown unconnected. Time-series panels begin at $t=30$ to omit the initialization transient.}
 \label{fig:position}
 \end{figure}
@@ -117,7 +117,7 @@ The pure-quality boundary confirms that low access alone is not sufficient for h
 
 \begin{figure}
 \centering
-\includegraphics[width=0.92\linewidth]{figs/fig4_advantage.png}
+\includegraphics[width=0.92\linewidth]{figures/structural_advantage.png}
 \caption{\textbf{Ranking and output differences by centrality and access.} Difference in holdout rank correlation (broker minus principal) and output gap (broker channel minus self-search) against broker betweenness centrality and access fraction; one dot for each of the 98 effective regimes, each a late-window mean over its seeds. Color identifies matching composition $\rho$.}
 \label{fig:advantage}
 \end{figure}

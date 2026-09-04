@@ -2,11 +2,11 @@
     scripts/paper/supp_figdata.jl
 
 Extract the supplementary figure dataset from a completed sweep. The output,
-`output/supplement/figdata.jld2`, contains seed-level constraint and effective
+`output/supplement/structural_figure_data.jld2`, contains seed-level constraint and effective
 size summaries used by `scripts/paper/supp_figures.jl`. The script reads saved
 data only and can be run independently of the main figure pipeline.
 
-Contents of supp_figdata.jld2 (single key "figdata", a Dict):
+Contents of structural_figure_data.jld2 (single key "figdata", a Dict):
   period      per-period time axis of the baseline runs
   series      per-period ensemble means at the baseline: constraint and
               effective_size (full per-period vectors; the renderer keeps the
@@ -32,7 +32,7 @@ const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
     error("set BROKERAGE_ABM_SWEEP_DIR to the sweep root directory")
 end
 const OUTFILE = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2")
+    joinpath(@__DIR__, "..", "..", "output", "supplement", "structural_figure_data.jld2")
 )
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))

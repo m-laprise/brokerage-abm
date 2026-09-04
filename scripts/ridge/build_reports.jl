@@ -1,7 +1,7 @@
 """
     scripts/ridge/build_reports.jl
 
-Compile the base Ridge and Ridge-ablation TeX sources under `paper/` and
+Compile the base Ridge and Ridge-ablation TeX sources under `paper/ridge/` and
 write the report PDFs under `output/ridge/`. LaTeX auxiliary files are created
 in temporary directories and discarded.
 
@@ -13,15 +13,15 @@ Usage: julia --project --threads=auto scripts/ridge/build_reports.jl
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const PAPER = joinpath(REPO_ROOT, "paper")
+const PAPER = joinpath(REPO_ROOT, "paper", "ridge")
 const REPORTING_PROVENANCE = reporting_git_provenance(REPO_ROOT)
 const REPORTS = (
     (
         source="ridge_experiment.tex",
         output=joinpath(REPO_ROOT, "output", "ridge", "paired", "ridge_experiment.pdf"),
         provenance=(
-            joinpath(REPO_ROOT, "output", "ridge", "paired", "results", "provenance.txt"),
-            joinpath(REPO_ROOT, "output", "ridge", "paired", "figures", "provenance.txt"),
+            joinpath(REPO_ROOT, "output", "ridge", "paired", "analysis", "provenance.txt"),
+            joinpath(REPO_ROOT, "output", "ridge", "paired", "figure_provenance.txt"),
         ),
     ),
     (
@@ -31,7 +31,7 @@ const REPORTS = (
         ),
         provenance=(
             joinpath(
-                REPO_ROOT, "output", "ridge", "ablations", "results", "provenance.txt"
+                REPO_ROOT, "output", "ridge", "ablations", "analysis", "provenance.txt"
             ),
         ),
     ),

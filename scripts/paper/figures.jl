@@ -3,20 +3,22 @@
 
 Figure assets for the paper's results section. TeX figure numbers follow their
 placement in `paper/section_source.tex`; the asset filenames remain stable.
-Reads only the small derived datasets `output/main/figdata.jld2` and
-`output/ridge/ablations/figdata.jld2`, which are written on the cluster, so
+Reads only the small derived datasets `output/main/figure_data.jld2` and
+`output/ridge/ablations/figure_data.jld2`, which are written on the cluster, so
 figures render locally with no access to the sweeps. CairoMakie only; no
 simulation; no hard-coded results
 (literal constants are display conventions only). Outputs print-resolution PNGs
-to output/main/figs/ and the display-convention keys to output/main/figmeta.tex.
+to output/main/figures/ and the display-convention keys to output/main/figmeta.tex.
 
-  fig1_dynamics       baseline dynamics
-  fig_information_sources
+  baseline_dynamics   baseline dynamics
+  information_sources
                       sources of the broker's ranking advantage
-  fig2_grid_lines     six outcomes across the rho x delta grid, lines per delta
+  matching_grid       six outcomes across the rho x delta grid, lines per delta
                       with 95% Monte Carlo interval whiskers
-  fig3_position_work  betweenness & access over time at baseline + cross-regime scatter
-  fig4_advantage      structural measures vs informational/output gaps
+  centrality_and_access
+                      betweenness & access over time at baseline + cross-regime scatter
+  structural_advantage
+                      structural measures vs informational/output gaps
 
 Usage: julia --project --threads=auto scripts/paper/figures.jl
 """
@@ -27,9 +29,9 @@ include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
 using Statistics: mean, median
 
-const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figs"))
+const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figures"))
 const INFORMATION_FIGDATA = normpath(
-    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figdata.jld2")
+    joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figure_data.jld2")
 )
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
@@ -58,16 +60,14 @@ const ETA_PALETTE = Makie.to_color.(["#4477AA", "#66CCEE", "#228833", "#CCBB44",
 const RHO_MARKERS = Dict(0.0 => :circle, 0.5 => :rect, 0.85 => :diamond, 1.0 => :utriangle)
 
 const FD = JLD2.load(
-    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figdata.jld2"))
+    normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figure_data.jld2"))
 )["figdata"]
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
     allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/figures.jl"),
 )
 const DATA_ANALYSIS_COMMIT = validate_analysis_commit(
-    REPORTING_PROVENANCE,
-    FD["meta"]["analysis_git_commit"];
-    artifact="main figure data",
+    REPORTING_PROVENANCE, FD["meta"]["analysis_git_commit"]; artifact="main figure data"
 )
 FD["meta"]["analysis_source_clean"] == true ||
     error("main figure data were extracted from dirty analysis sources")
@@ -133,7 +133,7 @@ function draw_interval_series!(
     return nothing
 end
 
-function fig_information_sources()
+function information_sources()
     models = (
         (key="pair", label="Base\nRidge", color=:black),
         (key="size_matched", label="Size-\nmatched", color=:darkorange),
@@ -244,12 +244,12 @@ function fig_information_sources()
         )
     end
     colgap!(fig.layout, 26)
-    savefig("fig_information_sources.png", fig)
+    savefig("information_sources.png", fig)
     return nothing
 end
 
 # ── Position: betweenness & access over time at baseline + cross-regime scatter ──
-function fig3_position_work()
+function centrality_and_access()
     fig = Figure(; size=(1230, 470))
     # left: broker betweenness and access fraction over time at baseline
     axa = Axis(
@@ -369,11 +369,11 @@ function fig3_position_work()
         framevisible=false,
     )
     colgap!(fig.layout, 14)
-    savefig("fig3_position_work.png", fig)
+    savefig("centrality_and_access.png", fig)
 end
 
 # ── Matching grid: six outcomes vs rho, with rho = 1 as a separate boundary ──
-function fig2_grid_lines()
+function matching_grid()
     gcells = FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gcells]))
     cells = Dict((c["rho"], c["delta"]) => c for c in gcells)
@@ -466,11 +466,11 @@ function fig2_grid_lines()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("fig2_grid_lines.png", fig)
+    savefig("matching_grid.png", fig)
 end
 
 # ── Advantage: structural measures vs informational/output differences (4 panels) ──
-function fig4_advantage()
+function structural_advantage()
     bc = FD["regime_cells"]
     rho = [c["rho"] for c in bc]
     bw = [c["betw"] for c in bc];
@@ -516,11 +516,11 @@ function fig4_advantage()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("fig4_advantage.png", fig)
+    savefig("structural_advantage.png", fig)
 end
 
 # ── Baseline dynamics, placed first in the results section ──
-function fig1_dynamics()
+function baseline_dynamics()
     # Each seed is smoothed first. The line and pointwise interval are then
     # computed across seeds; display trimming remains axis-only.
     ot(key) = summarized_series(key)
@@ -579,17 +579,17 @@ function fig1_dynamics()
     end
     colgap!(fig.layout, 12)
     rowgap!(fig.layout, 12)
-    savefig("fig1_dynamics.png", fig)
+    savefig("baseline_dynamics.png", fig)
 end
 
 foreach(
     function_name -> function_name(),
     (
-        fig1_dynamics,
-        fig_information_sources,
-        fig2_grid_lines,
-        fig3_position_work,
-        fig4_advantage,
+        baseline_dynamics,
+        information_sources,
+        matching_grid,
+        centrality_and_access,
+        structural_advantage,
     ),
 )
 # emit the display-convention keys quoted by the captions (paper/captions.tex)
@@ -601,7 +601,7 @@ open(normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figmeta.tex")), 
     println(io, "% Rendering commit: $(REPORTING_PROVENANCE.commit)")
     println(
         io,
-        "% Display conventions used to render output/main/figs/, quoted in captions via \\pv keys.",
+        "% Display conventions used to render output/main/figures/, quoted in captions via \\pv keys.",
     )
     println(io, "\\pvDefine{rollWin}{$ROLLW}")
     println(io, "\\pvDefine{betwInterval}{$BETWINT}")

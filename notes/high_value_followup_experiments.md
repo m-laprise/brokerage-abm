@@ -150,4 +150,4 @@ full sweep before seeing the baseline result.
 
 The explore-exploit hypothesis and its more involved experimental design are
 preserved separately in
-`output/ridge/ablations/explore_exploit_research_note.md`.
+`notes/explore_exploit_research_note.md`.
