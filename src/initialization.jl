@@ -66,6 +66,29 @@ function generate_agent_types(
     return types
 end
 
+"""
+    generate_matching_dgp(params, rng) -> NamedTuple
+
+Generate the type geometry, realized agent types, and matching environment used at
+the start of a simulation. The supplied RNG is advanced exactly through these DGP
+draws so initialization and reporting analyses can share one implementation.
+"""
+function generate_matching_dgp(params::ModelParams, rng::AbstractRNG)
+    geo = generate_curve_geometry(params.d, params.s, rng)
+    agent_types = generate_agent_types(params.N, geo, params.sigma_x, rng)
+    env = generate_matching_env(
+        params.d,
+        params.rho,
+        params.delta,
+        params.sigma_eps,
+        agent_types,
+        rng;
+        sigma_x=params.sigma_x,
+        curve_geo=geo,
+    )
+    return (; curve_geo=geo, agent_types, env)
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Full initialization
 # ─────────────────────────────────────────────────────────────────────────────
@@ -90,14 +113,11 @@ function initialize_model(params::ModelParams)::ModelState
     d = p.d
     N = p.N
 
-    # ── Agent types ──
-    geo = generate_curve_geometry(d, p.s, rng)
-    agent_types = generate_agent_types(N, geo, p.sigma_x, rng)
-
-    # ── Matching environment (A, B, c) ──
-    env = generate_matching_env(
-        d, p.rho, p.delta, p.sigma_eps, agent_types, rng; sigma_x=p.sigma_x, curve_geo=geo
-    )
+    # ── Agent types and matching environment (A, B, c) ──
+    dgp = generate_matching_dgp(p, rng)
+    geo = dgp.curve_geo
+    agent_types = dgp.agent_types
+    env = dgp.env
 
     # ── Calibration ──
     cal = calibrate(env, agent_types, p, rng)

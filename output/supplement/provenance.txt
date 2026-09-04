@@ -1,3 +1,0 @@
-analysis_commit=c75e9d1e5487884bf82e80a3a232f4c769c66404
-manuscript_commit=a2ad8b617aeed37e8f296abcda65dc2e831a4c8f
-manuscript_source_clean=false

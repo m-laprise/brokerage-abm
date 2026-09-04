@@ -122,35 +122,43 @@ report.
 
 ## Supplementary Material
 
-The results section measures the broker's structural advantage by betweenness
-centrality. The Supplementary Material reproduces the same analyses with the
-broker's two other saved ego-network measures, Burt's aggregate **constraint** and
-**effective size** (`src/measures.jl`), in Figures S1-S3. The same two tiers apply.
+Supplementary Figures S1--S3 visualize the matching-function data-generating
+process. Figures S4--S6 reproduce the main structural analyses with Burt's
+aggregate **constraint** and **effective size** (`src/measures.jl`). The pipeline
+retains seed-level inputs for both sets of figures.
 
-Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR`; run on a compute node):
+Cluster tier (run on a compute node):
 
-1. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
+1. `julia --project --threads=auto scripts/paper/dgp_figdata.jl`
+   Generates `output/supplement/dgp_figdata.jld2` from the production
+   initialization code. Within each of 50 DGP seeds, 1,000 realized types and the
+   matching-function objects are fixed across the effective current
+   `rho`-by-`delta` grid. The retained data include centered conditional-value
+   a three-component projection of the realized type distribution for S1,
+   matrices for the five distinct conditions and 100 principals displayed in S2,
+   normalized full-population singular spectra, and seed-level 90%-energy
+   effective dimensions for S3. This stage does not run simulation periods or draw
+   match noise.
+2. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `output/supplement/figdata.jld2`:
    the seed-level baseline constraint/effective-size series, the one-at-a-time
-   and grid late values, and the per-realization late values S1-S3 consume. Standalone
-   twin of `figdata.jl`; no hard-coded results.
+   and grid late values, and the per-realization late values S4--S6 consume. This
+   step needs the sweep and `BROKERAGE_ABM_SWEEP_DIR`.
 
 Local tier (no data access; works from a clone):
 
-2. `julia --project --threads=auto scripts/paper/supp_figures.jl`
-   Renders Supplementary Figures S1--S3 from
-   `output/supplement/figdata.jld2` only, and writes
-   `output/supplement/figmeta.tex` (the
-   display conventions quoted in the captions). Standalone twin of `figures.jl`.
-3. `julia --project --threads=auto scripts/paper/build_supplement.jl`
+3. `julia --project --threads=auto scripts/paper/supp_figures.jl`
+   Renders Supplementary Figures S1--S6 from the two retained datasets and writes
+   `output/supplement/figmeta.tex`, which records their shared analysis commit and
+   the display conventions quoted in the captions.
+4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex`. Caption values are resolved
    from generated `\pv` definitions, so no result is hand-written. The builder
    validates every `\pv` reference and figure path first. Needs only stock Julia
    and `pdflatex`.
 
-The three figures each redo a main-text structural-advantage analysis for
-constraint and effective size: **S1** covers the rho x delta grid; **S2** shows
-the baseline time path and the relationship with access across regimes; **S3**
+For the structural checks, **S4** covers the rho x delta grid, **S5** shows the
+baseline time path and the relationship with access across regimes, and **S6**
 shows the ranking and output differences against each measure.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).

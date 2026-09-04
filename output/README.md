@@ -31,10 +31,13 @@ builders reject inputs produced by a different commit.
 - [Complete working paper with appendices](manuscript/brokers_who_do_not_bridge_with_appendices.pdf)
 - [Appendix A: Simulation pseudocode](../simulation_pseudocode.pdf)
 - [Appendix B: Model specifications](../model_specifications.pdf)
-- [Supplementary Material: Alternative structural measures](supplement/supplement.pdf)
-- [Figure S1](supplement/figs/supp_S1_grid_lines.png)
-- [Figure S2](supplement/figs/supp_S2_position.png)
-- [Figure S3](supplement/figs/supp_S3_advantage.png)
+- [Supplementary Material: Model diagnostics and robustness analyses](supplement/supplement.pdf)
+- [Figure S1: Principal types and their latent curve](supplement/figs/supp_S1_type_geometry.png)
+- [Figure S2: Conditional match-value surfaces](supplement/figs/supp_S2_dgp_structure.png)
+- [Figure S3: Effective dimensionality of match value](supplement/figs/supp_S3_dgp_dimension.png)
+- [Figure S4: Alternative measures across the matching grid](supplement/figs/supp_S4_grid_lines.png)
+- [Figure S5: Alternative structural position measures](supplement/figs/supp_S5_position.png)
+- [Figure S6: Alternative measures and broker advantage](supplement/figs/supp_S6_advantage.png)
 
 ## Ridge experiments
 
@@ -61,8 +64,8 @@ builders reject inputs produced by a different commit.
 
 - Main results: `scripts/paper/stats.jl`, `figdata.jl`, `figures.jl`,
   `audit_convergence.jl`, `ridge_supplement.jl`, and `build_section.jl`
-- Supplement: `scripts/paper/supp_figdata.jl`, `supp_figures.jl`,
-  `ridge_supplement.jl`, and `build_supplement.jl`
+- Supplement: `scripts/paper/dgp_figdata.jl`, `supp_figdata.jl`,
+  `supp_figures.jl`, and `build_supplement.jl`
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and
   `analyze_ablations.jl`
 - Base Ridge figures: `scripts/ridge/paired_figures.jl`

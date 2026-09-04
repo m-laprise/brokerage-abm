@@ -20,4 +20,5 @@ using Test
     include("test_sweep_artifacts.jl")
     include("test_monte_carlo.jl")
     include("test_reporting_provenance.jl")
+    include("test_dgp_figdata.jl")
 end

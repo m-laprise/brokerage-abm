@@ -1,28 +1,25 @@
 """
     scripts/paper/supp_figures.jl
 
-Supplementary figures (S1-S3). Standalone twin of scripts/paper/figures.jl:
-reads ONLY output/supplement/figdata.jld2 (written by scripts/paper/supp_figdata.jl on
-the cluster), so the supplement renders locally with no access to the sweep, and
-independently of the results-section figures. CairoMakie only; no simulation; no
-hard-coded results (literal constants are display conventions only). Outputs
-print-resolution PNGs to output/supplement/figs/ and the display-convention keys to
-output/supplement/figmeta.tex.
+Render Supplementary Figures S1--S6 from retained figure-input datasets. Figures
+S1--S3 describe the matching-function data-generating process. Figures S4--S6
+reproduce the main structural analyses with Burt's aggregate constraint and
+effective size:
 
-The main results use broker betweenness centrality. These supplementary figures
-reproduce the same analyses with the broker's two other ego-network measures,
-Burt's aggregate constraint and Burt's effective size:
-
-  S1  constraint and effective size across the rho x delta grid, line per delta
+  S1  realized principal types and their latent curve in three dimensions
+  S2  conditional match-value surfaces ordered by realized general quality
+  S3  normalized singular spectra and 90%-energy effective dimension
+  S4  constraint and effective size across the rho x delta grid, line per delta
       (the matching-grid structural panel, for each alternative measure)
-  S2  each measure over time at baseline (left) and against access fraction
+  S5  each measure over time at baseline (left) and against access fraction
       across regimes (right); constraint top, effective size bottom (the
       position analysis, without the access-fraction time series)
-  S3  rank-correlation difference and output gap against each measure, colored by rho
+  S6  rank-correlation difference and output gap against each measure, colored by rho
       (the advantage analysis, with the alternative measures in place of betweenness)
 
-Like betweenness, both measures are recomputed only every network_measure_interval
-(20) periods, so the time panels in S2 plot the measurement periods.
+The script reads only `output/supplement/dgp_figdata.jld2` and
+`output/supplement/figdata.jld2`. It performs no simulation and writes
+print-resolution PNGs plus the display-convention keys used by the captions.
 
 Usage: julia --project --threads=auto scripts/paper/supp_figures.jl
 """
@@ -31,7 +28,6 @@ include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, 
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
-using Statistics: mean
 
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figs"))
 mkpath(OUT)
@@ -42,6 +38,7 @@ const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-p
 const ROLLW = 5                       # rolling-mean window, in observations
 const MEASINT = 20                    # network-measure interval, periods
 const TSTART = 30                     # displayed axes start here; data never cut
+const SPECTRUM_COMPONENTS = 25
 const RHO_COLORS = Dict(
     0.0 => :seagreen,
     0.3 => :mediumaquamarine,
@@ -64,22 +61,32 @@ const EFFS = ("effective_size", "Broker effective size")
 # the cell-level keys differ from the series keys (extract names them shorter)
 const CELLKEY = Dict("constraint" => "constraint", "effective_size" => "effsize")
 
-const FD = JLD2.load(
+const STRUCTURAL_FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figdata.jld2"))
 )["figdata"]
+const DGP_FD = JLD2.load(
+    normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figdata.jld2"))
+)["figdata"]
 const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/supp_figures.jl"),
 )
-const DATA_ANALYSIS_COMMIT = validate_analysis_commit(
-    REPORTING_PROVENANCE,
-    FD["meta"]["analysis_git_commit"];
-    artifact="supplement figure data",
-)
-FD["meta"]["analysis_source_clean"] == true ||
-    error("supplement figure data were extracted from dirty analysis sources")
-const PER = FD["period"]
-const SER = FD["series"]
-const SER_SEEDS = FD["series_seed_values"]
+const DATA_ANALYSIS_COMMITS = [
+    validate_analysis_commit(
+        REPORTING_PROVENANCE,
+        dataset["meta"]["analysis_git_commit"];
+        artifact="$label figure data",
+    ) for (label, dataset) in (("DGP", DGP_FD), ("structural", STRUCTURAL_FD))
+]
+length(unique(DATA_ANALYSIS_COMMITS)) == 1 ||
+    error("supplement figure datasets record different analysis commits")
+const DATA_ANALYSIS_COMMIT = only(unique(DATA_ANALYSIS_COMMITS))
+all(
+    dataset["meta"]["analysis_source_clean"] == true for dataset in (DGP_FD, STRUCTURAL_FD)
+) || error("supplement figure data were generated from dirty analysis sources")
+const PER = STRUCTURAL_FD["period"]
+const SER = STRUCTURAL_FD["series"]
+const SER_SEEDS = STRUCTURAL_FD["series_seed_values"]
 const TEND = maximum(PER)
 const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
 const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
@@ -132,9 +139,260 @@ function draw_interval_series!(axis, series; color=COL_GAP)
     return nothing
 end
 
-# ── S1: each measure vs rho across the grid, one line per delta ──
-function supp_S1_grid_lines()
-    gc = FD["grid_cells"]
+# ── S1: realized types around the latent type curve ──
+function supp_S1_type_geometry()
+    geometry = DGP_FD["type_geometry"]
+    curve = geometry["curve_projection"]
+    types = geometry["type_projection"]
+    curve_parameter = geometry["curve_parameter"]
+    projections = ((1, 2), (1, 3), (2, 3))
+    fig = Figure(; size=(1260, 410))
+    for (column, (horizontal, vertical)) in enumerate(projections)
+        axis = Axis(
+            fig[1, column];
+            title="Components $horizontal and $vertical",
+            xlabel="Component $horizontal",
+            ylabel=column == 1 ? "Component $vertical" : "",
+            xticksvisible=false,
+            xticklabelsvisible=false,
+            yticksvisible=false,
+            yticklabelsvisible=false,
+            xgridvisible=false,
+            ygridvisible=false,
+            aspect=DataAspect(),
+            titlesize=TITLE_FS,
+            xlabelsize=LABEL_FS,
+            ylabelsize=LABEL_FS,
+        )
+        scatter!(
+            axis,
+            view(types, horizontal, :),
+            view(types, vertical, :);
+            color=(:gray35, 0.24),
+            markersize=4,
+            strokewidth=0,
+            label=column == 1 ? "principal types" : nothing,
+        )
+        lines!(
+            axis,
+            view(curve, horizontal, :),
+            view(curve, vertical, :);
+            color=curve_parameter,
+            colormap=:viridis,
+            colorrange=(0.0, 1.0),
+            linewidth=2.4,
+            label=column == 1 ? "latent curve" : nothing,
+        )
+        column == 1 && axislegend(axis; position=:rt, LEG_KW...)
+    end
+    Colorbar(
+        fig[1, 4];
+        colormap=:viridis,
+        limits=(0.0, 1.0),
+        label="Position along latent curve",
+        labelsize=LABEL_FS,
+        ticklabelsize=TICK_FS,
+        width=16,
+    )
+    colgap!(fig.layout, 14)
+    savefig("supp_S1_type_geometry.png", fig)
+end
+
+# ── S2: conditional match-value surfaces ──
+function supp_S2_dgp_structure()
+    heatmaps = DGP_FD["heatmaps"]
+    conditions = DGP_FD["heatmap_conditions"]
+    matrices = [
+        heatmaps["rho=$(condition.rho)|delta=$(condition.delta)"] for
+        condition in conditions
+    ]
+    display_matrices = map(matrices) do matrix
+        displayed = copy(matrix)
+        for column in axes(displayed, 2), row in axes(displayed, 1)
+            row >= column && (displayed[row, column] = NaN32)
+        end
+        displayed
+    end
+    color_limit = maximum(
+        abs(value) for matrix in display_matrices for value in matrix if isfinite(value)
+    )
+    fig = Figure(; size=(1330, 760))
+    panels = fig[1, 1] = GridLayout()
+    for (column, title) in
+        enumerate(("Complementarity\nρ = 0", "Mixed\nρ = 0.5", "General quality\nρ = 1"))
+        Label(panels[1, column], title; fontsize=TITLE_FS)
+    end
+    Label(fig[1, 0], "General quality of principal i"; rotation=pi / 2, fontsize=LABEL_FS)
+    Label(panels[2, 0], "δ = 0.5"; rotation=pi / 2, fontsize=LABEL_FS)
+    Label(panels[3, 0], "δ = 1"; rotation=pi / 2, fontsize=LABEL_FS)
+    Label(fig[2, 1], "General quality of principal j"; fontsize=LABEL_FS)
+
+    panel_positions = ((2, 1), (2, 2), (2, 3), (3, 1), (3, 2))
+    for ((row, column), matrix) in zip(panel_positions, display_matrices)
+        axis = Axis(
+            panels[row, column];
+            xticksvisible=false,
+            xticklabelsvisible=false,
+            yticksvisible=false,
+            yticklabelsvisible=false,
+            xgridvisible=false,
+            ygridvisible=false,
+            aspect=DataAspect(),
+        )
+        heatmap!(
+            axis,
+            matrix;
+            colormap=:vik,
+            colorrange=(-color_limit, color_limit),
+            nan_color=:transparent,
+            rasterize=true,
+        )
+    end
+    Label(panels[3, 3], "δ has no effect\nwhen ρ = 1"; fontsize=LABEL_FS, color=:gray35)
+    Colorbar(
+        panels[2:3, 4];
+        colormap=:vik,
+        limits=(-color_limit, color_limit),
+        label="Expected match value (centered)",
+        labelsize=LABEL_FS,
+        ticklabelsize=TICK_FS,
+        width=18,
+    )
+    colsize!(fig.layout, 1, Relative(0.94))
+    rowsize!(fig.layout, 1, Relative(0.92))
+    for column in 1:3
+        colsize!(panels, column, Relative(0.29))
+    end
+    rowsize!(panels, 2, Relative(0.46))
+    rowsize!(panels, 3, Relative(0.46))
+    colgap!(panels, 12)
+    rowgap!(panels, 12)
+    savefig("supp_S2_dgp_structure.png", fig)
+end
+
+function spectrum_interval(matrix, component)
+    interval = monte_carlo_interval(view(matrix, component, :))
+    return (
+        mean=max(interval.mean, 0.0),
+        lower=max(interval.lower, 0.0),
+        upper=max(interval.upper, 0.0),
+    )
+end
+
+# ── S3: singular spectra and 90%-energy effective dimension ──
+function supp_S3_dgp_dimension()
+    displayed_rhos = [0.0, 0.5, 0.85, 1.0]
+    components = 1:SPECTRUM_COMPONENTS
+    fig = Figure(; size=(1390, 480))
+    spectrum_axis = Axis(
+        fig[1, 1];
+        title="Singular-value spectrum",
+        xlabel="Singular values (largest to smallest)",
+        ylabel="Relative magnitude (σₖ / σ₁)",
+        yticks=0.0:0.25:1.0,
+        limits=((0.5, SPECTRUM_COMPONENTS + 0.5), (-0.015, 1.05)),
+        titlesize=TITLE_FS,
+        xlabelsize=LABEL_FS,
+        ylabelsize=LABEL_FS,
+        xticklabelsize=TICK_FS,
+        yticklabelsize=TICK_FS,
+    )
+    for rho in displayed_rhos
+        spectrum = DGP_FD["spectra"][string(rho)]
+        summaries = [spectrum_interval(spectrum, component) for component in components]
+        band!(
+            spectrum_axis,
+            components,
+            [summary.lower for summary in summaries],
+            [summary.upper for summary in summaries];
+            color=(RHO_COLORS[rho], 0.16),
+        )
+        scatterlines!(
+            spectrum_axis,
+            components,
+            [summary.mean for summary in summaries];
+            color=RHO_COLORS[rho],
+            linewidth=2.2,
+            markersize=5,
+            label="ρ = $rho",
+        )
+    end
+    axislegend(spectrum_axis; position=:rt, LEG_KW...)
+
+    rank_axis = Axis(
+        fig[1, 2];
+        title="Effective dimensionality",
+        xlabel="ρ (complementarity vs quality)",
+        ylabel="Components capturing 90% variation",
+        xticks=DGP_FD["rho_values"],
+        titlesize=TITLE_FS,
+        xlabelsize=LABEL_FS,
+        ylabelsize=LABEL_FS,
+        xticklabelsize=TICK_FS,
+        yticklabelsize=TICK_FS,
+    )
+    rows = DGP_FD["conditions"]
+    for delta in DGP_FD["delta_values"]
+        points = sort(
+            [
+                let interval = monte_carlo_interval(row["rank90_seed_values"])
+                    (
+                        rho=row["rho"],
+                        mean=interval.mean,
+                        lower=interval.lower,
+                        upper=interval.upper,
+                    )
+                end for row in rows if row["delta"] == delta && row["rho"] < 1.0
+            ];
+            by=point -> point.rho,
+        )
+        rangebars!(
+            rank_axis,
+            [point.rho for point in points],
+            [point.lower for point in points],
+            [point.upper for point in points];
+            color=(DELTA_COLORS[delta], 0.72),
+            linewidth=1.2,
+            whiskerwidth=8,
+        )
+        scatterlines!(
+            rank_axis,
+            [point.rho for point in points],
+            [point.mean for point in points];
+            color=DELTA_COLORS[delta],
+            linewidth=2.0,
+            markersize=9,
+            label="δ = $delta",
+        )
+    end
+    boundary = only(row for row in rows if row["rho"] == 1.0)
+    boundary_interval = monte_carlo_interval(boundary["rank90_seed_values"])
+    rangebars!(
+        rank_axis,
+        [1.0],
+        [boundary_interval.lower],
+        [boundary_interval.upper];
+        color=:gray25,
+        linewidth=1.2,
+        whiskerwidth=8,
+    )
+    scatter!(
+        rank_axis,
+        [1.0],
+        [boundary_interval.mean];
+        color=:gray25,
+        marker=:diamond,
+        markersize=11,
+        label="ρ = 1 boundary",
+    )
+    Legend(fig[1, 3], rank_axis, "Difficulty"; LEG_KW...)
+    colgap!(fig.layout, 16)
+    savefig("supp_S3_dgp_dimension.png", fig)
+end
+
+# ── S4: each measure vs rho across the grid, one line per delta ──
+function supp_S4_grid_lines()
+    gc = STRUCTURAL_FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gc]))
     boundary_cells = [c for c in gc if c["rho"] == 1.0]
     length(unique(c["rel"] for c in boundary_cells)) == 1 ||
@@ -214,19 +472,18 @@ function supp_S1_grid_lines()
         ci == 1 && axislegend(ax, "Difficulty"; position=:rt, LEG_KW...)
     end
     colgap!(fig.layout, 16)
-    savefig("supp_S1_grid_lines.png", fig)
+    savefig("supp_S4_grid_lines.png", fig)
 end
 
-# ── S2: measure over time at baseline (left) + vs access fraction across regimes
+# ── S5: measure over time at baseline (left) + vs access fraction across regimes
 #    (right); constraint (top), effective size (bottom) ──
-function supp_S2_position()
-    cells = FD["oat_cells"]
+function supp_S5_position()
+    cells = STRUCTURAL_FD["oat_cells"]
     ac = [c["access"] for c in cells]
     fig = Figure(; size=(1180, 860))
     for (ri, (key, lab)) in enumerate(((CONSTR), (EFFS)))
         # left: the measure over time at baseline (no access-fraction series)
         series = measseries(key)
-        x = series[1]
         axl = Axis(
             fig[ri, 1];
             title=ri == 1 ? "Over time, at baseline" : "",
@@ -258,12 +515,12 @@ function supp_S2_position()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("supp_S2_position.png", fig)
+    savefig("supp_S5_position.png", fig)
 end
 
-# ── S3: rank-correlation difference and output gap against each measure ──
-function supp_S3_advantage()
-    bc = FD["regime_cells"]
+# ── S6: rank-correlation difference and output gap against each measure ──
+function supp_S6_advantage()
+    bc = STRUCTURAL_FD["regime_cells"]
     rho = [c["rho"] for c in bc]
     xs = [(CONSTR[2], [c["constraint"] for c in bc]), (EFFS[2], [c["effsize"] for c in bc])]
     ys = [
@@ -307,12 +564,19 @@ function supp_S3_advantage()
     end
     colgap!(fig.layout, 16);
     rowgap!(fig.layout, 12)
-    savefig("supp_S3_advantage.png", fig)
+    savefig("supp_S6_advantage.png", fig)
 end
 
 foreach(
     function_name -> function_name(),
-    (supp_S1_grid_lines, supp_S2_position, supp_S3_advantage),
+    (
+        supp_S1_type_geometry,
+        supp_S2_dgp_structure,
+        supp_S3_dgp_dimension,
+        supp_S4_grid_lines,
+        supp_S5_position,
+        supp_S6_advantage,
+    ),
 )
 # emit the display-convention keys quoted by the supplement captions
 open(
@@ -331,5 +595,12 @@ open(
     println(io, "\\pvDefine{suppRollWin}{$ROLLW}")
     println(io, "\\pvDefine{suppMeasInterval}{$MEASINT}")
     println(io, "\\pvDefine{suppAxisStart}{$TSTART}")
+    println(io, "\\pvDefine{suppDgpSeeds}{$(length(DGP_FD["seeds"]))}")
+    println(io, "\\pvDefine{suppDgpN}{$(DGP_FD["design"]["N"])}")
+    println(io, "\\pvDefine{suppDgpHeatmapN}{$(DGP_FD["design"]["heatmap_display_N"])}")
+    println(io, "\\pvDefine{suppDgpHeatmapSeed}{$(DGP_FD["heatmap_seed"])}")
+    println(io, "\\pvDefine{suppDgpDelta}{$(DGP_FD["baseline_delta"])}")
+    println(io, "\\pvDefine{suppDgpSpectrumComponents}{$SPECTRUM_COMPONENTS}")
+    println(io, "\\pvDefine{suppDgpRankEnergyPercent}{90}")
 end
 println("supplement figures done (+ supp_figmeta.tex)")

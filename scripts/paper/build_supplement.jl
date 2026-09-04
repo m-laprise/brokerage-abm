@@ -10,7 +10,8 @@ The build fails on a missing input, an undefined `\\pv` value, an unused display
 convention, a missing figure, or a LaTeX error.
 Auxiliary files are created in a temporary directory and discarded.
 
-Run `scripts/paper/supp_figures.jl` first.
+Run `scripts/paper/dgp_figdata.jl`, `scripts/paper/supp_figdata.jl`, and
+`scripts/paper/supp_figures.jl` first.
 
 Usage: julia --project --threads=auto scripts/paper/build_supplement.jl
 """

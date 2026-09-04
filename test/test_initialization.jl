@@ -167,6 +167,45 @@ using StableRNGs: StableRNG
         @test all(isapprox(norm(t), 1.0; atol=1e-10) for t in types)
     end
 
+    @testset "shared DGP generation matches model initialization" begin
+        local_params = default_params(N=50, seed=73)
+        dgp = BrokerageABM.generate_matching_dgp(
+            local_params, StableRNG(local_params.seed)
+        )
+        local_state = initialize_model(local_params)
+        @test dgp.curve_geo.d == local_state.curve_geo.d
+        @test dgp.curve_geo.s == local_state.curve_geo.s
+        @test dgp.curve_geo.freqs == local_state.curve_geo.freqs
+        @test dgp.curve_geo.phases == local_state.curve_geo.phases
+        @test dgp.agent_types == [agent.type for agent in local_state.agents]
+        @test dgp.env.c == local_state.env.c
+        @test dgp.env.A == local_state.env.A
+        @test dgp.env.B == local_state.env.B
+        @test dgp.env.rho == local_state.env.rho
+        @test dgp.env.delta == local_state.env.delta
+    end
+
+    @testset "rho and delta do not change underlying DGP draws" begin
+        reference_params = default_params(N=50, seed=81, rho=0.0, delta=0.0)
+        comparison_params = default_params(N=50, seed=81, rho=0.85, delta=1.0)
+        reference = BrokerageABM.generate_matching_dgp(
+            reference_params, StableRNG(reference_params.seed)
+        )
+        comparison = BrokerageABM.generate_matching_dgp(
+            comparison_params, StableRNG(comparison_params.seed)
+        )
+        @test reference.curve_geo.d == comparison.curve_geo.d
+        @test reference.curve_geo.s == comparison.curve_geo.s
+        @test reference.curve_geo.freqs == comparison.curve_geo.freqs
+        @test reference.curve_geo.phases == comparison.curve_geo.phases
+        @test reference.agent_types == comparison.agent_types
+        @test reference.env.c == comparison.env.c
+        @test reference.env.A == comparison.env.A
+        @test reference.env.B == comparison.env.B
+        @test (reference.env.rho, reference.env.delta) == (0.0, 0.0)
+        @test (comparison.env.rho, comparison.env.delta) == (0.85, 1.0)
+    end
+
     @testset "deterministic initialization: same seed -> identical state" begin
         s1 = initialize_model(default_params(N=50, seed=42))
         s2 = initialize_model(default_params(N=50, seed=42))
