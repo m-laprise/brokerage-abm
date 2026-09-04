@@ -56,9 +56,9 @@ The outputs are written under `runs/exploration/`.
 | `scripts/explore_model.jl` | Local baseline and parameter exploration |
 | `scripts/sweep/` | Reproducible SLURM sweep pipeline and [operating guide](scripts/sweep/README.md) |
 | `scripts/paper/` | Statistical reporting and figure pipeline, with a [reproduction guide](scripts/paper/README.md) |
-| `scripts/ridge/` | Ridge experiments, ablations, calibration, and reports |
-| `paper/` | Hand-edited manuscript, report, and appendix sources |
-| `notes/` | Hand-authored research notes |
+| `scripts/ridge/` | Ridge experiments, ablations, calibration, and analysis |
+| `paper/` | Hand-edited manuscript, supplement, and appendix sources |
+| `notes/` | Research notes |
 | `runs/` | Ignored raw simulation runs and local exploratory artifacts |
 | `output/` | Generated results, figures, reports, and provenance records |
 

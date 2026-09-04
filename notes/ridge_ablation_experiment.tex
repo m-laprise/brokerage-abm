@@ -4,11 +4,12 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{tabularx}
 \usepackage{microtype}
 \usepackage{float}
 \usepackage[T1]{fontenc}
 
-\input{../../output/ridge/ablations/analysis/values.tex}
+\input{../output/ridge/ablations/analysis/values.tex}
 
 \title{Ridge Broker Ablation Experiment}
 \author{}
@@ -66,9 +67,11 @@ than only its late-period summary.
 \centering
 \caption{Baseline outcomes by Ridge broker variant}
 \label{tab:ridge-ablation-baseline}
-\begin{tabular}{lrrrr}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}Xrrrr@{}}
 \toprule
-Outcome & Pair & Size-matched & Single-principal & Additive \\
+Outcome & Pair & \shortstack{Size-\\matched} & \shortstack{Single-\\principal} & Additive \\
 \midrule
 Agent holdout rank correlation
   & \rav{pairBaseline_agent_holdout_rank}
@@ -96,7 +99,7 @@ Outsourcing rate
   & \rav{single_principalBaseline_outsourcing_rate}
   & \rav{additiveBaseline_outsourcing_rate} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \begin{minipage}{0.94\linewidth}
 \footnotesize
 Entries use all \rav{nBaselineSeeds} common seeds. Each seed is first averaged
@@ -152,7 +155,7 @@ receives one observation.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{../../output/ridge/ablations/figures/ridge_ablations.png}
+\includegraphics[width=\linewidth]{../output/ridge/ablations/figures/ridge_ablations.png}
 \caption{Ridge broker restrictions. Panel A shows the baseline
 broker-minus-principal difference in holdout rank correlation over time under
 base Ridge and the three restrictions. Lines are ensemble means over 50 common
@@ -165,7 +168,7 @@ intervals for the mean seed-level change, and dashed lines mark no change.}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\linewidth]{../../output/ridge/ablations/figures/ridge_ablation_grid.png}
+\includegraphics[width=0.92\linewidth]{../output/ridge/ablations/figures/ridge_ablation_grid.png}
 \caption{Broker-minus-principal differences in holdout rank correlation across
 the $\rho\times\delta$
 design. Each panel shows one Ridge broker variant, each line shows one value

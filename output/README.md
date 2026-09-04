@@ -1,9 +1,9 @@
 # Scientific outputs
 
-This directory is the single canonical location for generated reports,
-figures, result tables, and figure-input datasets. Hand-edited TeX sources are
-under `paper/`; generator and build scripts are under `scripts/`; research notes
-are under `notes/`.
+This directory is the canonical location for generated article outputs,
+figures, result tables, and figure-input datasets. Hand-edited article sources
+are under `paper/`; generator and build scripts are under `scripts/`; research
+notes are under `notes/`.
 
 ## Main results
 
@@ -40,13 +40,11 @@ builders reject inputs produced by a different commit.
 
 ## Ridge experiments
 
-- [Base Ridge report](ridge/paired/ridge_experiment.pdf)
 - [Figure R1: Baseline dynamics](ridge/paired/figures/baseline_dynamics.png)
 - [Figure R2: Matching grid](ridge/paired/figures/matching_grid.png)
 - [Figure R3: Position and work](ridge/paired/figures/centrality_and_access.png)
 - [Figure R4: Structural advantage](ridge/paired/figures/structural_advantage.png)
 - [Figure R5: Direct NN-Ridge comparison](ridge/paired/figures/ridge_comparison.png)
-- [Ridge ablation report](ridge/ablations/ridge_ablation_experiment.pdf)
 - [Figure RA1: Ridge ablation contrasts](ridge/ablations/figures/ridge_ablations.png)
 - [Figure RA2: Ridge ablation grid](ridge/ablations/figures/ridge_ablation_grid.png)
 
@@ -67,7 +65,6 @@ builders reject inputs produced by a different commit.
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and
   `analyze_ablations.jl`
 - Base Ridge figures: `scripts/ridge/paired_figures.jl`
-- Ridge reports: `scripts/ridge/build_reports.jl`
 
 The model specification and simulation pseudocode sources are under
 `paper/appendices/`; their standalone review PDFs are under `output/appendices/`.

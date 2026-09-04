@@ -100,7 +100,7 @@ Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 
 ## Base Ridge figure supplement
 
-The base Ridge report reproduces the full content of Main Figures 1--4 with
+The base Ridge analysis reproduces the full content of Main Figures 1--4 with
 NN and base Ridge in the same assets and shared axes. Direct NN-Ridge and
 ablation contrasts use intervals on common-seed differences. To create its compact
 Ridge input dataset on the cluster, point the general extractor at the paired
@@ -112,17 +112,16 @@ BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figure_data.jld2 \
   julia --project --threads=auto scripts/paper/figdata.jl
 ```
 
-Then render the four comparative figures and rebuild the reports locally:
+Then render the four comparative figures locally:
 
 ```bash
 julia --project --threads=auto scripts/ridge/paired_figures.jl
-julia --project --threads=auto scripts/ridge/build_reports.jl
 ```
 
 The figure renderer validates that both datasets contain the same 98 effective
 realizations and the 20-seed general, 50-seed baseline reporting plan. Outputs
-are under `output/ridge/paired/figures/` and are embedded in the base Ridge
-report.
+are under `output/ridge/paired/figures/`. The Ridge research notes can be rebuilt with
+`julia --project --threads=auto scripts/ridge/build_reports.jl`.
 
 ## Supplementary Material
 

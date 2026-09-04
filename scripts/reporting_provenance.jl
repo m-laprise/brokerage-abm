@@ -62,7 +62,6 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "paper/captions.tex",
     "paper/supplement.tex",
     "paper/references.bib",
-    "paper/ridge",
     "scripts/paper/figures.jl",
     "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",
@@ -70,7 +69,6 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "scripts/paper/build_manuscript.jl",
     "scripts/paper/build_appendices.jl",
     "scripts/paper/build_publication.jl",
-    "scripts/ridge/build_reports.jl",
     "scripts/reporting_provenance.jl",
     "test/test_reporting_provenance.jl",
 )

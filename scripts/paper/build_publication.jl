@@ -18,7 +18,6 @@ const BUILD_STEPS = (
     "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",
     "scripts/paper/build_supplement.jl",
-    "scripts/ridge/build_reports.jl",
     "scripts/paper/build_manuscript.jl",
 )
 
