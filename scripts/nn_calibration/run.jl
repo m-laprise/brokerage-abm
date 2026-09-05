@@ -11,6 +11,7 @@ using BrokerageABM: default_params, run_simulation, verify_invariants
 using JLD2: jldopen, jldsave
 
 include(joinpath(@__DIR__, "calibration_config.jl"))
+include(joinpath(@__DIR__, "provenance.jl"))
 
 const NNCAL_SMOKE = "--smoke" in ARGS
 
@@ -40,10 +41,10 @@ function nncal_shard_current(path, provenance)
     isfile(path) || return false
     try
         return jldopen(path, "r") do file
-            file["git_commit"] == provenance[:git_commit] &&
-                file["pkg_manifest_hash"] == provenance[:pkg_manifest_hash] &&
-                file["manifest_hash"] == provenance[:manifest_hash] &&
-                file["schema_version"] == provenance[:schema_version]
+            all(NNCAL_PROVENANCE_KEYS) do key
+                name = string(key)
+                haskey(file, name) && file[name] == provenance[key]
+            end
         end
     catch
         return false
@@ -59,6 +60,10 @@ function main()
     entries, provenance = jldopen(manifest_path, "r") do file
         file["entries"], file["provenance"]
     end
+    nncal_verify_runtime_provenance(
+        provenance;
+        require_clean=get(ENV, "BROKERAGE_ABM_ALLOW_DIRTY", "0") != "1",
+    )
 
     task_id = nncal_task_id()
     0 <= task_id < length(entries) || error("task id $task_id is out of range")
@@ -91,10 +96,9 @@ function main()
         return nothing
     end
 
+    resolved = merge(NNCAL_BASELINE, (; N, T, seed))
     params = default_params(;
-        N=N,
-        T=T,
-        seed=seed,
+        resolved...,
         learning_model=:nn,
         eta_lr_agent=Float64(config[:agent_eta_lr]),
         eta_lr_broker=Float64(config[:broker_eta_lr]),

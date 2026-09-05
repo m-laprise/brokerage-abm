@@ -119,7 +119,7 @@ function main()
     provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
     mkpath(OUT_DIR)
     sweep = load_sweep_dataset(ROOT)
-    length(sweep.results) == 98 || error("expected 98 effective realizations")
+    length(sweep.results) == 80 || error("expected 80 effective realizations")
     baseline = sweep.result_by_rel[BASELINE_REL]
     length(baseline.seeds) == 50 || error("expected 50 baseline seeds")
     all(

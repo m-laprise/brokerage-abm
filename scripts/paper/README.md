@@ -15,7 +15,7 @@ Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR` to its root; run on
 node, `srun --partition=cpu --mem=8G`):
 
 The reporting root must contain 20 seeds for every effective realization and
-50 seeds for the baseline, for 1,990 runs in total. The data extractors check
+50 seeds for the baseline, for 1,630 runs in total. The data extractors check
 this seed plan before writing outputs. Every reporting stage also requires all
 source, paper, specification, and test files to match the current Git commit.
 Generated files under `output/` may differ. Data-derived inputs retain the clean

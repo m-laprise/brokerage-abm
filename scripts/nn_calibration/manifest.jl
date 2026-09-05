@@ -8,17 +8,13 @@ The reporting workflow requires a clean committed worktree. Set
 
 using Dates: Dates
 using JLD2
-using SHA: sha256
 
 include(joinpath(@__DIR__, "calibration_config.jl"))
+include(joinpath(@__DIR__, "provenance.jl"))
 
-const NNCAL_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-
-nncal_git_commit() = strip(read(`git -C $NNCAL_REPO_ROOT rev-parse HEAD`, String))
-function nncal_git_dirty()
-    !isempty(strip(read(`git -C $NNCAL_REPO_ROOT status --porcelain`, String)))
+module NNCALSweepDesign
+include(joinpath(@__DIR__, "..", "sweep", "sweep_config.jl"))
 end
-nncal_file_hash(path) = isfile(path) ? bytes2hex(sha256(read(path))) : "absent"
 
 function nncal_write_manifest_tsv(path, entries)
     open(path, "w") do io
@@ -72,7 +68,11 @@ function main()
     stage = Symbol(only(ARGS))
     stage in (:screen, :confirm) || error("invalid stage: $stage")
 
-    dirty = nncal_git_dirty()
+    NNCAL_BASELINE == NNCALSweepDesign.SWEEP_BASELINE || error(
+        "NN calibration baseline does not match the reporting sweep baseline",
+    )
+    source = nncal_current_source_provenance()
+    dirty = source[:git_dirty]
     dirty &&
         get(ENV, "BROKERAGE_ABM_ALLOW_DIRTY", "0") != "1" &&
         error(
@@ -88,16 +88,17 @@ function main()
         error("calibration manifest already exists: $stage_dir")
     mkpath(stage_dir)
 
-    commit = nncal_git_commit()
-    package_hash = nncal_file_hash(joinpath(NNCAL_REPO_ROOT, "Manifest.toml"))
+    commit = source[:git_commit]
+    package_hash = source[:pkg_manifest_hash]
     meta = Dict{Symbol,Any}(
         :stage => string(stage),
         :date => string(Dates.today()),
         :git_commit => commit,
         :git_dirty => dirty,
-        :julia_version => string(VERSION),
+        :julia_version => source[:julia_version],
         :pkg_manifest_hash => package_hash,
         :schema_version => NNCAL_SCHEMA_VERSION,
+        :baseline => Dict(pairs(NNCAL_BASELINE)),
         :N => NNCAL_N,
         :T => NNCAL_T,
         :early_periods => collect(NNCAL_EARLY_PERIODS),
@@ -122,7 +123,7 @@ function main()
 
     provenance = Dict{Symbol,Any}(
         :git_commit => commit,
-        :julia_version => string(VERSION),
+        :julia_version => source[:julia_version],
         :pkg_manifest_hash => package_hash,
         :manifest_hash => manifest_hash,
         :schema_version => NNCAL_SCHEMA_VERSION,

@@ -140,10 +140,10 @@ case "$stage" in
   smoke)
     idx="${2:-0}"
     mkdir -p "$LOGDIR"
-    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" \
+    jid=$(sbatch --parsable --account="$ACCOUNT" --time=00:15:00 \
         --cpus-per-task="$COMPUTE_CPUS" --array="${idx}-${idx}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
-        "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
+        "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR" --smoke)
     echo "smoke job submitted: $jid (task $idx, ${COMPUTE_CPUS} CPUs)"
     echo "  watch: tail -f $LOGDIR/${jid}_${idx}.out"
     ;;

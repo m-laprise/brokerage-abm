@@ -121,11 +121,6 @@ const K_VALS = [4, 12]
 const ROSTER_FRAC_VALS = [0.10, 0.20, 0.40]
 const N_STRANGERS_VALS = [0, 10, 50]
 
-# Focused grid at high rho and high reservation thresholds. It is intentionally
-# local rather than a global refinement of both parameters.
-const RHO_R_CORNER_VALS = [0.70, 0.85, 1.0]
-const R_CORNER_VALS = [0.90, 1.05, 1.20]
-
 const OAT_AXES = [
     (label="rho", key=:rho, vals=RHO_OAT),
     (label="eta", key=:eta, vals=ETA_VALS),
@@ -137,23 +132,14 @@ const OAT_AXES = [
     (label="n_strangers", key=:n_strangers, vals=N_STRANGERS_VALS),
 ]
 
-# Two-parameter grids: the first six are all pairwise combinations of
-# {rho, eta, N, r}; the last two are targeted refinements.
+# Two-parameter grids cover the three pairwise combinations of matching
+# composition, turnover, and the reservation threshold, plus the targeted
+# matching-composition by difficulty design.
 const PHASE_PAIRS = [
     (name="rho_eta", xkey=:rho, xvals=RHO_EXTENDED_VALS, ykey=:eta, yvals=ETA_VALS),
-    (name="rho_N", xkey=:rho, xvals=RHO_EXTENDED_VALS, ykey=:N, yvals=N_VALS),
     (name="rho_r", xkey=:rho, xvals=RHO_CORE_VALS, ykey=:reservation_frac, yvals=R_VALS),
     (name="eta_r", xkey=:eta, xvals=ETA_VALS, ykey=:reservation_frac, yvals=R_VALS),
-    (name="eta_N", xkey=:eta, xvals=ETA_VALS, ykey=:N, yvals=N_VALS),
-    (name="r_N", xkey=:reservation_frac, xvals=R_VALS, ykey=:N, yvals=N_VALS),
     (name="rho_delta", xkey=:rho, xvals=RHO_OAT, ykey=:delta, yvals=DELTA_VALS),
-    (
-        name="rho_r_corner",
-        xkey=:rho,
-        xvals=RHO_R_CORNER_VALS,
-        ykey=:reservation_frac,
-        yvals=R_CORNER_VALS,
-    ),
 ]
 
 const BASELINE_RELDIR = "oat/rho=0.5"

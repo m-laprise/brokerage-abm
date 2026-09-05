@@ -237,7 +237,7 @@ pv(
 # excluded because delta is not an effective dimension at rho=1.
 function rhofam(c)
     startswith(c.rel, "oat/rho=") || any(
-        startswith(c.rel, "phase/$pair/cells/") for pair in ("rho_eta", "rho_N", "rho_r")
+        startswith(c.rel, "phase/$pair/cells/") for pair in ("rho_eta", "rho_r")
     )
 end
 function rhocells(rv)

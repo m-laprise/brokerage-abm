@@ -2,7 +2,14 @@ using Test
 
 include(joinpath(@__DIR__, "..", "scripts", "nn_calibration", "summarize.jl"))
 
+module NNCalTestSweepDesign
+include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
+end
+
 @testset "NN calibration design" begin
+    @test NNCAL_SCHEMA_VERSION == 3
+    @test NNCAL_BASELINE == NNCalTestSweepDesign.SWEEP_BASELINE
+    @test NNCAL_N == NNCAL_BASELINE.N
     settings = nncal_candidate_settings()
     @test length(settings) == 9
     @test all(setting.initial_steps == 2 * setting.recurrent_steps for setting in settings)
@@ -26,4 +33,20 @@ include(joinpath(@__DIR__, "..", "scripts", "nn_calibration", "summarize.jl"))
     @test length(nncal_build_entries([confirmation], NNCAL_CONFIRM_SEEDS)) == 5
     @test_throws ErrorException nncal_stage_seeds(:combined)
     @test_throws ErrorException nncal_stage_configs(:combined)
+end
+
+@testset "NN calibration provenance" begin
+    expected = Dict{Symbol,Any}(
+        :git_commit => "commit-a",
+        :julia_version => "1.11.3",
+        :pkg_manifest_hash => "manifest-a",
+    )
+    @test isempty(nncal_provenance_mismatches(expected, copy(expected)))
+
+    current = copy(expected)
+    current[:git_commit] = "commit-b"
+    current[:julia_version] = "1.11.4"
+    @test nncal_provenance_mismatches(expected, current) == [
+        :git_commit, :julia_version
+    ]
 end

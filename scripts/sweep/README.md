@@ -45,8 +45,10 @@ The stages perform the following tasks:
    depot. Wait for `SETUP_OK` in its output.
 3. `manifest` creates the run manifest and `counts.env` on a compute node.
    Inspect the effective-regime and run counts before proceeding.
-4. `smoke` submits one array task. Inspect its output, error log, runtime, saved
-   shard, and provenance.
+4. `smoke` submits one two-period task with one initial and recurrent learning
+   update. It retains the manifest population size, writes under `smoke/`
+   rather than the scientific run directories, and has a 15-minute limit.
+   Inspect its output, error log, runtime, saved shard, and provenance.
 5. `compute` submits the full simulation array.
 6. `plot` submits aggregation jobs that produce each regime's `data.jld2` and
    diagnostic figures.
@@ -84,6 +86,10 @@ The reporting NN sweep uses 20 seeds for every regime and 50 at the baseline:
 export BROKERAGE_ABM_N_SEEDS=20
 export BROKERAGE_ABM_BASELINE_N_SEEDS=50
 ```
+
+The four two-parameter grids are `rho_eta`, `rho_r`, `eta_r`, and
+`rho_delta`. Market size is varied one at a time rather than crossed with the
+other parameters.
 
 The reporting values for the six NN optimizer controls are selected by the
 reproducible workflow in `scripts/nn_calibration/`. Set them explicitly before

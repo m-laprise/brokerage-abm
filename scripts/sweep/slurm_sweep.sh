@@ -4,7 +4,7 @@
 #   sbatch --array=0-$((NRUNS - 1))%200 \
 #          --output=$LOGDIR/%A_%a.out --error=$LOGDIR/%A_%a.err \
 #          slurm_sweep.sh <repo_root> <sweep_dir>
-# Args: $1 = repo root, $2 = sweep dir (exported as BROKERAGE_ABM_SWEEP_DIR).
+# Args: repository root, sweep directory, and optional runner flags.
 #SBATCH --job-name=brokerage_abm_run
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
@@ -16,6 +16,7 @@ set -euo pipefail
 
 REPO="${1:?usage: slurm_sweep.sh <repo_root> <sweep_dir>}"
 export BROKERAGE_ABM_SWEEP_DIR="${2:?usage: slurm_sweep.sh <repo_root> <sweep_dir>}"
+shift 2
 
 module purge
 module load julia/1.11.3
@@ -28,7 +29,7 @@ export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;zn
 cd "$REPO"
 echo "task=${SLURM_ARRAY_TASK_ID} host=$(hostname) cpus=${SLURM_CPUS_PER_TASK} sweep=$BROKERAGE_ABM_SWEEP_DIR"
 
-run_args=()
+run_args=("$@")
 if [[ "${BROKERAGE_ABM_RERUN:-0}" == "1" ]]; then
     run_args+=(--rerun)
 fi

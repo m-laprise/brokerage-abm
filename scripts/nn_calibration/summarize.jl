@@ -11,6 +11,7 @@ using JLD2
 using Statistics: mean, median, quantile
 
 include(joinpath(@__DIR__, "calibration_config.jl"))
+include(joinpath(@__DIR__, "provenance.jl"))
 
 function nncal_finite_mean(values, label)
     all(isfinite, values) || error("nonfinite values in $label")
@@ -40,13 +41,11 @@ function nncal_run_row(stage::Symbol, entry, provenance)
     )
     isfile(path) || error("missing calibration shard: $path")
     artifact = load(path)
-    artifact["git_commit"] == provenance[:git_commit] || error("commit mismatch: $path")
-    artifact["pkg_manifest_hash"] == provenance[:pkg_manifest_hash] ||
-        error("package manifest mismatch: $path")
-    artifact["manifest_hash"] == provenance[:manifest_hash] ||
-        error("calibration manifest mismatch: $path")
-    artifact["schema_version"] == provenance[:schema_version] ||
-        error("schema mismatch: $path")
+    for key in NNCAL_PROVENANCE_KEYS
+        name = string(key)
+        haskey(artifact, name) || error("missing $name provenance: $path")
+        artifact[name] == provenance[key] || error("$name mismatch: $path")
+    end
 
     df = artifact["df"]
     early = df[in.(df.period, Ref(NNCAL_EARLY_PERIODS)), :]
@@ -89,6 +88,10 @@ function nncal_stage_rows(stage::Symbol)
     manifest = nncal_load_manifest(stage)
     entries = manifest["entries"]
     provenance = manifest["provenance"]
+    nncal_verify_runtime_provenance(
+        provenance;
+        require_clean=get(ENV, "BROKERAGE_ABM_ALLOW_DIRTY", "0") != "1",
+    )
     return DataFrame(nncal_run_row(stage, entry, provenance) for entry in entries)
 end
 

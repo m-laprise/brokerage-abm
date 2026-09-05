@@ -64,9 +64,9 @@ The outputs are written under `runs/exploration/`.
 
 ## Study design and reproducibility
 
-The main reporting ensemble covers 98 scientifically distinct parameter
+The main reporting ensemble covers 80 scientifically distinct parameter
 regimes. Each regime has 20 independent seeds, and the baseline has 30
-additional seeds, for 1,990 runs over 500 periods. Some displayed grid
+additional seeds, for 1,630 runs over 500 periods. Some displayed grid
 coordinates resolve to the same regime when a parameter is inactive. Such
 duplicates reuse one simulation result and receive no additional analytical
 weight.

@@ -8,8 +8,18 @@ confirmation stage evaluates the selected agent and broker settings together.
 All scientific decisions use seed-level summaries.
 """
 
-const NNCAL_SCHEMA_VERSION = 2
-const NNCAL_N = 1000
+const NNCAL_SCHEMA_VERSION = 3
+const NNCAL_BASELINE = (
+    rho=0.5,
+    eta=0.02,
+    N=1000,
+    reservation_frac=0.60,
+    delta=0.50,
+    k=6,
+    roster_frac=0.20,
+    n_strangers=10,
+)
+const NNCAL_N = NNCAL_BASELINE.N
 const NNCAL_T = 200
 const NNCAL_EARLY_PERIODS = 101:150
 const NNCAL_LATE_PERIODS = 151:200
