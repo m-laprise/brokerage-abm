@@ -34,17 +34,3 @@ These are robustness checks, not a second calibration. The paired seed-level com
 ## Reporting
 
 The manuscript should state in one or two sentences that principal and broker training settings were calibrated separately at the baseline using out-of-sample ranking performance and seeds excluded from the reported simulations. The replication code should preserve the candidate grid, manifests, selection rule, seed-level results, and final decision.
-
-## Obsolete diagnostics
-
-Replace and then delete `scripts/diagnostics/param_sweep.jl`. It uses `T=80`, seeds 42 to 44, a one-at-a-time schedule grid, and the broker-minus-agent rank difference. It prints summaries without preserving results or provenance and does not calibrate agent and broker learning rates or budgets separately.
-
-The following standalone debugging scripts do not calibrate the live current model and should be removed after confirming that no retained analysis depends on them:
-
-- `scripts/diagnostics/stage1_representation.jl`
-- `scripts/diagnostics/stage1b_representation_ceiling.jl`
-- `scripts/diagnostics/stage2_training.jl`
-- `scripts/diagnostics/stage3_endogenous_data.jl`
-- `scripts/diagnostics/broker_learning_common.jl`, which is used only by the preceding scripts and `param_sweep.jl`
-
-In particular, the learning-rate comparison in `stage2_training.jl` defaults to vanilla gradient descent rather than production Adam. The fixed-data and representation scripts remain useful as historical debugging records, but they cannot justify the production hyperparameters. `scripts/diagnostics/broker_learning_investigation.md` should remain unchanged as a historical memo. The Ridge calibration scripts are separate, current experiments and are not deletion targets.
