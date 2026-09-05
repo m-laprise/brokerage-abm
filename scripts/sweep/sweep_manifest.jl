@@ -90,6 +90,12 @@ function main()
         :T => SWEEP_T,
         :T_burn => SWEEP_T_BURN,
         :learning_model => SWEEP_LEARNING_MODEL,
+        :nn_eta_lr_agent => SWEEP_NN_ETA_LR_AGENT,
+        :nn_eta_lr_broker => SWEEP_NN_ETA_LR_BROKER,
+        :nn_E_init_agent => SWEEP_NN_E_INIT_AGENT,
+        :nn_E_init_broker => SWEEP_NN_E_INIT_BROKER,
+        :nn_train_steps_agent => SWEEP_NN_TRAIN_STEPS_AGENT,
+        :nn_train_steps_broker => SWEEP_NN_TRAIN_STEPS_BROKER,
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
@@ -115,6 +121,12 @@ function main()
         :seeds => SWEEP_SEEDS,
         :baseline_seeds => SWEEP_BASELINE_SEEDS,
         :learning_model => SWEEP_LEARNING_MODEL,
+        :nn_eta_lr_agent => SWEEP_NN_ETA_LR_AGENT,
+        :nn_eta_lr_broker => SWEEP_NN_ETA_LR_BROKER,
+        :nn_E_init_agent => SWEEP_NN_E_INIT_AGENT,
+        :nn_E_init_broker => SWEEP_NN_E_INIT_BROKER,
+        :nn_train_steps_agent => SWEEP_NN_TRAIN_STEPS_AGENT,
+        :nn_train_steps_broker => SWEEP_NN_TRAIN_STEPS_BROKER,
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
@@ -184,6 +196,14 @@ function main()
     println("  Manifest.toml hash: $pkg_manifest_hash")
     println("  manifest.json hash: $manifest_hash")
     println("  learning model:     $SWEEP_LEARNING_MODEL")
+    println(
+        "  NN agent settings:  eta=$SWEEP_NN_ETA_LR_AGENT, " *
+        "init=$SWEEP_NN_E_INIT_AGENT, recurrent=$SWEEP_NN_TRAIN_STEPS_AGENT",
+    )
+    println(
+        "  NN broker settings: eta=$SWEEP_NN_ETA_LR_BROKER, " *
+        "init=$SWEEP_NN_E_INIT_BROKER, recurrent=$SWEEP_NN_TRAIN_STEPS_BROKER",
+    )
     println("  Ridge variant:      $SWEEP_RIDGE_BROKER_VARIANT")
     println("  agent Ridge lambda: $SWEEP_RIDGE_LAMBDA_AGENT")
     println("  broker Ridge lambda: $SWEEP_RIDGE_LAMBDA_BROKER")

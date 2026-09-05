@@ -94,7 +94,7 @@ function run_stage3()
     rows_live = residual_by_boundary(live_pred, cte; nbins=6)
     print_boundary_table("production broker", rows_live)
 
-    function train_on(Z, y; steps=2000, lr=p.eta_lr)
+    function train_on(Z, y; steps=2000, lr=p.eta_lr_broker)
         nn = init_neural_net(db, h, StableRNG(SEED + 5); b2_init=Q_OFFSET)
         grad = NNGradBuffers(nn)
         train_nn!(nn, grad, Matrix(Z), Vector(y), steps, lr)
@@ -102,7 +102,7 @@ function run_stage3()
     end
 
     println("\n### Gain recovery: trained on endogenous vs uniform data, identical optimization")
-    println("    (steps=2000, lr=$(p.eta_lr); scored on common uniform holdout)")
+    println("    (steps=2000, lr=$(p.eta_lr_broker); scored on common uniform holdout)")
     print_row("  endogenous history (q w/ noise)", train_on(Ze, q_e))
     print_row("  uniform sample (q w/ noise)", train_on(Zu, cu.target .+ env.sigma_eps .* randn(StableRNG(SEED + 11), n_e)))
     print_row("  uniform sample (noiseless)", train_on(Zu, cu.target))

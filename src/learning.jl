@@ -790,12 +790,18 @@ function train_agent_nn_impl!(agent::Agent, params::ModelParams)
     n = agent.history_count
     n <= 0 && return nothing
     n_steps = compute_adaptive_steps(
-        params.E_init, agent.n_new_obs, n; min_steps=params.train_steps
+        params.E_init_agent, agent.n_new_obs, n; min_steps=params.train_steps_agent
     )
     count = prepare_agent_training!(agent, params)
     agent.n_new_obs = 0
     train_nn_prefix_adam!(
-        agent.nn, agent.nn_grad, agent.train_X, agent.train_q, count, n_steps, params.eta_lr
+        agent.nn,
+        agent.nn_grad,
+        agent.train_X,
+        agent.train_q,
+        count,
+        n_steps,
+        params.eta_lr_agent,
     )
     return nothing
 end
@@ -853,9 +859,9 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
     count = prepare_broker_training!(broker, nothing, params, nothing; variant=:pair)
 
     # Step count is set by the new-data ratio over full history (independent of the
-    # window/cap), settling to the params.train_steps floor once history dominates.
+    # window/cap), settling to the broker step floor once history dominates.
     n_steps = compute_adaptive_steps(
-        params.E_init, broker.n_new_obs, n; min_steps=params.train_steps
+        params.E_init_broker, broker.n_new_obs, n; min_steps=params.train_steps_broker
     )
     broker.n_new_obs = 0
 
@@ -866,7 +872,7 @@ function train_broker_nn!(broker::Broker, params::ModelParams)
         broker.train_q,
         count,
         n_steps,
-        params.eta_lr,
+        params.eta_lr_broker,
     )
     return nothing
 end

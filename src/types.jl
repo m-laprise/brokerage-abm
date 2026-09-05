@@ -502,11 +502,14 @@ struct ModelParams
     ridge_broker_variant::Symbol  # :pair, :size_matched, :single_principal, or :additive
 
     # Neural network
-    eta_lr::Float64              # Adam learning rate (default 0.01)
-    E_init::Int                  # initial training steps (default 200)
+    eta_lr_agent::Float64        # agent Adam learning rate (default 0.01)
+    eta_lr_broker::Float64       # broker Adam learning rate (default 0.01)
+    E_init_agent::Int            # agent initial training steps (default 200)
+    E_init_broker::Int           # broker initial training steps (default 200)
     train_window_periods::Int    # training look-back horizon, in periods (default 40)
     train_max_obs::Int           # per-call observation cap; window subsampled to this (default 2000)
-    train_steps::Int             # min update steps per period; floor of the adaptive schedule (default 100)
+    train_steps_agent::Int       # agent update-step floor (default 100)
+    train_steps_broker::Int      # broker update-step floor (default 100)
 
     # Search
     roster_frac::Float64         # standing broker roster share (default 0.20)

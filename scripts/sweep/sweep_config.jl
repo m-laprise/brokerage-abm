@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard schema or scientific run semantics change."""
-const SWEEP_SCHEMA_VERSION = 10
+const SWEEP_SCHEMA_VERSION = 11
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -41,6 +41,20 @@ const SWEEP_BASELINE_SEEDS = collect(
     1:parse(Int, get(ENV, "BROKERAGE_ABM_BASELINE_N_SEEDS", string(length(SWEEP_SEEDS))))
 )
 const SWEEP_LEARNING_MODEL = Symbol(get(ENV, "BROKERAGE_ABM_LEARNING_MODEL", "nn"))
+const SWEEP_NN_ETA_LR_AGENT = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_NN_ETA_LR_AGENT", "0.01")
+)
+const SWEEP_NN_ETA_LR_BROKER = parse(
+    Float64, get(ENV, "BROKERAGE_ABM_NN_ETA_LR_BROKER", "0.01")
+)
+const SWEEP_NN_E_INIT_AGENT = parse(Int, get(ENV, "BROKERAGE_ABM_NN_E_INIT_AGENT", "200"))
+const SWEEP_NN_E_INIT_BROKER = parse(Int, get(ENV, "BROKERAGE_ABM_NN_E_INIT_BROKER", "200"))
+const SWEEP_NN_TRAIN_STEPS_AGENT = parse(
+    Int, get(ENV, "BROKERAGE_ABM_NN_TRAIN_STEPS_AGENT", "100")
+)
+const SWEEP_NN_TRAIN_STEPS_BROKER = parse(
+    Int, get(ENV, "BROKERAGE_ABM_NN_TRAIN_STEPS_BROKER", "100")
+)
 const SWEEP_RIDGE_LAMBDA_AGENT = parse(
     Float64, get(ENV, "BROKERAGE_ABM_RIDGE_LAMBDA_AGENT", "0.001")
 )
@@ -53,6 +67,12 @@ const SWEEP_RIDGE_BROKER_VARIANT = Symbol(
 const SWEEP_SCOPE = Symbol(get(ENV, "BROKERAGE_ABM_SWEEP_SCOPE", "full"))
 
 SWEEP_LEARNING_MODEL in (:nn, :ridge) || error("invalid sweep learning model")
+SWEEP_NN_ETA_LR_AGENT > 0.0 || error("agent NN learning rate must be positive")
+SWEEP_NN_ETA_LR_BROKER > 0.0 || error("broker NN learning rate must be positive")
+SWEEP_NN_E_INIT_AGENT >= 1 || error("agent NN initial steps must be positive")
+SWEEP_NN_E_INIT_BROKER >= 1 || error("broker NN initial steps must be positive")
+SWEEP_NN_TRAIN_STEPS_AGENT >= 1 || error("agent NN recurrent steps must be positive")
+SWEEP_NN_TRAIN_STEPS_BROKER >= 1 || error("broker NN recurrent steps must be positive")
 SWEEP_RIDGE_LAMBDA_AGENT > 0.0 || error("agent Ridge penalty must be positive")
 SWEEP_RIDGE_LAMBDA_BROKER > 0.0 || error("broker Ridge penalty must be positive")
 SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||

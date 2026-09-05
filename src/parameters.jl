@@ -68,11 +68,14 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :ridge_lambda_broker => 0.001,
         :ridge_broker_variant => :pair,
         # Neural network
-        :eta_lr => 0.01,
-        :E_init => 200,
+        :eta_lr_agent => 0.01,
+        :eta_lr_broker => 0.01,
+        :E_init_agent => 200,
+        :E_init_broker => 200,
         :train_window_periods => 40,
         :train_max_obs => 2000,
-        :train_steps => 100,
+        :train_steps_agent => 100,
+        :train_steps_broker => 100,
         # Search
         :roster_frac => 0.20,
         :n_strangers => 10,
@@ -106,11 +109,14 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:ridge_lambda_agent],
         defaults[:ridge_lambda_broker],
         defaults[:ridge_broker_variant],
-        defaults[:eta_lr],
-        defaults[:E_init],
+        defaults[:eta_lr_agent],
+        defaults[:eta_lr_broker],
+        defaults[:E_init_agent],
+        defaults[:E_init_broker],
         defaults[:train_window_periods],
         defaults[:train_max_obs],
-        defaults[:train_steps],
+        defaults[:train_steps_agent],
+        defaults[:train_steps_broker],
         defaults[:roster_frac],
         defaults[:n_strangers],
         defaults[:eta],
@@ -162,11 +168,14 @@ function validate_params(p::ModelParams)
     @assert p.ridge_broker_variant in (:pair, :size_matched, :single_principal, :additive) "invalid ridge_broker_variant: $(p.ridge_broker_variant)"
 
     # Neural network
-    @assert p.eta_lr > 0.0 "eta_lr must be > 0, got $(p.eta_lr)"
-    @assert p.E_init >= 1 "E_init must be >= 1, got $(p.E_init)"
+    @assert p.eta_lr_agent > 0.0 "eta_lr_agent must be > 0, got $(p.eta_lr_agent)"
+    @assert p.eta_lr_broker > 0.0 "eta_lr_broker must be > 0, got $(p.eta_lr_broker)"
+    @assert p.E_init_agent >= 1 "E_init_agent must be >= 1, got $(p.E_init_agent)"
+    @assert p.E_init_broker >= 1 "E_init_broker must be >= 1, got $(p.E_init_broker)"
     @assert p.train_window_periods >= 1 "train_window_periods must be >= 1, got $(p.train_window_periods)"
     @assert p.train_max_obs >= 1 "train_max_obs must be >= 1, got $(p.train_max_obs)"
-    @assert p.train_steps >= 1 "train_steps must be >= 1, got $(p.train_steps)"
+    @assert p.train_steps_agent >= 1 "train_steps_agent must be >= 1, got $(p.train_steps_agent)"
+    @assert p.train_steps_broker >= 1 "train_steps_broker must be >= 1, got $(p.train_steps_broker)"
     @assert agent_hidden_width(p) >= 1 "agent hidden width must be >= 1"
     @assert broker_hidden_width(p) >= 1 "broker hidden width must be >= 1"
 

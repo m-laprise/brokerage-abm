@@ -27,8 +27,15 @@ const CELLS = QUICK ? [(2000, 20, 50), (2000, 20, 100)] :
 tailmean(df, c) = mean(filter(!isnan, df[df.period .> T ÷ 2, c]))
 
 function run_cell(cap, wp, steps, seed)
-    p = default_params(; N=N, T=T, seed=seed,
-        train_window_periods=wp, train_max_obs=cap, train_steps=steps)
+    p = default_params(;
+        N=N,
+        T=T,
+        seed=seed,
+        train_window_periods=wp,
+        train_max_obs=cap,
+        train_steps_agent=steps,
+        train_steps_broker=steps,
+    )
     wall = @elapsed ((state, df) = run_simulation(p))
     pool = [a.type for a in state.agents]
     Xi, Xj = sample_pairs(state.env, pool, 4000, StableRNG(99); source=:pool)

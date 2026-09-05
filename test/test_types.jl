@@ -30,6 +30,9 @@ using LinearAlgebra: norm
         @test p.ridge_lambda_agent == 0.001
         @test p.ridge_lambda_broker == 0.001
         @test p.ridge_broker_variant == :pair
+        @test p.eta_lr_agent == p.eta_lr_broker == 0.01
+        @test p.E_init_agent == p.E_init_broker == 200
+        @test p.train_steps_agent == p.train_steps_broker == 100
         @test p.network_measure_interval == 20
         @test p.T == 500
     end
@@ -61,12 +64,30 @@ using LinearAlgebra: norm
     end
 
     @testset "default_params with overrides" begin
-        p = default_params(; seed=99, N=200, K=10, delta=0.75, roster_frac=0.40)
+        p = default_params(;
+            seed=99,
+            N=200,
+            K=10,
+            delta=0.75,
+            roster_frac=0.40,
+            eta_lr_agent=0.003,
+            eta_lr_broker=0.03,
+            E_init_agent=100,
+            E_init_broker=400,
+            train_steps_agent=50,
+            train_steps_broker=200,
+        )
         @test p.seed == 99
         @test p.N == 200
         @test p.K == 10
         @test p.delta == 0.75
         @test p.roster_frac == 0.40
+        @test p.eta_lr_agent == 0.003
+        @test p.eta_lr_broker == 0.03
+        @test p.E_init_agent == 100
+        @test p.E_init_broker == 400
+        @test p.train_steps_agent == 50
+        @test p.train_steps_broker == 200
     end
 
     @testset "default_params rejects unknown kwargs" begin
@@ -92,6 +113,12 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(ridge_lambda_agent=0.0)
         @test_throws AssertionError default_params(ridge_lambda_broker=0.0)
         @test_throws AssertionError default_params(ridge_broker_variant=:unknown)
+        @test_throws AssertionError default_params(eta_lr_agent=0.0)
+        @test_throws AssertionError default_params(eta_lr_broker=0.0)
+        @test_throws AssertionError default_params(E_init_agent=0)
+        @test_throws AssertionError default_params(E_init_broker=0)
+        @test_throws AssertionError default_params(train_steps_agent=0)
+        @test_throws AssertionError default_params(train_steps_broker=0)
     end
 
     @testset "NeuralNet and NNGradBuffers" begin

@@ -9,11 +9,14 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test SWEEP_SCHEMA_VERSION == 10
+    @test SWEEP_SCHEMA_VERSION == 11
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
     @test SWEEP_LEARNING_MODEL == :nn
+    @test SWEEP_NN_ETA_LR_AGENT == SWEEP_NN_ETA_LR_BROKER == 0.01
+    @test SWEEP_NN_E_INIT_AGENT == SWEEP_NN_E_INIT_BROKER == 200
+    @test SWEEP_NN_TRAIN_STEPS_AGENT == SWEEP_NN_TRAIN_STEPS_BROKER == 100
     @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
     @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full
@@ -98,8 +101,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test rho_N[:xvals] == RHO_EXTENDED_VALS
     @test rho_r[:xvals] == RHO_CORE_VALS
     @test all(
-        value in [j[:value] for j in oat_jobs if j[:key] == "rho"] for
-        value in (0.15, 0.85)
+        value in [j[:value] for j in oat_jobs if j[:key] == "rho"] for value in (0.15, 0.85)
     )
 
     # Rho-group summaries use the same effective support at rho = 0, 0.5, and 1.
@@ -126,13 +128,23 @@ end
     @test length(conditions) == 31
     @test length(entries) == 620
     @test length(plot_jobs) == 2
-    @test Set(cell[:pair] for cell in cells if cell[:kind] == "phase") ==
-        Set(["rho_delta"])
+    @test Set(cell[:pair] for cell in cells if cell[:kind] == "phase") == Set(["rho_delta"])
     @test_throws ErrorException build_cells(:invalid)
 end
 
 @testset "rho=1 effective realization is delta-invariant" begin
-    common = (N=30, k=4, T=3, E_init=1, train_steps=1, eta=0.0, rho=1.0, seed=90210)
+    common = (
+        N=30,
+        k=4,
+        T=3,
+        E_init_agent=1,
+        E_init_broker=1,
+        train_steps_agent=1,
+        train_steps_broker=1,
+        eta=0.0,
+        rho=1.0,
+        seed=90210,
+    )
     state_zero, metrics_zero = run_simulation(default_params(; common..., delta=0.0))
     state_one, metrics_one = run_simulation(default_params(; common..., delta=1.0))
     @test isequal(metrics_zero, metrics_one)

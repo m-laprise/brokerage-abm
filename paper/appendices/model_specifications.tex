@@ -229,7 +229,7 @@ In the default model, both agents and the broker use a fully-connected network w
 
 where \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Agents receive raw partner type vectors, the broker receives pairs of them.
 
-\textbf{Training rule.} Network weights minimize MSE with the Adam optimizer (learning rate \(\eta_{\mathrm{lr}}\), default 0.01) on the current training window. No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\text{init}}\) gradient steps (default 200) on their seed histories.
+\textbf{Training rule.} Network weights minimize MSE with the Adam optimizer on the current training window. Agents and the broker may have separate learning rates, \(\eta_{\mathrm{lr},a}\) and \(\eta_{\mathrm{lr},b}\). No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\mathrm{init},c}\) gradient steps on their seed histories, where \(c\in\{a,b\}\).
 
 \textbf{Alternate Ridge rule.} In the Ridge experiment, agents and the broker instead use
 
@@ -243,9 +243,9 @@ Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lamb
 
 Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
-\[E_t = \max\!\left(E_{\text{steps}}, \; \left\lceil E_{\text{init}} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right)\]
+\[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\}.\]
 
-where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps}}\) (default 100) is the minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same NN step-count rule. Ridge is solved directly at each fitting call.
+where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. Reporting values for the NN learning rates and update budgets are selected separately at the baseline using out-of-sample rank correlation and calibration seeds excluded from the reported simulations; the complete calibration is preserved in the replication code.
 
 Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, fitting deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
 
@@ -566,9 +566,9 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \(\rho\) & 0.50 & §2a & \(p_{\text{demand}}\) & 0.50 & §6 \\
 \(\delta\) & 0.5 & §2c & \(n_{\mathrm{strangers}}\) & 10 & §6a \\
 \(\sigma_\varepsilon\) & 0.284 & §2a & \(\alpha_R\) & 0.20 & §6b \\
-\(\eta_{\mathrm{lr}}\) & 0.01 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
-\(E_{\text{init}}\) & 200 & §3a & \(\omega\) & 0.2 & §7a \\
-\(E_{\text{steps}}\) & 100 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
+\(\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}\) & 0.01, 0.01 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
+\(E_{\text{init},a},E_{\text{init},b}\) & 200, 200 & §3a & \(\omega\) & 0.2 & §7a \\
+\(E_{\text{steps},a},E_{\text{steps},b}\) & 100, 100 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
 \(W_p\) & 40 periods & §3a & \(M_{\text{train}}\) & 2000 & §3a \\
 \bottomrule
 \end{tabular}

@@ -421,7 +421,7 @@ using Statistics: mean
 
     @testset "train_agent_nn! matches contiguous copied training" begin
         rng = StableRNG(314)
-        p = default_params(N=20, E_init=7)
+        p = default_params(N=20, E_init_agent=7)
         history_X = randn(rng, p.d, 24)
         history_q = randn(rng, 24)
         h_agent = agent_hidden_width(p)
@@ -448,7 +448,7 @@ using Statistics: mean
         )
 
         n_steps = compute_adaptive_steps(
-            p.E_init, n_new, agent.history_count; min_steps=p.train_steps
+            p.E_init_agent, n_new, agent.history_count; min_steps=p.train_steps_agent
         )
         train_agent_nn!(agent, p)
         # Live agent training uses Adam; with no period marks the window spans the
@@ -461,7 +461,7 @@ using Statistics: mean
             Vector(history_q[1:nref]),
             nref,
             n_steps,
-            p.eta_lr,
+            p.eta_lr_agent,
         )
 
         @test agent.nn.W1 == nn_ref.W1
@@ -472,7 +472,7 @@ using Statistics: mean
 
     @testset "train_agent_nn! is allocation-light after warmup" begin
         rng = StableRNG(315)
-        p = default_params(N=20, E_init=1)
+        p = default_params(N=20, E_init_agent=1)
         h_agent = agent_hidden_width(p)
         nn = init_neural_net(p.d, h_agent, rng)
         agent = Agent(
@@ -540,5 +540,34 @@ using Statistics: mean
         train_broker_nn!(broker, p)
         @test broker.n_new_obs == 0
         @test broker.nn.W1 != w1_before
+    end
+
+    @testset "broker training ignores agent optimizer settings" begin
+        base = default_params(;
+            N=30, seed=43, eta_lr_broker=0.007, E_init_broker=9, train_steps_broker=3
+        )
+        state = initialize_model(base)
+        record_broker_history!(
+            state.broker, state.agents[1].type, state.agents[2].type, 1.2
+        )
+        broker_left = deepcopy(state.broker)
+        broker_right = deepcopy(state.broker)
+        changed_agent = default_params(;
+            N=30,
+            seed=43,
+            eta_lr_agent=0.03,
+            E_init_agent=400,
+            train_steps_agent=200,
+            eta_lr_broker=base.eta_lr_broker,
+            E_init_broker=base.E_init_broker,
+            train_steps_broker=base.train_steps_broker,
+        )
+
+        train_broker_nn!(broker_left, base)
+        train_broker_nn!(broker_right, changed_agent)
+        @test broker_left.nn.W1 == broker_right.nn.W1
+        @test broker_left.nn.b1 == broker_right.nn.b1
+        @test broker_left.nn.w2 == broker_right.nn.w2
+        @test broker_left.nn.b2 == broker_right.nn.b2
     end
 end

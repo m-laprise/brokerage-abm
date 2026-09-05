@@ -123,9 +123,9 @@ $\omega$ & scalar & Satisfaction EWMA weight. \\
 $\mathsf L$ & learning function & $\mathrm{NN}$ (default) or $\mathrm{Ridge}$. \\
 $\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=0.003$ and $\lambda_b=0.001$. \\
 $a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
-$E_{\mathrm{init}}$ & scalar & Initial training steps. \\
-$E_{\mathrm{steps}}$ & scalar & Minimum (floor) training steps per period. \\
-$\eta_{\mathrm{lr}}$ & scalar & MLP Adam learning rate. \\
+$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps. \\
+$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call. \\
+$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates. \\
 $W_p$ & scalar & Training-window horizon, in periods. \\
 $M$ & scalar & Per-call training observation cap. \\
 \addlinespace[0.25em]
@@ -302,12 +302,12 @@ $r_\ell$ & $\{1,2\}$ & Endpoint retained once when broker observation $\ell$ is 
 \caption{\procFitPredictor}
 \label{alg:fitpredictor}
 \begin{algorithmic}[1]
-\Require Learning function $\mathsf L$, parameters $\Theta$, raw inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, learner-specific Ridge penalty $\lambda$, and fitting parameters.
+\Require Learning function $\mathsf L$, learner $c\in\{a,b\}$, parameters $\Theta$, raw inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, learner-specific Ridge penalty $\lambda_c$, and fitting parameters.
 \If{$\mathsf L=\mathrm{NN}$}
-    \State $E\gets\max\{E_{\mathrm{steps}},\lceil E_{\mathrm{init}}\Delta/n_{\mathrm{total}}\rceil\}$.
-    \State $(\Theta,\mathcal O)\gets\Call{\procTrainNN}{\Theta,\Xi_{\mathrm{tr}},y_{\mathrm{tr}},E,\eta_{\mathrm{lr}},\mathcal O}$.
+    \State $E\gets\max\{E_{\mathrm{steps},c},\lceil E_{\mathrm{init},c}\Delta/n_{\mathrm{total}}\rceil\}$.
+    \State $(\Theta,\mathcal O)\gets\Call{\procTrainNN}{\Theta,\Xi_{\mathrm{tr}},y_{\mathrm{tr}},E,\eta_{\mathrm{lr},c},\mathcal O}$.
 \Else
-    \State $(\alpha,\beta)\gets\displaystyle\arg\min_{a,b} \left\{n^{-1}\sum_{\ell=1}^n(a+b^\top\Xi_{\mathrm{tr},\cdot\ell}-y_{\mathrm{tr},\ell})^2 +\lambda\|b\|_2^2\right\}$.
+    \State $(\alpha,\beta)\gets\displaystyle\arg\min_{a,b} \left\{n^{-1}\sum_{\ell=1}^n(a+b^\top\Xi_{\mathrm{tr},\cdot\ell}-y_{\mathrm{tr},\ell})^2 +\lambda_c\|b\|_2^2\right\}$.
     \State $\Theta\gets(\alpha,\beta)$.
 \EndIf
 \State \Return $\Theta$ and, for NN, $\mathcal O$.
@@ -354,7 +354,7 @@ Within period-level routines, state variables without a superscript refer to the
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
         \State Let $P_i\gets|\mathbf p_i|$ and $b_i\gets0$ if $P_i\le W_p$, otherwise $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$. If $|L_i|>M$, keep $M$ spaced indices across $L_i$, including its first and last indices (or only its last index when $M=1$).
         \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
-        \State $\Theta_i\gets\Call{\procFitPredictor}{\mathsf L,\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},\lambda_a,\Delta_i,n_i,\vartheta}$; $\Delta_i\gets0$.
+        \State $\Theta_i\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},\lambda_a,\Delta_i,n_i,\vartheta}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
 \State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
@@ -362,7 +362,7 @@ Within period-level routines, state variables without a superscript refer to the
     \State Let $P_b\gets|\mathbf p_b|$ and $b_b\gets0$ if $P_b\le W_p$, otherwise $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$. If $|L_b|>M$, keep $M$ spaced indices across $L_b$, including its first and last indices (or only its last index when $M=1$).
     \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{size\mbox{-}matched}$, replace $L_b$ by the uniform size-matched sample defined above.
     \State Construct $Z_{b,\mathrm{tr}}=[z_{b\ell}]_{\ell\in L_b}$ and $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
-    \State $\Theta_b\gets\Call{\procFitPredictor}{\mathsf L,\Theta_b,Z_{b,\mathrm{tr}},y_{b,\mathrm{tr}},\lambda_b,\Delta_b,n_b,\vartheta}$; $\Delta_b\gets0$.
+    \State $\Theta_b\gets\Call{\procFitPredictor}{\mathsf L,b,\Theta_b,Z_{b,\mathrm{tr}},y_{b,\mathrm{tr}},\lambda_b,\Delta_b,n_b,\vartheta}$; $\Delta_b\gets0$.
 \EndIf
 \end{algorithmic}
 \end{breakablealgorithm}
@@ -475,11 +475,11 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
 \State Set $\mathbf p_i^0\gets(n_i^0)$ for every agent and $\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set $\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
 \For{each $i$ with $n_i^0>0$}
-    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
+    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
 \EndFor
 \If{$n_b^0>0$}
     \State $Z_{b,\mathrm{seed}}\gets[z_{b\ell}]_{\ell=1}^{n_b^0}$, $y_{b,\mathrm{seed}}\gets y_b^0$.
-    \State $\Theta_b^0\gets\Call{\procFitPredictor}{\mathsf L,\Theta_b^0,Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}},\lambda_b,n_b^0,n_b^0,\vartheta}$; $\Delta_b^0\gets0$.
+    \State $\Theta_b^0\gets\Call{\procFitPredictor}{\mathsf L,b,\Theta_b^0,Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}},\lambda_b,n_b^0,n_b^0,\vartheta}$; $\Delta_b^0\gets0$.
 \EndIf
 \State \Return $S^0$.
 \end{algorithmic}
