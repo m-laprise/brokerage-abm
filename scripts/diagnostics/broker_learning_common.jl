@@ -4,9 +4,9 @@
 Shared functions for diagnostics of broker learning. The matching signal is
 decomposed as:
 
-    f(x_i,x_j) = ρ·½(x_i'c + x_j'c)              ← quality   (linear, additive)
-               + (1-ρ)·x_i'A x_j                  ← core      (symmetric bilinear)
-               + (1-ρ)·δ·sign(x_i'B x_j)·x_i'A x_j ← gain      (regime-gated, discontinuous)
+    f(x_i,x_j) = shift + w_q·½(x_i'c + x_j'c)        ← quality (linear, additive)
+               + w_I·x_i'A x_j                         ← core (symmetric bilinear)
+               + w_I·δ·sign(x_i'B x_j)·x_i'A x_j    ← gain (regime-gated)
 
 The symmetric pair features span the `quality` and `core` components linearly.
 The discontinuous `gain` component is not in their linear span. The diagnostics
@@ -29,6 +29,7 @@ using BrokerageABM:
     predict_nn!,
     train_nn!,
     Q_OFFSET,
+    MATCH_NOISE_SD_BASE,
     MatchingEnv,
     CurveGeometry
 
@@ -56,7 +57,7 @@ function make_env(;
     s::Int=8,
     rho::Float64=0.5,
     delta::Float64=0.5,
-    sigma_eps::Float64=0.10,
+    sigma_eps::Float64=MATCH_NOISE_SD_BASE,
     sigma_x::Float64=0.5,
     seed::Int=42,
     n_pool::Int=4000,
@@ -135,9 +136,11 @@ function decompose(env::MatchingEnv, Xi::Matrix{Float64}, Xj::Matrix{Float64})
         base = dot(xi, Ax)
         b = dot(xi, Bx)
         s = sign(b)
-        quality[k] = env.rho * 0.5 * (dot(xi, env.c) + dot(xj, env.c))
-        core[k] = (1 - env.rho) * base
-        gain[k] = (1 - env.rho) * env.delta * s * base
+        quality[k] =
+            env.signal_shift +
+            env.quality_weight * 0.5 * (dot(xi, env.c) + dot(xj, env.c))
+        core[k] = env.interaction_weight * base
+        gain[k] = env.interaction_weight * env.delta * s * base
         bxj[k] = b
         regime[k] = s >= 0 ? 1 : -1
     end

@@ -4,8 +4,11 @@
 Default parameter construction and validation.
 """
 
-"""Constant offset included in match output and output-scale calibration."""
-const Q_OFFSET = 1.0
+"""Constant match-output offset in systematic-signal standard-deviation units."""
+const Q_OFFSET = 2.840698029863751
+
+"""Baseline match-noise standard deviation in systematic-signal units."""
+const MATCH_NOISE_SD_BASE = 0.28406980298637513
 
 # Shared friction rate as a share of the calibration mean q_cal, independent of
 # the reservation r: phi = c_s = search_cost_rate * q_cal. Both channels use the
@@ -47,8 +50,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :rho => 0.50,
         :delta => 0.5,
         :sigma_x => 0.5,
-        :sigma_eps => 0.10,
-        :constant_signal_scale => false,
+        :sigma_eps => MATCH_NOISE_SD_BASE,
         # Match accounting
         :K => 5,
         :p_demand => 0.50,
@@ -93,7 +95,6 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:delta],
         defaults[:sigma_x],
         defaults[:sigma_eps],
-        defaults[:constant_signal_scale],
         defaults[:K],
         defaults[:p_demand],
         defaults[:k],

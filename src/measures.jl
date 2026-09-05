@@ -19,7 +19,8 @@ using Base.Threads: @threads, nthreads
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    compute_prediction_quality(predicted, realized, rng; sigma_eps=0.10) -> PredictionQuality
+    compute_prediction_quality(predicted, realized, rng;
+                               sigma_eps=MATCH_NOISE_SD_BASE) -> PredictionQuality
 
 Compute standard R², bias, and Spearman rank correlation between predicted and
 realized values. Predicted values are first converted to a strict ranking, with
@@ -35,7 +36,7 @@ function compute_prediction_quality(
     predicted::AbstractVector{<:Real},
     realized::AbstractVector{<:Real},
     rng::AbstractRNG;
-    sigma_eps::Float64=0.10,
+    sigma_eps::Float64=MATCH_NOISE_SD_BASE,
 )::PredictionQuality
     n = length(predicted)
     n < 5 && return PredictionQuality(NaN, NaN, NaN)
@@ -193,7 +194,7 @@ function compute_prediction_quality_with_true_ranks!(
     realized::Vector{Float64},
     n::Int;
     rng::AbstractRNG,
-    sigma_eps::Float64=0.10,
+    sigma_eps::Float64=MATCH_NOISE_SD_BASE,
     pred_order::Vector{Int},
     pred_ranks::Vector{Float64},
     true_ranks::Vector{Float64},

@@ -21,7 +21,8 @@ Usage: julia --project --threads=auto scripts/paper/dgp_figdata.jl
 module DGPFigureData
 
 using BrokerageABM
-using BrokerageABM: MatchingEnv, Q_OFFSET, curve_point, generate_matching_dgp
+using BrokerageABM:
+    MatchingEnv, Q_OFFSET, curve_point, generate_matching_dgp, match_signal_coefficients
 using JLD2: jldsave
 using LinearAlgebra: Symmetric, eigvals, svd
 using StableRNGs: StableRNG
@@ -40,9 +41,9 @@ const TYPE_CURVE_POINTS = 500
 const SPECTRUM_RHOS = copy(RHO_OAT)
 const BASELINE_DELTA = Float64(SWEEP_BASELINE.delta)
 const HEATMAP_CONDITIONS = [
-    (; rho=0.0, delta=BASELINE_DELTA),
-    (; rho=0.5, delta=BASELINE_DELTA),
-    (; rho=1.0, delta=BASELINE_DELTA),
+    (; rho=0.0, delta=0.0),
+    (; rho=0.5, delta=0.0),
+    (; rho=1.0, delta=0.0),
     (; rho=0.0, delta=1.0),
     (; rho=0.5, delta=1.0),
 ]
@@ -81,8 +82,12 @@ end
 function conditional_match_matrix(components, rho::Real, delta::Real)
     r = Float64(rho)
     d = Float64(delta)
-    return Q_OFFSET .+ r .* components.quality_surface .+
-           (1.0 - r) .* ((1.0 .+ d .* components.regime_sign) .* components.complementarity)
+    coefficients = match_signal_coefficients(r, d)
+    interaction = (1.0 .+ d .* components.regime_sign) .* components.complementarity
+    return Q_OFFSET .+
+           coefficients.signal_shift .+
+           coefficients.quality_weight .* components.quality_surface .+
+           coefficients.interaction_weight .* interaction
 end
 
 """Subtract the grand mean from a conditional match-value matrix."""
@@ -136,7 +141,7 @@ function type_geometry_projection(
     )
 end
 
-"""Generate all seed-level inputs required by the two supplementary DGP figures."""
+"""Generate all seed-level inputs required by the three supplementary DGP figures."""
 function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
     seed_values = Int.(collect(seeds))
     isempty(seed_values) && throw(ArgumentError("at least one DGP seed is required"))
@@ -178,12 +183,16 @@ function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
                     singular_values ./ first(singular_values),
                 )
             end
-            if seed == HEATMAP_SEED && condition in HEATMAP_CONDITIONS
+        end
+
+        if seed == HEATMAP_SEED
+            for condition in HEATMAP_CONDITIONS
+                matrix = conditional_match_matrix(components, condition.rho, condition.delta)
+                centered = center_match_matrix(matrix)
+                condition_id = dgp_condition_id(condition.rho, condition.delta)
                 heatmaps[condition_id] = Float32.(centered[heatmap_order, heatmap_order])
-                isempty(heatmap_quality_scores) && append!(
-                    heatmap_quality_scores, components.quality_scores[heatmap_order]
-                )
             end
+            append!(heatmap_quality_scores, components.quality_scores[heatmap_order])
         end
     end
 
@@ -231,12 +240,14 @@ function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
 end
 
 function main()
-    provenance = reporting_git_provenance(REPO)
+    exploratory = "--exploratory" in ARGS
+    provenance = reporting_git_provenance(REPO; require_clean=!exploratory)
     data = build_dgp_figure_data()
     data["meta"] = Dict(
         "source" => "scripts/paper/dgp_figdata.jl",
         "analysis_git_commit" => provenance.commit,
         "analysis_source_clean" => provenance.source_clean,
+        "exploratory" => exploratory,
     )
     mkpath(dirname(OUTFILE))
     jldsave(OUTFILE; figdata=data)

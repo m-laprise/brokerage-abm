@@ -43,6 +43,7 @@ const BETWINT = 20                    # betweenness measurement interval, period
 const TSTART = 30                     # displayed axes start here; data never cut
 const RHO_COLORS = Dict(
     0.0 => :seagreen,
+    0.15 => :royalblue,
     0.3 => :mediumaquamarine,
     0.5 => :goldenrod,
     0.7 => :darkorange,

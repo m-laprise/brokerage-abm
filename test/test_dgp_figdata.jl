@@ -8,12 +8,13 @@ include(joinpath(@__DIR__, "..", "scripts", "paper", "dgp_figdata.jl"))
 const DGP = DGPFigureData
 
 @testset "Supplementary DGP figure data" begin
-    @testset "effective grid has 26 scientific conditions" begin
+    @testset "effective grid has 31 scientific conditions" begin
         @test DGP.DGP_N == 1000
         @test length(DGP.DGP_SEEDS) == 50
         @test DGP.HEATMAP_N == 100
         conditions = DGP.effective_dgp_conditions()
-        @test length(conditions) == 26
+        @test length(conditions) == 31
+        @test 0.15 in DGP.RHO_OAT
         @test count(condition -> condition.rho == 1.0, conditions) == 1
         @test only(condition.delta for condition in conditions if condition.rho == 1.0) ==
             0.5
@@ -56,13 +57,14 @@ const DGP = DGPFigureData
     @testset "figure-data assembly preserves seed-level inputs" begin
         data = DGP.build_dgp_figure_data(; seeds=1:2, parameter_overrides=(; N=20))
         @test data["seeds"] == [1, 2]
-        @test length(data["conditions"]) == 26
+        @test length(data["conditions"]) == 31
         @test all(length(row["rank90_seed_values"]) == 2 for row in data["conditions"])
         @test all(size(spectrum) == (20, 2) for spectrum in values(data["spectra"]))
+        @test length(data["spectra"]) == 7
         expected_heatmap_keys = Set([
-            "rho=0.0|delta=0.5",
-            "rho=0.5|delta=0.5",
-            "rho=1.0|delta=0.5",
+            "rho=0.0|delta=0.0",
+            "rho=0.5|delta=0.0",
+            "rho=1.0|delta=0.0",
             "rho=0.0|delta=1.0",
             "rho=0.5|delta=1.0",
         ])

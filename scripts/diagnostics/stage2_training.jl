@@ -70,9 +70,12 @@ function run_stage2()
         print_row("  lr=$lr", m)
     end
 
-    println("\n### With model noise σ_ε=0.10   (steps=2000, lr=0.03)")
-    m = recover(env, pool; steps=2000, lr=0.03, sigma_eps=0.10)
-    print_row("  σ_ε=0.10", m)
+    println(
+        "\n### With baseline model noise σ_ε=$MATCH_NOISE_SD_BASE   " *
+        "(steps=2000, lr=0.03)",
+    )
+    m = recover(env, pool; steps=2000, lr=0.03, sigma_eps=MATCH_NOISE_SD_BASE)
+    print_row("  σ_ε=$(round(MATCH_NOISE_SD_BASE; digits=3))", m)
 
     println("\n### Effect of training-window size n   (steps=2000, lr=0.03, noiseless)")
     for n in (200, 500, 1000, 4000)

@@ -186,7 +186,7 @@ using Statistics: mean
     @testset "NN can learn a linear function" begin
         rng = StableRNG(42)
         d = 8
-        nn = init_neural_net(d, 16, rng)
+        nn = init_neural_net(d, 16, rng; b2_init=1.0)
         grad = NNGradBuffers(nn)
 
         n = 100

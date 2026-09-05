@@ -318,7 +318,7 @@ end
 # Matching environment and calibration
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Matching environment, including an optional affine rescaling of match signal."""
+"""Fixed matching environment and calibrated coefficients for the match signal."""
 struct MatchingEnv
     d::Int
     rho::Float64
@@ -327,8 +327,9 @@ struct MatchingEnv
     B::Matrix{Float64}       # symmetric regime operator, weighted-orthogonalized against A
     delta::Float64            # gain strength
     sigma_eps::Float64        # match output noise SD
-    signal_scale::Float64      # optional positive match-signal scale
-    signal_shift::Float64      # optional match-signal shift
+    quality_weight::Float64      # coefficient on raw general quality
+    interaction_weight::Float64  # coefficient on raw complementarity
+    signal_shift::Float64        # fixed centering adjustment
 end
 
 """Output-scale constants derived from Monte Carlo calibration."""
@@ -477,12 +478,10 @@ struct ModelParams
     s::Int                       # active dimensions of type curve (default 8)
 
     # Matching function
-    rho::Float64                 # quality-interaction mixing weight (default 0.50)
+    rho::Float64                 # general-quality share of systematic variance (default 0.50)
     delta::Float64               # regime gain strength (default 0.5)
     sigma_x::Float64             # type noise scale (default 0.5)
-    sigma_eps::Float64           # match output noise SD (default 0.10)
-    constant_signal_scale::Bool  # rescale signal to baseline moments (default false)
-
+    sigma_eps::Float64           # match output noise SD (default 0.2841)
     # Match accounting
     K::Int                       # maximum active demands per period (default 5)
     p_demand::Float64            # per-position demand probability (default 0.50)

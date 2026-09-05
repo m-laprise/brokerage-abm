@@ -24,8 +24,8 @@ structure so the two cannot drift.
 # Versioning
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""Bump when the shard / manifest schema changes (invalidates cached shards)."""
-const SWEEP_SCHEMA_VERSION = 8
+"""Bump when the shard schema or scientific run semantics change."""
+const SWEEP_SCHEMA_VERSION = 10
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -51,14 +51,13 @@ const SWEEP_RIDGE_BROKER_VARIANT = Symbol(
     get(ENV, "BROKERAGE_ABM_RIDGE_BROKER_VARIANT", "pair")
 )
 const SWEEP_SCOPE = Symbol(get(ENV, "BROKERAGE_ABM_SWEEP_SCOPE", "full"))
-const SWEEP_CONSTANT_SIGNAL_SCALE = SWEEP_SCOPE == :constant_scale
 
 SWEEP_LEARNING_MODEL in (:nn, :ridge) || error("invalid sweep learning model")
 SWEEP_RIDGE_LAMBDA_AGENT > 0.0 || error("agent Ridge penalty must be positive")
 SWEEP_RIDGE_LAMBDA_BROKER > 0.0 || error("broker Ridge penalty must be positive")
 SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||
     error("invalid sweep Ridge broker variant")
-SWEEP_SCOPE in (:full, :rho_delta, :constant_scale) || error("invalid sweep scope")
+SWEEP_SCOPE in (:full, :rho_delta) || error("invalid sweep scope")
 isempty(SWEEP_SEEDS) && error("sweep must include at least one seed")
 length(SWEEP_BASELINE_SEEDS) < length(SWEEP_SEEDS) &&
     error("baseline seed set cannot be smaller than the general seed set")
@@ -82,10 +81,10 @@ const SWEEP_KEYS = keys(SWEEP_BASELINE)
 # OAT axis levels. `key` is the `default_params` keyword and `label` names the
 # output directory.
 const RHO_CORE_VALS = [0.0, 0.5, 1.0]
-const RHO_EXTENDED_VALS = [0.0, 0.5, 0.85, 1.0]
-# The OAT rho axis includes the extra 0.3, 0.7, and 0.85 levels for line-plot
-# resolution. The rho x delta grid uses the full OAT axis.
-const RHO_OAT = [0.0, 0.3, 0.5, 0.7, 0.85, 1.0]
+const RHO_EXTENDED_VALS = [0.0, 0.15, 0.5, 0.85, 1.0]
+# The OAT rho axis includes extra levels for line-plot resolution. The rho by
+# delta grid uses the full OAT axis.
+const RHO_OAT = [0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0]
 # The 0.001 level distinguishes limited positive turnover from the qualitatively
 # fixed population at zero; it is included in every grid that uses eta.
 const ETA_VALS = [0.0, 0.001, 0.01, 0.02, 0.03]
@@ -94,7 +93,7 @@ const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 
 # Matching difficulty (`delta`, the regime-gain strength) and network density
 # (`k`, the initial degree).
-# The matching-problem grid uses the same six rho levels as the OAT sweep and
+# The matching-problem grid uses the same seven rho levels as the OAT sweep and
 # five delta levels over its full allowed range. At rho=1, delta drops out of
 # match output exactly; those grid coordinates therefore share one realized result.
 const DELTA_VALS = [0.0, 0.25, 0.50, 0.75, 1.0]
@@ -220,10 +219,10 @@ phase cells (in `PHASE_PAIRS` order). Each cell points to the canonical result
 directory for its model realization.
 """
 function build_cells(scope::Symbol=SWEEP_SCOPE)
-    scope in (:full, :rho_delta, :constant_scale) || error("invalid sweep scope")
+    scope in (:full, :rho_delta) || error("invalid sweep scope")
     cells = Dict{Symbol,Any}[]
 
-    if scope in (:rho_delta, :constant_scale)
+    if scope == :rho_delta
         push!(
             cells,
             Dict{Symbol,Any}(
@@ -235,7 +234,7 @@ function build_cells(scope::Symbol=SWEEP_SCOPE)
                 :reldir => BASELINE_RELDIR,
             ),
         )
-        pair_names = scope == :rho_delta ? ("rho_delta",) : ("rho_delta", "rho_eta")
+        pair_names = ("rho_delta",)
         for pair_name in pair_names
             pr = only(pair for pair in PHASE_PAIRS if pair.name == pair_name)
             for (xi, xv) in enumerate(pr.xvals), (yi, yv) in enumerate(pr.yvals)

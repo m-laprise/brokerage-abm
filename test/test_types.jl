@@ -2,7 +2,7 @@ using Test
 using BrokerageABM
 using BrokerageABM: ActiveMatch, Agent, CachedNetworkMeasures, CalibrationConstants
 using BrokerageABM: CurveGeometry, MatchingEnv, NNGradBuffers, PeriodAccumulators
-using BrokerageABM: Q_OFFSET, effective_history_size
+using BrokerageABM: MATCH_NOISE_SD_BASE, Q_OFFSET, effective_history_size
 using BrokerageABM: agent_hidden_width, broker_hidden_width, broker_pair_feature_dim
 using BrokerageABM: has_current_match, init_neural_net, partner_mean
 using BrokerageABM: record_agent_history!, record_broker_history!
@@ -19,6 +19,8 @@ using LinearAlgebra: norm
         @test p.d == 8
         @test p.K == 5
         @test p.p_demand == 0.50
+        @test Q_OFFSET == 2.840698029863751
+        @test p.sigma_eps == MATCH_NOISE_SD_BASE == 0.28406980298637513
         @test p.omega == 0.20
         @test p.search_cost_rate == 0.05
         @test p.roster_frac == 0.20
@@ -28,7 +30,6 @@ using LinearAlgebra: norm
         @test p.ridge_lambda_agent == 0.001
         @test p.ridge_lambda_broker == 0.001
         @test p.ridge_broker_variant == :pair
-        @test !p.constant_signal_scale
         @test p.network_measure_interval == 20
         @test p.T == 500
     end
@@ -60,15 +61,12 @@ using LinearAlgebra: norm
     end
 
     @testset "default_params with overrides" begin
-        p = default_params(;
-            seed=99, N=200, K=10, delta=0.75, roster_frac=0.40, constant_signal_scale=true
-        )
+        p = default_params(; seed=99, N=200, K=10, delta=0.75, roster_frac=0.40)
         @test p.seed == 99
         @test p.N == 200
         @test p.K == 10
         @test p.delta == 0.75
         @test p.roster_frac == 0.40
-        @test p.constant_signal_scale
     end
 
     @testset "default_params rejects unknown kwargs" begin

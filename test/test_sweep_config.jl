@@ -9,7 +9,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test SWEEP_SCHEMA_VERSION == 8
+    @test SWEEP_SCHEMA_VERSION == 10
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
@@ -17,19 +17,18 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
     @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full
-    @test !SWEEP_CONSTANT_SIGNAL_SCALE
     @test ETA_VALS == [0.0, 0.001, 0.01, 0.02, 0.03]
-    @test length(cells) == 161
-    @test count(c -> c[:kind] == "oat", cells) == 31
-    @test count(c -> c[:kind] == "phase", cells) == 130
+    @test length(cells) == 175
+    @test count(c -> c[:kind] == "oat", cells) == 32
+    @test count(c -> c[:kind] == "phase", cells) == 143
 
-    @test length(conditions) == 98
+    @test length(conditions) == 109
     @test length(
         unique(Tuple(c[:resolved_params][key] for key in SWEEP_KEYS) for c in cells)
-    ) == 102
-    @test length(unique(condition_key(c[:params]) for c in cells)) == 98
-    @test count(c -> !c[:is_canonical], cells) == 63
-    @test sort(unique(c[:condition_index] for c in cells)) == collect(0:97)
+    ) == 113
+    @test length(unique(condition_key(c[:params]) for c in cells)) == 109
+    @test count(c -> !c[:is_canonical], cells) == 66
+    @test sort(unique(c[:condition_index] for c in cells)) == collect(0:108)
     @test all(conditions) do cell
         p = default_params(; cell[:resolved_params]...)
         expected_delta = p.rho == 1.0 ? SWEEP_BASELINE.delta : p.delta
@@ -59,19 +58,19 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test length(baseline_cells) > 1
     @test all(c[:result_reldir] == BASELINE_RELDIR for c in baseline_cells)
 
-    @test length(entries) == 1960
-    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 1960
+    @test length(entries) == 2180
+    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 2180
     @test all(e[:seed] in SWEEP_SEEDS for e in entries)
     @test all(c[:seeds] == SWEEP_SEEDS for c in conditions)
     @test all(e[:reldir] in keys(canonical_by_dir) for e in entries)
 
-    @test length(plot_jobs) == 39
+    @test length(plot_jobs) == 40
     oat_jobs = filter(j -> j[:kind] == "oat_cell", plot_jobs)
-    @test length(oat_jobs) == 31
+    @test length(oat_jobs) == 32
     @test all(haskey(j, :key) for j in oat_jobs)
     phase_jobs = filter(j -> j[:kind] == "phase_pair", plot_jobs)
     @test length(phase_jobs) == 8
-    @test sum(length(j[:cell_refs]) for j in phase_jobs) == 130
+    @test sum(length(j[:cell_refs]) for j in phase_jobs) == 143
     @test all(
         ref[:result_reldir] in keys(canonical_by_dir) for job in phase_jobs for
         ref in job[:cell_refs]
@@ -79,6 +78,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
 
     rho_delta = only(j for j in phase_jobs if j[:pair] == "rho_delta")
     @test rho_delta[:xvals] == RHO_OAT
+    @test 0.15 in rho_delta[:xvals]
     @test 0.85 in rho_delta[:xvals]
     rho_one_refs = filter(r -> r[:resolved_params][:rho] == 1.0, rho_delta[:cell_refs])
     @test length(rho_one_refs) == 5
@@ -91,12 +91,16 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     rho_N = only(j for j in phase_jobs if j[:pair] == "rho_N")
     rho_r = only(j for j in phase_jobs if j[:pair] == "rho_r")
     @test rho_eta[:xvals] == RHO_EXTENDED_VALS
+    @test 0.15 in RHO_EXTENDED_VALS
     @test rho_eta[:yvals] == ETA_VALS
     @test eta_r[:xvals] == ETA_VALS
     @test eta_N[:xvals] == ETA_VALS
     @test rho_N[:xvals] == RHO_EXTENDED_VALS
     @test rho_r[:xvals] == RHO_CORE_VALS
-    @test 0.85 in [j[:value] for j in oat_jobs if j[:key] == "rho"]
+    @test all(
+        value in [j[:value] for j in oat_jobs if j[:key] == "rho"] for
+        value in (0.15, 0.85)
+    )
 
     # Rho-group summaries use the same effective support at rho = 0, 0.5, and 1.
     # The rho x delta grid is separate because delta is inactive at rho = 1.
@@ -112,18 +116,18 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     end
 end
 
-@testset "constant-scale targeted design" begin
-    cells = build_cells(:constant_scale)
+@testset "rho-by-delta targeted design" begin
+    cells = build_cells(:rho_delta)
     conditions = result_cells(cells)
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test length(cells) == 51
-    @test length(conditions) == 42
-    @test length(entries) == 840
-    @test length(plot_jobs) == 3
+    @test length(cells) == 36
+    @test length(conditions) == 31
+    @test length(entries) == 620
+    @test length(plot_jobs) == 2
     @test Set(cell[:pair] for cell in cells if cell[:kind] == "phase") ==
-        Set(["rho_delta", "rho_eta"])
+        Set(["rho_delta"])
     @test_throws ErrorException build_cells(:invalid)
 end
 

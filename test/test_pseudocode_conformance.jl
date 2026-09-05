@@ -60,7 +60,16 @@ function configure_micro_state!(state)
     end
 
     state.env = MatchingEnv(
-        2, 0.0, zeros(2), Matrix{Float64}(I, 2, 2), zeros(2, 2), 0.0, 0.0, 1.0, 0.0
+        2,
+        0.0,
+        zeros(2),
+        Matrix{Float64}(I, 2, 2),
+        zeros(2, 2),
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     )
     state.cal = CalibrationConstants(2.0, 1.2, 0.2, 0.2)
 
@@ -378,7 +387,7 @@ end
         accepted = run_accept_pair!(state, 1, 2)
 
         @test length(accepted) == 1
-        @test accepted[1].q_realized ≈ 1.8
+        @test accepted[1].q_realized ≈ BrokerageABM.Q_OFFSET + 0.8
         @test state.broker.history_count == hb_before + 1
         assert_symmetric_active_match(agents, 1, 2; channel=:broker)
 

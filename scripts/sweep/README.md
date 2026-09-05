@@ -63,7 +63,7 @@ The default learning model is the neural network. The main controls are:
 | `BROKERAGE_ABM_LEARNING_MODEL` | `nn` or `ridge` | `nn` |
 | `BROKERAGE_ABM_N_SEEDS` | Seeds for each regime | `20` |
 | `BROKERAGE_ABM_BASELINE_N_SEEDS` | Seeds at the baseline | Same as other regimes |
-| `BROKERAGE_ABM_SWEEP_SCOPE` | `full`, `rho_delta`, or `constant_scale` | `full` |
+| `BROKERAGE_ABM_SWEEP_SCOPE` | `full` or `rho_delta` | `full` |
 | `BROKERAGE_ABM_RIDGE_LAMBDA_AGENT` | Principal Ridge penalty | `0.001` |
 | `BROKERAGE_ABM_RIDGE_LAMBDA_BROKER` | Broker Ridge penalty | `0.001` |
 | `BROKERAGE_ABM_RIDGE_BROKER_VARIANT` | Ridge broker specification | `pair` |
@@ -100,18 +100,6 @@ the `rho` by `delta` design:
 ```bash
 export BROKERAGE_ABM_SWEEP_SCOPE=rho_delta
 export BROKERAGE_ABM_RIDGE_BROKER_VARIANT=<variant>
-```
-
-The targeted constant-scale robustness design covers the `rho` by `delta` and
-`rho` by `eta` grids. It rescales the latent match signal within each realized
-condition to the mean and population standard deviation of the baseline signal
-over all distinct pairs in the initial population. Because the transformation
-is positive and affine, it preserves pair rankings within each condition.
-
-```bash
-export BROKERAGE_ABM_SWEEP_SCOPE=constant_scale
-export BROKERAGE_ABM_N_SEEDS=20
-export BROKERAGE_ABM_BASELINE_N_SEEDS=20
 ```
 
 The Ridge penalties were selected with calibration seeds excluded from the

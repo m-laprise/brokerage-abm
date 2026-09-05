@@ -34,7 +34,7 @@
 
 This document specifies an agent-based model of brokered matching.
 
-The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same monetary units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
+The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same payoff units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
 
 The model specification covers agents (§1), the matching problem (§2), how agents learn to predict match quality (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
 
@@ -57,19 +57,19 @@ Each agent \(i\) is characterized by:
 
 \subsubsection{Agent Types}\label{agent-types}
 
-Type vectors are generated near a smooth one-dimensional curve on the unit sphere in \(\mathbb{R}^d\). The curve is parameterized by a position \(u \in [0, 1]\):
+Type vectors are multidimensional but concentrated near a smooth one-dimensional curve on the unit sphere in \(\mathbb{R}^d\). Let \(u \in [0,1]\) index position along the curve:
 
-\[\mathbf{x}(u) = \frac{\tilde{\mathbf{x}}(u)}{\|\tilde{\mathbf{x}}(u)\|}, \qquad \tilde{x}_\ell(u) = \begin{cases} \sin(2\pi \nu_\ell u + \psi_\ell) & \ell = 1, \ldots, d_\gamma \\ 0 & \ell = d_\gamma+1, \ldots, d \end{cases}\]
+\[\boldsymbol{\gamma}(u) = \frac{\tilde{\boldsymbol{\gamma}}(u)}{\|\tilde{\boldsymbol{\gamma}}(u)\|}, \qquad \tilde{\gamma}_\ell(u) = \begin{cases} \sin(2\pi \nu_\ell u + \psi_\ell) & \ell = 1, \ldots, d_\gamma \\ 0 & \ell = d_\gamma+1, \ldots, d. \end{cases}\]
 
-where \(\nu_\ell \sim \mathrm{Unif}\{1, 2, 3, 4, 5\}\) are random integer frequencies, \(\psi_\ell \sim \mathrm{Unif}[0, 2\pi)\) are random phases, both drawn once per simulation, and \(d_\gamma \leq d\) is the number of \textbf{active dimensions}. The remaining dimensions enter only through noise.
+The frequencies \(\nu_\ell \sim \operatorname{Unif}\{1,2,3,4,5\}\) and phases \(\psi_\ell \sim \operatorname{Unif}[0,2\pi)\) are drawn once per simulation. The parameter \(d_\gamma\leq d\) is the number of coordinates in which the curve varies.
 
 Each agent is drawn at a random position \(u_i \sim \mathrm{Unif}[0,1]\) on the curve, then perturbed:
 
-\[\mathbf{x}_i = \frac{\mathbf{x}(u_i) + \boldsymbol{\epsilon}_i}{\|\mathbf{x}(u_i) + \boldsymbol{\epsilon}_i\|}, \qquad \boldsymbol{\epsilon}_i \sim \mathcal{N}\!\left(\mathbf{0}, \frac{\sigma_x^2}{d} \mathbf{I}_d\right)\]
+\[\mathbf{x}_i = \frac{\boldsymbol{\gamma}(u_i) + \boldsymbol{\epsilon}_i}{\|\boldsymbol{\gamma}(u_i) + \boldsymbol{\epsilon}_i\|}, \qquad \boldsymbol{\epsilon}_i \sim \mathcal{N}\!\left(\mathbf{0}, \frac{\sigma_x^2}{d} \mathbf{I}_d\right).\]
 
 Noise is applied in all \(d\) dimensions, then the vector is re-normalized. The scale \(\sigma_x / \sqrt{d}\) keeps the expected displacement from the curve approximately \(\sigma_x\) for any \(d\).
 
-\(d_\gamma\) controls type-space complexity by setting how many dimensions carry curve signal.
+Thus the curve remains one-dimensional for every \(d_\gamma\). Increasing \(d_\gamma\) changes how many coordinates contain systematic curve variation; the remaining coordinates contain only perturbation noise.
 
 \subsubsection{Broker}\label{broker}
 
@@ -85,42 +85,68 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Match output is symmetric and pair-level. The deterministic signal has three parts: agent general quality, pair interaction, and a pair-dependent multiplier applied to the interaction.
+Each pair's match value combines two sources: the agents' average general quality and a match-specific complementarity between their types. The parameter \(\rho\) moves the matching problem from pure complementarity to pure general quality. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Match value is symmetric in the two agents.
 
 \subsubsection{2a. Match Quality}\label{a.-match-quality}
 
-Let \(q_{ij}\) be the per-period value of the match between agents \(i\) and \(j\), measured in monetary units:
+Let \(q_{ij}\) be the per-period value of the match between agents \(i\) and \(j\), measured in payoff units:
 
 \[q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
-\varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2)\]
+\varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2).\]
 
-where \(Q = 1.0\) is a constant offset, \(\sigma_\varepsilon = 0.10\), and \(\varepsilon_{ij}\) is idiosyncratic match variation.
+The predictable match value \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The term \(\varepsilon_{ij}\) is random match variation. The payoff unit is chosen so that, averaging across fixed reference markets, the within-market variance of \(f\) across possible pairs is one (§2d). In these units, \(Q=2.840698\) is a constant offset and \(\sigma_\varepsilon=0.284070\).
 
-The deterministic signal \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents and fixed for the duration of the simulation:
+The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents:
 
-\[f(\mathbf{x}_i, \mathbf{x}_j) = \rho \cdot \frac{1}{2}\!\left[\mathbf{x}_i^\top \mathbf{c} + \mathbf{x}_j^\top \mathbf{c}\right] + (1 - \rho) \cdot g(\mathbf{x}_i, \mathbf{x}_j) \cdot \mathbf{x}_i^\top \mathbf{A} \mathbf{x}_j\]
+\[
+f(\mathbf{x}_i,\mathbf{x}_j)
+=\frac{1}{s_{\mathrm{mix}}(\rho,\delta)}
+\left[\sqrt{\rho}\,\widetilde U_{ij}
++\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
+\]
 
-where \(\rho \in [0,1]\) mixes general quality (§2b) and interaction (§2c).
+Here \(\widetilde U_{ij}\) is normalized general quality (§2b) and \(\widetilde W_{ij}(\delta)\) is normalized match-specific complementarity (§2c). Under the reference moments, \(\rho\in[0,1]\) is general quality's share of the two components' summed marginal variances; \(1-\rho\) is complementarity's share. Thus \(\rho=0\) gives pure complementarity and \(\rho=1\) gives pure general quality. At \(\rho=1\), \(\delta\) has no effect. The common factor \(s_{\mathrm{mix}}(\rho,\delta)\) accounts for the components' small covariance and keeps the average within-market variance of \(f\) fixed (§2d).
 
 \subsubsection{2b. Agent General Quality}\label{b.-agent-general-quality}
 
-\(\mathbf{c}\) is an ideal type vector. Each agent's general-quality score is \(\mathbf{x}_i^\top\mathbf{c}\).
+\(\mathbf{c}\) is an ideal type vector. An agent's general-quality score, \(\mathbf{x}_i^\top\mathbf{c}\), measures its alignment with that ideal. Pair-level general quality is the average of the two agents' scores:
 
-A pair contributes the average score \(\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c})\) to \(f\). The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the agent type curve:
+\[
+U_{ij}=\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c}),
+\qquad
+\widetilde U_{ij}=\frac{U_{ij}-\mu_U}{\sigma_U}.
+\]
+
+The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the agent type curve:
 
 \[u_c\sim\operatorname{Unif}[0,1],\qquad
 \boldsymbol{\epsilon}_c\sim\mathcal N\!\left(\mathbf 0,\frac{\sigma_x^2}{d}\mathbf I_d\right),\qquad
-\mathbf c=\mathbf x(u_c)+\boldsymbol{\epsilon}_c.\]
+\mathbf c=\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c.\]
 
 Unlike agent types, \(\mathbf c\) is not re-normalized after the perturbation.
 
-\subsubsection{2c. Match-Specific Interaction}\label{c.-match-specific-interaction}
+\subsubsection{2c. Match-Specific Complementarity}\label{c.-match-specific-complementarity}
 
-The interaction term is \(g(\mathbf{x}_i,\mathbf{x}_j)\,\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j\), where \(g\) is a pair-dependent multiplier.
+Define base complementarity, signed complementarity, and difficulty-adjusted complementarity as
 
-\(\mathbf{A}\) is a symmetric positive definite interaction matrix. Matrix \(\mathbf{A}\) gives a smooth bilinear interaction geometry, while \(\mathbf{B}\) divides pairs into two regions of the same type space. \(\mathbf{A}\) and \(\mathbf{B}\) are fixed for the duration of the simulation.
+\[
+V_{ij}=\mathbf{x}_i^\top\mathbf A\mathbf{x}_j,
+\qquad
+H_{ij}=\operatorname{sign}(\mathbf{x}_i^\top\mathbf B\mathbf{x}_j)V_{ij},
+\qquad
+W_{ij}(\delta)=V_{ij}+\delta H_{ij}.
+\]
 
-\textbf{Base interaction.} Draw \(\mathbf{M}_A\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and set
+The normalized complementarity used in the matching function is
+
+\[
+\widetilde W_{ij}(\delta)
+=\frac{W_{ij}(\delta)-\mu_W(\delta)}{\sigma_W(\delta)}.
+\]
+
+\(\mathbf{A}\) is a symmetric positive definite matrix that gives a smooth bilinear complementarity geometry. Because \(V_{ij}\) depends jointly on both types, it cannot in general be represented as the sum of separate agent scores. A second symmetric matrix, \(\mathbf{B}\), assigns pairs to two regions of type-pair space. Both matrices are fixed for the duration of the simulation.
+
+\textbf{Base complementarity.} Draw \(\mathbf{M}_A\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and set
 
 \[
 \mathbf{A}=\mathbf{M}_A^\top\mathbf{M}_A\cdot\frac{d}{\operatorname{tr}(\mathbf{M}_A^\top\mathbf{M}_A)}.
@@ -128,49 +154,68 @@ The interaction term is \(g(\mathbf{x}_i,\mathbf{x}_j)\,\mathbf{x}_i^\top\mathbf
 
 Thus \(\mathbf{A}\) is symmetric positive definite and \(\operatorname{tr}(\mathbf{A})=d\).
 
-For an isotropic unit vector \(\mathbf{x}\), \(E[\mathbf{x}\mathbf{x}^\top]=\mathbf{I}/d\), so \(E[\mathbf{x}^\top\mathbf{A}\mathbf{x}]=\operatorname{tr}(\mathbf{A})/d=1\). This normalization fixes the average interaction scale.
+The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) across realizations. The pair-level reference moments in §2d then place complementarity on the common scale used in the matching function.
 
-\textbf{Difficulty parameter.} A second symmetric matrix \(\mathbf{B}\in\mathbb{R}^{d\times d}\) defines
+\textbf{Difficulty parameter.} Equivalently, write \(W_{ij}(\delta)=g(\mathbf{x}_i,\mathbf{x}_j)V_{ij}\), where a second symmetric matrix \(\mathbf{B}\in\mathbb{R}^{d\times d}\) defines
 
 \[g(\mathbf{x}_i, \mathbf{x}_j) = 1 + \delta \cdot \text{sign}(\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j)\]
 
 where \(\delta\in[0,1]\) (default 0.5).
 
-The multiplier depends only on the sign of \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j\). Positive gives \(1+\delta\), negative gives \(1-\delta\), and zero gives 1. At \(\delta=0\), the boundary between the two regions has no effect. As \(\delta\) increases, crossing it changes the interaction more sharply, which makes the complementarity component harder to learn. Because \(\mathbf{B}\) is symmetric, the multiplier is symmetric in \(i\) and \(j\).
+The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different values even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. Normalizing \(W_{ij}(\delta)\) separately for each \(\delta\) removes the accompanying change in dispersion. Thus \(\delta\) changes the shape and difficulty of complementarity, not its variance.
 
-The regime matrix \(\mathbf{B}\) is constructed so the regime split is not a rescaling of the base interaction on the realized type distribution. Let
+\textbf{Boundary construction.} Matrix \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) over the realized type distribution. This ensures that \(\delta\) introduces a distinct boundary rather than merely amplifying the base complementarity pattern. Let
 
 \[\boldsymbol{\Sigma}_x = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top\]
 
 be the uncentered second-moment matrix of the realized type vectors.
 
-To draw the raw regime matrix, draw \(\mathbf{Z}\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries, symmetrize it as \(\mathbf{H}=(\mathbf{Z}+\mathbf{Z}^\top)/2\), and remove its average diagonal value:
+Draw \(\mathbf{Z}\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and form a symmetric zero-trace matrix:
 
 \[
-\mathbf{B}_0 = \mathbf{H} - \frac{\operatorname{tr}(\mathbf{H})}{d}\mathbf{I}_d.
+\widetilde{\mathbf B}=\frac{\mathbf Z+\mathbf Z^\top}{2},
+\qquad
+\mathbf{B}_0 = \widetilde{\mathbf B} - \frac{\operatorname{tr}(\widetilde{\mathbf B})}{d}\mathbf{I}_d.
 \]
 
-This makes \(\mathbf{B}_0\) symmetric with zero trace.
-
-Under the weighted inner product defined as
+Define the weighted inner product
 
 \[\langle \mathbf{M}, \mathbf{N} \rangle_{\boldsymbol{\Sigma}_x} = \operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{M} \boldsymbol{\Sigma}_x \mathbf{N}),\]
 
-remove the projection of \(\mathbf{B}_0\) onto \(\mathbf{A}\) and normalize:
+then remove the projection of \(\mathbf{B}_0\) onto \(\mathbf{A}\) and normalize:
 
 \[\mathbf{B}_{\text{raw}} = \mathbf{B}_0 - \frac{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{B}_0 \boldsymbol{\Sigma}_x \mathbf{A})}{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{A} \boldsymbol{\Sigma}_x \mathbf{A})} \mathbf{A}, \qquad \mathbf{B} = \frac{\mathbf{B}_{\text{raw}}}{\lVert \mathbf{B}_{\text{raw}} \rVert_F}.\]
 
-This gives \(\operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{B}\boldsymbol{\Sigma}_x\mathbf{A})=0\) and \(\|\mathbf{B}\|_F=1\).
-
-The weighted projection makes \(\mathbf{B}\) orthogonal to \(\mathbf{A}\) with respect to the realized type distribution, rather than with respect to unused directions in \(\mathbb{R}^d\). In this context, orthogonality means
-
-\[E\!\left[(\mathbf{x}_i^\top\mathbf{A}\mathbf{x}_j)(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j)\right] = \operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{A}\boldsymbol{\Sigma}_x\mathbf{B}) = 0,\]
-
-where the expectation is over independent draws from the realized type distribution. Because agent types lie near a curve, this removes overlap between the two bilinear scores where agents actually occur.
-
-\(\mathbf{B}\) remains symmetric after projection and normalization.
+This gives \(\operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{B}\boldsymbol{\Sigma}_x\mathbf{A})=0\) and \(\|\mathbf{B}\|_F=1\). Weighting by \(\boldsymbol{\Sigma}_x\) removes overlap between the two bilinear scores where agents actually occur, rather than in unused regions of \(\mathbb{R}^d\).
 
 Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_j)=f(\mathbf{x}_j,\mathbf{x}_i)\).
+
+\subsubsection{2d. Fixed Component Normalization}\label{d.-fixed-component-normalization}
+
+The component moments are computed once from reference markets and then held fixed in every simulation. They are not re-estimated within a simulated market. This preserves ordinary between-market variation instead of forcing every realization to have exactly the same component means and variances.
+
+The reference set contains 50 independently generated matching environments with \(N=1000\), \(d=d_\gamma=8\), and \(\sigma_x=0.5\), using seeds 10,001 through 10,050, which are separate from the sweep seeds. Each environment contains newly drawn types, \(\mathbf c\), \(\mathbf A\), and \(\mathbf B\), but no simulation periods or random match variation. Means, variances, and covariances are computed over all unordered pairs of distinct agents within each market, then averaged across markets with equal weight. The resulting reference moments are
+
+\[
+\begin{aligned}
+\mu_U&=0.0026670734, & \sigma_U^2&=0.1076132586,\\
+\mu_V&=0.0002323259, & \sigma_V^2&=0.3135097944,\\
+\mu_H&=-0.0012126664, & \sigma_H^2&=0.3131030983,
+\end{aligned}
+\]
+
+with \(\operatorname{Cov}(U,V)=0.0006659568\), \(\operatorname{Cov}(U,H)=-0.0025342379\), and \(\operatorname{Cov}(V,H)=-0.0025068532\). Therefore
+
+\[
+\begin{aligned}
+\mu_W(\delta)&=\mu_V+\delta\mu_H,\\
+\sigma_W^2(\delta)&=\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2,\\
+\kappa(\delta)&=\frac{\operatorname{Cov}(U,V)+\delta\operatorname{Cov}(U,H)}{\sigma_U\sigma_W(\delta)},\\
+s_{\mathrm{mix}}^2(\rho,\delta)&=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta).
+\end{aligned}
+\]
+
+These definitions make the average within-market variance of both \(\widetilde U\) and \(\widetilde W(\delta)\) equal to one over the reference markets. The common correction \(s_{\mathrm{mix}}\) accounts for their average within-market covariance, making the corresponding average variance of \(f\) equal to one for every \(\rho\) and \(\delta\). Because it scales both components equally, it does not alter the balance between general quality and complementarity set by \(\rho\). The small covariance cannot be assigned uniquely to either component, so \(\rho\) allocates only their marginal variances. A new simulated market is not rescaled to match these moments exactly, so its component means and variances may differ.
 
 \subsection{3. Learning}\label{learning}
 
@@ -517,10 +562,10 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \(d\) & 8 & §1 & \(k_G\) & 6 & §5a \\
 \(d_\gamma\) & 8 & §1 & \(p_{\text{rewire}}\) & 0.1 & §5a \\
 \(\sigma_x\) & 0.5 & §1 & \(\eta_{\mathrm{exit}}\) & 0.02 & §5c \\
-\(Q\) & 1.0 & §2a & \(K\) & 5 & §6 \\
+\(Q\) & 2.841 & §2a & \(K\) & 5 & §6 \\
 \(\rho\) & 0.50 & §2a & \(p_{\text{demand}}\) & 0.50 & §6 \\
 \(\delta\) & 0.5 & §2c & \(n_{\mathrm{strangers}}\) & 10 & §6a \\
-\(\sigma_\varepsilon\) & 0.10 & §2a & \(\alpha_R\) & 0.20 & §6b \\
+\(\sigma_\varepsilon\) & 0.284 & §2a & \(\alpha_R\) & 0.20 & §6b \\
 \(\eta_{\mathrm{lr}}\) & 0.01 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
 \(E_{\text{init}}\) & 200 & §3a & \(\omega\) & 0.2 & §7a \\
 \(E_{\text{steps}}\) & 100 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\

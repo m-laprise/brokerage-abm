@@ -137,12 +137,12 @@ $q_{ij}^t$ & scalar & Realized output for match $(i,j)$. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{True matching function}}\\
 $Q$ & scalar & Output offset. \\
-$\rho$ & scalar & Quality-interaction weight. \\
-$\delta$ & scalar & Matching difficulty: amplitude of the pair-dependent up/down multiplier. \\
+$\rho$ & scalar & General-quality share of the two components' summed marginal variances. \\
+$\delta$ & scalar & Strength of the pair boundary in match-specific complementarity. \\
 $\sigma_\varepsilon$ & scalar & Output-noise standard deviation. \\
 $c$ & $\R^d$ & Ideal agent type. \\
-$A$ & $\R^{d\times d}$ & Symmetric positive definite interaction matrix. \\
-$B$ & $\R^{d\times d}$ & Symmetric regime operator. \\
+$A$ & $\R^{d\times d}$ & Symmetric positive definite complementarity matrix. \\
+$B$ & $\R^{d\times d}$ & Symmetric boundary matrix. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Calibration and costs}}\\
 $\bar q_{\mathrm{cal}}$ & scalar & Calibration mean. \\
@@ -198,13 +198,24 @@ X^t,G^t,\\
 \]
 This tuple includes fixed realized model objects and all variables needed for later transitions. Implementation-only scratch buffers and diagnostic-only counters are omitted.
 
-The matching function is
+For the fixed reference moments, define
 \[
-f(x_i,x_j)
-=\rho\,\frac{x_i^\top c+x_j^\top c}{2}
-+(1-\rho)\,g(x_i,x_j)\,x_i^\top A x_j,
-\qquad
-g(x_i,x_j)=1+\delta\,\operatorname{sign}(x_i^\top Bx_j).
+U_{ij}=\frac{x_i^\top c+x_j^\top c}{2},\qquad
+V_{ij}=x_i^\top A x_j,\qquad
+H_{ij}=\operatorname{sign}(x_i^\top Bx_j)V_{ij},
+\]
+\[
+\widetilde U_{ij}=\frac{U_{ij}-\mu_U}{\sigma_U},\qquad
+\widetilde W_{ij}(\delta)=
+\frac{V_{ij}+\delta H_{ij}-(\mu_V+\delta\mu_H)}
+{\sqrt{\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2}}.
+\]
+With \(\kappa(\delta)=\operatorname{Corr}(U,W(\delta))\), the matching function is
+\[
+f(x_i,x_j)=
+\frac{\sqrt{\rho}\,\widetilde U_{ij}
++\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)}
+{\sqrt{1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)}}.
 \]
 \section{Top-Level Simulation}
 
@@ -379,8 +390,8 @@ $\nu_\ell$ & integer & Frequency for active curve coordinate $\ell$. \\
 $\psi_\ell$ & scalar & Phase for active curve coordinate $\ell$. \\
 $A_0$ & $\R^{d\times d}$ & Raw matrix used to construct $A$. \\
 $\Sigma_x$ & $\R^{d\times d}$ & Empirical agent type second moment. \\
-$B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric regime matrix. \\
-$B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization regime matrix. \\
+$B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric boundary matrix. \\
+$B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization boundary matrix. \\
 $Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}}$ & matrix, $\R^{n_b^0}$ & Broker seed fitting batch using the selected input map. \\
 \end{localvartable}
 

@@ -1,8 +1,8 @@
 """
     matching_function.jl
 
-Gain-modulated matching function:
-    f(x_i, x_j) = ρ · ½(x_i'c + x_j'c) + (1-ρ) · g(x_i,x_j) · x_i'Ax_j
+Variance-share matching function:
+    f(x_i, x_j) = s_f [√ρ U*(x_i,x_j) + √(1-ρ) W*_δ(x_i,x_j)] / s_mix
     g(x_i, x_j) = 1 + δ · sign(x_i'Bx_j)
 
 A is a symmetric positive definite (SPD) interaction matrix drawn at
@@ -12,15 +12,73 @@ sphere. Quality is a dot product with ideal type c. Interaction is a bilinear
 form through A, modulated by a regime-dependent gain determined by B. The gain
 defines high-gain `(1+δ)` and low-gain `(1-δ)` regimes.
 
-Observable output: q = Q + f(x_i, x_j) + ε, where Q is a constant offset and
+U* is standardized general quality and W*_δ is standardized complementarity.
+Their population moments are fixed constants calibrated once over independent
+matching environments. The residual correlation adjustment s_mix holds the
+systematic variance at one, which defines the payoff unit. Observable output is
+q = Q + f(x_i, x_j) + ε, where Q is a constant offset and
 ε ~ N(0, σ_ε²) is match noise.
 """
 
 using LinearAlgebra: dot, mul!, norm, tr
 using Random: AbstractRNG
 
-const SIGNAL_SCALE_REFERENCE_RHO = 0.5
-const SIGNAL_SCALE_REFERENCE_DELTA = 0.5
+# Fixed calibration over 50 independently generated markets with N = 1,000 and
+# seeds 10,001:10,050. Each market contributes equally through its within-market
+# moments over all unordered pairs of distinct principals. The calibration is
+# reproduced by scripts/calibrate_match_component_moments.jl.
+const MATCH_QUALITY_MEAN = 0.0026670734267777068
+const MATCH_QUALITY_VARIANCE = 0.10761325860961976
+const MATCH_BASE_INTERACTION_MEAN = 0.00023232587929797094
+const MATCH_SIGNED_INTERACTION_MEAN = -0.0012126664299509872
+const MATCH_BASE_INTERACTION_VARIANCE = 0.31350979443927257
+const MATCH_SIGNED_INTERACTION_VARIANCE = 0.3131030982910217
+const MATCH_QUALITY_BASE_COVARIANCE = 0.0006659568474291372
+const MATCH_QUALITY_SIGNED_COVARIANCE = -0.002534237858060982
+const MATCH_BASE_SIGNED_COVARIANCE = -0.0025068531682840554
+const MATCH_SIGNAL_SD = 1.0
+
+"""Fixed mean, variance, and quality covariance of complementarity at `delta`."""
+function interaction_component_moments(delta::Float64)
+    component_mean =
+        MATCH_BASE_INTERACTION_MEAN + delta * MATCH_SIGNED_INTERACTION_MEAN
+    component_variance =
+        MATCH_BASE_INTERACTION_VARIANCE +
+        2.0 * delta * MATCH_BASE_SIGNED_COVARIANCE +
+        delta^2 * MATCH_SIGNED_INTERACTION_VARIANCE
+    quality_covariance =
+        MATCH_QUALITY_BASE_COVARIANCE + delta * MATCH_QUALITY_SIGNED_COVARIANCE
+    component_variance > 0.0 || error("interaction component has nonpositive variance")
+    return (; component_mean, component_variance, quality_covariance)
+end
+
+"""
+    match_signal_coefficients(rho, delta)
+
+Return the calibrated coefficients that make `rho` general quality's share of
+the two components' summed marginal variances. The final scale adjusts for the
+small fixed covariance between standardized components and holds total
+systematic variance at one.
+"""
+function match_signal_coefficients(rho::Float64, delta::Float64)
+    moments = interaction_component_moments(delta)
+    quality_sd = sqrt(MATCH_QUALITY_VARIANCE)
+    interaction_sd = sqrt(moments.component_variance)
+    quality_share = sqrt(rho)
+    interaction_share = sqrt(1.0 - rho)
+    component_correlation =
+        moments.quality_covariance / (quality_sd * interaction_sd)
+    mixture_variance =
+        1.0 + 2.0 * quality_share * interaction_share * component_correlation
+    mixture_variance > 0.0 || error("standardized match mixture has nonpositive variance")
+    common_scale = MATCH_SIGNAL_SD / sqrt(mixture_variance)
+    quality_weight = common_scale * quality_share / quality_sd
+    interaction_weight = common_scale * interaction_share / interaction_sd
+    signal_shift =
+        -quality_weight * MATCH_QUALITY_MEAN -
+        interaction_weight * moments.component_mean
+    return (; quality_weight, interaction_weight, signal_shift)
+end
 
 """
     type_second_moment(agent_types) -> Matrix{Float64}
@@ -101,7 +159,7 @@ end
 
 """
     generate_matching_env(d, rho, delta, sigma_eps, agent_types, rng;
-                          sigma_x, curve_geo, constant_signal_scale) -> MatchingEnv
+                          sigma_x, curve_geo) -> MatchingEnv
 
 Build the matching environment:
 - Ideal type `c` drawn as a perturbation of a fresh random curve position from
@@ -110,9 +168,9 @@ Build the matching environment:
 - B = symmetric regime operator, orthogonalized against A under the empirical
   type second moment
 
-When `constant_signal_scale` is true, a positive affine transformation gives
-the signal the baseline mean and population standard deviation over all pairs
-of distinct initial principals. It does not change pair rankings.
+Fixed calibration coefficients standardize the two signal components and assign
+them marginal variance shares `rho` and `1-rho`. The small calibrated covariance
+between components is removed from total scale, keeping systematic variance fixed.
 """
 function generate_matching_env(
     d::Int,
@@ -123,7 +181,6 @@ function generate_matching_env(
     rng::AbstractRNG;
     sigma_x::Float64=0.5,
     curve_geo::CurveGeometry,
-    constant_signal_scale::Bool=false,
 )::MatchingEnv
     sigma_per_dim = sigma_x / sqrt(d)
 
@@ -143,75 +200,19 @@ function generate_matching_env(
     # boundary weakly aligned with the payoff geometry by construction.
     B = construct_regime_operator(A, agent_types, rng)
 
-    affine = if constant_signal_scale
-        constant_signal_affine(agent_types, c, A, B, rho, delta)
-    else
-        (; scale=1.0, shift=0.0)
-    end
-    return MatchingEnv(d, rho, c, A, B, delta, sigma_eps, affine.scale, affine.shift)
-end
-
-"""
-    constant_signal_affine(agent_types, c, A, B, rho, delta)
-
-Return the positive affine transformation that gives the current match signal
-the mean and population standard deviation of the baseline signal over feasible
-initial pairs. The baseline transformation is exactly the identity.
-"""
-function constant_signal_affine(
-    agent_types::Vector{Vector{Float64}},
-    c::Vector{Float64},
-    A::Matrix{Float64},
-    B::Matrix{Float64},
-    rho::Float64,
-    delta::Float64,
-)
-    rho == SIGNAL_SCALE_REFERENCE_RHO &&
-        delta == SIGNAL_SCALE_REFERENCE_DELTA &&
-        return (; scale=1.0, shift=0.0)
-
-    n_agents = length(agent_types)
-    n_pairs = n_agents * (n_agents - 1) ÷ 2
-    quality_scores = [dot(x, c) for x in agent_types]
-    Ax = Vector{Float64}(undef, length(c))
-    Bx = similar(Ax)
-    current_sum = 0.0
-    current_sum_sq = 0.0
-    reference_sum = 0.0
-    reference_sum_sq = 0.0
-
-    @inbounds for j in 2:n_agents
-        xj = agent_types[j]
-        mul!(Ax, A, xj)
-        mul!(Bx, B, xj)
-        for i in 1:(j - 1)
-            xi = agent_types[i]
-            quality = 0.5 * (quality_scores[i] + quality_scores[j])
-            base_interaction = dot(xi, Ax)
-            regime = sign(dot(xi, Bx))
-            current =
-                rho * quality + (1.0 - rho) * (1.0 + delta * regime) * base_interaction
-            reference =
-                SIGNAL_SCALE_REFERENCE_RHO * quality +
-                (1.0 - SIGNAL_SCALE_REFERENCE_RHO) *
-                (1.0 + SIGNAL_SCALE_REFERENCE_DELTA * regime) *
-                base_interaction
-            current_sum += current
-            current_sum_sq += current^2
-            reference_sum += reference
-            reference_sum_sq += reference^2
-        end
-    end
-
-    current_mean = current_sum / n_pairs
-    reference_mean = reference_sum / n_pairs
-    current_var = current_sum_sq / n_pairs - current_mean^2
-    reference_var = reference_sum_sq / n_pairs - reference_mean^2
-    current_var > 0.0 || error("current match signal has zero variance")
-    reference_var > 0.0 || error("baseline match signal has zero variance")
-    scale = sqrt(reference_var / current_var)
-    shift = reference_mean - scale * current_mean
-    return (; scale, shift)
+    coefficients = match_signal_coefficients(rho, delta)
+    return MatchingEnv(
+        d,
+        rho,
+        c,
+        A,
+        B,
+        delta,
+        sigma_eps,
+        coefficients.quality_weight,
+        coefficients.interaction_weight,
+        coefficients.signal_shift,
+    )
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -245,18 +246,19 @@ end
 """
     match_signal(xi, xj, env) -> Float64
 
-Deterministic matching function:
-    f(x_i, x_j) = ρ · ½(x_i'c + x_j'c) + (1-ρ) · g(x_i,x_j) · x_i'Ax_j
+Deterministic matching function with fixed component standardization and
+variance-share weights.
 
 Does not include the offset Q or noise ε. Used for holdout evaluation and diagnostics.
 """
 function match_signal(xi::AbstractVector, xj::AbstractVector, env::MatchingEnv)::Float64
-    quality = env.rho * 0.5 * (dot(xi, env.c) + dot(xj, env.c))
+    quality = 0.5 * (dot(xi, env.c) + dot(xj, env.c))
     base_interaction = dot(xi, env.A * xj)
     g = regime_gain(xi, xj, env)
-    interaction = (1.0 - env.rho) * g * base_interaction
-    signal = quality + interaction
-    return env.signal_shift + env.signal_scale * signal
+    interaction = g * base_interaction
+    return env.signal_shift +
+           env.quality_weight * quality +
+           env.interaction_weight * interaction
 end
 
 """In-place `match_signal` using pre-allocated buffers for Ax_j and Bx_j."""
@@ -267,13 +269,14 @@ function match_signal!(
     xj::AbstractVector,
     env::MatchingEnv,
 )::Float64
-    quality = env.rho * 0.5 * (dot(xi, env.c) + dot(xj, env.c))
+    quality = 0.5 * (dot(xi, env.c) + dot(xj, env.c))
     mul!(Ax_buf, env.A, xj)
     base_interaction = dot(xi, Ax_buf)
     g = regime_gain!(Bx_buf, xi, xj, env)
-    interaction = (1.0 - env.rho) * g * base_interaction
-    signal = quality + interaction
-    return env.signal_shift + env.signal_scale * signal
+    interaction = g * base_interaction
+    return env.signal_shift +
+           env.quality_weight * quality +
+           env.interaction_weight * interaction
 end
 
 """

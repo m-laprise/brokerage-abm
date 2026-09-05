@@ -41,6 +41,7 @@ const TSTART = 30                     # displayed axes start here; data never cu
 const SPECTRUM_COMPONENTS = 25
 const RHO_COLORS = Dict(
     0.0 => :seagreen,
+    0.15 => :royalblue,
     0.3 => :mediumaquamarine,
     0.5 => :goldenrod,
     0.7 => :darkorange,
@@ -71,8 +72,10 @@ const STRUCTURAL_FD = JLD2.load(
 const DGP_FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figure_data.jld2"))
 )["figdata"]
+const EXPLORATORY = "--exploratory" in ARGS
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
+    require_clean=!EXPLORATORY,
     allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/supp_figures.jl"),
 )
 const DGP_ANALYSIS_COMMIT = validate_analysis_commit(
@@ -83,7 +86,7 @@ const STRUCTURAL_ANALYSIS_COMMIT = validate_analysis_commit(
     STRUCTURAL_FD["meta"]["analysis_git_commit"];
     artifact="structural figure data",
 )
-all(
+EXPLORATORY || all(
     dataset["meta"]["analysis_source_clean"] == true for dataset in (DGP_FD, STRUCTURAL_FD)
 ) || error("supplement figure data were generated from dirty analysis sources")
 const PER = STRUCTURAL_FD["period"]
@@ -225,7 +228,7 @@ function match_value_surfaces()
         Label(panels[1, column], title; fontsize=TITLE_FS)
     end
     Label(fig[1, 0], "General quality of principal i"; rotation=pi / 2, fontsize=LABEL_FS)
-    Label(panels[2, 0], "δ = 0.5"; rotation=pi / 2, fontsize=LABEL_FS)
+    Label(panels[2, 0], "δ = 0"; rotation=pi / 2, fontsize=LABEL_FS)
     Label(panels[3, 0], "δ = 1"; rotation=pi / 2, fontsize=LABEL_FS)
     Label(fig[2, 1], "General quality of principal j"; fontsize=LABEL_FS)
 
@@ -283,7 +286,7 @@ end
 
 # ── S3: singular spectra and 90%-energy effective dimension ──
 function effective_dimensionality()
-    displayed_rhos = [0.0, 0.5, 0.85, 1.0]
+    displayed_rhos = [0.0, 0.15, 0.5, 0.85, 1.0]
     components = 1:SPECTRUM_COMPONENTS
     fig = Figure(; size=(1390, 480))
     spectrum_axis = Axis(
@@ -591,6 +594,8 @@ open(
     println(io, "% DGP data analysis commit: $DGP_ANALYSIS_COMMIT")
     println(io, "% Structural data analysis commit: $STRUCTURAL_ANALYSIS_COMMIT")
     println(io, "% Rendering commit: $(REPORTING_PROVENANCE.commit)")
+    println(io, "% Exploratory DGP artifact: $(get(DGP_FD["meta"], "exploratory", false))")
+    println(io, "% Exploratory rendering: $EXPLORATORY")
     println(
         io,
         "% Display conventions used to render output/supplement/figures/, quoted in captions via \\pv keys.",

@@ -3,6 +3,8 @@ using BrokerageABM
 using BrokerageABM: Q_OFFSET, calibrate, generate_matching_env
 using BrokerageABM: match_output, match_output!, match_signal, match_signal!
 using BrokerageABM: regime_gain, regime_gain!
+using BrokerageABM: interaction_component_moments, match_signal_coefficients
+using BrokerageABM: MATCH_QUALITY_VARIANCE, MATCH_SIGNAL_SD
 using StableRNGs: StableRNG
 using LinearAlgebra: dot, norm, normalize, eigvals, issymmetric
 using Statistics: mean, std
@@ -22,7 +24,6 @@ using Statistics: mean, std
         sigma_eps::Float64=0.25,
         env_seed::Int=42,
         geo_seed::Int=11,
-        constant_signal_scale::Bool=false,
     )
         geo = BrokerageABM.generate_curve_geometry(d, d, StableRNG(geo_seed))
         return generate_matching_env(
@@ -33,7 +34,6 @@ using Statistics: mean, std
             types,
             StableRNG(env_seed);
             curve_geo=geo,
-            constant_signal_scale,
         )
     end
 
@@ -46,45 +46,33 @@ using Statistics: mean, std
         @test length(env.c) == d
         @test size(env.A) == (d, d)
         @test size(env.B) == (d, d)
-        @test env.signal_scale == 1.0
-        @test env.signal_shift == 0.0
+        coefficients = match_signal_coefficients(rho, 0.5)
+        @test env.quality_weight == coefficients.quality_weight
+        @test env.interaction_weight == coefficients.interaction_weight
+        @test env.signal_shift == coefficients.signal_shift
     end
 
-    @testset "constant signal scale preserves rankings and baseline moments" begin
-        types = test_agent_types(d, 60, StableRNG(510))
-        reference = test_env(types; rho=0.5, delta=0.5)
-        raw = test_env(types; rho=0.0, delta=1.0)
-        scaled = test_env(types; rho=0.0, delta=1.0, constant_signal_scale=true)
-        baseline_scaled = test_env(types; rho=0.5, delta=0.5, constant_signal_scale=true)
-        pairs = [(i, j) for j in 2:length(types) for i in 1:(j - 1)]
-        reference_values = [match_signal(types[i], types[j], reference) for (i, j) in pairs]
-        raw_values = [match_signal(types[i], types[j], raw) for (i, j) in pairs]
-        scaled_values = [match_signal(types[i], types[j], scaled) for (i, j) in pairs]
-
-        @test scaled.signal_scale > 0.0
-        @test mean(scaled_values) ≈ mean(reference_values) atol = 1e-12
-        @test std(scaled_values; corrected=false) ≈ std(reference_values; corrected=false) atol =
-            1e-12
-        @test scaled_values ≈ scaled.signal_shift .+ scaled.signal_scale .* raw_values atol =
-            1e-12
-        @test sortperm(scaled_values) == sortperm(raw_values)
-        @test baseline_scaled.signal_scale == 1.0
-        @test baseline_scaled.signal_shift == 0.0
-        @test all(pairs) do (i, j)
-            match_signal(types[i], types[j], baseline_scaled) ==
-            match_signal(types[i], types[j], reference)
+    @testset "variance-share calibration fixes total systematic variance" begin
+        @test MATCH_SIGNAL_SD == 1.0
+        deltas = (0.0, 0.25, 0.5, 0.75, 1.0)
+        rho_values = (0.0, 0.15, 0.5, 0.85, 1.0)
+        for delta in deltas, rho_value in rho_values
+            coefficients = match_signal_coefficients(rho_value, delta)
+            moments = interaction_component_moments(delta)
+            calibrated_variance =
+                coefficients.quality_weight^2 * MATCH_QUALITY_VARIANCE +
+                coefficients.interaction_weight^2 * moments.component_variance +
+                2.0 *
+                coefficients.quality_weight *
+                coefficients.interaction_weight *
+                moments.quality_covariance
+            @test calibrated_variance ≈ MATCH_SIGNAL_SD^2 atol = 1e-14
         end
-    end
 
-    @testset "constant-scale baseline preserves the trajectory" begin
-        common = (
-            N=20, k=4, T=3, E_init=1, train_steps=1, eta=0.0, rho=0.5, delta=0.5, seed=511
-        )
-        _, original = run_simulation(default_params(; common...))
-        _, controlled = run_simulation(
-            default_params(; common..., constant_signal_scale=true)
-        )
-        @test isequal(original, controlled)
+        quality_only = match_signal_coefficients(1.0, 0.0)
+        interaction_only = match_signal_coefficients(0.0, 1.0)
+        @test quality_only.interaction_weight == 0.0
+        @test interaction_only.quality_weight == 0.0
     end
 
     @testset "curve_geo path decouples c and A, while B depends on realized types" begin
@@ -176,13 +164,15 @@ using Statistics: mean, std
         # At rho=1: pure quality, no interaction
         env1 = test_env(types; rho=1.0)
         xi, xj = types[1], types[2]
-        expected_q = 0.5 * (dot(xi, env1.c) + dot(xj, env1.c))
+        raw_quality = 0.5 * (dot(xi, env1.c) + dot(xj, env1.c))
+        expected_q = env1.signal_shift + env1.quality_weight * raw_quality
         @test match_signal(xi, xj, env1) ≈ expected_q
 
         # At rho=0: pure interaction, no quality
         env0 = test_env(types; rho=0.0)
         g = regime_gain(xi, xj, env0)
-        expected_int = g * dot(xi, env0.A * xj)
+        expected_int =
+            env0.signal_shift + env0.interaction_weight * g * dot(xi, env0.A * xj)
         @test match_signal(xi, xj, env0) ≈ expected_int
     end
 
