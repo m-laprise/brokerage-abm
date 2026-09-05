@@ -94,7 +94,7 @@ Let \(q_{ij}\) be the per-period value of the match between agents \(i\) and \(j
 \[q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
 \varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2).\]
 
-The predictable match value \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The term \(\varepsilon_{ij}\) is random match variation. The payoff unit is chosen so that, averaging across fixed reference markets, the within-market variance of \(f\) across possible pairs is one (§2d). In these units, \(Q=2.840698\) is a constant offset and \(\sigma_\varepsilon=0.284070\).
+The predictable match value \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The term \(\varepsilon_{ij}\) is random match variation.
 
 The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents:
 
@@ -105,7 +105,15 @@ f(\mathbf{x}_i,\mathbf{x}_j)
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
 \]
 
-Here \(\widetilde U_{ij}\) is normalized general quality (§2b) and \(\widetilde W_{ij}(\delta)\) is normalized match-specific complementarity (§2c). Under the reference moments, \(\rho\in[0,1]\) is general quality's share of the two components' summed marginal variances; \(1-\rho\) is complementarity's share. Thus \(\rho=0\) gives pure complementarity and \(\rho=1\) gives pure general quality. At \(\rho=1\), \(\delta\) has no effect. The common factor \(s_{\mathrm{mix}}(\rho,\delta)\) accounts for the components' small covariance and keeps the average within-market variance of \(f\) fixed (§2d).
+The tildes indicate that general quality (§2b) and match-specific complementarity (§2c) are centered and scaled using fixed moments. These moments are estimated once from independently generated matching environments. Within each environment, they are calculated across all unordered pairs of distinct agents; they are then averaged across environments and held fixed in every simulation. Individual markets are not rescaled, so they retain ordinary between-market variation.
+
+Let \(\kappa(\delta)\) denote the fixed covariance between general quality and complementarity after each component is standardized. The common adjustment
+
+\[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
+
+accounts for this small covariance. Averaged across the independently generated environments, each standardized component and the resulting predictable match value \(f\) have within-market variance one for every \(\rho\) and \(\delta\). This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
+
+Because the two components have the same marginal variance on this scale, \(\rho\in[0,1]\) is general quality's share of their summed marginal variances, while \(1-\rho\) is complementarity's share. Thus \(\rho=0\) gives pure complementarity and \(\rho=1\) gives pure general quality. At \(\rho=1\), \(\delta\) has no effect.
 
 \subsubsection{2b. Agent General Quality}\label{b.-agent-general-quality}
 
@@ -121,9 +129,10 @@ The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a per
 
 \[u_c\sim\operatorname{Unif}[0,1],\qquad
 \boldsymbol{\epsilon}_c\sim\mathcal N\!\left(\mathbf 0,\frac{\sigma_x^2}{d}\mathbf I_d\right),\qquad
-\mathbf c=\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c.\]
+\mathbf c=\frac{\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c}
+{\left\|\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c\right\|_2}.\]
 
-Unlike agent types, \(\mathbf c\) is not re-normalized after the perturbation.
+The normalization places \(\mathbf c\) on the same unit sphere as agent types. The perturbation therefore changes the ideal direction without changing its magnitude.
 
 \subsubsection{2c. Match-Specific Complementarity}\label{c.-match-specific-complementarity}
 
@@ -154,7 +163,7 @@ The normalized complementarity used in the matching function is
 
 Thus \(\mathbf{A}\) is symmetric positive definite and \(\operatorname{tr}(\mathbf{A})=d\).
 
-The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) across realizations. The pair-level reference moments in §2d then place complementarity on the common scale used in the matching function.
+The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) across realizations. The fixed pair-level normalization described in §2a then places complementarity on the common scale used in the matching function.
 
 \textbf{Difficulty parameter.} Equivalently, write \(W_{ij}(\delta)=g(\mathbf{x}_i,\mathbf{x}_j)V_{ij}\), where a second symmetric matrix \(\mathbf{B}\in\mathbb{R}^{d\times d}\) defines
 
@@ -190,33 +199,6 @@ This gives \(\operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{B}\boldsymbol{\Sigma
 
 Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_j)=f(\mathbf{x}_j,\mathbf{x}_i)\).
 
-\subsubsection{2d. Fixed Component Normalization}\label{d.-fixed-component-normalization}
-
-The component moments are computed once from reference markets and then held fixed in every simulation. They are not re-estimated within a simulated market. This preserves ordinary between-market variation instead of forcing every realization to have exactly the same component means and variances.
-
-The reference set contains 50 independently generated matching environments with \(N=1000\), \(d=d_\gamma=8\), and \(\sigma_x=0.5\), using seeds 10,001 through 10,050, which are separate from the sweep seeds. Each environment contains newly drawn types, \(\mathbf c\), \(\mathbf A\), and \(\mathbf B\), but no simulation periods or random match variation. Means, variances, and covariances are computed over all unordered pairs of distinct agents within each market, then averaged across markets with equal weight. The resulting reference moments are
-
-\[
-\begin{aligned}
-\mu_U&=0.0026670734, & \sigma_U^2&=0.1076132586,\\
-\mu_V&=0.0002323259, & \sigma_V^2&=0.3135097944,\\
-\mu_H&=-0.0012126664, & \sigma_H^2&=0.3131030983,
-\end{aligned}
-\]
-
-with \(\operatorname{Cov}(U,V)=0.0006659568\), \(\operatorname{Cov}(U,H)=-0.0025342379\), and \(\operatorname{Cov}(V,H)=-0.0025068532\). Therefore
-
-\[
-\begin{aligned}
-\mu_W(\delta)&=\mu_V+\delta\mu_H,\\
-\sigma_W^2(\delta)&=\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2,\\
-\kappa(\delta)&=\frac{\operatorname{Cov}(U,V)+\delta\operatorname{Cov}(U,H)}{\sigma_U\sigma_W(\delta)},\\
-s_{\mathrm{mix}}^2(\rho,\delta)&=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta).
-\end{aligned}
-\]
-
-These definitions make the average within-market variance of both \(\widetilde U\) and \(\widetilde W(\delta)\) equal to one over the reference markets. The common correction \(s_{\mathrm{mix}}\) accounts for their average within-market covariance, making the corresponding average variance of \(f\) equal to one for every \(\rho\) and \(\delta\). Because it scales both components equally, it does not alter the balance between general quality and complementarity set by \(\rho\). The small covariance cannot be assigned uniquely to either component, so \(\rho\) allocates only their marginal variances. A new simulated market is not rescaled to match these moments exactly, so its component means and variances may differ.
-
 \subsection{3. Learning}\label{learning}
 
 Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to refit every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model refits only when its history is nonempty and it has received new observations since its previous fitting call. A parameter switch selects the prediction model. Neural-network learning is the default. Ridge regression is the alternate experiment.
@@ -239,13 +221,13 @@ where \(\mathbf{z}\) is the input feature vector and the remaining symbols are n
 \hat q_b(\mathbf x_i,\mathbf x_j)=\alpha_b+\boldsymbol\gamma_b^\top\psi(\mathbf x_i,\mathbf x_j).
 \]
 
-Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\). An initial joint baseline calibration applied the same seven candidate penalties from \(10^{-4}\) to 1 to both learners over ten fixed seeds separate from the reporting seeds. Maximizing the median across seeds of the period 401--500 mean of the two holdout rank correlations selected a common penalty of 0.001, which we retain as \(\lambda_b\). Holding \(\lambda_b\) fixed, a separate agent calibration compared \(\lambda_a\in\{0.001,0.003,0.01,0.03,0.1,0.3,0.5\}\) on the same seeds and selected \(\lambda_a=0.003\) by the median late-period agent holdout rank correlation.
+Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\). The reporting simulations use \(\lambda_a=0.003\) and \(\lambda_b=0.001\).
 
 Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
 \[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\}.\]
 
-where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. Reporting values for the NN learning rates and update budgets are selected separately at the baseline using out-of-sample rank correlation and calibration seeds excluded from the reported simulations; the complete calibration is preserved in the replication code.
+where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=0.003\), \(\eta_{\mathrm{lr},b}=0.03\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=100\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=50\).
 
 Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, fitting deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
 
@@ -562,13 +544,13 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \(d\) & 8 & §1 & \(k_G\) & 6 & §5a \\
 \(d_\gamma\) & 8 & §1 & \(p_{\text{rewire}}\) & 0.1 & §5a \\
 \(\sigma_x\) & 0.5 & §1 & \(\eta_{\mathrm{exit}}\) & 0.02 & §5c \\
-\(Q\) & 2.841 & §2a & \(K\) & 5 & §6 \\
+\(Q\) & 2.84 & §2a & \(K\) & 5 & §6 \\
 \(\rho\) & 0.50 & §2a & \(p_{\text{demand}}\) & 0.50 & §6 \\
 \(\delta\) & 0.5 & §2c & \(n_{\mathrm{strangers}}\) & 10 & §6a \\
-\(\sigma_\varepsilon\) & 0.284 & §2a & \(\alpha_R\) & 0.20 & §6b \\
-\(\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}\) & 0.01, 0.01 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
-\(E_{\text{init},a},E_{\text{init},b}\) & 200, 200 & §3a & \(\omega\) & 0.2 & §7a \\
-\(E_{\text{steps},a},E_{\text{steps},b}\) & 100, 100 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
+\(\sigma_\varepsilon\) & 0.28 & §2a & \(\alpha_R\) & 0.20 & §6b \\
+\(\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}\) & 0.003, 0.03 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
+\(E_{\text{init},a},E_{\text{init},b}\) & 100, 100 & §3a & \(\omega\) & 0.2 & §7a \\
+\(E_{\text{steps},a},E_{\text{steps},b}\) & 50, 50 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
 \(W_p\) & 40 periods & §3a & \(M_{\text{train}}\) & 2000 & §3a \\
 \bottomrule
 \end{tabular}

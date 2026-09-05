@@ -14,9 +14,10 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
     @test SWEEP_LEARNING_MODEL == :nn
-    @test SWEEP_NN_ETA_LR_AGENT == SWEEP_NN_ETA_LR_BROKER == 0.01
-    @test SWEEP_NN_E_INIT_AGENT == SWEEP_NN_E_INIT_BROKER == 200
-    @test SWEEP_NN_TRAIN_STEPS_AGENT == SWEEP_NN_TRAIN_STEPS_BROKER == 100
+    @test SWEEP_NN_ETA_LR_AGENT == 0.003
+    @test SWEEP_NN_ETA_LR_BROKER == 0.03
+    @test SWEEP_NN_E_INIT_AGENT == SWEEP_NN_E_INIT_BROKER == 100
+    @test SWEEP_NN_TRAIN_STEPS_AGENT == SWEEP_NN_TRAIN_STEPS_BROKER == 50
     @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
     @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full

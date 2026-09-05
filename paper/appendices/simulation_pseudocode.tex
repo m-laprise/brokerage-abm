@@ -123,9 +123,9 @@ $\omega$ & scalar & Satisfaction EWMA weight. \\
 $\mathsf L$ & learning function & $\mathrm{NN}$ (default) or $\mathrm{Ridge}$. \\
 $\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=0.003$ and $\lambda_b=0.001$. \\
 $a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
-$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps. \\
-$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call. \\
-$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates. \\
+$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps; both are 100 in the reporting simulations. \\
+$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call; both are 50 in the reporting simulations. \\
+$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates; reporting values are 0.003 and 0.03, respectively. \\
 $W_p$ & scalar & Training-window horizon, in periods. \\
 $M$ & scalar & Per-call training observation cap. \\
 \addlinespace[0.25em]
@@ -446,7 +446,7 @@ $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachme
 \For{$i=1,\ldots,N$}
     \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
 \EndFor
-\State Draw $u_c\sim\mathrm{Unif}[0,1]$ and $\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set $c\gets\gamma(u_c)+\epsilon_c$ without re-normalizing.
+\State Draw $u_c\sim\mathrm{Unif}[0,1]$ and $\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set $c\gets[\gamma(u_c)+\epsilon_c]/\|\gamma(u_c)+\epsilon_c\|_2$.
 \State Draw $A_0\in\R^{d\times d}$ iid standard normal and set $A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
 \State $\Sigma_x\gets N^{-1}\sum_i x_i^0(x_i^0)^\top$.
 \State Draw symmetric zero-trace $B_0$ and set

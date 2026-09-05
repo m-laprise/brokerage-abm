@@ -4,26 +4,26 @@
 Fixed design and helpers for neural-network optimizer calibration.
 
 The screen varies one learner at a time around the reference setting. The
-confirmation stage adds seeds only for the two best screen configurations per
-learner. The combined stage evaluates the selected agent and broker settings
-together. All scientific decisions use seed-level summaries.
+confirmation stage evaluates the selected agent and broker settings together.
+All scientific decisions use seed-level summaries.
 """
 
-const NNCAL_SCHEMA_VERSION = 1
+const NNCAL_SCHEMA_VERSION = 2
 const NNCAL_N = 1000
 const NNCAL_T = 200
 const NNCAL_EARLY_PERIODS = 101:150
 const NNCAL_LATE_PERIODS = 151:200
 const NNCAL_SCREEN_SEEDS = collect(9_000_001:9_000_003)
-const NNCAL_CONFIRM_SEEDS = collect(9_000_004:9_000_005)
-const NNCAL_ALL_SEEDS = vcat(NNCAL_SCREEN_SEEDS, NNCAL_CONFIRM_SEEDS)
+const NNCAL_CONFIRM_SEEDS = collect(9_000_001:9_000_005)
 const NNCAL_LEARNING_RATES = [0.003, 0.01, 0.03]
 const NNCAL_RECURRENT_STEPS = [50, 100, 200]
 const NNCAL_REFERENCE_LEARNING_RATE = 0.01
 const NNCAL_REFERENCE_RECURRENT_STEPS = 100
 const NNCAL_INITIAL_TO_RECURRENT_RATIO = 2
 const NNCAL_PRACTICAL_TOLERANCE = 0.01
-const NNCAL_SHORTLIST_SIZE = 2
+const NNCAL_SELECTED_AGENT_LEARNING_RATE = 0.003
+const NNCAL_SELECTED_BROKER_LEARNING_RATE = 0.03
+const NNCAL_SELECTED_RECURRENT_STEPS = 50
 
 function nncal_setting(eta_lr::Real, recurrent_steps::Integer)
     steps = Int(recurrent_steps)
@@ -100,9 +100,15 @@ function nncal_screen_configs()
     return nncal_assign_ids!(configs)
 end
 
-function nncal_combined_config(agent_setting, broker_setting)
+function nncal_confirmation_config()
+    agent = nncal_setting(
+        NNCAL_SELECTED_AGENT_LEARNING_RATE, NNCAL_SELECTED_RECURRENT_STEPS
+    )
+    broker = nncal_setting(
+        NNCAL_SELECTED_BROKER_LEARNING_RATE, NNCAL_SELECTED_RECURRENT_STEPS
+    )
     return nncal_assign_ids!([
-        nncal_config(agent_setting, broker_setting; agent_scan=false, broker_scan=false)
+        nncal_config(agent, broker; agent_scan=false, broker_scan=false)
     ])
 end
 
@@ -137,27 +143,11 @@ nncal_summary_dir() = joinpath(nncal_calibration_root(), "summaries")
 function nncal_stage_seeds(stage::Symbol)
     stage == :screen && return NNCAL_SCREEN_SEEDS
     stage == :confirm && return NNCAL_CONFIRM_SEEDS
-    stage == :combined && return NNCAL_ALL_SEEDS
     error("unknown calibration stage: $stage")
 end
 
 function nncal_stage_configs(stage::Symbol)
     stage == :screen && return nncal_screen_configs()
-
-    if stage == :confirm
-        path = joinpath(nncal_summary_dir(), "screen_selection.jld2")
-        isfile(path) || error("screen selection not found: $path")
-        return JLD2.load(path, "shortlist_configs")
-    end
-
-    if stage == :combined
-        path = joinpath(nncal_summary_dir(), "confirmed_selection.jld2")
-        isfile(path) || error("confirmed selection not found: $path")
-        selection = JLD2.load(path)
-        return nncal_combined_config(
-            selection["selected_agent_setting"], selection["selected_broker_setting"]
-        )
-    end
-
+    stage == :confirm && return nncal_confirmation_config()
     error("unknown calibration stage: $stage")
 end

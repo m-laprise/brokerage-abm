@@ -44,6 +44,7 @@ using Statistics: mean, std
         @test env.rho == rho
         @test env.delta == 0.5
         @test length(env.c) == d
+        @test norm(env.c) ≈ 1.0 atol = 1e-12
         @test size(env.A) == (d, d)
         @test size(env.B) == (d, d)
         coefficients = match_signal_coefficients(rho, 0.5)

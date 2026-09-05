@@ -61,6 +61,7 @@ using StableRNGs: StableRNG
         @test BrokerageABM.weighted_regime_overlap(env.A, env.B, types) ≈ 0.0 atol=1e-12
         @test length(env.c) == d
         @test all(isfinite, env.c)
+        @test norm(env.c) ≈ 1.0 atol = 1e-12
     end
 
     @testset "network has correct structure" begin

@@ -1,5 +1,5 @@
 """
-    manifest.jl <screen|confirm|combined>
+    manifest.jl <screen|confirm>
 
 Create the immutable task manifest for one neural-network calibration stage.
 The reporting workflow requires a clean committed worktree. Set
@@ -68,9 +68,9 @@ function nncal_write_manifest_tsv(path, entries)
 end
 
 function main()
-    length(ARGS) == 1 || error("usage: manifest.jl <screen|confirm|combined>")
+    length(ARGS) == 1 || error("usage: manifest.jl <screen|confirm>")
     stage = Symbol(only(ARGS))
-    stage in (:screen, :confirm, :combined) || error("invalid stage: $stage")
+    stage in (:screen, :confirm) || error("invalid stage: $stage")
 
     dirty = nncal_git_dirty()
     dirty &&

@@ -11,18 +11,25 @@ recurrent budget. Every run uses `N=1000`, `T=200`, the production Adam
 implementation, and otherwise baseline parameters.
 
 The screen evaluates 17 unique one-learner-at-a-time configurations on seeds
-9,000,001 through 9,000,003. The two configurations with the highest median
-period-151--200 rank correlation for each learner advance to confirmation on
-seeds 9,000,004 and 9,000,005. The confirmed choice is the smallest recurrent
-budget within 0.01 of the best five-seed median. At equal cost, learning rate
-0.01 is preferred when eligible. The combined stage evaluates the selected
-agent and broker settings together on all five seeds and compares periods
-101--150 with 151--200.
+9,000,001 through 9,000,003. Agents attain their highest median period-151--200
+rank correlation with learning rate 0.003 and 50 recurrent steps. For the
+broker, learning rate 0.03 with 200 recurrent steps has the highest median, but
+its gain over 50 steps is inconsistent across paired seeds, its late-period
+rank correlation is still rising, and it takes about twice as long. The
+selected settings therefore use learning rates 0.003 for agents and 0.03 for
+the broker, with 100 initial and 50 recurrent steps for both. The confirmation
+stage evaluates these settings together on seeds 9,000,001 through 9,000,005
+and compares periods 101--150 with 151--200.
+
+The joint confirmation passed. Median period-151--200 rank correlation was
+0.647 for agents and 0.913 for the broker. Median changes from periods
+101--150 were -0.001 and 0.001, respectively, and median runtime was 351
+seconds.
 
 Each stage writes a human-readable task manifest, a native JLD2 manifest, its
-SHA-256 hash, seed-level period tables, aggregate TSV files, and the selection
-record. Shards record the code commit, Julia version, package-manifest hash, and
-calibration-manifest hash.
+SHA-256 hash, seed-level period tables, and aggregate summaries. Shards record
+the code commit, Julia version, package-manifest hash, and calibration-manifest
+hash.
 
 ## Della workflow
 
@@ -51,12 +58,8 @@ Run the stages in order:
 ./scripts/nn_calibration/submit.sh smoke confirm
 ./scripts/nn_calibration/submit.sh compute confirm
 ./scripts/nn_calibration/submit.sh summarize confirm
-./scripts/nn_calibration/submit.sh manifest combined
-./scripts/nn_calibration/submit.sh smoke combined
-./scripts/nn_calibration/submit.sh compute combined
-./scripts/nn_calibration/submit.sh summarize combined
 ```
 
-Inspect the smoke log and artifact before each compute submission. If a
-confirmed choice lies on a tested boundary or the combined summary reports a
-decline greater than 0.01, stop and extend only the affected comparison.
+Inspect the smoke log and artifact before each compute submission. The
+confirmation summary reports whether the median rank correlation for each
+learner changes by more than 0.01 between the two late-period windows.

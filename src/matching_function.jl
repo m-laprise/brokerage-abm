@@ -27,14 +27,14 @@ using Random: AbstractRNG
 # seeds 10,001:10,050. Each market contributes equally through its within-market
 # moments over all unordered pairs of distinct principals. The calibration is
 # reproduced by scripts/calibrate_match_component_moments.jl.
-const MATCH_QUALITY_MEAN = 0.0026670734267777068
-const MATCH_QUALITY_VARIANCE = 0.10761325860961976
+const MATCH_QUALITY_MEAN = 0.002893596796277548
+const MATCH_QUALITY_VARIANCE = 0.08517176413068542
 const MATCH_BASE_INTERACTION_MEAN = 0.00023232587929797094
 const MATCH_SIGNED_INTERACTION_MEAN = -0.0012126664299509872
 const MATCH_BASE_INTERACTION_VARIANCE = 0.31350979443927257
 const MATCH_SIGNED_INTERACTION_VARIANCE = 0.3131030982910217
-const MATCH_QUALITY_BASE_COVARIANCE = 0.0006659568474291372
-const MATCH_QUALITY_SIGNED_COVARIANCE = -0.002534237858060982
+const MATCH_QUALITY_BASE_COVARIANCE = 0.000702922548823412
+const MATCH_QUALITY_SIGNED_COVARIANCE = -0.0021085381919249075
 const MATCH_BASE_SIGNED_COVARIANCE = -0.0025068531682840554
 const MATCH_SIGNAL_SD = 1.0
 
@@ -162,8 +162,8 @@ end
                           sigma_x, curve_geo) -> MatchingEnv
 
 Build the matching environment:
-- Ideal type `c` drawn as a perturbation of a fresh random curve position from
-  the supplied curve geometry
+- Unit ideal type `c` drawn by perturbing and re-normalizing a fresh random
+  curve position from the supplied curve geometry
 - A = M_A'M_A (SPD interaction matrix)
 - B = symmetric regime operator, orthogonalized against A under the empirical
   type second moment
@@ -188,6 +188,7 @@ function generate_matching_env(
     @assert curve_geo.d == d "curve_geo.d must equal d"
     ref = curve_point(rand(rng), curve_geo)
     c = ref .+ sigma_per_dim .* randn(rng, d)
+    c ./= norm(c)
 
     # SPD interaction matrix: A = M_A'M_A, normalized so E[x'Ax] ≈ 1 for unit vectors
     # For unit vectors, E[x'Ax] = trace(A)/d. Dividing by trace(A)/d normalizes to unit scale.

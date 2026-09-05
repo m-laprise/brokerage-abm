@@ -64,12 +64,12 @@ The default learning model is the neural network. The main controls are:
 | `BROKERAGE_ABM_N_SEEDS` | Seeds for each regime | `20` |
 | `BROKERAGE_ABM_BASELINE_N_SEEDS` | Seeds at the baseline | Same as other regimes |
 | `BROKERAGE_ABM_SWEEP_SCOPE` | `full` or `rho_delta` | `full` |
-| `BROKERAGE_ABM_NN_ETA_LR_AGENT` | Principal NN learning rate | `0.01` |
-| `BROKERAGE_ABM_NN_ETA_LR_BROKER` | Broker NN learning rate | `0.01` |
-| `BROKERAGE_ABM_NN_E_INIT_AGENT` | Principal NN initial update budget | `200` |
-| `BROKERAGE_ABM_NN_E_INIT_BROKER` | Broker NN initial update budget | `200` |
-| `BROKERAGE_ABM_NN_TRAIN_STEPS_AGENT` | Principal NN recurrent update floor | `100` |
-| `BROKERAGE_ABM_NN_TRAIN_STEPS_BROKER` | Broker NN recurrent update floor | `100` |
+| `BROKERAGE_ABM_NN_ETA_LR_AGENT` | Principal NN learning rate | `0.003` |
+| `BROKERAGE_ABM_NN_ETA_LR_BROKER` | Broker NN learning rate | `0.03` |
+| `BROKERAGE_ABM_NN_E_INIT_AGENT` | Principal NN initial update budget | `100` |
+| `BROKERAGE_ABM_NN_E_INIT_BROKER` | Broker NN initial update budget | `100` |
+| `BROKERAGE_ABM_NN_TRAIN_STEPS_AGENT` | Principal NN recurrent update floor | `50` |
+| `BROKERAGE_ABM_NN_TRAIN_STEPS_BROKER` | Broker NN recurrent update floor | `50` |
 | `BROKERAGE_ABM_RIDGE_LAMBDA_AGENT` | Principal Ridge penalty | `0.001` |
 | `BROKERAGE_ABM_RIDGE_LAMBDA_BROKER` | Broker Ridge penalty | `0.001` |
 | `BROKERAGE_ABM_RIDGE_BROKER_VARIANT` | Ridge broker specification | `pair` |

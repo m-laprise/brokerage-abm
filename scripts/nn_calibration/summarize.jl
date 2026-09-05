@@ -1,10 +1,9 @@
 """
-    summarize.jl <screen|confirm|combined>
+    summarize.jl <screen|confirm>
 
-Validate and summarize one neural-network calibration stage. Screening selects
-two configurations per learner for confirmation. Confirmation applies the
-prespecified practical-equivalence rule. The combined summary checks whether
-the separately selected settings remain adequate when used together.
+Validate and summarize one neural-network calibration stage. Screening ranks
+each learner's candidate settings. Confirmation checks the selected joint
+configuration over five seeds.
 """
 
 using DataFrames: DataFrame, eachrow, groupby, names, nrow
@@ -149,56 +148,6 @@ function nncal_scan_order(summary::DataFrame, learner::Symbol)
     return candidates[order, :]
 end
 
-function nncal_select_efficient(summary::DataFrame, learner::Symbol)
-    ranking = nncal_scan_order(summary, learner)
-    metric_column = learner == :agent ? :agent_rank_median : :broker_rank_median
-    steps_column = learner == :agent ? :agent_recurrent_steps : :broker_recurrent_steps
-    rate_column = learner == :agent ? :agent_eta_lr : :broker_eta_lr
-    best = maximum(ranking[!, metric_column])
-    eligible = ranking[ranking[!, metric_column] .>= best - NNCAL_PRACTICAL_TOLERANCE, :]
-    minimum_steps = minimum(eligible[!, steps_column])
-    eligible = eligible[eligible[!, steps_column] .== minimum_steps, :]
-    preferred = eligible[eligible[!, rate_column] .== NNCAL_REFERENCE_LEARNING_RATE, :]
-    !isempty(preferred) && (eligible = preferred)
-    order = sortperm(
-        1:nrow(eligible);
-        by=index -> (-eligible[index, metric_column], eligible[index, rate_column]),
-    )
-    return eligible[order[1], :]
-end
-
-function nncal_config_by_id(configs, config_id::Integer)
-    matches = filter(config -> config[:config_id] == config_id, configs)
-    length(matches) == 1 || error("expected one config with id $config_id")
-    return only(matches)
-end
-
-function nncal_shortlist_configs(configs, agent_ids, broker_ids)
-    shortlisted_ids = unique(vcat(agent_ids, broker_ids))
-    shortlisted = Dict{Symbol,Any}[]
-    for config_id in shortlisted_ids
-        config = deepcopy(nncal_config_by_id(configs, config_id))
-        config[:agent_scan] = config_id in agent_ids
-        config[:broker_scan] = config_id in broker_ids
-        push!(shortlisted, config)
-    end
-    return shortlisted
-end
-
-function nncal_agent_setting(config)
-    return nncal_setting(config[:agent_eta_lr], config[:agent_recurrent_steps])
-end
-
-function nncal_broker_setting(config)
-    return nncal_setting(config[:broker_eta_lr], config[:broker_recurrent_steps])
-end
-
-function nncal_boundary_flag(setting)
-    return setting.eta_lr in (first(NNCAL_LEARNING_RATES), last(NNCAL_LEARNING_RATES)) ||
-           setting.recurrent_steps in
-           (first(NNCAL_RECURRENT_STEPS), last(NNCAL_RECURRENT_STEPS))
-end
-
 function nncal_summarize_screen()
     rows = nncal_stage_rows(:screen)
     expected = Set(NNCAL_SCREEN_SEEDS)
@@ -207,132 +156,59 @@ function nncal_summarize_screen()
     summary = nncal_config_summary(rows)
     agent_ranking = nncal_scan_order(summary, :agent)
     broker_ranking = nncal_scan_order(summary, :broker)
-    agent_shortlist_ids = agent_ranking.config_id[1:NNCAL_SHORTLIST_SIZE]
-    broker_shortlist_ids = broker_ranking.config_id[1:NNCAL_SHORTLIST_SIZE]
-    configs = nncal_load_manifest(:screen)["configs"]
-    shortlist_configs = nncal_shortlist_configs(
-        configs, agent_shortlist_ids, broker_shortlist_ids
-    )
-    shortlist_ids = [config[:config_id] for config in shortlist_configs]
 
     outdir = nncal_summary_dir()
     mkpath(outdir)
     nncal_write_tsv(joinpath(outdir, "screen_runs.tsv"), rows)
     nncal_write_tsv(joinpath(outdir, "screen_by_config.tsv"), summary)
     jldsave(
-        joinpath(outdir, "screen_selection.jld2");
+        joinpath(outdir, "screen_summary.jld2");
         rows=rows,
         summary=summary,
         agent_ranking=agent_ranking,
         broker_ranking=broker_ranking,
-        agent_shortlist_config_ids=agent_shortlist_ids,
-        broker_shortlist_config_ids=broker_shortlist_ids,
-        shortlist_config_ids=shortlist_ids,
-        shortlist_configs=shortlist_configs,
-        shortlist_rule="two highest three-seed median rank correlations per learner",
     )
     println("agent screen ranking:")
     show(stdout, "text/plain", agent_ranking)
     println("\nbroker screen ranking:")
     show(stdout, "text/plain", broker_ranking)
-    println("\nshortlist_config_ids=$(join(shortlist_ids, ','))")
+    println()
     return nothing
 end
 
 function nncal_summarize_confirm()
-    screen = nncal_stage_rows(:screen)
-    confirm = nncal_stage_rows(:confirm)
-    finalist_ids = Set(unique(confirm.config_id))
-    rows = vcat(screen[in.(screen.config_id, Ref(finalist_ids)), :], confirm)
-    expected = Set(NNCAL_ALL_SEEDS)
-    all(Set(group.seed) == expected for group in groupby(rows, :config_id)) ||
-        error("confirmation seed set is incomplete")
+    rows = nncal_stage_rows(:confirm)
+    Set(rows.seed) == Set(NNCAL_CONFIRM_SEEDS) || error("confirmation seed set is incomplete")
     summary = nncal_config_summary(rows)
-    selected_agent = nncal_select_efficient(summary, :agent)
-    selected_broker = nncal_select_efficient(summary, :broker)
-    configs = nncal_load_manifest(:confirm)["configs"]
-    agent_config = nncal_config_by_id(configs, selected_agent.config_id)
-    broker_config = nncal_config_by_id(configs, selected_broker.config_id)
-    agent_setting = nncal_agent_setting(agent_config)
-    broker_setting = nncal_broker_setting(broker_config)
-
-    outdir = nncal_summary_dir()
-    nncal_write_tsv(joinpath(outdir, "confirm_runs.tsv"), rows)
-    nncal_write_tsv(joinpath(outdir, "confirm_by_config.tsv"), summary)
-    jldsave(
-        joinpath(outdir, "confirmed_selection.jld2");
-        rows=rows,
-        summary=summary,
-        selected_agent_config_id=selected_agent.config_id,
-        selected_broker_config_id=selected_broker.config_id,
-        selected_agent_setting=agent_setting,
-        selected_broker_setting=broker_setting,
-        agent_boundary_extension_required=nncal_boundary_flag(agent_setting),
-        broker_boundary_extension_required=nncal_boundary_flag(broker_setting),
-        selection_rule="smallest recurrent budget within 0.01 of the best five-seed median rank; prefer learning rate 0.01 at equal cost",
-    )
-    println("selected_agent_setting=$agent_setting")
-    println("selected_broker_setting=$broker_setting")
-    println("agent_boundary_extension_required=$(nncal_boundary_flag(agent_setting))")
-    println("broker_boundary_extension_required=$(nncal_boundary_flag(broker_setting))")
-    return nothing
-end
-
-function nncal_summarize_combined()
-    rows = nncal_stage_rows(:combined)
-    Set(rows.seed) == Set(NNCAL_ALL_SEEDS) || error("combined seed set is incomplete")
-    summary = nncal_config_summary(rows)
-    nrow(summary) == 1 || error("combined stage must contain one configuration")
-    selection = load(joinpath(nncal_summary_dir(), "confirmed_selection.jld2"))
-    confirm_summary = selection["summary"]
-    agent_reference = only(
-        confirm_summary[
-            confirm_summary.config_id .== selection["selected_agent_config_id"],
-            :agent_rank_median,
-        ],
-    )
-    broker_reference = only(
-        confirm_summary[
-            confirm_summary.config_id .== selection["selected_broker_config_id"],
-            :broker_rank_median,
-        ],
-    )
-    combined = summary[1, :]
-    agent_interaction_change = combined.agent_rank_median - agent_reference
-    broker_interaction_change = combined.broker_rank_median - broker_reference
-    interaction_ok =
-        agent_interaction_change >= -NNCAL_PRACTICAL_TOLERANCE &&
-        broker_interaction_change >= -NNCAL_PRACTICAL_TOLERANCE
+    nrow(summary) == 1 || error("confirmation stage must contain one configuration")
+    result = summary[1, :]
     stable =
-        abs(combined.agent_rank_change_median) <= NNCAL_PRACTICAL_TOLERANCE &&
-        abs(combined.broker_rank_change_median) <= NNCAL_PRACTICAL_TOLERANCE
+        abs(result.agent_rank_change_median) <= NNCAL_PRACTICAL_TOLERANCE &&
+        abs(result.broker_rank_change_median) <= NNCAL_PRACTICAL_TOLERANCE
 
     outdir = nncal_summary_dir()
-    nncal_write_tsv(joinpath(outdir, "combined_runs.tsv"), rows)
-    nncal_write_tsv(joinpath(outdir, "combined_summary.tsv"), summary)
+    mkpath(outdir)
+    nncal_write_tsv(joinpath(outdir, "confirm_runs.tsv"), rows)
+    nncal_write_tsv(joinpath(outdir, "confirm_summary.tsv"), summary)
     jldsave(
-        joinpath(outdir, "combined_summary.jld2");
+        joinpath(outdir, "confirm_summary.jld2");
         rows=rows,
         summary=summary,
-        agent_interaction_change=agent_interaction_change,
-        broker_interaction_change=broker_interaction_change,
-        interaction_ok=interaction_ok,
         late_window_stable=stable,
         practical_tolerance=NNCAL_PRACTICAL_TOLERANCE,
+        selection_rationale="ranking performance, late-window stability, runtime, and a common 50-step update budget",
     )
-    println("agent_interaction_change=$agent_interaction_change")
-    println("broker_interaction_change=$broker_interaction_change")
-    println("interaction_ok=$interaction_ok")
     println("late_window_stable=$stable")
+    show(stdout, "text/plain", summary)
+    println()
     return nothing
 end
 
 function main()
-    length(ARGS) == 1 || error("usage: summarize.jl <screen|confirm|combined>")
+    length(ARGS) == 1 || error("usage: summarize.jl <screen|confirm>")
     stage = Symbol(only(ARGS))
     stage == :screen && return nncal_summarize_screen()
     stage == :confirm && return nncal_summarize_confirm()
-    stage == :combined && return nncal_summarize_combined()
     error("invalid stage: $stage")
 end
 

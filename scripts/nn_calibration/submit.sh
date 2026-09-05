@@ -8,11 +8,9 @@
 #   ./scripts/nn_calibration/submit.sh compute screen
 #   ./scripts/nn_calibration/submit.sh summarize screen
 #   ./scripts/nn_calibration/submit.sh manifest confirm
+#   ./scripts/nn_calibration/submit.sh smoke confirm
 #   ./scripts/nn_calibration/submit.sh compute confirm
 #   ./scripts/nn_calibration/submit.sh summarize confirm
-#   ./scripts/nn_calibration/submit.sh manifest combined
-#   ./scripts/nn_calibration/submit.sh compute combined
-#   ./scripts/nn_calibration/submit.sh summarize combined
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -71,7 +69,7 @@ case "$action" in
     ;;
 
   manifest)
-    [[ "$stage" =~ ^(screen|confirm|combined)$ ]] || { echo "invalid stage: $stage"; exit 2; }
+    [[ "$stage" =~ ^(screen|confirm)$ ]] || { echo "invalid stage: $stage"; exit 2; }
     mkdir -p "$LOGDIR"
     srun --account="$ACCOUNT" --partition=cpu --time=00:10:00 \
         --cpus-per-task=1 --mem=4G --job-name="nncal_manifest_${stage}" \
@@ -84,7 +82,7 @@ case "$action" in
     ;;
 
   smoke)
-    [[ "$stage" =~ ^(screen|confirm|combined)$ ]] || { echo "invalid stage: $stage"; exit 2; }
+    [[ "$stage" =~ ^(screen|confirm)$ ]] || { echo "invalid stage: $stage"; exit 2; }
     stage_dir="$CALIBRATION_DIR/stages/$stage"
     mkdir -p "$LOGDIR"
     jid=$(sbatch --parsable --account="$ACCOUNT" --time=00:15:00 \
@@ -96,7 +94,7 @@ case "$action" in
     ;;
 
   compute)
-    [[ "$stage" =~ ^(screen|confirm|combined)$ ]] || { echo "invalid stage: $stage"; exit 2; }
+    [[ "$stage" =~ ^(screen|confirm)$ ]] || { echo "invalid stage: $stage"; exit 2; }
     stage_dir="$CALIBRATION_DIR/stages/$stage"
     source "$stage_dir/counts.env"
     mkdir -p "$LOGDIR"
@@ -108,7 +106,7 @@ case "$action" in
     ;;
 
   summarize)
-    [[ "$stage" =~ ^(screen|confirm|combined)$ ]] || { echo "invalid stage: $stage"; exit 2; }
+    [[ "$stage" =~ ^(screen|confirm)$ ]] || { echo "invalid stage: $stage"; exit 2; }
     mkdir -p "$LOGDIR"
     srun --account="$ACCOUNT" --partition=cpu --time=00:20:00 \
         --cpus-per-task=1 --mem=8G --job-name="nncal_summary_${stage}" \
