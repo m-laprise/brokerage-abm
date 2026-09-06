@@ -19,6 +19,7 @@ using Test
     include("test_sweep_config.jl")
     include("test_sweep_artifacts.jl")
     include("test_nn_calibration.jl")
+    include("test_ridge_calibration.jl")
     include("test_monte_carlo.jl")
     include("test_reporting_provenance.jl")
     include("test_dgp_figdata.jl")

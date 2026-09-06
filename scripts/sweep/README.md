@@ -103,8 +103,8 @@ NN sweep:
 ```bash
 export BROKERAGE_ABM_LEARNING_MODEL=ridge
 export BROKERAGE_ABM_RIDGE_BROKER_VARIANT=pair
-export BROKERAGE_ABM_RIDGE_LAMBDA_AGENT=0.003
-export BROKERAGE_ABM_RIDGE_LAMBDA_BROKER=0.001
+export BROKERAGE_ABM_RIDGE_LAMBDA_AGENT=<confirmed principal penalty>
+export BROKERAGE_ABM_RIDGE_LAMBDA_BROKER=<confirmed broker penalty>
 export BROKERAGE_ABM_N_SEEDS=20
 export BROKERAGE_ABM_BASELINE_N_SEEDS=50
 ```
@@ -118,13 +118,11 @@ export BROKERAGE_ABM_SWEEP_SCOPE=rho_delta
 export BROKERAGE_ABM_RIDGE_BROKER_VARIANT=<variant>
 ```
 
-The Ridge penalties were selected with calibration seeds excluded from the
-reporting ensembles. A joint baseline calibration selected 0.001 for the
-broker. Holding that value fixed, the principal calibration selected 0.003 by
-median late-period holdout rank correlation. The calibration jobs and
-summaries are implemented in `scripts/ridge/slurm_calibration.sh`,
-`slurm_agent_calibration.sh`, `summarize_calibration.jl`, and
-`summarize_agent_calibration.jl`.
+Before a Ridge reporting sweep, use the reproducible baseline workflow in
+`scripts/ridge/calibration/` to screen the two penalties factorially and confirm
+the selected pair on disjoint seeds. Calibration seeds are excluded from the
+reporting ensembles. The procedure and commands are documented in
+`scripts/ridge/README.md`.
 
 ## Provenance and reuse
 
