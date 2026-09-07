@@ -69,6 +69,8 @@ const FIGDATA = normpath(
 )
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
+const MC_LEVEL = 0.95
+const SUMMARY_QUANTILES = (0.10, 0.90)
 const METRICS = (
     :agent_holdout_rank,
     :broker_holdout_rank,
@@ -144,7 +146,7 @@ function ensemble_series(result::SweepResult, metric::Symbol; seeds=result.seeds
         hcat, (Float64.(metric_series(result.mdfs[index[seed]], metric)) for seed in seeds)
     )
     summaries = [
-        monte_carlo_interval(view(seed_series, period_index, :)) for
+        monte_carlo_interval(view(seed_series, period_index, :); level=MC_LEVEL) for
         period_index in axes(seed_series, 1)
     ]
     return (
@@ -156,7 +158,7 @@ function ensemble_series(result::SweepResult, metric::Symbol; seeds=result.seeds
 end
 
 function monte_carlo_se(values)::Float64
-    return monte_carlo_interval(values).se
+    return monte_carlo_interval(values; level=MC_LEVEL).se
 end
 
 f3(value) = @sprintf("%.3f", value)
@@ -279,7 +281,7 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
                 pair_seed_values = seed_values(pair_result, :rank_gap; seeds)
                 variant_seed_values = seed_values(variant_result, :rank_gap; seeds)
                 interval = paired_monte_carlo_interval(
-                    pair_seed_values, variant_seed_values
+                    pair_seed_values, variant_seed_values; level=MC_LEVEL
                 )
                 (
                     reference=nanmean(pair_seed_values),
@@ -353,7 +355,8 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
                 delta=Float64(cell[:yval]),
                 result_rel=String(cell[:result_reldir]),
                 interval=monte_carlo_interval(
-                    seed_values(dataset.result_by_rel[cell[:result_reldir]], :rank_gap)
+                    seed_values(dataset.result_by_rel[cell[:result_reldir]], :rank_gap);
+                    level=MC_LEVEL,
                 ),
             ) for cell in cells
         ]
@@ -510,7 +513,9 @@ function main()
             variant_seed_values = seed_values(
                 datasets_by_design[variant.key][design_key], metric; seeds
             )
-            interval = paired_monte_carlo_interval(pair_seed_values, variant_seed_values)
+            interval = paired_monte_carlo_interval(
+                pair_seed_values, variant_seed_values; level=MC_LEVEL
+            )
             push!(row, getproperty(interval, field))
         end
         push!(condition_rows, row)
@@ -582,9 +587,48 @@ function main()
 
     values = Pair{String,String}[]
     add(key, value; formatter=f3) = push!(values, key => formatter(value))
+    lambda_agents = unique(
+        Float64(result.cfg["ridge_lambda_agent"]) for result in pair.results
+    )
+    lambda_brokers = unique(
+        Float64(result.cfg["ridge_lambda_broker"]) for result in pair.results
+    )
+    length(lambda_agents) == 1 || error("Ridge agent penalties differ")
+    length(lambda_brokers) == 1 || error("Ridge broker penalties differ")
+    nonbaseline_seed_counts = unique(
+        length(result.seeds) for result in datasets[:size_matched].results if
+        result.rel != BASELINE_REL
+    )
+    length(nonbaseline_seed_counts) == 1 || error("nonbaseline seed counts differ")
+    late_period_end = Int(pair.meta[:T])
+    rho_values = sort!(
+        unique(Float64(pair_by_design[key].cfg["rho"]) for key in design_keys)
+    )
+    interior_rho_values = filter(<(1.0), rho_values)
+    length(interior_rho_values) < length(rho_values) || error("missing rho boundary")
+
+    add("nAblations", length(VARIANTS); formatter=fint)
     add("nConditions", length(design_keys); formatter=fint)
     add("nBaselineSeeds", length(baseline_seeds); formatter=fint)
-    add("nOtherSeeds", 20; formatter=fint)
+    add("nOtherSeeds", only(nonbaseline_seed_counts); formatter=fint)
+    add("ridgeLambdaAgent", only(lambda_agents); formatter=string)
+    add("ridgeLambdaBroker", only(lambda_brokers); formatter=string)
+    add("latePeriodStart", late_period_end - LATE_WIDTH + 1; formatter=fint)
+    add("latePeriodEnd", late_period_end; formatter=fint)
+    add("mcLevelPercent", round(Int, 100 * MC_LEVEL); formatter=fint)
+    add(
+        "summaryLowerPercent",
+        round(Int, 100 * first(SUMMARY_QUANTILES));
+        formatter=fint,
+    )
+    add(
+        "summaryUpperPercent",
+        round(Int, 100 * last(SUMMARY_QUANTILES));
+        formatter=fint,
+    )
+    add("rhoInteriorMin", first(interior_rho_values); formatter=string)
+    add("rhoInteriorMax", last(interior_rho_values); formatter=string)
+    add("rhoBoundary", last(rho_values); formatter=string)
 
     for key in all_keys, metric in METRICS
         baseline = condition_mean(
@@ -607,7 +651,7 @@ function main()
             seed_values(
                 datasets_by_design[variant.key][baseline_key], metric; seeds=baseline_seeds
             ) .- seed_values(pair_by_design[baseline_key], metric; seeds=baseline_seeds)
-        paired_baseline_interval = monte_carlo_interval(paired_baseline)
+        paired_baseline_interval = monte_carlo_interval(paired_baseline; level=MC_LEVEL)
         pair_values = [
             condition_mean(
                 pair_by_design[design_key],
@@ -640,15 +684,16 @@ function main()
         add("$(variant.key)DeltaMedian_$(metric)", median(differences); formatter=signed3)
         add(
             "$(variant.key)DeltaQ10_$(metric)",
-            quantile(differences, 0.10);
+            quantile(differences, first(SUMMARY_QUANTILES));
             formatter=signed3,
         )
         add(
             "$(variant.key)DeltaQ90_$(metric)",
-            quantile(differences, 0.90);
+            quantile(differences, last(SUMMARY_QUANTILES));
             formatter=signed3,
         )
         add("$(variant.key)GreaterN_$(metric)", count(>(0.0), differences); formatter=fint)
+        add("$(variant.key)LessN_$(metric)", count(<(0.0), differences); formatter=fint)
         add(
             "$(variant.key)ConditionCorrelation_$(metric)", cor(pair_values, variant_values)
         )
@@ -661,7 +706,9 @@ function main()
         datasets_by_design[:additive][baseline_key], :rank_gap; seeds=baseline_seeds
     )
     baseline_single_minus_additive = single_baseline .- additive_baseline
-    single_minus_additive_interval = monte_carlo_interval(baseline_single_minus_additive)
+    single_minus_additive_interval = monte_carlo_interval(
+        baseline_single_minus_additive; level=MC_LEVEL
+    )
     add(
         "singleMinusAdditiveBaseline_rank_gap",
         nanmean(baseline_single_minus_additive);
@@ -696,12 +743,12 @@ function main()
     )
     add(
         "singleMinusAdditiveQ10_rank_gap",
-        quantile(single_minus_additive, 0.10);
+        quantile(single_minus_additive, first(SUMMARY_QUANTILES));
         formatter=signed3,
     )
     add(
         "singleMinusAdditiveQ90_rank_gap",
-        quantile(single_minus_additive, 0.90);
+        quantile(single_minus_additive, last(SUMMARY_QUANTILES));
         formatter=signed3,
     )
     add(
@@ -709,10 +756,12 @@ function main()
         count(>(0.0), single_minus_additive);
         formatter=fint,
     )
-
-    rho_values = sort!(
-        unique(Float64(pair_by_design[key].cfg["rho"]) for key in design_keys)
+    add(
+        "singleMinusAdditiveLessN_rank_gap",
+        count(<(0.0), single_minus_additive);
+        formatter=fint,
     )
+
     for rho in rho_values
         rho_keys = filter(
             key -> Float64(pair_by_design[key].cfg["rho"]) == rho, design_keys
@@ -750,6 +799,9 @@ function main()
         "ablationSinglePositiveN" => value_by_key["single_principalPositiveN_rank_gap"],
         "ablationAdditiveMedianGap" => value_by_key["additiveMedian_rank_gap"],
         "ablationAdditivePositiveN" => value_by_key["additivePositiveN_rank_gap"],
+        "ablationAdditiveBeatsSingleN" =>
+            value_by_key["singleMinusAdditiveLessN_rank_gap"],
+        "ablationPairBeatsAdditiveN" => value_by_key["additiveLessN_rank_gap"],
     )
     open(PAPER_VALUES, "w") do io
         println(io, "% Generated by scripts/ridge/analyze_ablations.jl on $(now()).")
@@ -772,14 +824,15 @@ function main()
             println(io, "$(variant.key)_sweep=$(basename(normpath(variant.root)))")
             println(io, "$(variant.key)_manifest=$(dataset.manifest_hash)")
         end
-        println(io, "late_periods=$(Int(pair.meta[:T]) - LATE_WIDTH + 1):$(pair.meta[:T])")
+        println(io, "late_periods=$(late_period_end - LATE_WIDTH + 1):$late_period_end")
         println(io, "weighting=one observation per effective realization")
         println(
             io,
             "realization_matching=resolved parameters in DESIGN_KEYS, with delta canonicalized to baseline when rho=1",
         )
         println(io, "baseline_seeds=$(join(baseline_seeds, ','))")
-        println(io, "other_seeds=$(join(1:20, ','))")
+        other_seed_count = only(nonbaseline_seed_counts)
+        println(io, "other_seeds=$(join(1:other_seed_count, ','))")
     end
 
     println("Baseline late-period differences in holdout rank correlation:")

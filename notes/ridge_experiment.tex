@@ -9,6 +9,7 @@
 \usepackage[T1]{fontenc}
 
 \input{../output/ridge/paired/analysis/values.tex}
+\input{../output/ridge/paired/figure_values.tex}
 
 \title{Base Ridge Learning Experiment}
 \author{}
@@ -21,48 +22,43 @@
 
 \paragraph{Question and design.}
 This experiment asks whether the broker's ranking advantage persists when both
-agents and the broker use Ridge regression instead of neural networks. Agent
-models predict match quality from the candidate's type. The broker predicts
-match quality from the pair's additive and bilinear type features. Thus, both
-learners use linear Ridge estimators, with separately calibrated penalties,
-while the broker retains the pair representation and pooled history made
-possible by mediation. The experiment therefore tests whether neural-network
-flexibility is necessary for a broker ranking advantage. It does not equalize
-the learners' information sets or feature maps. The calibrated penalties are
-$\lambda_a=0.003$ and $\lambda_b=0.001$.
+agents and the broker use Ridge regression instead of neural networks. Agents
+predict match quality from the candidate's type. The broker uses additive and
+bilinear features of the pair and pools its mediated-match history. Thus, the
+experiment tests whether neural-network flexibility is necessary for a broker
+ranking advantage while retaining each learner's information and feature map.
+The calibrated penalties are $\lambda_a=\rv{ridgeLambdaAgent}$ and
+$\lambda_b=\rv{ridgeLambdaBroker}$.
 
 The primary estimand in realization $c$ is
 \[
 G_L(c)=\overline{r}_{b,L}(c)-\overline{r}_{a,L}(c),
 \]
 where $L\in\{\mathrm{NN},\mathrm{Ridge}\}$ and each bar is the seed-averaged
-holdout rank correlation over periods 481--500. The learning-system contrast is
+holdout rank correlation over periods \rv{latePeriodStart}--\rv{latePeriodEnd}.
+The learning-system contrast is
 $G_{\mathrm{Ridge}}(c)-G_{\mathrm{NN}}(c)$. It includes the endogenous changes
-in matching and subsequent learning histories induced by the learning rule; it
-is not a fixed-data comparison of estimators. Each of the
+in matching and later learning histories induced by the learning rule. It is
+not a fixed-data comparison of estimators. Each of the
 \rv{nConditions} effective realizations receives one observation. Grid
 coordinates that refer to the same realization receive no additional weight.
 The model comparison uses the same seeds in both learning conditions:
-\rv{nCommonSeeds} at the baseline and 20 elsewhere.
+\rv{nCommonSeeds} at the baseline and \rv{nOtherSeeds} elsewhere.
 
-Figures~\ref{fig:ridge-dynamics}--\ref{fig:ridge-advantage} reproduce the full
-content of Main Figures 1--4 with NN and base Ridge shown in the same figure.
-Corresponding panels use shared axes, so differences in level and dispersion
-are visually comparable. Figure~\ref{fig:ridge-comparison} then shows direct
-paired comparisons of the primary ranking and output outcomes.
+Figures~\ref{fig:ridge-dynamics}--\ref{fig:ridge-advantage} reproduce the
+corresponding main figures with NN and base Ridge on shared axes.
+Figure~\ref{fig:ridge-comparison} shows paired comparisons of the primary
+ranking and output outcomes.
 
 \paragraph{Baseline.}
 With the common seeds, the NN broker-minus-principal difference in holdout rank
-correlation is
-\rv{nnBaseline_rank_gap}, compared with
+correlation is \rv{nnBaseline_rank_gap}, compared with
 \rv{ridgeBaseline_rank_gap} under base Ridge. The paired change is
-\rv{baselineDelta_rank_gap}, with a 95\% Monte Carlo interval of
+\rv{baselineDelta_rank_gap}, with a \rv{mcLevelPercent}\% Monte Carlo interval of
 [\rv{baselineDeltaLower_rank_gap}, \rv{baselineDeltaUpper_rank_gap}].
-Table~\ref{tab:ridge-baseline} reports the other
-baseline outcomes. Figure~\ref{fig:ridge-dynamics} shows how the baseline's
-matching, network, access, and outsourcing dynamics differ over the full run.
-Figure~\ref{fig:ridge-comparison}A isolates the corresponding broker and agent
-ranking trajectories.
+Table~\ref{tab:ridge-baseline} reports other baseline outcomes.
+Figure~\ref{fig:ridge-dynamics} shows the full baseline dynamics, and
+Figure~\ref{fig:ridge-comparison}A isolates the broker and agent ranking trajectories.
 
 \begin{table}[ht]
 \centering
@@ -84,10 +80,6 @@ Broker-minus-principal difference in holdout rank correlation
   & \rv{nnBaseline_rank_gap}
   & \rv{ridgeBaseline_rank_gap}
   & \rv{baselineDelta_rank_gap} \\
-Prediction $R^2$ gap
-  & \rv{nnBaseline_r2_gap}
-  & \rv{ridgeBaseline_r2_gap}
-  & \rv{baselineDelta_r2_gap} \\
 Brokered-minus-self output gap
   & \rv{nnBaseline_output_gap}
   & \rv{ridgeBaseline_output_gap}
@@ -109,7 +101,8 @@ Broker betweenness centrality
 \begin{minipage}{0.92\linewidth}
 \footnotesize
 Entries use the \rv{nCommonSeeds} common seeds. Each seed is first averaged over
-periods 481--500. The Ridge-minus-NN column is the mean paired seed difference.
+periods \rv{latePeriodStart}--\rv{latePeriodEnd}. The Ridge-minus-NN column is
+the mean paired seed difference.
 The access fraction is the share of accepted broker offers whose counterparty
 was not already the demander's neighbor.
 \end{minipage}
@@ -120,7 +113,8 @@ Across the \rv{nConditions} effective realizations, the median
 broker-minus-principal difference in holdout rank correlation is
 \rv{nnMedian_rank_gap} for NN and
 \rv{ridgeMedian_rank_gap} for Ridge. The median Ridge-minus-NN contrast is
-\rv{deltaMedian_rank_gap}. Its 10th and 90th percentiles are
+\rv{deltaMedian_rank_gap}. Its \rv{summaryLowerPercent}th and
+\rv{summaryUpperPercent}th percentiles are
 \rv{deltaQ10_rank_gap} and \rv{deltaQ90_rank_gap}. The Ridge difference is positive in
 \rv{ridgePositiveN_rank_gap} realizations, compared with
 \rv{nnPositiveN_rank_gap} under NN, and exceeds the NN difference in
@@ -138,24 +132,19 @@ outsourcing is \rv{nnMedian_outsourcing_rate} under NN and
 \rv{ridgeMedian_outsourcing_rate} under Ridge.
 
 Figure~\ref{fig:ridge-grid} shows the matching-problem surface under each
-learning system. Figure~\ref{fig:ridge-position} compares the broker's evolving
-network position and access, and Figure~\ref{fig:ridge-advantage} shows how the
-rank-correlation and output differences covary with those structural outcomes
-across effective
-realizations. Figure~\ref{fig:ridge-comparison}B--C summarizes the paired
-condition-level differences directly against zero.
+learning system. Figure~\ref{fig:ridge-position} compares the broker's network
+position and access. Figure~\ref{fig:ridge-advantage} relates the ranking and
+output differences to those structural outcomes. Figure~\ref{fig:ridge-comparison}B--C
+shows the paired condition-level changes directly against zero.
 
 \paragraph{Interpretation.}
-The base Ridge results show that neural-network flexibility is not necessary
-for the broker to rank candidates better than agents in this modeled system:
-the Ridge broker-minus-principal difference in holdout rank correlation is
-positive in \rv{ridgePositiveN_rank_gap} of
-\rv{nConditions} effective realizations. This result does not identify the
-cause of that advantage. The broker still observes both parties to each
-mediated match, represents the pair with additive and bilinear features, and
-pools observations across mediated matches. The Ridge broker ablations probe
-the system-level consequences of restricting pooled sample size, retaining
-only one endpoint type per fitting row, and removing bilinear pair features.
+Neural-network flexibility is not necessary for the broker to rank candidates
+better than agents in this modeled system. The Ridge broker-minus-principal
+difference is positive in \rv{ridgePositiveN_rank_gap} of \rv{nConditions}
+effective realizations. This experiment does not identify the source of that
+advantage because the broker still observes both parties, represents pairs with
+additive and bilinear features, and pools mediated-match observations. The
+ablation experiment restricts these features separately.
 
 \clearpage
 \section*{Illustrative figures}
@@ -166,10 +155,11 @@ only one endpoint type per fitting row, and removing bilinear pair features.
 \caption{Baseline dynamics under NN and base Ridge. Rows identify the
 learning system. Panels show matches per agent, mean and median agent-network
 degree, broker betweenness centrality, access fraction, and outsourcing rate.
-Lines are five-observation rolling ensemble means over 50 common seeds.
-Ribbons are pointwise 95\% Monte Carlo intervals.
-Betweenness is measured every 20 periods; other measures are recorded every
-period. Axes begin at period 30 and are shared across learning systems.}
+Lines are \rfv{rollingWindow}-observation rolling ensemble means over
+\rv{nCommonSeeds} common seeds. Ribbons are pointwise
+\rv{mcLevelPercent}\% Monte Carlo intervals. Betweenness is measured every
+\rfv{networkMeasureInterval} periods; other measures are recorded every period.
+Axes begin at period \rfv{displayStart} and are shared across learning systems.}
 \label{fig:ridge-dynamics}
 \end{figure}
 
@@ -178,10 +168,11 @@ period. Axes begin at period 30 and are shared across learning systems.}
 \includegraphics[width=\linewidth]{../output/ridge/paired/figures/matching_grid.png}
 \caption{Outcomes across the $\rho\times\delta$ matching grid under NN (top
 two rows) and base Ridge (bottom two rows). Each line is a value of $\delta$;
-lines span $\rho=0$ through $0.85$. The pure-quality boundary $\rho=1$, where
+lines span $\rho=\rv{rhoInteriorMin}$ through $\rv{rhoInteriorMax}$. The
+pure-quality boundary $\rho=\rv{rhoBoundary}$, where
 $\delta$ is inactive, is shown once and unconnected. Each marker is an effective
 realization's late-window seed mean. Corresponding NN and Ridge panels use the
-same vertical scale. Whiskers are 95\% Monte Carlo intervals.}
+same vertical scale. Whiskers are \rv{mcLevelPercent}\% Monte Carlo intervals.}
 \label{fig:ridge-grid}
 \end{figure}
 
@@ -189,9 +180,9 @@ same vertical scale. Whiskers are 95\% Monte Carlo intervals.}
 \centering
 \includegraphics[width=\linewidth]{../output/ridge/paired/figures/centrality_and_access.png}
 \caption{Broker position and access under NN and base Ridge. Left panels show
-five-observation rolling ensemble means at the baseline. Right panels show one
+\rfv{rollingWindow}-observation rolling ensemble means at the baseline. Right panels show one
 point per one-at-a-time regime, using late-window seed means. Ribbons are
-pointwise 95\% Monte Carlo intervals. Corresponding
+pointwise \rv{mcLevelPercent}\% Monte Carlo intervals. Corresponding
 panels use shared axes.}
 \label{fig:ridge-position}
 \end{figure}
@@ -213,12 +204,14 @@ and Ridge panels use shared axes; color denotes $\rho$.}
 \includegraphics[width=\linewidth]{../output/ridge/paired/figures/ridge_comparison.png}
 \caption{Direct comparison of NN and base Ridge. Panel A shows broker and principal
 holdout rank correlation over time under NN and base Ridge at the baseline.
-Lines are ensemble means over 50 common seeds; ribbons are pointwise 95\% Monte
+Lines are ensemble means over \rv{nCommonSeeds} common seeds; ribbons are pointwise
+\rv{mcLevelPercent}\% Monte
 Carlo intervals. Panels B and C show the paired change from NN to base Ridge in the
 broker-minus-principal difference in holdout rank correlation and in the broker
-channel-minus-self-search output gap, respectively, for each of the 98 effective
+channel-minus-self-search output gap, respectively, for each of the
+\rv{nConditions} effective
 realizations. The horizontal position is that realization's NN mean. Whiskers are
-paired 95\% Monte Carlo intervals for the mean seed-level change, and dashed lines
+paired \rv{mcLevelPercent}\% Monte Carlo intervals for the mean seed-level change, and dashed lines
 mark no change.}
 \label{fig:ridge-comparison}
 \end{figure}

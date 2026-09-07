@@ -24,23 +24,20 @@
 \vspace{0.75em}
 
 \paragraph{Question and design.}
-These ablations probe three components of the broker's learning setup under
-Ridge learning. They do not provide an additive decomposition of the broker's
-advantage. The base Ridge reference pools the broker's mediated-match
-history and uses additive and bilinear pair features. \emph{Size-matched pooled
-history} retains these features but uses the smaller of the broker's available
-sample and the median agent fitting-sample size. \emph{Single-principal history}
-randomly retains one endpoint type from each mediated match for fitting; the
-endpoint labels have no directional meaning. At prediction, the fitted
-one-type function is applied to both parties and the fitting-sample output mean
-is subtracted once. This variant produces an additive pair score and cannot
-represent a bilinear interaction. \emph{Additive Ridge} retains both endpoint
-types in every fitting row but replaces the pair features with their
-type-vector sum, so it also cannot represent a bilinear interaction. The agent
-learning rule and parameters are unchanged, but realized agent histories can
-change as matching evolves. All conditions use $\lambda_a=\lambda_b=0.001$,
-the same period window and fitting cadence, and the same broker observation
-cap before any additional size matching.
+These \rav{nAblations} ablations restrict the broker's Ridge learning setup.
+They are not an additive decomposition of its advantage. The base Ridge
+reference pools mediated-match observations and uses additive and bilinear pair
+features. \emph{Size-matched pooled history} retains those features but limits
+the broker to the smaller of its available sample and the median agent fitting
+sample. \emph{Single-principal history} randomly retains one endpoint type from
+each mediated match. At prediction, its fitted one-type function scores both
+parties, with the fitting-sample output mean subtracted once. \emph{Additive
+Ridge} retains both endpoint types but replaces the pair features with their
+type-vector sum. The latter two variants cannot represent bilinear interactions.
+Agent parameters remain fixed, although matching can change agents' realized
+histories. All conditions use $\lambda_a=\rav{ridgeLambdaAgent}$ and
+$\lambda_b=\rav{ridgeLambdaBroker}$, the same fitting schedule, and the same
+broker observation cap before size matching.
 
 The primary estimand in realization $c$ is the late-period broker-minus-principal
 difference in holdout rank correlation
@@ -48,15 +45,16 @@ difference in holdout rank correlation
 G_v(c)=\overline r_{b,v}(c)-\overline r_{a,v}(c),
 \]
 for Ridge broker variant $v$. The ablation contrast is
-$G_v(c)-G_{\mathrm{pair}}(c)$. Each bar averages periods 481--500 within seed
+$G_v(c)-G_{\mathrm{pair}}(c)$. Each bar averages periods
+\rav{latePeriodStart}--\rav{latePeriodEnd} within seed
 and then averages seeds. The baseline comparisons use \rav{nBaselineSeeds}
 common seeds. Other conditions use \rav{nOtherSeeds} common seeds. The
 $\rho\times\delta$ analysis gives one observation to each of the
 \rav{nConditions} effective realizations, including the baseline. Repeated
 grid coordinates that map to the same realization receive no additional
 weight. Because the ablations alter broker rankings, matches, and later
-learning histories, their contrasts are system-level effects of the specified
-restriction, not fixed-data comparisons of fitted regressions.
+learning histories, the contrasts describe the resulting systems, not
+fixed-data comparisons of fitted regressions.
 
 \paragraph{Baseline.}
 Table~\ref{tab:ridge-ablation-baseline} reports late-period baseline outcomes.
@@ -103,7 +101,7 @@ Outsourcing rate
 \begin{minipage}{0.94\linewidth}
 \footnotesize
 Entries use all \rav{nBaselineSeeds} common seeds. Each seed is first averaged
-over periods 481--500.
+over periods \rav{latePeriodStart}--\rav{latePeriodEnd}.
 \end{minipage}
 \end{table}
 
@@ -121,7 +119,9 @@ effective realizations}
 \label{tab:ridge-ablation-robustness}
 \begin{tabular}{lrrrrr}
 \toprule
-Variant & Median difference & Median $\Delta$ & $\Delta$ [P10, P90] & Difference $>0$ & $\Delta>0$ \\
+Variant & Median difference & Median $\Delta$ &
+$\Delta$ [P\rav{summaryLowerPercent}, P\rav{summaryUpperPercent}] &
+Difference $>0$ & $\Delta<0$ \\
 \midrule
 Pair
   & \rav{pairMedian_rank_gap} & -- & --
@@ -131,19 +131,19 @@ Size-matched
   & \rav{size_matchedDeltaMedian_rank_gap}
   & [\rav{size_matchedDeltaQ10_rank_gap}, \rav{size_matchedDeltaQ90_rank_gap}]
   & \rav{size_matchedPositiveN_rank_gap}/\rav{nConditions}
-  & \rav{size_matchedGreaterN_rank_gap}/\rav{nConditions} \\
+  & \rav{size_matchedLessN_rank_gap}/\rav{nConditions} \\
 Single-principal
   & \rav{single_principalMedian_rank_gap}
   & \rav{single_principalDeltaMedian_rank_gap}
   & [\rav{single_principalDeltaQ10_rank_gap}, \rav{single_principalDeltaQ90_rank_gap}]
   & \rav{single_principalPositiveN_rank_gap}/\rav{nConditions}
-  & \rav{single_principalGreaterN_rank_gap}/\rav{nConditions} \\
+  & \rav{single_principalLessN_rank_gap}/\rav{nConditions} \\
 Additive
   & \rav{additiveMedian_rank_gap}
   & \rav{additiveDeltaMedian_rank_gap}
   & [\rav{additiveDeltaQ10_rank_gap}, \rav{additiveDeltaQ90_rank_gap}]
   & \rav{additivePositiveN_rank_gap}/\rav{nConditions}
-  & \rav{additiveGreaterN_rank_gap}/\rav{nConditions} \\
+  & \rav{additiveLessN_rank_gap}/\rav{nConditions} \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{0.94\linewidth}
@@ -158,10 +158,12 @@ receives one observation.
 \includegraphics[width=\linewidth]{../output/ridge/ablations/figures/ridge_ablations.png}
 \caption{Ridge broker restrictions. Panel A shows the baseline
 broker-minus-principal difference in holdout rank correlation over time under
-base Ridge and the three restrictions. Lines are ensemble means over 50 common
-seeds; ribbons are pointwise 95\% Monte Carlo intervals. Panels B--D show each
+base Ridge and the \rav{nAblations} restrictions. Lines are ensemble means over
+\rav{nBaselineSeeds} common seeds; ribbons are pointwise
+\rav{mcLevelPercent}\% Monte Carlo intervals. Panels B--D show each
 restriction's paired change from base Ridge across the \rav{nConditions}
-effective regimes, against that regime's base Ridge mean. Whiskers are paired 95\% Monte Carlo
+effective regimes, against that regime's base Ridge mean. Whiskers are paired
+\rav{mcLevelPercent}\% Monte Carlo
 intervals for the mean seed-level change, and dashed lines mark no change.}
 \label{fig:ridge-ablations}
 \end{figure}
@@ -172,9 +174,11 @@ intervals for the mean seed-level change, and dashed lines mark no change.}
 \caption{Broker-minus-principal differences in holdout rank correlation across
 the $\rho\times\delta$
 design. Each panel shows one Ridge broker variant, each line shows one value
-of $\delta$ over $\rho=0$ through $0.85$, and markers are late-window seed means.
-The pure-quality boundary $\rho=1$, where $\delta$ is inactive, is shown once and
-unconnected. The vertical scale is shared across panels, whiskers are 95\% Monte
+of $\delta$ over $\rho=\rav{rhoInteriorMin}$ through
+$\rav{rhoInteriorMax}$, and markers are late-window seed means. The pure-quality
+boundary $\rho=\rav{rhoBoundary}$, where $\delta$ is inactive, is shown once and
+unconnected. The vertical scale is shared across panels, whiskers are
+\rav{mcLevelPercent}\% Monte
 Carlo intervals, and the dashed line marks equal broker and principal holdout
 rank correlations.}
 \label{fig:ridge-ablation-grid}

@@ -39,6 +39,8 @@ const FIGURE_DIR = normpath(
 )
 const BASELINE_REL = "oat/rho=0.5"
 const LATE_WIDTH = 20
+const MC_LEVEL = 0.95
+const SUMMARY_QUANTILES = (0.10, 0.90)
 const DESIGN_KEYS = (
     "N",
     "T",
@@ -202,7 +204,7 @@ function validate_comparison(nn::ComparisonSweep, ridge::ComparisonSweep)
 end
 
 function monte_carlo_se(values)::Float64
-    return monte_carlo_interval(values).se
+    return monte_carlo_interval(values; level=MC_LEVEL).se
 end
 
 f3(value) = @sprintf("%.3f", value)
@@ -226,7 +228,7 @@ function ensemble_series(result::ComparisonResult, metric::Symbol; seeds=result.
         hcat, (Float64.(metric_series(result.mdfs[index[seed]], metric)) for seed in seeds)
     )
     summaries = [
-        monte_carlo_interval(view(seed_series, period_index, :)) for
+        monte_carlo_interval(view(seed_series, period_index, :); level=MC_LEVEL) for
         period_index in axes(seed_series, 1)
     ]
     return (
@@ -271,7 +273,7 @@ function comparison_figure(nn, ridge, rows)
         points = [
             let nr = nn.results[row.rel], rr = ridge.results[row.rel]
                 interval = paired_monte_carlo_interval(
-                    seed_values(nr, metric), seed_values(rr, metric)
+                    seed_values(nr, metric), seed_values(rr, metric); level=MC_LEVEL
                 )
                 (
                     reference=condition_mean(nr, metric),
@@ -392,7 +394,7 @@ function main()
             nr = nn.results[row.rel]
             rr = ridge.results[row.rel]
             interval = paired_monte_carlo_interval(
-                seed_values(nr, metric), seed_values(rr, metric)
+                seed_values(nr, metric), seed_values(rr, metric); level=MC_LEVEL
             )
             push!(values, interval.mean)
         end
@@ -400,7 +402,7 @@ function main()
             nr = nn.results[row.rel]
             rr = ridge.results[row.rel]
             interval = paired_monte_carlo_interval(
-                seed_values(nr, metric), seed_values(rr, metric)
+                seed_values(nr, metric), seed_values(rr, metric); level=MC_LEVEL
             )
             push!(values, getproperty(interval, field))
         end
@@ -436,8 +438,46 @@ function main()
 
     values = Pair{String,String}[]
     add(key, value; formatter=f3) = push!(values, key => formatter(value))
+    nonbaseline_seed_counts = unique(
+        length(result.seeds) for (rel, result) in nn.results if rel != BASELINE_REL
+    )
+    length(nonbaseline_seed_counts) == 1 || error("NN nonbaseline seed counts differ")
+    ridge_lambda_agents = unique(
+        Float64(result.config["ridge_lambda_agent"]) for
+        result in Base.values(ridge.results)
+    )
+    ridge_lambda_brokers = unique(
+        Float64(result.config["ridge_lambda_broker"]) for
+        result in Base.values(ridge.results)
+    )
+    length(ridge_lambda_agents) == 1 || error("Ridge agent penalties differ")
+    length(ridge_lambda_brokers) == 1 || error("Ridge broker penalties differ")
+    rho_values = sort!(unique(row.rho for row in rows))
+    interior_rho_values = filter(<(1.0), rho_values)
+    length(interior_rho_values) < length(rho_values) || error("missing rho boundary")
+    late_period_end = Int(nn.meta[:T])
+
     add("nConditions", length(rows); formatter=fint)
     add("nCommonSeeds", length(common_seeds); formatter=fint)
+    add("nOtherSeeds", only(nonbaseline_seed_counts); formatter=fint)
+    add("ridgeLambdaAgent", only(ridge_lambda_agents); formatter=string)
+    add("ridgeLambdaBroker", only(ridge_lambda_brokers); formatter=string)
+    add("latePeriodStart", late_period_end - LATE_WIDTH + 1; formatter=fint)
+    add("latePeriodEnd", late_period_end; formatter=fint)
+    add("mcLevelPercent", round(Int, 100 * MC_LEVEL); formatter=fint)
+    add(
+        "summaryLowerPercent",
+        round(Int, 100 * first(SUMMARY_QUANTILES));
+        formatter=fint,
+    )
+    add(
+        "summaryUpperPercent",
+        round(Int, 100 * last(SUMMARY_QUANTILES));
+        formatter=fint,
+    )
+    add("rhoInteriorMin", first(interior_rho_values); formatter=string)
+    add("rhoInteriorMax", last(interior_rho_values); formatter=string)
+    add("rhoBoundary", last(rho_values); formatter=string)
 
     for metric in metrics
         nn_value = condition_mean(nn_baseline, metric)
@@ -445,7 +485,7 @@ function main()
         paired =
             seed_values(ridge_baseline, metric; seeds=common_seeds) .-
             seed_values(nn_baseline, metric; seeds=common_seeds)
-        paired_interval = monte_carlo_interval(paired)
+        paired_interval = monte_carlo_interval(paired; level=MC_LEVEL)
         label = replace(string(metric), "_" => " ")
         add("nnBaseline_$(metric)", nn_value)
         add("ridgeBaseline_$(metric)", ridge_common)
@@ -475,8 +515,16 @@ function main()
         add("ridgeMedian_$(metric)", median(ridge_values))
         add("deltaMean_$(metric)", mean(differences); formatter=signed3)
         add("deltaMedian_$(metric)", median(differences); formatter=signed3)
-        add("deltaQ10_$(metric)", quantile(differences, 0.10); formatter=signed3)
-        add("deltaQ90_$(metric)", quantile(differences, 0.90); formatter=signed3)
+        add(
+            "deltaQ10_$(metric)",
+            quantile(differences, first(SUMMARY_QUANTILES));
+            formatter=signed3,
+        )
+        add(
+            "deltaQ90_$(metric)",
+            quantile(differences, last(SUMMARY_QUANTILES));
+            formatter=signed3,
+        )
         add("ridgeGreaterN_$(metric)", count(>(0.0), differences); formatter=fint)
         add("nnPositiveN_$(metric)", count(>(0.0), nn_values); formatter=fint)
         add("ridgePositiveN_$(metric)", count(>(0.0), ridge_values); formatter=fint)
@@ -513,10 +561,11 @@ function main()
         println(io, "ridge_manifest=$(ridge.manifest_hash)")
         println(io, "ridge_schema=$(ridge.schema_version)")
         println(io, "ridge_commit=$(ridge.git_commit)")
-        println(io, "late_periods=$(Int(nn.meta[:T]) - LATE_WIDTH + 1):$(nn.meta[:T])")
+        println(io, "late_periods=$(late_period_end - LATE_WIDTH + 1):$late_period_end")
         println(io, "weighting=one observation per effective realization")
         println(io, "baseline_comparison_seeds=$(join(common_seeds, ','))")
-        println(io, "other_comparison_seeds=$(join(1:20, ','))")
+        other_seed_count = only(nonbaseline_seed_counts)
+        println(io, "other_comparison_seeds=$(join(1:other_seed_count, ','))")
     end
 
     comparison_figure(nn, ridge, rows)
