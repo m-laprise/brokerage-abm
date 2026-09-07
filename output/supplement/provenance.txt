@@ -1,0 +1,4 @@
+dgp_analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
+structural_analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
+manuscript_commit=6b8bfbb52fcced1dfccaba3658db407be9dfc21b
+manuscript_source_clean=true

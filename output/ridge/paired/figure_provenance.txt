@@ -1,7 +1,7 @@
-generated=2026-09-07T12:49:49.837
+generated=2026-09-07T13:07:20.147
 source=scripts/ridge/paired_figures.jl
-data_analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
-rendering_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
+data_analysis_commit=6b8bfbb52fcced1dfccaba3658db407be9dfc21b
+rendering_commit=6b8bfbb52fcced1dfccaba3658db407be9dfc21b
 rendering_source_clean=true
 nn_sweep=2026-09-05_adeaa06_nn
 nn_manifest=a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c
