@@ -1,0 +1,13 @@
+generated=2026-09-07T12:41:18.331
+sweep=2026-09-05_adeaa06_nn
+manifest=a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c
+analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
+analysis_source_clean=true
+effective_realizations=80
+general_nested_comparison=first 10 versus all 20 seeds
+baseline_nested_comparison=first 20 versus all 50 seeds
+normalization=absolute full-sample condition estimate
+relative_precision_exclusion=95% interval contains zero
+non_r2_outcomes=14
+median_relative_ci_half_width_percent=0.3:8.3
+median_relative_nested_change_percent=0.1:4.8

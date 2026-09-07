@@ -797,8 +797,6 @@ function main()
         "ablationSizePositiveN" => value_by_key["size_matchedPositiveN_rank_gap"],
         "ablationSingleMedianGap" => value_by_key["single_principalMedian_rank_gap"],
         "ablationSinglePositiveN" => value_by_key["single_principalPositiveN_rank_gap"],
-        "ablationAdditiveMedianGap" => value_by_key["additiveMedian_rank_gap"],
-        "ablationAdditivePositiveN" => value_by_key["additivePositiveN_rank_gap"],
         "ablationAdditiveBeatsSingleN" =>
             value_by_key["singleMinusAdditiveLessN_rank_gap"],
         "ablationPairBeatsAdditiveN" => value_by_key["additiveLessN_rank_gap"],

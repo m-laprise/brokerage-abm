@@ -1,0 +1,15 @@
+generated=2026-09-07T12:41:57.078
+analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
+analysis_source_clean=true
+nn_sweep=2026-09-05_adeaa06_nn
+nn_manifest=a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c
+nn_schema=11
+nn_commit=adeaa06f0b7098f8789925f0b638abddd935a16b
+ridge_sweep=2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001
+ridge_manifest=fbe5bddcf4f52957843f88c345226998079fef523c259651dfb15c46d2b1f113
+ridge_schema=11
+ridge_commit=c8f181fd7b5a8c6839a1e860fa34af9d56b72e12
+late_periods=481:500
+weighting=one observation per effective realization
+baseline_comparison_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50
+other_comparison_seeds=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20

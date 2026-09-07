@@ -1,5 +1,5 @@
-generated=2026-09-07T09:08:54.108
-analysis_commit=4cfe1c4715838fb3787c489f8355ebdfd24ca4bf
+generated=2026-09-07T12:42:46.117
+analysis_commit=e3f041b8a284bda48bf98907d9f7b42521987b07
 analysis_source_clean=true
 pair_sweep=2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001
 pair_manifest=fbe5bddcf4f52957843f88c345226998079fef523c259651dfb15c46d2b1f113
