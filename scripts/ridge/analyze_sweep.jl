@@ -181,10 +181,12 @@ function condition_mean(result::ComparisonResult, metric::Symbol; seeds=result.s
 end
 
 function validate_comparison(nn::ComparisonSweep, ridge::ComparisonSweep)
-    length(nn.results) == 98 || error("expected 98 NN effective realizations")
-    length(ridge.results) == 98 || error("expected 98 Ridge effective realizations")
-    length(nn.grid_cells) == 161 || error("expected 161 NN grid coordinates")
-    length(ridge.grid_cells) == 161 || error("expected 161 Ridge grid coordinates")
+    isempty(nn.results) && error("NN sweep has no effective realizations")
+    isempty(ridge.results) && error("Ridge sweep has no effective realizations")
+    length(nn.results) == length(ridge.results) ||
+        error("NN and Ridge effective-realization counts differ")
+    length(nn.grid_cells) == length(ridge.grid_cells) ||
+        error("NN and Ridge grid-coordinate counts differ")
     Set(keys(nn.results)) == Set(keys(ridge.results)) || error("effective designs differ")
     for rel in keys(nn.results)
         nr = nn.results[rel]
@@ -302,7 +304,7 @@ function comparison_figure(nn, ridge, rows)
             ax,
             minimum(x),
             yhi;
-            text="98 effective realizations",
+            text="$(length(nn.results)) effective realizations",
             align=(:left, :top),
             fontsize=15,
         )

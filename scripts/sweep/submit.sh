@@ -14,13 +14,7 @@
 # The `resolve` stage performs network operations on the login node. Precompilation
 # and simulation run on compute nodes through `sbatch` or `srun`.
 #
-# Cluster settings come from the environment (BROKERAGE_ABM_ACCOUNT,
-# BROKERAGE_ABM_DATA_ROOT). Override via env: BROKERAGE_ABM_DATA_ROOT,
-# BROKERAGE_ABM_TAG, BROKERAGE_ABM_THROTTLE (array %K, default 200),
-# BROKERAGE_ABM_CPUS (CPUs and Julia threads per simulation, default 2),
-# BROKERAGE_ABM_PLOT_THROTTLE (default 24), BROKERAGE_ABM_TIME (compute
-# walltime, default 6 hours for the 500-period design), learning-model settings
-# documented in sweep_config.jl, JULIA_DEPOT_PATH, and JULIA_CPU_TARGET.
+# Cluster settings are documented in README.md and sweep_config.jl.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -32,11 +26,20 @@ ACCOUNT="${BROKERAGE_ABM_ACCOUNT:?set BROKERAGE_ABM_ACCOUNT to your SLURM accoun
 THROTTLE="${BROKERAGE_ABM_THROTTLE:-200}"
 COMPUTE_CPUS="${BROKERAGE_ABM_CPUS:-2}"
 PLOT_THROTTLE="${BROKERAGE_ABM_PLOT_THROTTLE:-24}"
-COMPUTE_TIME="${BROKERAGE_ABM_TIME:-06:00:00}"
 JULIA_MODULE="${BROKERAGE_ABM_JULIA_MODULE:-julia/1.11.3}"
 export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-/scratch/gpfs/BSTEWART/${USER}/julia_depot_brokerage}"
 export JULIA_CPU_TARGET="${JULIA_CPU_TARGET:-generic;skylake-avx512,clone_all;znver3,clone_all}"
 export BROKERAGE_ABM_LEARNING_MODEL="${BROKERAGE_ABM_LEARNING_MODEL:-nn}"
+if [ "$BROKERAGE_ABM_LEARNING_MODEL" = "ridge" ]; then
+    DEFAULT_COMPUTE_TIME="01:01:00"
+    DEFAULT_COMPUTE_TIME_MIN="00:05:00"
+else
+    DEFAULT_COMPUTE_TIME="06:00:00"
+    DEFAULT_COMPUTE_TIME_MIN=""
+fi
+COMPUTE_TIME="${BROKERAGE_ABM_TIME:-$DEFAULT_COMPUTE_TIME}"
+COMPUTE_TIME_MIN="${BROKERAGE_ABM_TIME_MIN:-$DEFAULT_COMPUTE_TIME_MIN}"
+COMPUTE_QOS="${BROKERAGE_ABM_QOS:-short}"
 export BROKERAGE_ABM_NN_ETA_LR_AGENT="${BROKERAGE_ABM_NN_ETA_LR_AGENT:-0.003}"
 export BROKERAGE_ABM_NN_ETA_LR_BROKER="${BROKERAGE_ABM_NN_ETA_LR_BROKER:-0.03}"
 export BROKERAGE_ABM_NN_E_INIT_AGENT="${BROKERAGE_ABM_NN_E_INIT_AGENT:-100}"
@@ -151,7 +154,12 @@ case "$stage" in
   compute)
     [ -f "$SWEEP_DIR/counts.env" ] || { echo "run ./submit.sh manifest first"; exit 1; }
     source "$SWEEP_DIR/counts.env"
-    jid=$(sbatch --parsable --account="$ACCOUNT" --time="$COMPUTE_TIME" \
+    time_min_args=()
+    if [ -n "$COMPUTE_TIME_MIN" ]; then
+        time_min_args+=(--time-min="$COMPUTE_TIME_MIN")
+    fi
+    jid=$(sbatch --parsable --account="$ACCOUNT" --qos="$COMPUTE_QOS" \
+        --time="$COMPUTE_TIME" "${time_min_args[@]}" \
         --cpus-per-task="$COMPUTE_CPUS" \
         --array="0-$((NRUNS - 1))%${THROTTLE}" \
         --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \

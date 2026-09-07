@@ -78,7 +78,9 @@ The default learning model is the neural network. The main controls are:
 | `BROKERAGE_ABM_TAG` | Output tag | Date and commit based |
 | `BROKERAGE_ABM_CPUS` | CPUs and Julia threads per simulation | `2` |
 | `BROKERAGE_ABM_THROTTLE` | Maximum concurrent simulation tasks | `200` |
-| `BROKERAGE_ABM_TIME` | Simulation-task wall time | `06:00:00` |
+| `BROKERAGE_ABM_TIME` | Simulation-task wall time | NN: `06:00:00`; Ridge: `01:01:00` |
+| `BROKERAGE_ABM_TIME_MIN` | Minimum time for Ridge backfill allocations | Ridge: `00:05:00`; NN: unset |
+| `BROKERAGE_ABM_QOS` | Compute QOS | `short` |
 
 The reporting NN sweep uses 20 seeds for every regime and 50 at the baseline:
 

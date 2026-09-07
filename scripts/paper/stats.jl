@@ -82,6 +82,12 @@ const RHO_DELTA_RESULTS = unique_effective_results([
     grid_result(SWEEP, cell[:reldir]) for
     cell in SWEEP.grid_cells if get(cell, :pair, nothing) == "rho_delta"
 ])
+const RHO_ETA_COORDINATES = Set(
+    (
+        Float64(cell[:resolved_params][:rho]),
+        Float64(cell[:resolved_params][:eta]),
+    ) for cell in SWEEP.grid_cells if get(cell, :pair, nothing) == "rho_eta"
+)
 
 # ── emitted values, in order ──
 VALS = Pair{String,String}[]
@@ -92,6 +98,7 @@ pv("nRegimes", fint(length(B)))
 pv("nRuns", fint(sum(length(c.seeds) for c in B)))
 pv("nGeneralSeeds", fint(only(unique(GENERAL_SEED_COUNTS))))
 pv("nBaselineSeeds", fint(BASELINE_N_SEEDS))
+pv("rhoEtaConditionN", fint(length(RHO_ETA_COORDINATES)))
 
 # ── 5.1 ──
 pv("outBaselineLate", f2(late(BL.mdfs, col(:outsourcing_rate))))
@@ -158,13 +165,14 @@ rank_gap_values = brk_rank .- agt_rank
 rank_gap_intervals = [monte_carlo_interval(late_seed_values(c.mdfs, rankgap)) for c in B]
 pv("rankGapNNPosN", fint(count(>(0), rank_gap_values)))
 pv("rankGapNNCiPosN", fint(count(interval -> interval.lower > 0.0, rank_gap_intervals)))
-pv("rankGapNNCiNegN", fint(count(interval -> interval.upper < 0.0, rank_gap_intervals)))
 pv("brokerR2PositiveN", fint(count(>(0), brk_r2)))
 
 # ── 5.2 ──
 pv("betwRho0", f2(late(oatb("rho", "0.0").mdfs, col(:betweenness))))
+pv("betwRho085", f2(late(oatb("rho", "0.85").mdfs, col(:betweenness))))
 pv("betwRho1", f2(late(oatb("rho", "1.0").mdfs, col(:betweenness))))
 pv("accessRho0", f2(late(oatb("rho", "0.0").mdfs, accessf)))
+pv("accessRho085", f2(late(oatb("rho", "0.85").mdfs, accessf)))
 pv("accessRho1", f2(late(oatb("rho", "1.0").mdfs, accessf)))
 pv("rhoDeltaEffectiveN", fint(length(RHO_DELTA_RESULTS)))
 grid_rank_intervals = [
@@ -184,6 +192,8 @@ rho0_delta0 = rdcell(0.0, 0.0)
 rho0_delta1 = rdcell(0.0, 1.0)
 pv("brokerRankRho0D0", f2(late(rho0_delta0.mdfs, col(:broker_holdout_rank))))
 pv("brokerRankRho0D1", f2(late(rho0_delta1.mdfs, col(:broker_holdout_rank))))
+pv("agentRankRho0D0", f2(late(rho0_delta0.mdfs, col(:agent_holdout_rank))))
+pv("agentRankRho0D1", f2(late(rho0_delta1.mdfs, col(:agent_holdout_rank))))
 pv("rankGapRho0D0", f2(late(rho0_delta0.mdfs, rankgap)))
 pv("rankGapRho0D1", f2(late(rho0_delta1.mdfs, rankgap)))
 

@@ -51,7 +51,8 @@ META["analysis_source_clean"] == true ||
 META["learning_model"] == "ridge" || error("expected base Ridge figure data")
 
 const REGIMES = FD["regime_cells"]
-length(REGIMES) == 98 || error("expected 98 effective base Ridge realizations")
+length(REGIMES) == length(META["condition_seed_counts"]) ||
+    error("base Ridge effective-realization count does not match its metadata")
 all(length(cell["seeds"]) == (cell["rel"] == BASELINE_REL ? 50 : 20) for cell in REGIMES) ||
     error("unexpected base Ridge seed plan")
 

@@ -78,8 +78,10 @@ function validate_inputs()
     for (label, data, expected_model) in (("NN", NN, "nn"), ("Ridge", RIDGE, "ridge"))
         meta = data["meta"]
         counts = meta["condition_seed_counts"]
-        length(counts) == 98 || error("expected 98 $label effective realizations")
-        meta["n_runs"] == 1990 || error("expected 1,990 $label runs")
+        length(counts) == length(data["regime_cells"]) ||
+            error("$label effective-realization count does not match its metadata")
+        meta["n_runs"] == sum(values(counts)) ||
+            error("$label run count does not match its condition seed counts")
         meta["baseline_n_seeds"] == 50 || error("expected 50 $label baseline seeds")
         all(rel == "oat/rho=0.5" ? n == 50 : n == 20 for (rel, n) in counts) ||
             error("unexpected $label seed plan")
@@ -504,6 +506,11 @@ function figure_r4()
 end
 
 function write_provenance()
+    nn_counts = NN["meta"]["condition_seed_counts"]
+    nonbaseline_seed_counts = unique(
+        n for (rel, n) in nn_counts if rel != "oat/rho=0.5"
+    )
+    length(nonbaseline_seed_counts) == 1 || error("NN nonbaseline seed counts differ")
     open(joinpath(dirname(OUT_DIR), "figure_provenance.txt"), "w") do io
         println(io, "generated=$(now())")
         println(io, "source=scripts/ridge/paired_figures.jl")
@@ -514,9 +521,9 @@ function write_provenance()
         println(io, "nn_manifest=$(NN["meta"]["manifest_hash"])")
         println(io, "ridge_sweep=$(RIDGE["meta"]["sweep"])")
         println(io, "ridge_manifest=$(RIDGE["meta"]["manifest_hash"])")
-        println(io, "effective_realizations=98")
-        println(io, "general_seeds=20")
-        println(io, "baseline_seeds=50")
+        println(io, "effective_realizations=$(length(nn_counts))")
+        println(io, "general_seeds=$(only(nonbaseline_seed_counts))")
+        println(io, "baseline_seeds=$(NN["meta"]["baseline_n_seeds"])")
         println(io, "rolling_window=$ROLLW")
         println(io, "network_measure_interval=$BETWINT")
         println(io, "display_start=$TSTART")

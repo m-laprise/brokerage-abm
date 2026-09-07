@@ -38,9 +38,9 @@ represent a bilinear interaction. \emph{Additive Ridge} retains both endpoint
 types in every fitting row but replaces the pair features with their
 type-vector sum, so it also cannot represent a bilinear interaction. The agent
 learning rule and parameters are unchanged, but realized agent histories can
-change as matching evolves. All conditions use $\lambda_a=0.003$,
-$\lambda_b=0.001$, the same period window and fitting cadence, and the same
-broker observation cap before any additional size matching.
+change as matching evolves. All conditions use $\lambda_a=\lambda_b=0.001$,
+the same period window and fitting cadence, and the same broker observation
+cap before any additional size matching.
 
 The primary estimand in realization $c$ is the late-period broker-minus-principal
 difference in holdout rank correlation
@@ -160,8 +160,8 @@ receives one observation.
 broker-minus-principal difference in holdout rank correlation over time under
 base Ridge and the three restrictions. Lines are ensemble means over 50 common
 seeds; ribbons are pointwise 95\% Monte Carlo intervals. Panels B--D show each
-restriction's paired change from base Ridge across the 26 effective regimes,
-against that regime's base Ridge mean. Whiskers are paired 95\% Monte Carlo
+restriction's paired change from base Ridge across the \rav{nConditions}
+effective regimes, against that regime's base Ridge mean. Whiskers are paired 95\% Monte Carlo
 intervals for the mean seed-level change, and dashed lines mark no change.}
 \label{fig:ridge-ablations}
 \end{figure}

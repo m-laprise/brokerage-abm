@@ -48,8 +48,6 @@ const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
 const LATE_WIDTH = 20   # final-period summary window
-const FIG3_RHO_VALUES = [0.0, 0.5, 0.85, 1.0]
-const FIG3_ETA_VALUES = [0.0, 0.001, 0.01, 0.02, 0.03]
 const SWEEP = load_sweep_dataset(ROOT)
 const BASELINE_REL = "oat/rho=0.5"
 length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
@@ -199,12 +197,13 @@ fd["rho_eta_cells"] = let out = Dict{String,Any}[]
             ),
         )
     end
-    expected = Set((rho, eta) for rho in FIG3_RHO_VALUES for eta in FIG3_ETA_VALUES)
     observed = Set((cell["rho"], cell["eta"]) for cell in out)
-    length(out) == length(expected) ||
-        error("rho x eta extraction has duplicate or missing coordinates")
+    length(out) == length(observed) || error("rho x eta extraction has duplicate coordinates")
+    rho_values = unique(first.(observed))
+    eta_values = unique(last.(observed))
+    expected = Set((rho, eta) for rho in rho_values for eta in eta_values)
     observed == expected ||
-        error("rho x eta extraction coordinates differ from the approved figure grid")
+        error("rho x eta extraction does not form a complete grid")
     out
 end
 

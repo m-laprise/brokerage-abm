@@ -198,22 +198,23 @@ function results_by_design(dataset::SweepDataset)
 end
 
 function validate_design(pair::SweepDataset, datasets)
-    length(pair.results) == 98 || error("expected 98 base Ridge effective realizations")
+    isempty(pair.results) && error("base Ridge sweep has no effective realizations")
     pair_by_design = results_by_design(pair)
     datasets_by_design = Dict(
         variant.key => results_by_design(datasets[variant.key]) for variant in VARIANTS
     )
     reference_keys = Set(keys(datasets_by_design[first(VARIANTS).key]))
-    length(reference_keys) == 26 || error("expected 26 ablation effective realizations")
+    isempty(reference_keys) && error("ablation sweep has no effective realizations")
+    reference_grid_count = length(datasets[first(VARIANTS).key].grid_cells)
     pair_baseline_cfg = pair.result_by_rel[BASELINE_REL].cfg
     for variant in VARIANTS
         dataset = datasets[variant.key]
         by_design = datasets_by_design[variant.key]
         variant_baseline_cfg = dataset.result_by_rel[BASELINE_REL].cfg
-        length(dataset.results) == 26 ||
-            error("$(variant.label) does not have 26 realizations")
-        length(dataset.grid_cells) == 31 ||
-            error("$(variant.label) does not have 31 grid coordinates")
+        length(dataset.results) == length(reference_keys) ||
+            error("$(variant.label) effective-realization count differs")
+        length(dataset.grid_cells) == reference_grid_count ||
+            error("$(variant.label) grid-coordinate count differs")
         Set(keys(by_design)) == reference_keys ||
             error("$(variant.label) effective design differs")
         for realization_key in reference_keys
@@ -317,7 +318,7 @@ function ablation_figure(pair_by_design, datasets_by_design, design_keys, baseli
             ax,
             minimum(x),
             yhi;
-            text="26 effective realizations",
+            text="$(length(design_keys)) effective realizations",
             align=(:left, :top),
             fontsize=14,
         )

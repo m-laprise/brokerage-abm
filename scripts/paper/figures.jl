@@ -58,7 +58,7 @@ const DELTA_COLORS = Dict(
     1.0 => :firebrick,
 )
 const ETA_PALETTE = Makie.to_color.(["#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677"])
-const RHO_MARKERS = Dict(0.0 => :circle, 0.5 => :rect, 0.85 => :diamond, 1.0 => :utriangle)
+const RHO_MARKER_PALETTE = [:circle, :cross, :rect, :diamond, :utriangle, :dtriangle, :hexagon]
 
 const FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figure_data.jld2"))
@@ -143,8 +143,8 @@ function information_sources()
     )
     variants = models[2:end]
     conditions = INFORMATION_FD["conditions"]
-    length(conditions) == INFORMATION_META["n_conditions"] == 26 ||
-        error("expected 26 Ridge ablation figure conditions")
+    length(conditions) == INFORMATION_META["n_conditions"] ||
+        error("Ridge ablation condition count does not match its metadata")
     baseline = only(
         filter(
             condition -> condition["result_reldir"] == INFORMATION_META["baseline_reldir"],
@@ -283,9 +283,15 @@ function centrality_and_access()
     rho = Float64[c["rho"] for c in cells]
     eta = Float64[c["eta"] for c in cells]
     eta_values = sort(unique(eta))
+    rho_values = sort(unique(rho))
     length(eta_values) <= length(ETA_PALETTE) || error("turnover palette is too short")
+    length(rho_values) <= length(RHO_MARKER_PALETTE) ||
+        error("matching-composition marker palette is too short")
     eta_colors = Dict(
         value => ETA_PALETTE[index] for (index, value) in enumerate(eta_values)
+    )
+    rho_markers = Dict(
+        value => RHO_MARKER_PALETTE[index] for (index, value) in enumerate(rho_values)
     )
     axc = Axis(
         fig[1, 2];
@@ -337,7 +343,7 @@ function centrality_and_access()
                 axc,
                 [x],
                 [y];
-                marker=RHO_MARKERS[r],
+                marker=rho_markers[r],
                 color=eta_colors[value],
                 markersize=13,
                 strokecolor=:black,
@@ -348,10 +354,9 @@ function centrality_and_access()
     eta_elements = [
         LineElement(; color=eta_colors[value], linewidth=3) for value in eta_values
     ]
-    rho_values = sort(unique(rho))
     rho_elements = [
         MarkerElement(;
-            marker=RHO_MARKERS[value],
+            marker=rho_markers[value],
             color=:gray60,
             strokecolor=:black,
             strokewidth=0.5,
