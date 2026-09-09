@@ -30,6 +30,8 @@ struct SweepDataset
 end
 
 string_dict(values) = Dict{String,Any}(string(key) => value for (key, value) in values)
+comparable_config_value(value::Symbol) = string(value)
+comparable_config_value(value) = value
 
 function validate_result(result::SweepResult, condition, expected_seeds, expected_periods)
     result.rel == condition[:result_reldir] ||
@@ -46,9 +48,11 @@ function validate_result(result::SweepResult, condition, expected_seeds, expecte
     for (key, value) in condition[:resolved_params]
         name = string(key)
         haskey(result.cfg, name) || error("realized config for $(result.rel) lacks $name")
-        result.cfg[name] == value || error(
-            "realized config mismatch for $(result.rel): $name=$(result.cfg[name]), expected $value",
-        )
+        comparable_config_value(result.cfg[name]) == comparable_config_value(value) ||
+            error(
+                "realized config mismatch for $(result.rel): " *
+                "$name=$(result.cfg[name]), expected $value",
+            )
     end
     return result
 end

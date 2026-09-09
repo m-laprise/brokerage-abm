@@ -33,6 +33,10 @@ const FIGURE_DIR = joinpath(OUT_DIR, "figures")
 const LATE_WIDTH = 20
 const LEVEL = 0.95
 const MODES = (:full, :assessment_only, :access_only)
+const GRID_CELLS = [
+    (rho, eta) for rho in (0.0, 0.5, 1.0) for eta in (0.0, 0.01, 0.03)
+]
+const CONTRAST_CELLS = vcat([(0.5, 0.02)], GRID_CELLS)
 const MODE_LABELS = Dict(
     :full => "Full service",
     :assessment_only => "Assessment only",
@@ -235,8 +239,7 @@ function main()
     length(dataset.results) == 30 || error("expected 30 broker-service conditions")
     index = result_index(dataset)
     expected_keys = Set(
-        (mode, rho, eta) for mode in MODES for (rho, eta) in
-        vcat([(0.5, 0.02)], [(r, e) for r in (0.0, 0.5, 1.0) for e in (0.0, 0.01, 0.03)])
+        (mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS
     )
     Set(keys(index)) == expected_keys || error("broker-service design mismatch")
 
@@ -283,7 +286,7 @@ function main()
     )
 
     contrast_rows = Vector{Vector{Any}}()
-    for rho in (0.0, 0.5, 1.0), eta in (0.0, 0.01, 0.03), metric in METRICS
+    for (rho, eta) in CONTRAST_CELLS, metric in METRICS
         for (label, reference) in
             (("assessment", :access_only), ("access", :assessment_only))
             interval = paired_interval(

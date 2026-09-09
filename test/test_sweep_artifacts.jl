@@ -43,7 +43,9 @@ end
     mktempdir() do root
         result_rel = "oat/rho=1.0"
         alias_rel = "phase/rho_delta/cells/5_0"
-        resolved = Dict{Symbol,Any}(:rho => 1.0, :delta => 0.5)
+        resolved = Dict{Symbol,Any}(
+            :rho => 1.0, :delta => 0.5, :broker_service => :full
+        )
         grid_cells = [
             Dict{Symbol,Any}(
                 :kind => "oat",
@@ -91,7 +93,9 @@ end
             joinpath(result_dir, "data.jld2");
             mdfs=frames,
             seeds=[1, 2],
-            realized_config=Dict("rho" => 1.0, "delta" => 0.5),
+            realized_config=Dict(
+                "rho" => 1.0, "delta" => 0.5, "broker_service" => "full"
+            ),
             provenance=provenance,
             result_reldir=result_rel,
             condition_index=0,
@@ -113,7 +117,9 @@ end
             joinpath(result_dir, "data.jld2");
             mdfs=frames[1:1],
             seeds=[1],
-            realized_config=Dict("rho" => 1.0, "delta" => 0.5),
+            realized_config=Dict(
+                "rho" => 1.0, "delta" => 0.5, "broker_service" => "full"
+            ),
             provenance=provenance,
             result_reldir=result_rel,
             condition_index=0,
