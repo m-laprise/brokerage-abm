@@ -20,6 +20,10 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
         write(joinpath(repository, "output", "generated.txt"), "generated\n")
         @test reporting_git_provenance(repository).source_clean
 
+        mkpath(joinpath(repository, "notes"))
+        write(joinpath(repository, "notes", "planning.md"), "draft note\n")
+        @test reporting_git_provenance(repository).source_clean
+
         write(joinpath(repository, "source.txt"), "modified\n")
         dirty = reporting_git_provenance(repository; require_clean=false)
         @test !dirty.source_clean

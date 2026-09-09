@@ -2,20 +2,21 @@
     scripts/reporting_provenance.jl
 
 Commit-provenance helpers shared by scientific reporting scripts. Generated files
-under `output/` are excluded from the cleanliness check because each reporting
-stage updates them. Scientific analysis inputs must match a recorded commit.
-Manuscript builders may include explicitly identified, uncommitted presentation
-changes, which remain marked as dirty in downstream provenance. Retained analysis
-inputs may record an earlier ancestor commit.
+under `output/` and research notes under `notes/` are excluded from the cleanliness
+check because neither is an input to reporting computations. Scientific analysis
+inputs must match a recorded commit. Manuscript builders may include explicitly
+identified, uncommitted presentation changes, which remain marked as dirty in
+downstream provenance. Retained analysis inputs may record an earlier ancestor
+commit.
 """
 
 """
     reporting_git_provenance(path; require_clean=true, allowed_dirty_paths=())
 
 Return the repository root and current Git commit. When `require_clean` is
-true, fail if any path outside the top-level `output/` directory and
-`allowed_dirty_paths` differs from the commit. `source_clean` still reports
-whether all non-output files match the commit.
+true, fail if any path outside the top-level `output/` and `notes/` directories
+and `allowed_dirty_paths` differs from the commit. `source_clean` reports whether
+all files that can affect the generated artifact match the commit.
 """
 function reporting_git_provenance(
     path;
@@ -34,6 +35,7 @@ function reporting_git_provenance(
         "--",
         ".",
         ":(exclude)output",
+        ":(exclude)notes",
     ]
     source_status = strip(read(Cmd(status_args), String))
     source_clean = isempty(source_status)
@@ -43,7 +45,7 @@ function reporting_git_provenance(
     if require_clean && !isempty(unpermitted_status)
         error(
             "reporting source does not match commit $commit; commit or remove " *
-            "these non-output, non-presentation changes before generating " *
+            "these unpermitted changes before generating " *
             "scientific artifacts:\n" * unpermitted_status,
         )
     end
