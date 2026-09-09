@@ -49,7 +49,7 @@ export BROKERAGE_ABM_RIDGE_BROKER_VARIANT="${BROKERAGE_ABM_RIDGE_BROKER_VARIANT:
 export BROKERAGE_ABM_SWEEP_SCOPE="${BROKERAGE_ABM_SWEEP_SCOPE:-full}"
 export BROKERAGE_ABM_N_SEEDS="${BROKERAGE_ABM_N_SEEDS:-20}"
 export BROKERAGE_ABM_BASELINE_N_SEEDS="${BROKERAGE_ABM_BASELINE_N_SEEDS:-$BROKERAGE_ABM_N_SEEDS}"
-export BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS="${BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS:-50}"
+export BROKERAGE_ABM_ASSESSMENT_ACCESS_BASELINE_N_SEEDS="${BROKERAGE_ABM_ASSESSMENT_ACCESS_BASELINE_N_SEEDS:-50}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
 TODAY="$(date +%Y-%m-%d)"
@@ -134,7 +134,7 @@ case "$stage" in
         echo "BROKERAGE_ABM_SWEEP_SCOPE=$BROKERAGE_ABM_SWEEP_SCOPE"
         echo "BROKERAGE_ABM_N_SEEDS=$BROKERAGE_ABM_N_SEEDS"
         echo "BROKERAGE_ABM_BASELINE_N_SEEDS=$BROKERAGE_ABM_BASELINE_N_SEEDS"
-        echo "BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS=$BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS"
+        echo "BROKERAGE_ABM_ASSESSMENT_ACCESS_BASELINE_N_SEEDS=$BROKERAGE_ABM_ASSESSMENT_ACCESS_BASELINE_N_SEEDS"
     } > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;
@@ -186,7 +186,7 @@ case "$stage" in
     [ -n "${PILOT_JOBID:-}" ] || { echo "run ./submit.sh pilot first"; exit 1; }
     jid=$(sbatch --parsable --account="$ACCOUNT" --dependency="afterok:${PILOT_JOBID}" \
         --output="$LOGDIR/pilot_analyze_%j.out" --error="$LOGDIR/pilot_analyze_%j.err" \
-        "$REPO/scripts/broker_services/slurm_analyze.sh" "$REPO" "$SWEEP_DIR" --pilot)
+        "$REPO/scripts/assessment_access/slurm_analyze.sh" "$REPO" "$SWEEP_DIR" --pilot)
     echo "PILOT_ANALYSIS_JOBID=$jid" >> "$ENVFILE"
     echo "pilot analysis submitted: $jid  (afterok:${PILOT_JOBID})"
     ;;
@@ -216,14 +216,14 @@ case "$stage" in
   analyze)
     [ -f "$ENVFILE" ] || { echo "run the manifest and plot stages first"; exit 1; }
     source "$ENVFILE"
-    [ "${BROKERAGE_ABM_SWEEP_SCOPE:-}" = "broker_services" ] || {
-        echo "analyze stage is defined only for the broker-services scope"
+    [ "${BROKERAGE_ABM_SWEEP_SCOPE:-}" = "assessment_access" ] || {
+        echo "analyze stage is defined only for the assessment-access scope"
         exit 1
     }
     [ -n "${PLOT_JOBID:-}" ] || { echo "run ./submit.sh plot first"; exit 1; }
     jid=$(sbatch --parsable --account="$ACCOUNT" --dependency="afterok:${PLOT_JOBID}" \
         --output="$LOGDIR/analyze_%j.out" --error="$LOGDIR/analyze_%j.err" \
-        "$REPO/scripts/broker_services/slurm_analyze.sh" "$REPO" "$SWEEP_DIR")
+        "$REPO/scripts/assessment_access/slurm_analyze.sh" "$REPO" "$SWEEP_DIR")
     echo "ANALYSIS_JOBID=$jid" >> "$ENVFILE"
     echo "analysis job submitted: $jid  (afterok:${PLOT_JOBID})"
     ;;

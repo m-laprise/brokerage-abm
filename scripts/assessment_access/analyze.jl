@@ -2,16 +2,15 @@
 Analyze the broker assessment vs access experiment with seed-paired Monte Carlo
 intervals.
 
-Set `BROKERAGE_ABM_BROKER_SERVICE_SWEEP_DIR` to the completed sweep root.
-Outputs are written to `output/broker_services/`.
+Set `BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR` to the completed sweep root.
+Outputs are written to `output/assessment_access/`.
 
-Usage: julia --project --threads=auto scripts/broker_services/analyze.jl
+Usage: julia --project --threads=auto scripts/assessment_access/analyze.jl
 """
 
 using CairoMakie
 using DataFrames: DataFrame
 using JLD2: jldsave
-using Printf: @sprintf
 using Statistics: mean
 
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
@@ -20,24 +19,22 @@ include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const ANALYSIS_PROVENANCE = reporting_git_provenance(REPO_ROOT)
-const SWEEP_ROOT = get(ENV, "BROKERAGE_ABM_BROKER_SERVICE_SWEEP_DIR") do
-    error("BROKERAGE_ABM_BROKER_SERVICE_SWEEP_DIR is required")
+const SWEEP_ROOT = get(ENV, "BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR") do
+    error("BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR is required")
 end
 const OUT_DIR = normpath(
     get(
         ENV,
-        "BROKERAGE_ABM_BROKER_SERVICE_OUTPUT_DIR",
-        joinpath(@__DIR__, "..", "..", "output", "broker_services"),
+        "BROKERAGE_ABM_ASSESSMENT_ACCESS_OUTPUT_DIR",
+        joinpath(@__DIR__, "..", "..", "output", "assessment_access"),
     ),
 )
 const FIGURE_DIR = joinpath(OUT_DIR, "figures")
 const LATE_WIDTH = 20
 const LEVEL = 0.95
 const MODES = (:full, :assessment_only, :access_only)
-const GRID_CELLS = [
-    (rho, eta) for rho in (0.0, 0.5, 1.0) for eta in (0.0, 0.01, 0.03)
-]
-const CONTRAST_CELLS = vcat([(0.5, 0.02)], GRID_CELLS)
+const GRID_CELLS = [(rho, eta) for rho in (0.0, 0.5, 1.0) for eta in (0.0, 0.01, 0.03)]
+const CONTRAST_CELLS = vcat([(0.5, 0.02)], GRID_CELLS, [(0.5, 0.001)])
 const MODE_LABELS = Dict(
     :full => "Full service",
     :assessment_only => "Assessment only",
@@ -75,7 +72,9 @@ function metric_series(df::DataFrame, metric::Symbol)
         return df.q_broker_mean .- df.q_self_mean
     elseif metric == :access_fraction
         total = df.access_count .+ df.assessment_count
-        return [total[i] > 0 ? df.access_count[i] / total[i] : NaN for i in eachindex(total)]
+        return [
+            total[i] > 0 ? df.access_count[i] / total[i] : NaN for i in eachindex(total)
+        ]
     end
     return df[!, metric]
 end
@@ -180,16 +179,8 @@ end
 
 function contrast_figure(index, metric::Symbol, filename::String, ylabel::String)
     contributions = (
-        (
-            label="Assessment contribution",
-            reference=:access_only,
-            comparison=:full,
-        ),
-        (
-            label="Access contribution",
-            reference=:assessment_only,
-            comparison=:full,
-        ),
+        (label="Assessment contribution", reference=:access_only, comparison=:full),
+        (label="Access contribution", reference=:assessment_only, comparison=:full),
     )
     eta_values = (0.0, 0.01, 0.03)
     colors = (:steelblue, :goldenrod, :firebrick)
@@ -234,18 +225,17 @@ end
 
 function main()
     dataset = load_sweep_dataset(SWEEP_ROOT)
-    dataset.meta[:scope] == :broker_services || error("unexpected sweep scope")
+    dataset.meta[:scope] in (:assessment_access, :broker_services) ||
+        error("unexpected sweep scope")
     validate_analysis_commit(
         ANALYSIS_PROVENANCE,
         dataset.meta[:git_commit];
         artifact="broker assessment vs access sweep",
     )
-    length(dataset.results) == 30 ||
-        error("expected 30 assessment vs access conditions")
     index = result_index(dataset)
-    expected_keys = Set(
-        (mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS
-    )
+    expected_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS)
+    length(dataset.results) == length(expected_keys) ||
+        error("unexpected number of assessment vs access conditions")
     Set(keys(index)) == expected_keys || error("assessment vs access design mismatch")
 
     mkpath(FIGURE_DIR)
@@ -258,11 +248,12 @@ function main()
             seed_metric_values = seed_values(result, metric)
             for seed in sort!(collect(keys(seed_metric_values)))
                 push!(
-                    seed_rows,
-                    Any[mode, rho, eta, seed, metric, seed_metric_values[seed]],
+                    seed_rows, Any[mode, rho, eta, seed, metric, seed_metric_values[seed]]
                 )
             end
-            interval = monte_carlo_interval(collect(values(seed_metric_values)); level=LEVEL)
+            interval = monte_carlo_interval(
+                collect(values(seed_metric_values)); level=LEVEL
+            )
             push!(
                 summary_rows,
                 Any[

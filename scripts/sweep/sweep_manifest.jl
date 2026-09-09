@@ -71,8 +71,10 @@ function main()
     nconditions = length(conditions)
     baseline_seeds = scope_baseline_seeds()
     pilot_indices = [
-        e[:index] for e in entries if e[:kind] == "broker_service" &&
-        e[:rho] == SWEEP_BASELINE.rho && e[:eta] == SWEEP_BASELINE.eta && e[:seed] <= 5
+        e[:index] for e in entries if e[:kind] == "assessment_access" &&
+        e[:rho] == SWEEP_BASELINE.rho &&
+        e[:eta] == SWEEP_BASELINE.eta &&
+        e[:seed] <= 5
     ]
 
     # ── Provenance ───────────────────────────────────────────────────────────
@@ -104,7 +106,8 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
-        :broker_services => sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
+        :broker_service_modes =>
+            sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
         :scope => SWEEP_SCOPE,
     )
 
@@ -136,7 +139,8 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
-        :broker_services => sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
+        :broker_service_modes =>
+            sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
         :scope => SWEEP_SCOPE,
     )
 

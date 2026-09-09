@@ -13,7 +13,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
-    @test BROKER_SERVICE_BASELINE_SEEDS == collect(1:50)
+    @test ASSESSMENT_ACCESS_BASELINE_SEEDS == collect(1:50)
     @test SWEEP_LEARNING_MODEL == :nn
     @test SWEEP_NN_ETA_LR_AGENT == 0.003
     @test SWEEP_NN_ETA_LR_BROKER == 0.03
@@ -119,24 +119,24 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
 end
 
 @testset "broker assessment vs access experiment design" begin
-    cells = build_cells(:broker_services)
+    cells = build_cells(:assessment_access)
     conditions = result_cells(cells)
     entries = build_entries(cells)
 
-    @test length(cells) == length(conditions) == 30
-    @test length(entries) == 690
-    @test length(build_plot_jobs(cells)) == 30
+    @test length(cells) == length(conditions) == 33
+    @test length(entries) == 750
+    @test length(build_plot_jobs(cells)) == 33
     @test all(job[:kind] == "aggregate_cell" for job in build_plot_jobs(cells))
     @test Set(c[:broker_service] for c in cells) ==
         Set(["full", "assessment_only", "access_only"])
     @test count(is_baseline_condition, cells) == 3
+    @test count(c -> c[:rho] == 0.5 && c[:eta] == 0.001, cells) == 3
     @test all(length(c[:seeds]) == (is_baseline_condition(c) ? 50 : 20) for c in cells)
-    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 690
+    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 750
     pilot = [
-        e[:index] for e in entries if e[:rho] == 0.5 && e[:eta] == 0.02 &&
-        e[:seed] <= 5
+        e[:index] for e in entries if e[:rho] == 0.5 && e[:eta] == 0.02 && e[:seed] <= 5
     ]
-    @test pilot == [0:4; 230:234; 460:464]
+    @test pilot == [0:4; 250:254; 500:504]
 end
 
 @testset "rho-by-delta targeted design" begin
