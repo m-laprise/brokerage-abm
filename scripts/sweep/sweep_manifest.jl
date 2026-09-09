@@ -69,6 +69,11 @@ function main()
     nruns = length(entries)
     nplot = length(plot_jobs)
     nconditions = length(conditions)
+    baseline_seeds = scope_baseline_seeds()
+    pilot_indices = [
+        e[:index] for e in entries if e[:kind] == "broker_service" &&
+        e[:rho] == SWEEP_BASELINE.rho && e[:eta] == SWEEP_BASELINE.eta && e[:seed] <= 5
+    ]
 
     # ── Provenance ───────────────────────────────────────────────────────────
     commit = git_commit()
@@ -86,7 +91,7 @@ function main()
         :n_conditions => nconditions,
         :n_grid_cells => length(cells),
         :seeds => SWEEP_SEEDS,
-        :baseline_seeds => SWEEP_BASELINE_SEEDS,
+        :baseline_seeds => baseline_seeds,
         :T => SWEEP_T,
         :T_burn => SWEEP_T_BURN,
         :learning_model => SWEEP_LEARNING_MODEL,
@@ -99,6 +104,7 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :broker_services => sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
         :scope => SWEEP_SCOPE,
     )
 
@@ -119,7 +125,7 @@ function main()
             ) for p in PHASE_PAIRS
         ],
         :seeds => SWEEP_SEEDS,
-        :baseline_seeds => SWEEP_BASELINE_SEEDS,
+        :baseline_seeds => baseline_seeds,
         :learning_model => SWEEP_LEARNING_MODEL,
         :nn_eta_lr_agent => SWEEP_NN_ETA_LR_AGENT,
         :nn_eta_lr_broker => SWEEP_NN_ETA_LR_BROKER,
@@ -130,6 +136,7 @@ function main()
         :ridge_lambda_agent => SWEEP_RIDGE_LAMBDA_AGENT,
         :ridge_lambda_broker => SWEEP_RIDGE_LAMBDA_BROKER,
         :ridge_broker_variant => SWEEP_RIDGE_BROKER_VARIANT,
+        :broker_services => sort(unique(c[:resolved_params][:broker_service] for c in conditions)),
         :scope => SWEEP_SCOPE,
     )
 
@@ -158,8 +165,10 @@ function main()
         "NGRIDCELLS=$(length(cells))\n" *
         "NRUNS=$nruns\n" *
         "NPLOT=$nplot\n" *
+        "NPILOT=$(length(pilot_indices))\n" *
+        "PILOT_ARRAY=$(join(pilot_indices, ','))\n" *
         "NSEEDS=$(length(SWEEP_SEEDS))\n" *
-        "NBASELINESEEDS=$(length(SWEEP_BASELINE_SEEDS))\n" *
+        "NBASELINESEEDS=$(length(baseline_seeds))\n" *
         "LEARNING_MODEL=$SWEEP_LEARNING_MODEL\n" *
         "RIDGE_BROKER_VARIANT=$SWEEP_RIDGE_BROKER_VARIANT\n",
     )
@@ -208,7 +217,7 @@ function main()
     println("  agent Ridge lambda: $SWEEP_RIDGE_LAMBDA_AGENT")
     println("  broker Ridge lambda: $SWEEP_RIDGE_LAMBDA_BROKER")
     println(
-        "  seed counts:        $(length(SWEEP_SEEDS)) general, $(length(SWEEP_BASELINE_SEEDS)) baseline",
+        "  seed counts:        $(length(SWEEP_SEEDS)) general, $(length(baseline_seeds)) baseline",
     )
     println("  grid coordinates:  $(length(cells))")
     println("  effective results: $nconditions")

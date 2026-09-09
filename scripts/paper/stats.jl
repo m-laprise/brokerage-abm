@@ -133,39 +133,29 @@ pv(
     fint(count(interval -> interval.upper < 0.0, access_change_intervals)),
 )
 pv("brokerRankBaseline", f2(late(BL.mdfs, col(:broker_holdout_rank))))
-pv("brokerR2Baseline", f2(late(BL.mdfs, col(:broker_holdout_r2))))
 pv("agentRankBaseline", f2(late(BL.mdfs, col(:agent_holdout_rank))))
-pv("agentR2BaselineBase", f2(late(BL.mdfs, col(:agent_holdout_r2))))
 
 # ── Table 1 (section 1): baseline early/late + across-regime median ──
-# Across-regime summary is the median of the late mean over the regimes;
-# the assessment-quality rows are late-only, so their early cells are blank.
+# Across-regime summaries are medians of regime-level late-window means.
 med(v) = median(filter(!isnan, v))
 pv("ogapBaselineEarly", fs2(early(BL.mdfs, ogap)))
 pv("ogapBaselineLate", fs2(late(BL.mdfs, ogap)))
 pv("accessBaselineEarly", f2(early(BL.mdfs, accessf)))
 pv("accessBaselineLate", f2(late(BL.mdfs, accessf)))
 pv("brokerRankBaselineEarly", f2(early(BL.mdfs, col(:broker_holdout_rank))))
-pv("brokerR2BaselineEarly", f2(early(BL.mdfs, col(:broker_holdout_r2))))
 pv("agentRankBaselineEarly", f2(early(BL.mdfs, col(:agent_holdout_rank))))
-pv("agentR2BaselineEarly", f2(early(BL.mdfs, col(:agent_holdout_r2))))
 pv("outBaseMed", f2(med(ob)))
 pv("ogapBaseMed", fs2(med(og)))
 pv("accessBaseMed", f2(med(ac_l)))
 # table summary = median over regimes; prose parentheticals = mean
 brk_rank = [late(c.mdfs, col(:broker_holdout_rank)) for c in B]
-brk_r2 = [late(c.mdfs, col(:broker_holdout_r2)) for c in B]
 agt_rank = [late(c.mdfs, col(:agent_holdout_rank)) for c in B]
-agt_r2 = [late(c.mdfs, col(:agent_holdout_r2)) for c in B]
 pv("brokerRankBaseMed", f2(med(brk_rank)));
-pv("brokerR2BaseMed", f2(med(brk_r2)))
 pv("agentRankBaseMed", f2(med(agt_rank)))
-pv("agentR2BaseMed", f2(med(agt_r2)))
 rank_gap_values = brk_rank .- agt_rank
 rank_gap_intervals = [monte_carlo_interval(late_seed_values(c.mdfs, rankgap)) for c in B]
 pv("rankGapNNPosN", fint(count(>(0), rank_gap_values)))
 pv("rankGapNNCiPosN", fint(count(interval -> interval.lower > 0.0, rank_gap_intervals)))
-pv("brokerR2PositiveN", fint(count(>(0), brk_r2)))
 
 # ── 5.2 ──
 pv("betwRho0", f2(late(oatb("rho", "0.0").mdfs, col(:betweenness))))

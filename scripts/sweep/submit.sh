@@ -7,14 +7,17 @@
 #   ./submit.sh setup            # submit precompilation and wait for completion
 #   ./submit.sh manifest         # srun compute: write manifest.{json,jld2}+counts.env
 #   ./submit.sh smoke [idx]      # run one array task (default 0), then inspect it
+#   ./submit.sh pilot            # service experiment: five baseline seeds per mode
+#   ./submit.sh pilot-analyze    # service experiment: summarize the pilot
 #   ./submit.sh compute          # submit the full compute array and print its job ID
 #   ./submit.sh plot             # submit the dependent plot array (afterany)
+#   ./submit.sh analyze          # service experiment: analyze completed aggregates
 #   ./submit.sh status           # squeue for this user's sweep jobs
 #
 # The `resolve` stage performs network operations on the login node. Precompilation
 # and simulation run on compute nodes through `sbatch` or `srun`.
 #
-# Cluster settings are documented in README.md and sweep_config.jl.
+# Scientific sweep settings are defined in sweep_config.jl.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -34,8 +37,8 @@ if [ "$BROKERAGE_ABM_LEARNING_MODEL" = "ridge" ]; then
     DEFAULT_COMPUTE_TIME="01:01:00"
     DEFAULT_COMPUTE_TIME_MIN="00:05:00"
 else
-    DEFAULT_COMPUTE_TIME="06:00:00"
-    DEFAULT_COMPUTE_TIME_MIN=""
+    DEFAULT_COMPUTE_TIME="01:01:00"
+    DEFAULT_COMPUTE_TIME_MIN="00:05:00"
 fi
 COMPUTE_TIME="${BROKERAGE_ABM_TIME:-$DEFAULT_COMPUTE_TIME}"
 COMPUTE_TIME_MIN="${BROKERAGE_ABM_TIME_MIN:-$DEFAULT_COMPUTE_TIME_MIN}"
@@ -52,6 +55,7 @@ export BROKERAGE_ABM_RIDGE_BROKER_VARIANT="${BROKERAGE_ABM_RIDGE_BROKER_VARIANT:
 export BROKERAGE_ABM_SWEEP_SCOPE="${BROKERAGE_ABM_SWEEP_SCOPE:-full}"
 export BROKERAGE_ABM_N_SEEDS="${BROKERAGE_ABM_N_SEEDS:-20}"
 export BROKERAGE_ABM_BASELINE_N_SEEDS="${BROKERAGE_ABM_BASELINE_N_SEEDS:-$BROKERAGE_ABM_N_SEEDS}"
+export BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS="${BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS:-50}"
 
 SHA="$(git -C "$REPO" rev-parse --short HEAD)"
 TODAY="$(date +%Y-%m-%d)"
@@ -136,6 +140,7 @@ case "$stage" in
         echo "BROKERAGE_ABM_SWEEP_SCOPE=$BROKERAGE_ABM_SWEEP_SCOPE"
         echo "BROKERAGE_ABM_N_SEEDS=$BROKERAGE_ABM_N_SEEDS"
         echo "BROKERAGE_ABM_BASELINE_N_SEEDS=$BROKERAGE_ABM_BASELINE_N_SEEDS"
+        echo "BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS=$BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS"
     } > "$ENVFILE"
     echo "manifest + counts.env written under $SWEEP_DIR"
     ;;
@@ -168,9 +173,37 @@ case "$stage" in
     echo "compute array submitted: $jid  (0-$((NRUNS - 1))%${THROTTLE}, ${NRUNS} tasks, ${COMPUTE_CPUS} CPUs/task)"
     ;;
 
+  pilot)
+    [ -f "$SWEEP_DIR/counts.env" ] || { echo "run ./submit.sh manifest first"; exit 1; }
+    source "$SWEEP_DIR/counts.env"
+    [ "${NPILOT:-0}" -gt 0 ] || { echo "this sweep has no pilot task set"; exit 1; }
+    jid=$(sbatch --parsable --account="$ACCOUNT" --qos="$COMPUTE_QOS" \
+        --time="$COMPUTE_TIME" --cpus-per-task="$COMPUTE_CPUS" \
+        --array="${PILOT_ARRAY}%${NPILOT}" \
+        --output="$LOGDIR/%A_%a.out" --error="$LOGDIR/%A_%a.err" \
+        "$SCRIPT_DIR/slurm_sweep.sh" "$REPO" "$SWEEP_DIR")
+    echo "PILOT_JOBID=$jid" >> "$ENVFILE"
+    echo "pilot array submitted: $jid  (${NPILOT} tasks, ${COMPUTE_CPUS} CPUs/task)"
+    ;;
+
+  pilot-analyze)
+    [ -f "$ENVFILE" ] || { echo "run the manifest and pilot stages first"; exit 1; }
+    source "$ENVFILE"
+    [ -n "${PILOT_JOBID:-}" ] || { echo "run ./submit.sh pilot first"; exit 1; }
+    jid=$(sbatch --parsable --account="$ACCOUNT" --dependency="afterok:${PILOT_JOBID}" \
+        --output="$LOGDIR/pilot_analyze_%j.out" --error="$LOGDIR/pilot_analyze_%j.err" \
+        "$REPO/scripts/broker_services/slurm_analyze.sh" "$REPO" "$SWEEP_DIR" --pilot)
+    echo "PILOT_ANALYSIS_JOBID=$jid" >> "$ENVFILE"
+    echo "pilot analysis submitted: $jid  (afterok:${PILOT_JOBID})"
+    ;;
+
   plot)
     [ -f "$SWEEP_DIR/counts.env" ] || { echo "run ./submit.sh manifest first"; exit 1; }
     source "$SWEEP_DIR/counts.env"
+    if [ "$NPLOT" -eq 0 ]; then
+        echo "no plot jobs for this sweep scope"
+        exit 0
+    fi
     dep=""
     if [ -f "$ENVFILE" ]; then
         # shellcheck disable=SC1090
@@ -182,7 +215,23 @@ case "$stage" in
         --array="0-$((NPLOT - 1))%${PLOT_THROTTLE}" \
         --output="$LOGDIR/plot_%A_%a.out" --error="$LOGDIR/plot_%A_%a.err" \
         "$SCRIPT_DIR/slurm_plot.sh" "$REPO" "$SWEEP_DIR")
+    echo "PLOT_JOBID=$jid" >> "$ENVFILE"
     echo "plot array submitted: $jid  (0-$((NPLOT - 1))%${PLOT_THROTTLE}) ${dep:-(no dependency)}"
+    ;;
+
+  analyze)
+    [ -f "$ENVFILE" ] || { echo "run the manifest and plot stages first"; exit 1; }
+    source "$ENVFILE"
+    [ "${BROKERAGE_ABM_SWEEP_SCOPE:-}" = "broker_services" ] || {
+        echo "analyze stage is defined only for the broker-services scope"
+        exit 1
+    }
+    [ -n "${PLOT_JOBID:-}" ] || { echo "run ./submit.sh plot first"; exit 1; }
+    jid=$(sbatch --parsable --account="$ACCOUNT" --dependency="afterok:${PLOT_JOBID}" \
+        --output="$LOGDIR/analyze_%j.out" --error="$LOGDIR/analyze_%j.err" \
+        "$REPO/scripts/broker_services/slurm_analyze.sh" "$REPO" "$SWEEP_DIR")
+    echo "ANALYSIS_JOBID=$jid" >> "$ENVFILE"
+    echo "analysis job submitted: $jid  (afterok:${PLOT_JOBID})"
     ;;
 
   status)

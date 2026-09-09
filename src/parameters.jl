@@ -77,6 +77,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :train_steps_agent => 50,
         :train_steps_broker => 50,
         # Search
+        :broker_service => :full,
         :roster_frac => 0.20,
         :n_strangers => 10,
         :eta => 0.02,
@@ -117,6 +118,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         defaults[:train_max_obs],
         defaults[:train_steps_agent],
         defaults[:train_steps_broker],
+        defaults[:broker_service],
         defaults[:roster_frac],
         defaults[:n_strangers],
         defaults[:eta],
@@ -180,6 +182,7 @@ function validate_params(p::ModelParams)
     @assert broker_hidden_width(p) >= 1 "broker hidden width must be >= 1"
 
     # Search
+    @assert p.broker_service in (:full, :assessment_only, :access_only) "invalid broker_service: $(p.broker_service)"
     @assert 0.0 <= p.roster_frac <= 1.0 "roster_frac must be in [0, 1], got $(p.roster_frac)"
     @assert p.n_strangers >= 0 "n_strangers must be >= 0, got $(p.n_strangers)"
     @assert 0.0 <= p.eta < 1.0 "eta must be in [0, 1), got $(p.eta)"

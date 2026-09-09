@@ -9,6 +9,7 @@ using BrokerageABM
     expected_keys = Set([
         "period",
         "N",
+        "broker_service",
         "n_active_matches",
         "median_counterparties",
         "max_counterparties",
@@ -34,6 +35,7 @@ using BrokerageABM
     @test Set(keys(summary)) == expected_keys
     @test summary["period"] == state.period
     @test summary["N"] == state.params.N
+    @test summary["broker_service"] == "full"
     @test summary["broker_roster_size"] == length(state.broker.roster)
     @test summary["broker_access_size"] ==
         BrokerageABM.broker_access_size(state.broker)

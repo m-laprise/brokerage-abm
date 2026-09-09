@@ -21,6 +21,7 @@ function diagnostic_summary(state::ModelState)::Dict{String,Any}
     return Dict{String,Any}(
         "period" => state.period,
         "N" => N,
+        "broker_service" => string(state.params.broker_service),
         "n_active_matches" => sum(length(a.active_matches) for a in agents) ÷ 2,
         "median_counterparties" => state.accum.median_counterparties,
         "max_counterparties" => state.accum.max_counterparties,

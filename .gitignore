@@ -47,3 +47,6 @@ paper/**/*.aux
 !output/supplement/dgp_figure_data.jld2
 !output/ridge/paired/figure_data.jld2
 !output/ridge/ablations/figure_data.jld2
+
+# Generated bundle for external manuscript review
+output/overleaf/

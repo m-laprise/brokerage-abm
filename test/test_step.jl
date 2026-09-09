@@ -94,6 +94,33 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
         @test metrics.max_counterparties >= metrics.median_counterparties
         @test metrics.broker_access_size >= metrics.roster_size
         @test metrics.broker_access_size <= p.N
+        @test metrics.self_filled_positions <= metrics.self_requested_positions
+        @test metrics.broker_filled_positions <= metrics.broker_requested_positions
+        @test metrics.broker_filled_positions ==
+            metrics.access_count + metrics.assessment_count
+    end
+
+    @testset "Per-request outcomes count unfilled positions" begin
+        state = initialize_model(default_params(N=20, T=2, seed=145))
+        state.accum.total_demand = 10
+        state.accum.outsourced_slots = 4
+        append!(state.accum.agent_realized, [3.0, 5.0])
+        append!(state.accum.broker_realized, [4.0, 6.0, 8.0])
+
+        metrics = collect_period_metrics(state)
+        expected_self_net = 8.0 - 6 * state.cal.c_s
+        expected_broker_net = 18.0 - 3 * state.cal.phi
+
+        @test metrics.self_requested_positions == 6
+        @test metrics.broker_requested_positions == 4
+        @test metrics.self_filled_positions == 2
+        @test metrics.broker_filled_positions == 3
+        @test metrics.self_fill_rate == 2 / 6
+        @test metrics.broker_fill_rate == 3 / 4
+        @test metrics.self_net_output_per_requested_position ≈ expected_self_net / 6
+        @test metrics.broker_net_output_per_requested_position ≈ expected_broker_net / 4
+        @test metrics.net_output_per_requested_position ≈
+            (expected_self_net + expected_broker_net) / 10
     end
 
     @testset "collect_period_metrics reports agent-only degree summaries from G" begin

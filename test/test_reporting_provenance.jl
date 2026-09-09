@@ -44,6 +44,10 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
             joinpath(repository, "paper", "appendices", "model_specifications.tex"),
             "specifications\n",
         )
+        write(
+            joinpath(repository, "paper", "appendices", "simulation_pseudocode.tex"),
+            "pseudocode\n",
+        )
         run(`git -C $repository add paper`)
         run(`git -C $repository commit -q -m paper`)
         write(joinpath(repository, "source.txt"), "committed\n")
@@ -57,6 +61,16 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
             joinpath(repository, "paper", "appendices", "model_specifications.tex"),
             "revised specifications\n",
         )
+        write(
+            joinpath(repository, "paper", "appendices", "simulation_pseudocode.tex"),
+            "revised pseudocode\n",
+        )
+        revised = manuscript_git_provenance(repository)
+        @test !revised.source_clean
+        @test occursin("model_specifications.tex", revised.source_status)
+        @test occursin("simulation_pseudocode.tex", revised.source_status)
+
+        write(joinpath(repository, "analysis.jl"), "revised analysis\n")
         @test_throws ErrorException manuscript_git_provenance(repository)
     end
 end

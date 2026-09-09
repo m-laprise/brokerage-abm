@@ -10,6 +10,7 @@ const RIDGECAL_BASELINE = (
     k=6,
     roster_frac=0.20,
     n_strangers=10,
+    broker_service=:full,
 )
 const RIDGECAL_N = RIDGECAL_BASELINE.N
 const RIDGECAL_T = 500
@@ -86,4 +87,3 @@ function ridgecal_stage_seeds(stage::Symbol)
     stage == :confirm && return RIDGECAL_CONFIRM_SEEDS
     error("unknown Ridge calibration stage: $stage")
 end
-

@@ -36,7 +36,7 @@ This document specifies an agent-based model of brokered matching.
 
 The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same payoff units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
 
-The model specification covers agents (§1), the matching problem (§2), how agents learn to predict match quality (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
+The model specification covers agents (§1), the matching problem (§2), how agents learn to predict expected match output (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
 
 \section{Part I. Model Specification}\label{part-i.-model-specification}
 
@@ -85,16 +85,16 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Each pair's match value combines two sources: the agents' average general quality and a match-specific complementarity between their types. The parameter \(\rho\) moves the matching problem from pure complementarity to pure general quality. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Match value is symmetric in the two agents.
+Each potential pair's expected match output combines two sources: the agents' average general quality and a match-specific complementarity between their types. The parameter \(\rho\) moves the matching problem from pure complementarity to pure general quality. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Expected and realized match output are symmetric in the two agents.
 
-\subsubsection{2a. Match Quality}\label{a.-match-quality}
+\subsubsection{2a. Match Output}\label{a.-match-output}
 
-Let \(q_{ij}\) be the per-period value of the match between agents \(i\) and \(j\), measured in payoff units:
+Let \(q_{ij}\) be the realized per-period output of a match between agents \(i\) and \(j\), measured in payoff units:
 
 \[q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
 \varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2).\]
 
-The predictable match value \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The term \(\varepsilon_{ij}\) is random match variation.
+The conditional expected output is \(E[q_{ij}\mid\mathbf{x}_i,\mathbf{x}_j]=Q+f(\mathbf{x}_i,\mathbf{x}_j)\). The systematic component \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The independent, mean-zero shock \(\varepsilon_{ij}\) creates match-specific variation that neither the agents nor the broker can predict.
 
 The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents:
 
@@ -111,7 +111,7 @@ Let \(\kappa(\delta)\) denote the fixed covariance between general quality and c
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
-accounts for this small covariance. Averaged across the independently generated environments, each standardized component and the resulting predictable match value \(f\) have within-market variance one for every \(\rho\) and \(\delta\). This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
+accounts for this small covariance. Averaged across the independently generated environments, each standardized component and the resulting systematic component \(f\) have within-market variance one for every \(\rho\) and \(\delta\). Because \(Q\) is constant, expected match output has the same variance. This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
 
 Because the two components have the same marginal variance on this scale, \(\rho\in[0,1]\) is general quality's share of their summed marginal variances, while \(1-\rho\) is complementarity's share. Thus \(\rho=0\) gives pure complementarity and \(\rho=1\) gives pure general quality. At \(\rho=1\), \(\delta\) has no effect.
 
@@ -171,7 +171,7 @@ The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) a
 
 where \(\delta\in[0,1]\) (default 0.5).
 
-The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different values even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. Normalizing \(W_{ij}(\delta)\) separately for each \(\delta\) removes the accompanying change in dispersion. Thus \(\delta\) changes the shape and difficulty of complementarity, not its variance.
+The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different expected output even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. Normalizing \(W_{ij}(\delta)\) separately for each \(\delta\) removes the accompanying change in dispersion. Thus \(\delta\) changes the shape and difficulty of complementarity, not its variance.
 
 \textbf{Boundary construction.} Matrix \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) over the realized type distribution. This ensures that \(\delta\) introduces a distinct boundary rather than merely amplifying the base complementarity pattern. Let
 
@@ -357,7 +357,11 @@ then the broker samples without replacement from \(\{1,\ldots,N\}\setminus \wide
 
 \subsubsection{6c. Broker-Mediated Search}\label{c.-broker-mediated-search}
 
-For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match quality. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
+For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match output. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
+
+The broker-service experiment separates access from assessment. The default \textbf{full-service broker} uses the broker access set \(\mathcal A_b^t\) and the broker's pair predictions. The \textbf{assessment-only broker} applies the broker's pair predictions to the same candidate set an agent could reach through self-search: its network neighbors and an independently drawn stranger pool. The \textbf{access-only broker} presents candidates from \(\mathcal A_b^t\), but the client orders them using its own assessments: its pair-specific mean for an experienced neighbor and its prediction model otherwise. In every mode, candidates below the score source's reservation threshold are excluded.
+
+These restrictions change only how brokered candidates are obtained and ordered. The broker continues to observe mediated outcomes and refit its model in all modes, although its predictions do not determine access-only offers. Offer acceptance, match formation, fees, satisfaction, reputation, learning histories, and network updating are unchanged. ``Assessment-only'' means that the broker adds no candidate access beyond ordinary self-search. It does not imply that every resulting match joins existing neighbors, because ordinary self-search includes strangers. Likewise, access-only service can select a current neighbor when that neighbor belongs to the broker access set.
 
 \subsubsection{6d. Offer Acceptance and Match Formation}\label{d.-offer-acceptance-and-match-formation}
 
@@ -381,7 +385,7 @@ Before the next period begins, match lists are cleared. The next period begins w
 
 \subsubsection{7a. Satisfaction Tracking}\label{a.-satisfaction-tracking}
 
-Each agent \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an EWMA of realized match value net of search costs:
+Each agent \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an EWMA of realized match output net of search costs:
 
 \[s_{i,c}^{t+1} = (1 - \omega)\,s_{i,c}^t + \omega \cdot \tilde{q}\]
 
@@ -461,7 +465,7 @@ where \(d_b\) is the broker's degree and \(t_b\) is the number of ties among the
 
 \subsubsection{Prediction Quality}\label{prediction-quality}
 
-Prediction quality is evaluated on holdout pairs and accepted directed offers:
+Prediction quality is evaluated on random candidate pairs and accepted directed offers:
 
 {
 \begin{longtable}[]{@{}
@@ -480,7 +484,7 @@ Reported measures
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Holdout pairs & Up to 100 agents with non-empty histories; for each sampled agent \(i\), \(\min(40,N-1)\) non-self partners \(j\). Agent and broker predictions are evaluated against noiseless \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\). Both models use the same deterministic sample conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
+Random candidate pairs & Up to 100 agents with non-empty histories; for each sampled agent \(i\), \(\min(40,N-1)\) non-self partners \(j\). Agent and broker predictions are evaluated against noiseless \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\). Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
 Selected offers & Accepted directed offers by channel, self-search or brokered. A reciprocal relationship can represent two directed decisions. & Channel-specific \(R^2\), RMSE, bias, and Spearman rank correlation. \\
 \end{longtable}
 }
@@ -493,7 +497,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation evaluates the strict ranking produced from predicted output. Candidates are ordered by predicted output, with each set of equal predictions ordered uniformly at random. Agent and broker tie-breaking draws are independent. Spearman's \(\rho_S\) is then computed between this produced ranking and the realized-output ranks; equal realized outputs retain their average ranks. The same rule is applied to each holdout candidate set and to the pooled accepted directed offers within each selected-offer channel. Thus a constant predictor produces a random ranking with expected rank correlation zero. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Holdout summaries use common valid-agent support for all four measures: an agent-level holdout set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
+Rank correlation evaluates the strict ranking produced from predicted output. Candidates are ordered by predicted output, with each set of equal predictions ordered uniformly at random. Agent and broker tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with expected-output ranks. For selected offers, it compares the produced ranking with realized-output ranks. Equal target values retain their average ranks. Thus a constant predictor produces a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: expected output for random candidate pairs and realized output for selected offers. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Random-candidate summaries use common valid-agent support for all four measures: an agent-level candidate set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
 
 \subsubsection{Other Measures}\label{other-measures}
 
@@ -512,7 +516,8 @@ Definition
 \bottomrule\noalign{}
 \endlastfoot
 Access vs.~assessment & For each accepted broker-directed offer, record whether receiver \(j\) was a direct neighbor of sender \(i\) in \(G\) at the time of the offer. Non-neighbor receivers indicate access; neighbor receivers indicate assessment. \\
-Match quality by channel & Average realized match output \(\bar{q}_c^t\), where \(c \in \{\text{self}, \text{brokered}\}\). \\
+Realized match output by channel & Average realized match output \(\bar{q}_c^t\), where \(c \in \{\text{self}, \text{brokered}\}\). \\
+Requested-position outcomes & For each channel, record the share of requested positions filled and realized output net of channel costs per requested position. Unfilled positions contribute zero output. \\
 Mean channel satisfaction & Cross-agent means \(N^{-1}\sum_i s_{i,\text{self}}^t\) and \(N^{-1}\sum_i s_{i,\text{broker}}^t\). \\
 Outsourcing rate & Outsourced requested positions divided by total requested positions. \\
 Broker access size & \(\|\mathcal{A}_b^t\| = \|\text{Roster}^t \cup D^t\|\), measured after outsourcing decisions form \(D^t\) and before entry/exit. \\
@@ -530,6 +535,8 @@ Agent-node degree summaries & Mean, median, minimum, and maximum degree, excludi
 The table lists baseline values only. Entries are arranged in two columns; each column follows the document order, with the run length listed first.
 
 The baseline learning function is NN. Ridge and its broker variants are alternate experiments (§3).
+
+The baseline broker provides both access and assessment. The assessment-only and access-only modes are alternate experiments (§6c).
 
 {
 \begin{center}
@@ -559,7 +566,7 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 
 \subsubsection{9b. Reproducibility}\label{b.-reproducibility}
 
-All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, random ordering within market score ties, and subsequent model events. Holdout samples and their independent agent and broker tie-breaking draws are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
+All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, random ordering within market score ties, and subsequent model events. Random candidate samples and their independent agent and broker tie-breaking draws are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
 
 \section{References}\label{references}
 

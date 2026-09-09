@@ -78,7 +78,7 @@ function collect_period_metrics(state::ModelState)
     broker = state.broker
     N = p.N
 
-    # Prediction quality: holdout is per-agent averaged, computed in step.jl.
+    # Random-candidate diagnostics are averaged across agents in step.jl.
     # Selected-sample metrics are pooled over actual matches by channel.
     se = state.env.sigma_eps
     selected_rank_rng = diagnostics_rng(p.seed, state.period, 0x4a8f3c21)
@@ -98,6 +98,13 @@ function collect_period_metrics(state::ModelState)
     else
         sqrt(mean((a.broker_predicted .- a.broker_realized) .^ 2))
     end
+
+    self_requested = a.total_demand - a.outsourced_slots
+    broker_requested = a.outsourced_slots
+    self_filled = length(a.agent_realized)
+    broker_filled = length(a.broker_realized)
+    self_net_output = sum(a.agent_realized) - state.cal.c_s * self_requested
+    broker_net_output = sum(a.broker_realized) - state.cal.phi * broker_filled
 
     # Agent-level stats
     mean_sat_self = mean(ag.satisfaction_self for ag in agents)
@@ -120,6 +127,22 @@ function collect_period_metrics(state::ModelState)
         total_demand=a.total_demand,
         outsourcing_rate=a.total_demand > 0 ? a.outsourced_slots / a.total_demand : 0.0,
         outsourcing_rate_demanders=a.n_demanders > 0 ? a.n_outsourced / a.n_demanders : 0.0,
+        self_requested_positions=self_requested,
+        broker_requested_positions=broker_requested,
+        self_filled_positions=self_filled,
+        broker_filled_positions=broker_filled,
+        self_fill_rate=self_requested > 0 ? self_filled / self_requested : NaN,
+        broker_fill_rate=broker_requested > 0 ? broker_filled / broker_requested : NaN,
+        self_net_output_per_requested_position=(
+            self_requested > 0 ? self_net_output / self_requested : NaN
+        ),
+        broker_net_output_per_requested_position=(
+            broker_requested > 0 ? broker_net_output / broker_requested : NaN
+        ),
+        net_output_per_requested_position=(
+            a.total_demand > 0 ?
+            (self_net_output + broker_net_output) / a.total_demand : NaN
+        ),
         # Access vs assessment
         access_count=a.access_count,
         assessment_count=a.assessment_count,

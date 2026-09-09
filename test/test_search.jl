@@ -161,7 +161,7 @@ end
         @test Set(order_b) == Set(candidate_ids)
     end
 
-    @testset "Period stranger pool has fixed default size" begin
+    @testset "Demander stranger pool has fixed default size" begin
         p = default_params(N=80, T=5, seed=13)
         state = initialize_model(p)
         strangers = state.workspace.search.period_strangers
@@ -338,5 +338,85 @@ end
         @test global_a.order != global_b.order
         @test Set(global_a.order) == Set(candidate_ids)
         @test Set(global_b.order) == Set(candidate_ids)
+    end
+
+    @testset "Assessment-only broker uses self-access candidates and broker scores" begin
+        p = default_params(
+            N=20, T=2, K=1, n_strangers=0, broker_service=:assessment_only, seed=24
+        )
+        state = initialize_model(p)
+        agents = state.agents
+        broker = state.broker
+        G = state.G
+        ws = state.workspace
+
+        remove_agent_edges!(G, 1)
+        add_match_edge!(G, 1, 2)
+        empty!(broker.roster)
+        push!(broker.roster, 3)
+        empty!(broker.current_clients)
+        push!(broker.current_clients, 1)
+        set_constant_prediction!(agents[1].nn, state.cal.r - 1.0)
+        set_constant_prediction!(broker.nn, state.cal.r + 1.0)
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, p.N)
+
+        sent = BrokerageABM.append_broker_offers!(
+            ws,
+            [1],
+            [:broker],
+            [1],
+            agents,
+            broker,
+            p,
+            state.cal.r;
+            rng=StableRNG(7401),
+            G=G,
+        )
+
+        @test sent == 1
+        @test [(o.from_id, o.to_id, o.channel) for o in ws.offer_book.offers] ==
+            [(1, 2, :broker)]
+    end
+
+    @testset "Access-only broker uses broker access and principal scores" begin
+        p = default_params(
+            N=20, T=2, K=1, broker_service=:access_only, seed=25
+        )
+        state = initialize_model(p)
+        agents = state.agents
+        broker = state.broker
+        G = state.G
+        ws = state.workspace
+
+        remove_agent_edges!(G, 1)
+        fill!(agents[1].partner_count, 0)
+        fill!(agents[1].partner_sum, 0.0)
+        empty!(broker.roster)
+        union!(broker.roster, [2, 3])
+        empty!(broker.current_clients)
+        push!(broker.current_clients, 1)
+        set_constant_prediction!(agents[1].nn, state.cal.r + 1.0)
+        set_constant_prediction!(broker.nn, state.cal.r - 1.0)
+        BrokerageABM.rebuild_current_match_index!(ws, agents)
+        BrokerageABM.reset_offer_book!(ws, p.N)
+
+        sent = BrokerageABM.append_broker_offers!(
+            ws,
+            [1],
+            [:broker],
+            [1],
+            agents,
+            broker,
+            p,
+            state.cal.r;
+            rng=StableRNG(7501),
+            G=G,
+        )
+
+        @test sent == 1
+        @test only(ws.offer_book.offers).from_id == 1
+        @test only(ws.offer_book.offers).to_id in (2, 3)
+        @test only(ws.offer_book.offers).predicted_value == state.cal.r + 1.0
     end
 end

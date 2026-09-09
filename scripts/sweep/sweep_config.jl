@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard schema or scientific run semantics change."""
-const SWEEP_SCHEMA_VERSION = 11
+const SWEEP_SCHEMA_VERSION = 12
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification
@@ -39,6 +39,9 @@ const SWEEP_T_BURN = 30
 const SWEEP_SEEDS = collect(1:parse(Int, get(ENV, "BROKERAGE_ABM_N_SEEDS", "20")))
 const SWEEP_BASELINE_SEEDS = collect(
     1:parse(Int, get(ENV, "BROKERAGE_ABM_BASELINE_N_SEEDS", string(length(SWEEP_SEEDS))))
+)
+const BROKER_SERVICE_BASELINE_SEEDS = collect(
+    1:parse(Int, get(ENV, "BROKERAGE_ABM_SERVICE_BASELINE_N_SEEDS", "50"))
 )
 const SWEEP_LEARNING_MODEL = Symbol(get(ENV, "BROKERAGE_ABM_LEARNING_MODEL", "nn"))
 const SWEEP_NN_ETA_LR_AGENT = parse(
@@ -77,7 +80,7 @@ SWEEP_RIDGE_LAMBDA_AGENT > 0.0 || error("agent Ridge penalty must be positive")
 SWEEP_RIDGE_LAMBDA_BROKER > 0.0 || error("broker Ridge penalty must be positive")
 SWEEP_RIDGE_BROKER_VARIANT in (:pair, :size_matched, :single_principal, :additive) ||
     error("invalid sweep Ridge broker variant")
-SWEEP_SCOPE in (:full, :rho_delta) || error("invalid sweep scope")
+SWEEP_SCOPE in (:full, :rho_delta, :broker_services) || error("invalid sweep scope")
 isempty(SWEEP_SEEDS) && error("sweep must include at least one seed")
 length(SWEEP_BASELINE_SEEDS) < length(SWEEP_SEEDS) &&
     error("baseline seed set cannot be smaller than the general seed set")
@@ -95,6 +98,7 @@ const SWEEP_BASELINE = (
     k=6,
     roster_frac=0.20,
     n_strangers=10,
+    broker_service=:full,
 )
 const SWEEP_KEYS = keys(SWEEP_BASELINE)
 
@@ -111,7 +115,7 @@ const ETA_VALS = [0.0, 0.001, 0.01, 0.02, 0.03]
 const N_VALS = [500, 1000, 1500]
 const R_VALS = [0.40, 0.60, 0.90, 1.20]   # reservation_frac (lambda_r)
 
-# Matching difficulty (`delta`, the regime-gain strength) and network density
+# Matching difficulty (`delta`, the complementarity-boundary strength) and network density
 # (`k`, the initial degree).
 # The matching-problem grid uses the same seven rho levels as the OAT sweep and
 # five delta levels over its full allowed range. At rho=1, delta drops out of
@@ -170,11 +174,24 @@ function condition_key(params::AbstractDict)
     return Tuple(resolved[key] for key in SWEEP_KEYS)
 end
 
-"""True when a resolved cell is the baseline effective realization."""
-is_baseline_condition(cell) = condition_key(cell[:params]) == Tuple(SWEEP_BASELINE)
+"""True when a cell has baseline model parameters, apart from broker service."""
+function is_baseline_condition(cell)
+    resolved = resolved_sweep_params(cell[:params])
+    return all(
+        resolved[key] == SWEEP_BASELINE[key] for key in SWEEP_KEYS if key != :broker_service
+    )
+end
 
 """Planned seeds for an effective condition."""
-condition_seeds(cell) = is_baseline_condition(cell) ? SWEEP_BASELINE_SEEDS : SWEEP_SEEDS
+function condition_seeds(cell)
+    is_baseline_condition(cell) || return SWEEP_SEEDS
+    return get(cell, :kind, "") == "broker_service" ?
+           BROKER_SERVICE_BASELINE_SEEDS : SWEEP_BASELINE_SEEDS
+end
+
+"""Baseline seed set recorded for the selected sweep scope."""
+scope_baseline_seeds(scope::Symbol=SWEEP_SCOPE) =
+    scope == :broker_services ? BROKER_SERVICE_BASELINE_SEEDS : SWEEP_BASELINE_SEEDS
 
 """
 Annotate grid coordinates with the first result directory realizing each condition.
@@ -225,8 +242,43 @@ phase cells (in `PHASE_PAIRS` order). Each cell points to the canonical result
 directory for its model realization.
 """
 function build_cells(scope::Symbol=SWEEP_SCOPE)
-    scope in (:full, :rho_delta) || error("invalid sweep scope")
+    scope in (:full, :rho_delta, :broker_services) || error("invalid sweep scope")
     cells = Dict{Symbol,Any}[]
+
+    if scope == :broker_services
+        for mode in (:full, :assessment_only, :access_only)
+            base = Dict{Symbol,Any}(:broker_service => mode)
+            push!(
+                cells,
+                Dict{Symbol,Any}(
+                    :kind => "broker_service",
+                    :broker_service => string(mode),
+                    :rho => SWEEP_BASELINE.rho,
+                    :eta => SWEEP_BASELINE.eta,
+                    :params => base,
+                    :reldir => "broker_services/$(mode)/baseline",
+                ),
+            )
+            for rho in RHO_CORE_VALS, eta in (0.0, 0.01, 0.03)
+                params = Dict{Symbol,Any}(
+                    :broker_service => mode, :rho => rho, :eta => eta
+                )
+                push!(
+                    cells,
+                    Dict{Symbol,Any}(
+                        :kind => "broker_service",
+                        :broker_service => string(mode),
+                        :rho => rho,
+                        :eta => eta,
+                        :params => params,
+                        :reldir =>
+                            "broker_services/$(mode)/rho=$(fmt_val(rho))_eta=$(fmt_val(eta))",
+                    ),
+                )
+            end
+        end
+        return link_result_cells!(cells)
+    end
 
     if scope == :rho_delta
         push!(
@@ -327,7 +379,21 @@ function build_entries(cells)
                 :resolved_params => c[:resolved_params],
             )
             # carry axis/pair metadata through for provenance
-            for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
+            for k in (
+                :axis,
+                :key,
+                :value,
+                :pair,
+                :xkey,
+                :xval,
+                :xi,
+                :ykey,
+                :yval,
+                :yi,
+                :broker_service,
+                :rho,
+                :eta,
+            )
                 haskey(c, k) && (e[k] = c[k])
             end
             push!(entries, e)
@@ -348,6 +414,27 @@ for all grid points -> per-grid-point data.jld2 + summary.jld2 + heatmaps).
 function build_plot_jobs(cells)
     jobs = Dict{Symbol,Any}[]
     idx = 0
+
+    for c in cells
+        c[:kind] == "broker_service" || continue
+        push!(
+            jobs,
+            Dict{Symbol,Any}(
+                :index => idx,
+                :kind => "aggregate_cell",
+                :cell_kind => c[:kind],
+                :reldir => c[:reldir],
+                :result_reldir => c[:result_reldir],
+                :condition_index => c[:condition_index],
+                :resolved_params => c[:resolved_params],
+                :seeds => c[:seeds],
+                :broker_service => c[:broker_service],
+                :rho => c[:rho],
+                :eta => c[:eta],
+            ),
+        )
+        idx += 1
+    end
 
     # OAT plot jobs (one per OAT cell)
     for c in cells

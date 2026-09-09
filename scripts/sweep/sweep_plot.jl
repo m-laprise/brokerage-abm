@@ -7,6 +7,7 @@ rerunning simulations.
 Plot-job kinds (from `manifest.jld2` `plot_jobs`):
   * `oat_cell`: aggregate one OAT cell and render its dynamics and network figures.
   * `phase_pair`: aggregate one two-parameter grid and render its metric heatmaps.
+  * `aggregate_cell`: aggregate one experiment condition without rendering.
 
 Usage:
   BROKERAGE_ABM_SWEEP_DIR=... SLURM_ARRAY_TASK_ID=<i> julia --project --threads=auto scripts/sweep/sweep_plot.jl
@@ -92,7 +93,9 @@ end
 """Grid-coordinate metadata paired with the canonical realized-result config."""
 function grid_config(config, grid)
     cfg = realized_config(config)
-    cfg["kind"] = haskey(grid, :pair) ? "phase" : "oat"
+    cfg["kind"] = get(
+        grid, :cell_kind, get(grid, :kind, haskey(grid, :pair) ? "phase" : "oat")
+    )
     cfg["reldir"] = grid[:reldir]
     cfg["result_reldir"] = grid[:result_reldir]
     cfg["condition_index"] = grid[:condition_index]
@@ -632,6 +635,22 @@ function do_oat_cell(sweepdir, job, expected_provenance)
     plot_dynamics(cell.mdfs, label, joinpath(celldir, "dynamics.png"))
 end
 
+function do_aggregate_cell(sweepdir, job, expected_provenance)
+    celldir = joinpath(sweepdir, job[:reldir])
+    aggregate = joinpath(celldir, "data.jld2")
+    if shards_complete(celldir, expected_provenance, job[:seeds]) &&
+        aggregate_is_current(aggregate, expected_provenance)
+        println("SKIP aggregate (current): $(job[:reldir])")
+        return nothing
+    end
+    shards_complete(celldir, expected_provenance, job[:seeds]) ||
+        error("incomplete shards for $(job[:reldir])")
+    cell = load_cell(celldir, expected_provenance, job[:seeds])
+    write_cell_data(celldir, cell, job)
+    println("aggregated $(job[:reldir]) ($(length(cell.seeds)) seeds)")
+    return nothing
+end
+
 function do_phase_pair(sweepdir, job, expected_provenance)
     pairdir = joinpath(sweepdir, job[:reldir])
     # Idempotent: skip pairs whose summary already exists (BROKERAGE_ABM_REPLOT=1 forces a rebuild).
@@ -726,6 +745,8 @@ function main()
         do_oat_cell(sweepdir, job, provenance)
     elseif job[:kind] == "phase_pair"
         do_phase_pair(sweepdir, job, provenance)
+    elseif job[:kind] == "aggregate_cell"
+        do_aggregate_cell(sweepdir, job, provenance)
     else
         error("unknown plot job kind: $(job[:kind])")
     end

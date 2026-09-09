@@ -390,8 +390,8 @@ Base.@kwdef mutable struct PeriodAccumulators
     broker_predicted::Vector{Float64} = Float64[]
     broker_realized::Vector{Float64} = Float64[]
 
-    # Holdout: per-agent averaged over sampled agents (both agent and broker
-    # evaluated on the same per-agent partner sets for comparability)
+    # Random-candidate diagnostics, averaged across sampled agents. Both learners
+    # are evaluated on the same candidate sets.
     agent_holdout_r2::Float64 = NaN
     agent_holdout_bias::Float64 = NaN
     agent_holdout_rank::Float64 = NaN
@@ -479,7 +479,7 @@ struct ModelParams
 
     # Matching function
     rho::Float64                 # general-quality share of systematic variance (default 0.50)
-    delta::Float64               # regime gain strength (default 0.5)
+    delta::Float64               # complementarity-boundary strength (default 0.5)
     sigma_x::Float64             # type noise scale (default 0.5)
     sigma_eps::Float64           # match output noise SD (default 0.2841)
     # Match accounting
@@ -512,8 +512,9 @@ struct ModelParams
     train_steps_broker::Int      # broker update-step floor (default 50)
 
     # Search
+    broker_service::Symbol        # :full (default), :assessment_only, or :access_only
     roster_frac::Float64         # standing broker roster share (default 0.20)
-    n_strangers::Int             # period-level stranger pool size (default 10)
+    n_strangers::Int             # per-demander stranger pool size (default 10)
     eta::Float64                 # agent entry/exit rate (default 0.02)
     roster_churn::Float64        # standing-roster exogenous churn probability (default 0.02)
 
@@ -555,6 +556,7 @@ Base.@kwdef mutable struct BrokerPairWorkspace
     Z_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # broker feature input
     H_batch::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)  # h x n_pairs hidden
     Y_batch::Vector{Float64} = Float64[]                      # n_pairs output
+    feature_buf::Vector{Float64} = Float64[]                   # scalar broker prediction
     period_broker_demanders::Vector{Int} = Int[]
     period_broker_access_ids::Vector{Int} = Int[]
     broker_pair_scores::Vector{Tuple{Float64,Int,Int}} = Tuple{Float64,Int,Int}[]
@@ -596,7 +598,7 @@ Base.@kwdef mutable struct PeriodLedger
     offer_remaining::Vector{Int} = Int[]
 end
 
-"""Reusable deterministic holdout-diagnostics buffers."""
+"""Reusable deterministic random-candidate diagnostic buffers."""
 Base.@kwdef mutable struct HoldoutWorkspace
     z_buf::Vector{Float64} = Float64[]
     agent_preds::Vector{Float64} = Float64[]

@@ -91,6 +91,7 @@ function main()
     println(
         "RUN   [$id] $reldir seed=$seed  (N=$(p.N), rho=$(p.rho), eta=$(p.eta), " *
         "r_frac=$(p.reservation_frac), learner=$(p.learning_model), " *
+        "broker_service=$(p.broker_service), " *
         "broker_variant=$(p.ridge_broker_variant), " *
         "threads=$(Threads.nthreads()))",
     )
@@ -119,6 +120,7 @@ function main()
         "k" => p.k,
         "roster_frac" => p.roster_frac,
         "n_strangers" => p.n_strangers,
+        "broker_service" => string(p.broker_service),
         "s" => p.s,
         "reservation_frac" => p.reservation_frac,
         "learning_model" => string(p.learning_model),

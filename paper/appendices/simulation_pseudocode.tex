@@ -28,6 +28,7 @@
 \newcommand{\procPredictBroker}{PredictBroker}
 \newcommand{\procTrainPredictors}{TrainPredictors}
 \newcommand{\procChooseChannel}{ChooseChannel}
+\newcommand{\procBrokerCandidates}{BrokerCandidates}
 \newcommand{\procAddOffer}{AddOffer}
 \newcommand{\procOfferMarket}{OfferMarket}
 \newcommand{\procFinalizeMatch}{FinalizeMatch}
@@ -121,6 +122,7 @@ $d$ & scalar & Agent type dimension. \\
 $k_G$ & scalar & Watts-Strogatz graph degree. \\
 $\omega$ & scalar & Satisfaction EWMA weight. \\
 $\mathsf L$ & learning function & $\mathrm{NN}$ (default) or $\mathrm{Ridge}$. \\
+$\mathsf S_b$ & broker service & Full (default), assessment-only, or access-only. \\
 $\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=0.003$ and $\lambda_b=0.001$. \\
 $a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
 $E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps; both are 100 in the reporting simulations. \\
@@ -135,7 +137,7 @@ $X^t=[x_1^t,\ldots,x_N^t]$ & $\R^{d\times N}$ & Agent type matrix; $x_i^t=X^t_{\
 $\gamma$ & $[0,1]\to\R^d$ & Agent type curve for initial and entrant draws. \\
 $q_{ij}^t$ & scalar & Realized output for match $(i,j)$. \\
 \addlinespace[0.25em]
-\multicolumn{3}{@{}l}{\textit{True matching function}}\\
+\multicolumn{3}{@{}l}{\textit{Match-output function}}\\
 $Q$ & scalar & Output offset. \\
 $\rho$ & scalar & General-quality share of the two components' summed marginal variances. \\
 $\delta$ & scalar & Strength of the pair boundary in match-specific complementarity. \\
@@ -161,6 +163,7 @@ $\mathcal O_i^t,\mathcal O_b^t$ & Adam states & Persistent NN optimizer moments 
 $\Delta_i^t,\Delta_b^t$ & nonnegative integers & Observations added since the learner's previous training call. \\
 $\mathbf p_i^t,\mathbf p_b^t$ & integer sequences & Cumulative history counts at the end of learner initialization (period 0) and each later completed period. \\
 $v_b^t(i,j)$ & scalar & Symmetric broker prediction for unordered pair $\{i,j\}$. \\
+$a_{i\to j}^t$ & scalar & Agent $i$'s assessment of candidate $j$. \\
 $w_{j\leftarrow i}^t$ & scalar & Receiver acceptance score. \\
 $\bar q_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed empirical means. \\
 $C_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed counts. \\
@@ -210,12 +213,17 @@ H_{ij}=\operatorname{sign}(x_i^\top Bx_j)V_{ij},
 \frac{V_{ij}+\delta H_{ij}-(\mu_V+\delta\mu_H)}
 {\sqrt{\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2}}.
 \]
-With \(\kappa(\delta)=\operatorname{Corr}(U,W(\delta))\), the matching function is
+With \(\kappa(\delta)=\operatorname{Corr}(U,W(\delta))\), the systematic output component is
 \[
 f(x_i,x_j)=
 \frac{\sqrt{\rho}\,\widetilde U_{ij}
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)}
 {\sqrt{1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)}}.
+\]
+Expected match output is \(Q+f(x_i,x_j)\). A completed match produces realized output
+\[
+q_{ij}=Q+f(x_i,x_j)+\varepsilon_{ij},
+\qquad \varepsilon_{ij}\sim\mathcal N(0,\sigma_\varepsilon^2).
 \]
 \section{Top-Level Simulation}
 
@@ -574,6 +582,8 @@ $\mathcal N_G^t(i)$ & subset of $[N]$ & Non-broker graph neighbors of $i$. \\
 $U_i^t$ & subset of $[N]$ & Self-search stranger pool independently sampled for demander $i$. \\
 $n_{\mathrm{strangers}}$ & integer & Per-demander stranger-pool size. \\
 $v_{i\to j}^{\mathrm{self},t}$ & scalar & Self-offer score. \\
+$\mathcal U_{b,i}$ & subset of $[N]$ & Candidate set for broker-client demander $i$. \\
+$v_{b,i\to j}^t$ & scalar & Score used to order brokered candidates for demander $i$. \\
 $\Omega_i$ & integer & Residual offer quota for demander $i$. \\
 $\Omega$ & $\mathbb Z_{\ge0}^N$ & Residual quota vector. \\
 $O^t$ & map & Directed offer book. \\
@@ -581,13 +591,11 @@ $O_{ij}^t$ & offer record & Record $(i,j,z,v)$ for offer $i\to j$. \\
 $\mathcal P_O^t$ & set & Unordered pairs represented in $O^t$. \\
 $\mathcal U_i^{\mathrm{self}}$ & subset of $[N]$ & Self-search candidate set. \\
 $\mathcal I_i^{\mathrm{self}}$ & list & Self-search candidates sorted by score. \\
-$\mathcal P_b^t$ & set & Feasible unordered broker-pair set. \\
-$\mathcal I_{b,i}$ & list & Accessible broker candidates for client $i$, sorted by $v_b^t$. \\
+$\mathcal I_{b,i}$ & list & Brokered candidates for client $i$, sorted by $v_{b,i\to j}^t$. \\
 $\mathcal B_b^t$ & list & Selected directed broker offers. \\
 $u_{i\to j}^{\mathrm{self}},u_{b,i\to j}^{\mathrm{local}},u_{b,i\to j}^{\mathrm{global}}$ & $[0,1]$ & Independent random secondary keys used only within equal-score rankings. \\
 $o,o',o_{ij},o_{ji}$ & offer records & Offer records; fields include $o.z$ and $o.\mathrm{from}$. \\
 $z^\star$ & channel & Accepted-record channel. \\
-$\alpha,\beta$ & indices & Ordered endpoints induced by one unordered broker pair. \\
 $\iota$ & $\{0,1\}$ & Return value of \procAddOffer. \\
 \end{localvartable}
 
@@ -595,13 +603,19 @@ The symmetric broker score is
 \[
 v_b^t(i,j)=\Call{\procPredictBroker}{i,j}.
 \]
-Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node. The self-search proposal score is defined for every graph neighbor and for the non-neighbors in the demander-specific stranger pool:
+Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node. Agent $i$ assesses any presented candidate as
+\[
+a_{i\to j}^{t}=
+\begin{cases}
+\bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
+\Call{\procPredictAgent}{i,x_j^t}, & \text{otherwise}.
+\end{cases}
+\]
+Self-search makes this score available only for neighbors and non-neighbors in the demander-specific stranger pool:
 \[
 v_{i\to j}^{\mathrm{self},t}=
 \begin{cases}
-\bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
-\Call{\procPredictAgent}{i,x_j^t}, & j\in\mathcal N_G^t(i),\ C_{ij}^t=0,\\
-\Call{\procPredictAgent}{i,x_j^t}, & j\in U_i^t\setminus\mathcal N_G^t(i),\\
+a_{i\to j}^{t}, & j\in\mathcal N_G^t(i)\cup(U_i^t\setminus\mathcal N_G^t(i)),\\
 \bot, & \text{otherwise}.
 \end{cases}
 \]
@@ -633,6 +647,24 @@ The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers 
 \end{breakablealgorithm}
 
 \begin{breakablealgorithm}
+\caption{\procBrokerCandidates}
+\label{alg:brokercandidates}
+\begin{algorithmic}[1]
+\Require Broker-client demander $i$, state $S$, broker service $\mathsf S_b$.
+\Ensure Candidate set $\mathcal U_{b,i}$ and score function $v_{b,i\to j}^t$.
+\If{$\mathsf S_b=\mathrm{full}$}
+    \State $\mathcal U_{b,i}\gets\Ab^t\setminus(\{i\}\cup M_i^t)$ and $v_{b,i\to j}^t\gets v_b^t(i,j)$.
+\ElsIf{$\mathsf S_b=\mathrm{assessment\mbox{-}only}$}
+    \State Draw $U_i^t\subset[N]$ uniformly without replacement, $|U_i^t|=\min(n_{\mathrm{strangers}},N)$.
+    \State $\mathcal U_{b,i}\gets[\mathcal N_G^t(i)\cup(U_i^t\setminus\mathcal N_G^t(i))]\setminus(\{i\}\cup M_i^t)$ and $v_{b,i\to j}^t\gets v_b^t(i,j)$.
+\Else
+    \State $\mathcal U_{b,i}\gets\Ab^t\setminus(\{i\}\cup M_i^t)$ and $v_{b,i\to j}^t\gets a_{i\to j}^t$. \Comment{access-only}
+\EndIf
+\State \Return $(\mathcal U_{b,i},v_{b,i\to j}^t)$.
+\end{algorithmic}
+\end{breakablealgorithm}
+
+\begin{breakablealgorithm}
 \caption{\procOfferMarket}
 \label{alg:market}
 \begin{algorithmic}[1]
@@ -652,13 +684,13 @@ The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers 
 \EndFor
 \State $\Ab^t\gets\mathrm{Roster}^t\cup D^t$.
 \State $D_+^t\gets\{i:(i,\mathrm{broker},d_i)\in\mathcal D^t,\ \Omega_i>0\}$.
-\State $\mathcal P_b^t\gets\{\{i,j\}:i\ne j,\ (i\in D_+^t,j\in\Ab^t)\ \text{or}\ (j\in D_+^t,i\in\Ab^t)\}$.
 \State $\mathcal B_b^t\gets\emptyset$.
 \For{each $i\in D_+^t$}
+    \State $(\mathcal U_{b,i},v_{b,i\to j}^t)\gets\Call{\procBrokerCandidates}{i,S,\mathsf S_b}$.
     \State Draw independent $u_{b,i\to j}^{\mathrm{local}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
-    \State $\mathcal I_{b,i}\gets\argsort_{j\in\Ab^t:\{i,j\}\in\mathcal P_b^t,\ v_b^t(i,j)>r}(-v_b^t(i,j),u_{b,i\to j}^{\mathrm{local}})$.
+    \State $\mathcal I_{b,i}\gets\argsort_{j\in\mathcal U_{b,i}:\ v_{b,i\to j}^t>r}(-v_{b,i\to j}^t,u_{b,i\to j}^{\mathrm{local}})$.
     \For{the first $\min(\Omega_i,|\mathcal I_{b,i}|)$ agents $j$ in $\mathcal I_{b,i}$}
-        \State Append $(i,j,v_b^t(i,j))$ to $\mathcal B_b^t$.
+        \State Append $(i,j,v_{b,i\to j}^t)$ to $\mathcal B_b^t$.
     \EndFor
 \EndFor
 \State Draw a new independent $u_{b,i\to j}^{\mathrm{global}}\sim\mathrm{Unif}(0,1)$ for each $(i,j,v)\in\mathcal B_b^t$.
@@ -735,6 +767,6 @@ $\mathbf{1}\{\cdot\}$ & indicator & Equals $1$ when its condition is true and $0
 \end{breakablealgorithm}
 
 \paragraph{\diag{\procCollectMeasures.}}
-\diag{$\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ is a pure measure-collection function called after matching and before entry/exit turnover. It records demand, outsourcing, accepted matches, realized output, selected-sample prediction quality, deterministic holdout prediction quality, broker access and assessment counts, satisfaction, reputation, roster size, broker access size, agent-node degree summaries excluding the broker node, and cached broker network measures. The measures themselves do not feed back into $S^{t+1}$. For rank correlation, predicted values first produce a strict ranking: equal predictions are ordered uniformly at random, independently for the agent and broker, while equal realized outputs retain average ranks. Spearman correlation is computed only after this predicted ranking is formed. The same rule is used for each holdout candidate set and for pooled accepted directed offers within each selected-offer channel.}
+\diag{$\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ records the measures defined in Appendix B, Section~8, without changing the simulation state.}
 
 \end{document}

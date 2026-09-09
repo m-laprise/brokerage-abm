@@ -210,7 +210,7 @@ function information_sources()
     ax_conditions = Axis(
         fig[1, 2];
         title="B. Across matching conditions",
-        ylabel="Difference in holdout rank correlation\n(broker minus principal)",
+        ylabel="Difference in rank correlation\n(broker minus principal)",
         xticks=(1:length(models), [model.label for model in models]),
         axis_style...,
     )

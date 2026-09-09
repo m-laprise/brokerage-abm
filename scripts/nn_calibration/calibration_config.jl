@@ -18,6 +18,7 @@ const NNCAL_BASELINE = (
     k=6,
     roster_frac=0.20,
     n_strangers=10,
+    broker_service=:full,
 )
 const NNCAL_N = NNCAL_BASELINE.N
 const NNCAL_T = 200

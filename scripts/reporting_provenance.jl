@@ -62,6 +62,8 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "paper/captions.tex",
     "paper/supplement.tex",
     "paper/references.bib",
+    "paper/appendices/model_specifications.tex",
+    "paper/appendices/simulation_pseudocode.tex",
     "scripts/paper/figures.jl",
     "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",
@@ -77,9 +79,9 @@ const MANUSCRIPT_ITERATION_PATHS = (
     manuscript_git_provenance(path)
 
 Return provenance for a manuscript build while allowing explicitly listed prose,
-figure-presentation, and builder edits. Changes to analysis code, model
-specifications, tests, or other source files still stop the build, except for
-this helper's focused test.
+appendix, figure-presentation, and builder edits. Changes to model or analysis
+code, other tests, or other source files still stop the build, except for this
+helper's focused test.
 """
 function manuscript_git_provenance(path)
     return reporting_git_provenance(

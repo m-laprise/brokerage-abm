@@ -4,7 +4,7 @@
 Offer construction helpers for the shared active-demand market.
 """
 
-using Graphs: neighbors
+using Graphs: has_edge, neighbors
 using Random: AbstractRNG
 using StatsBase: sample
 
@@ -116,6 +116,57 @@ function sample_period_strangers!(
     return out
 end
 
+@inline function principal_candidate_score(
+    agent::Agent,
+    candidate_id::Int,
+    agents::Vector{Agent},
+    G::SimpleGraph,
+    params::ModelParams,
+)::Float64
+    if has_edge(G, agent.id, candidate_id) && agent.partner_count[candidate_id] > 0
+        return partner_mean(agent, candidate_id)
+    end
+    return predict_agent(agent, agents[candidate_id].type, params)
+end
+
+function collect_self_access_ids!(
+    out::Vector{Int},
+    ws::SimWorkspace,
+    agent_id::Int,
+    agents::Vector{Agent},
+    G::SimpleGraph,
+    broker_node::Int,
+    period_strangers::Vector{Int},
+)
+    empty!(out)
+    N = length(agents)
+    search = ws.search
+    nbr_mask = ensure_nbr_mask!(ws, N)
+    nbr_marked = search.nbr_marked
+    empty!(nbr_marked)
+
+    @inbounds for nbr in neighbors(G, agent_id)
+        nbr == broker_node && continue
+        (nbr < 1 || nbr > N) && continue
+        nbr_mask[nbr] = true
+        push!(nbr_marked, nbr)
+        has_current_match(ws, agent_id, nbr) && continue
+        push!(out, nbr)
+    end
+
+    @inbounds for candidate_id in period_strangers
+        candidate_id == agent_id && continue
+        nbr_mask[candidate_id] && continue
+        has_current_match(ws, agent_id, candidate_id) && continue
+        push!(out, candidate_id)
+    end
+
+    @inbounds for nbr in nbr_marked
+        nbr_mask[nbr] = false
+    end
+    return out
+end
+
 function append_self_search_offers!(
     ws::SimWorkspace,
     agent::Agent,
@@ -190,6 +241,113 @@ function append_self_search_offers!(
         candidate_idx = sort_pairs[rank_idx][3]
         j = candidate_ids[candidate_idx]
         if add_offer!(offer_book, agent_id, j, :self, candidate_vals[candidate_idx])
+            sent += 1
+        end
+    end
+    return sent
+end
+
+function append_restricted_broker_offers!(
+    ws::SimWorkspace,
+    broker_demanders::Vector{Int},
+    agents::Vector{Agent},
+    broker::Broker,
+    G::SimpleGraph,
+    params::ModelParams,
+    r::Float64,
+    remaining::Vector{Int},
+    rng::AbstractRNG,
+)::Int
+    mode = params.broker_service
+    mode in (:assessment_only, :access_only) ||
+        error("restricted broker offers do not support broker_service=$mode")
+
+    max_quota = maximum(did -> remaining[did], broker_demanders; init=0)
+    max_quota <= 0 && return 0
+
+    broker_pairs = ws.broker_pairs
+    ensure_broker_top_offer_buffers!(broker_pairs, length(agents), max_quota)
+    counts = broker_pairs.broker_top_counts
+    top_offers = broker_pairs.broker_top_offers
+    selected = broker_pairs.broker_selected_offers
+    empty!(selected)
+
+    feature_dim = broker_pair_feature_dim(params.d)
+    length(broker_pairs.feature_buf) == feature_dim ||
+        resize!(broker_pairs.feature_buf, feature_dim)
+    feature_buf = broker_pairs.feature_buf
+    offer_index = ws.offer_book.offer_index
+
+    broker_access = broker_pairs.period_broker_access_ids
+    if mode == :access_only
+        collect_broker_access_ids!(broker_access, broker, agents, ws)
+        isempty(broker_access) && return 0
+    end
+
+    search = ws.search
+    @inbounds for did in broker_demanders
+        counts[did] = 0
+        remaining[did] > 0 || continue
+        candidate_ids = if mode == :assessment_only
+            sample_period_strangers!(
+                search.period_strangers, length(agents), params.n_strangers, rng
+            )
+            collect_self_access_ids!(
+                search.neighbor_ids,
+                ws,
+                did,
+                agents,
+                G,
+                broker.node_id,
+                search.period_strangers,
+            )
+        else
+            broker_access
+        end
+
+        for candidate_id in candidate_ids
+            candidate_id == did && continue
+            has_current_match(ws, did, candidate_id) && continue
+            offer_index[did, candidate_id] == 0 || continue
+            score = if mode == :assessment_only
+                predict_broker!(
+                    broker,
+                    feature_buf,
+                    agents[did].type,
+                    agents[candidate_id].type,
+                    params,
+                )
+            else
+                principal_candidate_score(agents[did], candidate_id, agents, G, params)
+            end
+            score > r || continue
+            insert_broker_top_offer!(
+                top_offers,
+                counts,
+                did,
+                candidate_id,
+                -score,
+                rand(rng),
+                remaining[did],
+            )
+        end
+    end
+
+    @inbounds for did in broker_demanders
+        for idx in 1:counts[did]
+            neg_score, _, lo, hi, from_id, to_id = top_offers[idx, did]
+            push!(selected, (neg_score, rand(rng), lo, hi, from_id, to_id))
+        end
+    end
+    sort!(selected; alg=QuickSort)
+
+    sent = 0
+    offer_book = ws.offer_book
+    @inbounds for item in selected
+        neg_score, _, _, _, from_id, to_id = item
+        remaining[from_id] > 0 || continue
+        if add_offer!(offer_book, from_id, to_id, :broker, -neg_score)
+            remaining[from_id] -= 1
             sent += 1
         end
     end
@@ -454,6 +612,7 @@ function append_broker_offers!(
     r::Float64;
     rng::AbstractRNG,
     remaining_demand::Union{Vector{Int},Nothing}=nothing,
+    G::Union{SimpleGraph,Nothing}=nothing,
 )::Int
     broker_pairs = ws.broker_pairs
     broker_demanders = broker_pairs.period_broker_demanders
@@ -473,6 +632,21 @@ function append_broker_offers!(
         isnothing(remaining_demand) && (remaining[did] = demand_counts[idx])
     end
     isempty(broker_demanders) && return 0
+
+    if params.broker_service != :full
+        isnothing(G) && error("restricted broker service requires the market graph")
+        return append_restricted_broker_offers!(
+            ws,
+            broker_demanders,
+            agents,
+            broker,
+            G::SimpleGraph,
+            params,
+            r,
+            remaining,
+            rng,
+        )
+    end
 
     broker_access = broker_pairs.period_broker_access_ids
     collect_broker_access_ids!(broker_access, broker, agents, ws)

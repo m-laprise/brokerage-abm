@@ -23,6 +23,7 @@ using LinearAlgebra: norm
         @test p.sigma_eps == MATCH_NOISE_SD_BASE == 0.28406980298637513
         @test p.omega == 0.20
         @test p.search_cost_rate == 0.05
+        @test p.broker_service == :full
         @test p.roster_frac == 0.20
         @test p.n_strangers == 10
         @test p.roster_churn == 0.02
@@ -110,6 +111,7 @@ using LinearAlgebra: norm
         @test_throws AssertionError default_params(roster_frac=1.1)
         @test_throws AssertionError default_params(roster_churn=-0.1)
         @test_throws AssertionError default_params(roster_churn=1.1)
+        @test_throws AssertionError default_params(broker_service=:unknown)
         @test_throws AssertionError default_params(learning_model=:linear)
         @test_throws AssertionError default_params(ridge_lambda_agent=0.0)
         @test_throws AssertionError default_params(ridge_lambda_broker=0.0)

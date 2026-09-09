@@ -9,10 +9,11 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     entries = build_entries(cells)
     plot_jobs = build_plot_jobs(cells)
 
-    @test SWEEP_SCHEMA_VERSION == 11
+    @test SWEEP_SCHEMA_VERSION == 12
     @test SWEEP_T == 500
     @test SWEEP_SEEDS == collect(1:20)
     @test SWEEP_BASELINE_SEEDS == collect(1:20)
+    @test BROKER_SERVICE_BASELINE_SEEDS == collect(1:50)
     @test SWEEP_LEARNING_MODEL == :nn
     @test SWEEP_NN_ETA_LR_AGENT == 0.003
     @test SWEEP_NN_ETA_LR_BROKER == 0.03
@@ -21,6 +22,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     @test SWEEP_RIDGE_LAMBDA_AGENT == 0.001
     @test SWEEP_RIDGE_LAMBDA_BROKER == 0.001
     @test SWEEP_SCOPE == :full
+    @test SWEEP_BASELINE.broker_service == :full
     @test ETA_VALS == [0.0, 0.001, 0.01, 0.02, 0.03]
     @test length(cells) == 124
     @test count(c -> c[:kind] == "oat", cells) == 32
@@ -45,6 +47,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
             p.k,
             p.roster_frac,
             p.n_strangers,
+            p.broker_service,
         )
     end
 
@@ -113,6 +116,27 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
         end
         @test length(unique(c[:condition_index] for c in refs)) == 8
     end
+end
+
+@testset "broker-service experiment design" begin
+    cells = build_cells(:broker_services)
+    conditions = result_cells(cells)
+    entries = build_entries(cells)
+
+    @test length(cells) == length(conditions) == 30
+    @test length(entries) == 690
+    @test length(build_plot_jobs(cells)) == 30
+    @test all(job[:kind] == "aggregate_cell" for job in build_plot_jobs(cells))
+    @test Set(c[:broker_service] for c in cells) ==
+        Set(["full", "assessment_only", "access_only"])
+    @test count(is_baseline_condition, cells) == 3
+    @test all(length(c[:seeds]) == (is_baseline_condition(c) ? 50 : 20) for c in cells)
+    @test length(unique((e[:condition_index], e[:seed]) for e in entries)) == 690
+    pilot = [
+        e[:index] for e in entries if e[:rho] == 0.5 && e[:eta] == 0.02 &&
+        e[:seed] <= 5
+    ]
+    @test pilot == [0:4; 230:234; 460:464]
 end
 
 @testset "rho-by-delta targeted design" begin

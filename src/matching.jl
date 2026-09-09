@@ -236,6 +236,7 @@ function run_offer_market!(
         cal.r;
         rng=rng,
         remaining_demand=remaining,
+        G=G,
     )
 
     @inbounds for (i, j) in offer_book.offer_pairs
