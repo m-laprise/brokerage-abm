@@ -292,10 +292,13 @@ function main()
 
     contrast_rows = Vector{Vector{Any}}()
     for (rho, eta) in CONTRAST_CELLS, metric in METRICS
-        for (label, reference) in
-            (("assessment", :access_only), ("access", :assessment_only))
+        for (label, reference, comparison) in (
+            ("assessment", :access_only, :full),
+            ("access", :assessment_only, :full),
+            ("assessment_vs_access", :access_only, :assessment_only),
+        )
             interval = paired_interval(
-                index[(reference, rho, eta)], index[(:full, rho, eta)], metric
+                index[(reference, rho, eta)], index[(comparison, rho, eta)], metric
             )
             push!(
                 contrast_rows,
