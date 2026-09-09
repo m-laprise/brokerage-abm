@@ -7,11 +7,11 @@
 #   ./submit.sh setup            # submit precompilation and wait for completion
 #   ./submit.sh manifest         # srun compute: write manifest.{json,jld2}+counts.env
 #   ./submit.sh smoke [idx]      # run one array task (default 0), then inspect it
-#   ./submit.sh pilot            # service experiment: five baseline seeds per mode
-#   ./submit.sh pilot-analyze    # service experiment: summarize the pilot
+#   ./submit.sh pilot            # assessment vs access experiment: baseline pilot
+#   ./submit.sh pilot-analyze    # assessment vs access experiment: pilot summary
 #   ./submit.sh compute          # submit the full compute array and print its job ID
 #   ./submit.sh plot             # submit the dependent plot array (afterany)
-#   ./submit.sh analyze          # service experiment: analyze completed aggregates
+#   ./submit.sh analyze          # assessment vs access experiment: final analysis
 #   ./submit.sh status           # squeue for this user's sweep jobs
 #
 # The `resolve` stage performs network operations on the login node. Precompilation

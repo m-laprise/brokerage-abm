@@ -118,7 +118,7 @@ include(joinpath(@__DIR__, "..", "scripts", "sweep", "sweep_config.jl"))
     end
 end
 
-@testset "broker-service experiment design" begin
+@testset "broker assessment vs access experiment design" begin
     cells = build_cells(:broker_services)
     conditions = result_cells(cells)
     entries = build_entries(cells)

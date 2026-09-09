@@ -1,5 +1,6 @@
 """
-Summarize the five-seed broker-service baseline pilot from current raw shards.
+Summarize the five-seed broker assessment vs access pilot from current raw
+shards.
 
 Set `BROKERAGE_ABM_BROKER_SERVICE_SWEEP_DIR` to the sweep root and optionally
 set `BROKERAGE_ABM_BROKER_SERVICE_OUTPUT_DIR` for the output directory.
@@ -121,7 +122,7 @@ function main()
         println(io, "schema_version=$(pilot.schema_version)")
         println(io, "sweep_root=$(abspath(SWEEP_ROOT))")
     end
-    println("Broker-service pilot analysis written to $OUT_DIR")
+    println("Broker assessment vs access pilot analysis written to $OUT_DIR")
 end
 
 abspath(PROGRAM_FILE) == abspath(@__FILE__) && main()

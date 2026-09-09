@@ -1,5 +1,6 @@
 """
-Analyze the broker-service experiment with seed-paired Monte Carlo intervals.
+Analyze the broker assessment vs access experiment with seed-paired Monte Carlo
+intervals.
 
 Set `BROKERAGE_ABM_BROKER_SERVICE_SWEEP_DIR` to the completed sweep root.
 Outputs are written to `output/broker_services/`.
@@ -96,7 +97,7 @@ function result_index(dataset::SweepDataset)
     index = Dict{Tuple{Symbol,Float64,Float64},SweepResult}()
     for result in dataset.results
         key = condition_key(result)
-        haskey(index, key) && error("duplicate broker-service condition: $key")
+        haskey(index, key) && error("duplicate assessment vs access condition: $key")
         index[key] = result
     end
     return index
@@ -234,14 +235,18 @@ end
 function main()
     dataset = load_sweep_dataset(SWEEP_ROOT)
     dataset.meta[:scope] == :broker_services || error("unexpected sweep scope")
-    dataset.meta[:git_commit] == ANALYSIS_PROVENANCE.commit ||
-        error("sweep and analysis commits differ")
-    length(dataset.results) == 30 || error("expected 30 broker-service conditions")
+    validate_analysis_commit(
+        ANALYSIS_PROVENANCE,
+        dataset.meta[:git_commit];
+        artifact="broker assessment vs access sweep",
+    )
+    length(dataset.results) == 30 ||
+        error("expected 30 assessment vs access conditions")
     index = result_index(dataset)
     expected_keys = Set(
         (mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS
     )
-    Set(keys(index)) == expected_keys || error("broker-service design mismatch")
+    Set(keys(index)) == expected_keys || error("assessment vs access design mismatch")
 
     mkpath(FIGURE_DIR)
     seed_rows = Vector{Vector{Any}}()
@@ -342,7 +347,7 @@ function main()
         println(io, "schema_version=$(dataset.schema_version)")
         println(io, "sweep_root=$(abspath(SWEEP_ROOT))")
     end
-    println("Broker-service analysis written to $OUT_DIR")
+    println("Broker assessment vs access analysis written to $OUT_DIR")
 end
 
 abspath(PROGRAM_FILE) == abspath(@__FILE__) && main()
