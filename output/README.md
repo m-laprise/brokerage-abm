@@ -48,6 +48,15 @@ builders reject inputs produced by a different commit.
 - [Figure RA1: Ridge ablation contrasts](ridge/ablations/figures/ridge_ablations.png)
 - [Figure RA2: Ridge ablation grid](ridge/ablations/figures/ridge_ablation_grid.png)
 
+## Broker assessment vs access experiment
+
+- [Baseline dynamics](assessment_access/figures/baseline_dynamics.png)
+- [Net-output comparisons](assessment_access/figures/net_output_contributions.png)
+- Condition summaries: `assessment_access/condition_summary.tsv`
+- Paired comparisons: `assessment_access/paired_contrasts.tsv`
+- Seed-level results: `assessment_access/seed_level.tsv` and
+  `assessment_access/figure_data.jld2`
+
 ## Research notes
 
 - [High-value follow-up experiments](../notes/high_value_followup_experiments.md),
@@ -65,6 +74,7 @@ builders reject inputs produced by a different commit.
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and
   `analyze_ablations.jl`
 - Base Ridge figures: `scripts/ridge/paired_figures.jl`
+- Broker assessment vs access experiment: `scripts/assessment_access/analyze.jl`
 
 The model specification and simulation pseudocode sources are under
 `paper/appendices/`; their standalone review PDFs are under `output/appendices/`.
