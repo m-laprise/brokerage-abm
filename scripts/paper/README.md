@@ -53,7 +53,7 @@ scientific results.
    main-text values in `paper_values.tex`, and the seed-level main-figure data
    in `output/ridge/ablations/figure_data.jld2`.
 
-Local tier (no data access; works from a clone of this repository):
+Local tier (uses retained data; no access to the raw sweep is needed):
 
 5. `julia --project --threads=auto scripts/paper/figures.jl`
    Renders the five results assets at print resolution, including the two-panel
@@ -71,7 +71,7 @@ Local tier (no data access; works from a clone of this repository):
    `output/main/results_section.tex`, an `\input`-ready fragment with literal numbers
    and a provenance header. Fails on any undefined or unused value, title, or
    caption block, or missing figure, then compile-checks the fragment in a
-   temporary directory. The results section contains five figures, numbered by
+   temporary directory. The results section contains six figures, numbered by
    their order of first citation rather than by their asset filenames. Needs
    only stock Julia and `pdflatex`.
 8. `julia --project --threads=auto scripts/paper/build_appendices.jl`
@@ -82,8 +82,9 @@ Local tier (no data access; works from a clone of this repository):
    writing only the two manuscript PDFs under `output/manuscript/`. It uses `pdfunite` to
    create `brokers_who_do_not_bridge_with_appendices.pdf`, containing the main manuscript,
    Appendix A (simulation pseudocode), Appendix B (model specifications), and
-   the Supplementary Material, in that order. Run steps 7--8 first whenever any
-   results input or provenance changes.
+   the Supplementary Material, in that order. Run step 7 after changing Results
+   prose or captions. Rebuild appendices or the supplement only when their own
+   inputs change.
 
 After the retained datasets, analysis outputs, and generated values exist,
 running `julia --project --threads=auto scripts/paper/build_publication.jl`
@@ -97,6 +98,26 @@ metric not yet extracted, which `figdata.jl` must then be taught to include.
 
 Hand-edited sources: `paper/section_source.tex` (prose) and `paper/captions.tex`
 (figure titles and captions). Generated artifacts are under `output/main/`.
+
+## Assessment and access reporting
+
+Inputs are in `output/assessment_access/`: `figure_data.jld2` holds seed-level
+results and contrasts; `centrality_trajectories.jld2` holds baseline network
+trajectories. TSV tables, `provenance.txt`, and diagnostic `figures/` accompany them.
+Rendering requires no raw sweeps or simulations. Captions are in TeX.
+
+Run these scripts with `julia --project --threads=auto scripts/assessment_access/<script>`:
+
+| Script | Output under `output/` |
+| --- | --- |
+| `main_figure.jl` | `main/figures/assessment_access.{png,pdf}` |
+| `figure_2.jl` | `main/figures/assessment_access_2.png` |
+| `main_figure.jl --complementarity` | `supplement/figures/complementarity_contributions.png` |
+| `paper_values.jl` | `assessment_access/paper_values.tex` |
+
+Check figures and quoted outsourcing values against retained data with
+`julia --project --threads=auto test/test_assessment_access_reporting.jl`.
+`build_publication.jl` includes all three figures and the generated values.
 
 ## Base Ridge figure supplement
 
@@ -126,9 +147,10 @@ are under `output/ridge/paired/figures/`. The Ridge research notes can be rebuil
 ## Supplementary Material
 
 Supplementary Figures S1--S3 visualize the matching-function data-generating
-process. Figures S4--S6 reproduce the main structural analyses with Burt's
+process. Figure S4 compares the value of assessment and access across matching
+composition. Figures S5--S7 reproduce the main structural analyses with Burt's
 aggregate **constraint** and **effective size** (`src/measures.jl`). The pipeline
-retains seed-level inputs for both sets of figures.
+retains seed-level inputs for all figures.
 
 Cluster tier (run on a compute node):
 
@@ -145,24 +167,32 @@ Cluster tier (run on a compute node):
 2. `julia --project --threads=auto scripts/paper/supp_figdata.jl`
    Extracts the supplement's figure-input dataset to `output/supplement/structural_figure_data.jld2`:
    the seed-level baseline constraint/effective-size series, the one-at-a-time
-   and grid late values, and the per-realization late values S4--S6 consume. This
+   and grid late values, and the per-realization late values S5--S7 consume. This
    step needs the sweep and `BROKERAGE_ABM_SWEEP_DIR`.
 
-Local tier (no data access; works from a clone):
+Local tier (uses retained data):
 
 3. `julia --project --threads=auto scripts/paper/supp_figures.jl`
-   Renders Supplementary Figures S1--S6 from the two retained datasets and writes
+   Renders Supplementary Figures S1--S3 and S5--S7 from the two retained datasets and writes
    `output/supplement/figmeta.tex`, which records each dataset's analysis commit
    and the display conventions quoted in the captions.
-4. `julia --project --threads=auto scripts/paper/build_supplement.jl`
+4. `julia --project --threads=auto scripts/assessment_access/main_figure.jl --complementarity`
+   Renders Figure S4 from the retained assessment-access contrasts, checking them
+   against the saved seed-level values. The caption is in `paper/supplement.tex`.
+   Generate its caption values with
+   `julia --project --threads=auto scripts/assessment_access/paper_values.jl`.
+5. `julia --project --threads=auto scripts/paper/build_supplement.jl`
    Compiles the standalone `paper/supplement.tex`. Caption values are resolved
    from generated `\pv` definitions, so no result is hand-written. The builder
    validates every `\pv` reference and figure path first. Needs only stock Julia
    and `pdflatex`.
 
-For the structural checks, **S4** covers the rho x delta grid, **S5** shows the
-baseline time path and the relationship with access across regimes, and **S6**
+For the structural checks, **S5** covers the rho x delta grid, **S6** shows the
+baseline time path and the relationship with access across regimes, and **S7**
 shows the ranking and output differences against each measure.
+
+Main-text supplementary figure references use the labels in `paper/supplement.tex`.
+The results builder resolves their numbers from the figure order.
 
 Hand-edited source: `paper/supplement.tex` (standalone document and captions).
 Generated artifacts are under `output/supplement/`. LaTeX auxiliary files are

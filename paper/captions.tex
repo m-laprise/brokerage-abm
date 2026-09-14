@@ -3,8 +3,8 @@
 % \pvtitle{name} / \pvcaption{name} references in section_source.tex (and the
 % fig:<name> label). Titles are rendered by the TeX (as the bold lead-in of the
 % caption), not baked into the PNGs. Blocks may use \pv{key} references: data
-% values come from values.tex (stats.jl), display conventions from figmeta.tex
-% (figures.jl), so derivation facts quoted here cannot drift from the figure code.
+% values come from generated reporting fragments, including assessment-access
+% paper_values.tex; display conventions come from figmeta.tex (figures.jl).
 % Convention: captions describe elements and derivations only, no interpretation.
 
 \begin{ptitle}{position}
@@ -12,6 +12,13 @@ Broker centrality and access fraction
 \end{ptitle}
 \begin{pcaption}{position}
 Left: broker betweenness centrality and access fraction over time at the baseline, as \pv{rollWin}-observation rolling ensemble means over seeds, with pointwise 95\% Monte Carlo intervals; centrality is measured every \pv{betwInterval} periods. Right: all \pv{rhoEtaConditionN} combinations in the $\rho\times\eta$ grid, with other parameters held at baseline, including $\delta=0.5$, each shown as a late-window mean over that regime's seeds. Color identifies turnover $\eta$, marker shape identifies $\rho$, and whiskers are 95\% Monte Carlo intervals on both axes. Within each $\eta$, lines connect all $\rho$ values below 1. The pure-quality boundary $\rho=1$, where complementarity is absent, is shown unconnected. Time-series panels begin at $t=\pv{axisStart}$ to omit the initialization transient.
+\end{pcaption}
+
+\begin{ptitle}{assessment_access}
+Brokerage with access, assessment, or both
+\end{ptitle}
+\begin{pcaption}{assessment_access}
+Broker models are defined in Section~\ref{sec:assessment-access}. $\rho=\pv{aaRho}$ and $\delta=\pv{aaDelta}$ throughout. Panel A shows differences from full service in net output to principals per requested position at $\eta\in\{\pv{aaEtas}\}$. Net output deducts search costs and broker fees; unfilled positions remain in the denominator. Panels B--D use baseline turnover ($\eta=\pv{aaEta}$). Panel B shows mean principal degree at every period from $t=\pv{aaDegreeStart}$ to $\pv{aaHorizon}$. Degree includes each principal's link to the broker when present. Panel C shows late-mean differences in broker betweenness centrality from full service. Panel D shows mean broker betweenness centrality, measured at $t=\pv{aaCentralityFirst},\pv{aaCentralitySecond},\ldots,\pv{aaHorizon}$. Panels B and D show levels for all three broker models; lines join recorded values without smoothing. Panels A and C show assessment-only and access-only minus full service, using recorded outcomes averaged over $t=\pv{aaLateStart}$--$\pv{aaHorizon}$ for each seed. Differences are calculated within each seed before averaging across seeds. Negative values indicate outcomes below full service. Bands and bars show two-sided, pointwise \pv{aaIntervalPercent}\% Student-$t$ Monte Carlo intervals. Each simulation uses $N=\pv{aaN}$ and $T=\pv{aaHorizon}$. Estimates use \pv{aaBaselineSeeds} seeds per baseline model and \pv{aaOtherSeeds} at other turnover rates. Panel A displays zero turnover in a separate shaded strip; positive rates use a linear turnover scale. In Panel A, series are offset horizontally for visibility. Lines connect positive-turnover points as visual guides; zero-turnover points are unconnected. The shaded band on the positive-turnover axis marks baseline turnover. All other parameters remain at baseline.
 \end{pcaption}
 
 \begin{ptitle}{information}

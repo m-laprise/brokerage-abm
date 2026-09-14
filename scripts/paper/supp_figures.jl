@@ -1,23 +1,24 @@
 """
     scripts/paper/supp_figures.jl
 
-Render Supplementary Figures S1--S6 from retained figure-input datasets. Figures
-S1--S3 describe the matching-function data-generating process. Figures S4--S6
+Render Supplementary Figures S1--S3 and S5--S7 from retained figure-input datasets.
+Figures S1--S3 describe the matching-function data-generating process. Figures S5--S7
 reproduce the main structural analyses with Burt's aggregate constraint and
 effective size:
 
   S1  realized principal types and their latent curve in three dimensions
   S2  conditional match-value surfaces ordered by realized general quality
   S3  normalized singular spectra and 90%-energy effective dimension
-  S4  constraint and effective size across the rho x delta grid, line per delta
+  S5  constraint and effective size across the rho x delta grid, line per delta
       (the matching-grid structural panel, for each alternative measure)
-  S5  each measure over time at baseline (left) and against access fraction
+  S6  each measure over time at baseline (left) and against access fraction
       across regimes (right); constraint top, effective size bottom (the
       position analysis, without the access-fraction time series)
-  S6  rank-correlation difference and output gap against each measure, colored by rho
+  S7  rank-correlation difference and output gap against each measure, colored by rho
       (the advantage analysis, with the alternative measures in place of betweenness)
 
-The script reads only `output/supplement/dgp_figure_data.jld2` and
+Figure S4 is rendered by scripts/assessment_access/main_figure.jl --complementarity.
+This script reads only `output/supplement/dgp_figure_data.jld2` and
 `output/supplement/structural_figure_data.jld2`. It performs no simulation and writes
 print-resolution PNGs plus the display-convention keys used by the captions.
 
@@ -395,7 +396,7 @@ function effective_dimensionality()
     savefig("effective_dimensionality.png", fig)
 end
 
-# ── S4: each measure vs rho across the grid, one line per delta ──
+# ── S5: each measure vs rho across the grid, one line per delta ──
 function alternative_measures_grid()
     gc = STRUCTURAL_FD["grid_cells"]
     dls = sort(unique([c["delta"] for c in gc]))
@@ -480,7 +481,7 @@ function alternative_measures_grid()
     savefig("alternative_measures_grid.png", fig)
 end
 
-# ── S5: measure over time at baseline (left) + vs access fraction across regimes
+# ── S6: measure over time at baseline (left) + vs access fraction across regimes
 #    (right); constraint (top), effective size (bottom) ──
 function alternative_measures_position()
     cells = STRUCTURAL_FD["oat_cells"]
@@ -523,7 +524,7 @@ function alternative_measures_position()
     savefig("alternative_measures_position.png", fig)
 end
 
-# ── S6: rank-correlation difference and output gap against each measure ──
+# ── S7: rank-correlation difference and output gap against each measure ──
 function alternative_measures_advantage()
     bc = STRUCTURAL_FD["regime_cells"]
     rho = [c["rho"] for c in bc]

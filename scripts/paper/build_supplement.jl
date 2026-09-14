@@ -3,15 +3,15 @@
 
 Compile the standalone Supplementary Material to
 `output/supplement/supplement.pdf`. Inputs are the hand-edited
-`paper/supplement.tex`, generated `output/supplement/figmeta.tex`, and the
-figures in `output/supplement/figures/`.
+`paper/supplement.tex`, generated `output/supplement/figmeta.tex` and
+`output/assessment_access/paper_values.tex`, and the supplementary figures.
 
 The build fails on a missing input, an undefined `\\pv` value, an unused display
 convention, a missing figure, or a LaTeX error.
 Auxiliary files are created in a temporary directory and discarded.
 
-Run `scripts/paper/dgp_figdata.jl`, `scripts/paper/supp_figdata.jl`, and
-`scripts/paper/supp_figures.jl` first.
+With retained data available, render the required figures and generate the
+assessment-access manuscript values first. See scripts/paper/README.md.
 
 Usage: julia --project --threads=auto scripts/paper/build_supplement.jl
 """
@@ -22,6 +22,9 @@ const PAPER = normpath(joinpath(@__DIR__, "..", "..", "paper"))
 const GENERATED = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement"))
 const SRC = joinpath(PAPER, "supplement.tex")
 const FIGMETA = joinpath(GENERATED, "figmeta.tex")
+const ASSESSMENT_VALUES = normpath(
+    joinpath(GENERATED, "..", "assessment_access", "paper_values.tex")
+)
 const FIGDIR = joinpath(GENERATED, "figures")
 const PDF = joinpath(GENERATED, "supplement.pdf")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
@@ -32,6 +35,8 @@ fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
 
 isfile(SRC) || fail("missing $SRC")
 isfile(FIGMETA) || fail("missing $FIGMETA (run scripts/paper/supp_figures.jl first)")
+isfile(ASSESSMENT_VALUES) ||
+    fail("missing $ASSESSMENT_VALUES (run scripts/assessment_access/paper_values.jl first)")
 figmeta_source = read(FIGMETA, String)
 analysis_commits = Dict{String,String}()
 for label in ("DGP", "Structural")
@@ -44,10 +49,15 @@ for label in ("DGP", "Structural")
         REPORTING_PROVENANCE, match_result[1]; artifact="$label supplement figure data"
     )
 end
+analysis_commits["assessment_access"] = validate_analysis_commit(
+    REPORTING_PROVENANCE,
+    recorded_analysis_commit(ASSESSMENT_VALUES);
+    artifact="assessment-access manuscript values",
+)
 
 defs = Set{String}()
 figmeta_defs = Set{String}()
-for values_file in (FIGMETA,), line in eachline(values_file)
+for values_file in (FIGMETA, ASSESSMENT_VALUES), line in eachline(values_file)
     match_result = match(r"^\\pvDefine\{([^}]+)\}\{.*\}\s*$", line)
     isnothing(match_result) || begin
         match_result[1] in defs && fail("duplicate \\pv definition: $(match_result[1])")
@@ -64,7 +74,7 @@ refs = Set(match_result[1] for match_result in eachmatch(r"\\pv\{([^}]+)\}", bod
 undefined = sort(collect(setdiff(refs, defs)))
 unused = sort(collect(setdiff(figmeta_defs, refs)))
 isempty(undefined) ||
-    fail("\\pv references with no definition in figmeta.tex: " * join(undefined, ", "))
+    fail("\\pv references with no generated definition: " * join(undefined, ", "))
 isempty(unused) || fail("figmeta.tex definitions never referenced: " * join(unused, ", "))
 
 figures = [
@@ -99,10 +109,15 @@ mktempdir() do build
     errors = count("\n!", log)
     ok || fail("pdflatex failed while building the supplement")
     errors == 0 || fail("$errors LaTeX errors while building the supplement")
+    occursin("There were undefined references", log) &&
+        fail("undefined supplement references")
     cp(joinpath(build, "supplement.pdf"), PDF; force=true)
     open(joinpath(GENERATED, "provenance.txt"), "w") do io
         println(io, "dgp_analysis_commit=$(analysis_commits["dgp"])")
         println(io, "structural_analysis_commit=$(analysis_commits["structural"])")
+        println(
+            io, "assessment_access_analysis_commit=$(analysis_commits["assessment_access"])"
+        )
         println(io, "manuscript_commit=$(REPORTING_PROVENANCE.commit)")
         println(io, "manuscript_source_clean=$(REPORTING_PROVENANCE.source_clean)")
     end

@@ -59,6 +59,7 @@ function reporting_git_provenance(
 end
 
 const MANUSCRIPT_ITERATION_PATHS = (
+    ".gitignore", # Inclusion of retained figure-input artifacts in the commit.
     "paper/manuscript.tex",
     "paper/section_source.tex",
     "paper/captions.tex",
@@ -73,7 +74,13 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "scripts/paper/build_manuscript.jl",
     "scripts/paper/build_appendices.jl",
     "scripts/paper/build_publication.jl",
+    "scripts/paper/README.md",
+    "scripts/assessment_access/main_figure.jl",
+    "scripts/assessment_access/figure_2.jl",
+    "scripts/assessment_access/centrality_data.jl",
+    "scripts/assessment_access/paper_values.jl",
     "scripts/reporting_provenance.jl",
+    "test/test_assessment_access_reporting.jl",
     "test/test_reporting_provenance.jl",
 )
 
@@ -81,9 +88,10 @@ const MANUSCRIPT_ITERATION_PATHS = (
     manuscript_git_provenance(path)
 
 Return provenance for a manuscript build while allowing explicitly listed prose,
-appendix, figure-presentation, and builder edits. Changes to model or analysis
-code, other tests, or other source files still stop the build, except for this
-helper's focused test.
+appendix, figure-presentation, and builder edits, including the assessment-access
+renderers, retained-data extractor, value formatter, and their focused checks.
+Changes to model or original experiment-analysis code, other tests, or other
+source files still stop the build, except for this helper's focused test.
 """
 function manuscript_git_provenance(path)
     return reporting_git_provenance(

@@ -74,6 +74,34 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
         @test occursin("model_specifications.tex", revised.source_status)
         @test occursin("simulation_pseudocode.tex", revised.source_status)
 
+        write(
+            joinpath(repository, ".gitignore"),
+            "*.jld2\n!output/assessment_access/centrality_trajectories.jld2\n",
+        )
+        artifact_inclusion = manuscript_git_provenance(repository)
+        @test !artifact_inclusion.source_clean
+        @test occursin(".gitignore", artifact_inclusion.source_status)
+        @test_throws ErrorException reporting_git_provenance(repository)
+
+        reporting_paths = filter(
+            path -> startswith(path, "scripts/assessment_access/") ||
+                path == "test/test_assessment_access_reporting.jl",
+            MANUSCRIPT_ITERATION_PATHS,
+        )
+        for path in reporting_paths
+            mkpath(dirname(joinpath(repository, path)))
+            write(joinpath(repository, path), "uncommitted presentation change\n")
+        end
+        presentation = manuscript_git_provenance(repository)
+        @test !isempty(reporting_paths) && !presentation.source_clean
+        @test all(path -> occursin(path, presentation.source_status), reporting_paths)
+        @test_throws ErrorException reporting_git_provenance(repository)
+        write(
+            joinpath(repository, "scripts", "assessment_access", "analyze.jl"),
+            "uncommitted scientific analysis\n",
+        )
+        @test_throws ErrorException manuscript_git_provenance(repository)
+
         write(joinpath(repository, "analysis.jl"), "revised analysis\n")
         @test_throws ErrorException manuscript_git_provenance(repository)
     end
