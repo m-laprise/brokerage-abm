@@ -42,7 +42,7 @@ Across the tested regimes, the broker is usually the dominant channel in the mar
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\linewidth]{figures/baseline_dynamics.png}
+\includegraphics[width=\linewidth]{figures/baseline_dynamics.png}
 \caption{\textbf{\pvtitle{dynamics}.} \pvcaption{dynamics}}
 \label{fig:dynamics}
 \end{figure}
@@ -133,7 +133,7 @@ In the assessment and access experiment, the access-only broker also develops an
 
 \begin{figure}
 \centering
-\includegraphics[width=0.94\linewidth]{figures/information_sources.png}
+\includegraphics[width=\linewidth]{figures/information_sources.png}
 \caption{\textbf{\pvtitle{information}.} \pvcaption{information}}
 \label{fig:information-sources}
 \end{figure}
@@ -160,7 +160,7 @@ The assessment and access experiment provides direct evidence for this role of c
 
 \subsection{A Broker Can Be Highly Central While Doing Little Bridging}
 
-In most full-service regimes, the broker's structural position strengthens over time while principals have fewer direct ties on average. At the baseline, mean principal degree falls from \pv{degBaselineEarly} to \pv{degBaselineLate}, while broker betweenness centrality rises from \pv{betwBaselineEarly} to \pv{betwBaselineLate} (early to late means). This combination occurs in \pv{comoveN} of \pv{nRegimes} regimes, and principal degree falls in \pv{degFallsN} of them (Fig.~\ref{fig:position}). In most regimes, direct ties do not accumulate fast enough to offset turnover. The broker's structural advantage therefore does not disappear as brokered matches create direct ties. Because outsourcing connects current clients to the broker, sustained use converts the value of assessment into structural centrality.
+In most full-service regimes, the broker's structural position strengthens over time while principals have fewer direct ties on average. At the baseline, mean principal degree falls from \pv{degBaselineEarly} to \pv{degBaselineLate}, while broker betweenness centrality rises from \pv{betwBaselineEarly} to \pv{betwBaselineLate} (early to late means; Fig.~\ref{fig:dynamics}). This combination occurs in \pv{comoveN} of \pv{nRegimes} regimes, and principal degree falls in \pv{degFallsN} of them. In most regimes, direct ties do not accumulate fast enough to offset turnover. The broker's structural advantage therefore does not disappear as brokered matches create direct ties. Because outsourcing connects current clients to the broker, sustained use converts the value of assessment into structural centrality.
 
 The distinction between assessment and access helps explain this relationship. An access match creates a direct tie between previously unconnected principals and can remove the broker from their shortest path. An assessment match reuses an existing tie, so the broker can serve the market without directly adding ties to the principal network.
 
@@ -168,9 +168,9 @@ The assessment and access experiment provides direct evidence of these structura
 
 This helps explain why the full-service broker usually gains centrality in the main simulations. As its work becomes increasingly assessment-based, relatively few brokered matches create new ties among principals. Valuable assessments sustain outsourcing, which connects principals to the broker, while turnover removes ties and renews opportunities for brokerage. The broker's structural position strengthens despite the self-liquidating force of its introductions.
 
-The two controlled comparisons in Figure~\ref{fig:position} separate matching composition from turnover. Holding turnover fixed, moving from pure complementarity toward $\rho=0.85$ raises access and lowers centrality. Holding $\rho$ fixed, increasing turnover raises both access and centrality at every tested $\rho$. Turnover creates network gaps, while matching composition determines how often brokerage closes them with direct ties.
+Figure~\ref{fig:position} compares broker centrality with principal degree (Panel A) and access fraction (Panel B) across matching compositions and turnover rates. Holding turnover fixed, moving from pure complementarity toward $\rho=0.85$ raises access and lowers centrality. Holding $\rho$ fixed, increasing turnover raises both access and centrality at every tested $\rho$. Turnover creates network gaps, while matching composition determines how often brokerage closes them with direct ties.
 
-The turnover effect is substantial but nonlinear. Holding other parameters at baseline, increasing $\eta$ from 0 to 0.03 lowers late mean principal degree from \pv{degEta0Late} to \pv{degEta003Late} and raises broker centrality from \pv{betwEta0Late} to \pv{betwEta003Late}, with most of the change occurring between $\eta=0.001$ and $0.01$. Turnover also changes the broker's realized-output advantage. In the $\rho\times\eta$ grid, the 95\% interval for the broker-minus-self-search output gap is below zero in \pv{qgapEta0CINegN} of \pv{rhoEtaRhoN} $\rho$ conditions at $\eta=0$, but above zero in \pv{qgapEta01CIPosN} of \pv{rhoEtaRhoN} by $\eta=0.01$. In the model, turnover removes principals and ties, creating network gaps and the conditions under which brokered matches outperform self-search.
+The turnover effect is substantial but nonlinear (Panel A). Holding other parameters at baseline, increasing $\eta$ from 0 to 0.03 lowers late mean principal degree from \pv{degEta0Late} to \pv{degEta003Late} and raises broker centrality from \pv{betwEta0Late} to \pv{betwEta003Late}, with most of the change occurring between $\eta=0.001$ and $0.01$. Turnover also changes the broker's realized-output advantage. In the $\rho\times\eta$ grid, the 95\% interval for the broker-minus-self-search output gap is below zero in \pv{qgapEta0CINegN} of \pv{rhoEtaRhoN} $\rho$ conditions at $\eta=0$, but above zero in \pv{qgapEta01CIPosN} of \pv{rhoEtaRhoN} by $\eta=0.01$. In the model, turnover removes principals and ties, creating network gaps and the conditions under which brokered matches outperform self-search.
 
 \begin{figure}
 \centering
@@ -183,7 +183,7 @@ The pure-quality boundary confirms that low access alone is not sufficient for h
 
 \begin{figure}
 \centering
-\includegraphics[width=0.92\linewidth]{figures/structural_advantage.png}
+\includegraphics[width=\linewidth]{figures/structural_advantage.png}
 \caption{\textbf{\pvtitle{advantage}.} \pvcaption{advantage}}
 \label{fig:advantage}
 \end{figure}
@@ -192,7 +192,6 @@ Figure~\ref{fig:advantage} shows that structural position relates differently to
 
 Taken together, the results show that informational advantage, broker use, centrality, and realized output for principals need not move together. The broker's assessments improve when it observes matches across clients and retains information about both parties. A greater role for complementarity increases the realized-output advantage of brokered matches. Turnover removes ties and renews opportunities for brokerage. Although introductions can reduce dependence on the broker, the knowledge gained through brokering can improve its assessments. Those assessments can sustain outsourcing when brokerage remains attractive relative to self-search. As the assessment and access comparison shows, extensive use and a strong structural position do not necessarily mean greater value for principals.
 
-\FloatBarrier
 \subsection{Propositions}
 
 The simulation results motivate the following falsifiable propositions for future empirical research. These propositions extend the model's implications beyond the simulated setting:

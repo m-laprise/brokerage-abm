@@ -38,8 +38,8 @@ scientific results.
    command is given below.
 3. `julia --project --threads=auto scripts/paper/audit_convergence.jl`
    Writes the reproducible seed-convergence audit to
-   `output/main/convergence/`. The condition and outcome tables are retained as
-   diagnostics and are not included in the paper. Relative precision follows
+   `output/main/convergence/`. The condition table also supplies principal-degree
+   estimates and intervals for the centrality figure. Relative precision follows
    the conventional interval-half-width-to-estimate definition; cells whose
    interval contains zero retain only absolute precision. Only the concise
    non-$R^2$ range in `values.tex` is consumed by the methods section.
@@ -57,8 +57,9 @@ Local tier (uses retained data; no access to the raw sweep is needed):
 
 5. `julia --project --threads=auto scripts/paper/figures.jl`
    Renders the five results assets at print resolution, including the two-panel
-   information-source figure. It reads only `output/main/figure_data.jld2` and
-   `output/ridge/ablations/figure_data.jld2`; it also writes
+   information-source figure. It reads `output/main/figure_data.jld2`,
+   `output/ridge/ablations/figure_data.jld2`, and the condition audit under
+   `output/main/convergence/`; it also writes
    `output/main/figmeta.tex` (the display conventions quoted in captions:
    rolling window, measurement interval, axis start).
 6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
@@ -90,6 +91,8 @@ After the retained datasets, analysis outputs, and generated values exist,
 running `julia --project --threads=auto scripts/paper/build_publication.jl`
 performs the raw-data-free rendering and publication-build steps in dependency
 order.
+
+PDF builders preserve existing files when only build dates or document IDs differ.
 
 Iterating on figure styling (colors, legends, fonts, layout, smoothing) means
 editing `figures.jl` and rerunning steps 5--7 locally. The cluster tier reruns

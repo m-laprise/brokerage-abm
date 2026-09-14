@@ -11,7 +11,6 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx,booktabs}
 \usepackage{flafter}
-\usepackage{placeins}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{fancyhdr}
 \graphicspath{{output/main/}}
@@ -50,6 +49,14 @@
 \clubpenalty=10000
 \widowpenalty=10000
 \displaywidowpenalty=10000
+% Let figures share text pages; reserve float-only pages for substantial content.
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.85}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \usepackage[
@@ -270,7 +277,7 @@ In summary, three elements enable capture or enclosure: a matching problem that 
 
 Within the agent-based model, the broker's centrality is a product of its relational work. The broker is central because many principals outsource to it repeatedly: good assessments help keep brokerage attractive relative to self-search. Its centrality rises and falls with outsourcing and satisfaction, not with exogenous features of the initial graph.
 
-The simulations show that the broker's relational work endogenously produces its structural advantage. This process generates two patterns that existing theory does not readily predict. The first is that the broker tends to be most central exactly where it bridges least in practice. Across variation in matching composition at a fixed turnover rate, centrality is negatively associated with the access fraction (Figure~\ref{fig:position}): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
+The simulations show that the broker's relational work endogenously produces its structural advantage. This process generates two patterns that existing theory does not readily predict. The first is that the broker tends to be most central exactly where it bridges least in practice. Across variation in matching composition at a fixed turnover rate, centrality is negatively associated with the access fraction (Figure~\ref{fig:position}B): in the complementarity-dominated markets where the broker is most prominent, almost all its matches re-pair principals already tied to one another. A strong bridging position coincides with weak bridging behavior. Occupying a strategic position and using it for one's work are different things that theory should not conflate.
 
 The second pattern concerns the sustainability of brokerage. A long-standing expectation is that brokerage tends to undermine its own structural basis \autocite{burtStructuralHolesSocial1992,burtBridgeDecay2002a,stovelStabilizingBrokerage2011}. Each successful introduction creates a direct tie that can reduce future dependence on the broker. Access therefore creates a self-liquidating force, not an inevitable decline in broker centrality.
 

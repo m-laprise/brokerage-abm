@@ -9,6 +9,7 @@ Compile the standalone Supplementary Material to
 The build fails on a missing input, an undefined `\\pv` value, an unused display
 convention, a missing figure, or a LaTeX error.
 Auxiliary files are created in a temporary directory and discarded.
+Existing PDFs are preserved when only build dates or document IDs differ.
 
 With retained data available, render the required figures and generate the
 assessment-access manuscript values first. See scripts/paper/README.md.
@@ -17,6 +18,7 @@ Usage: julia --project --threads=auto scripts/paper/build_supplement.jl
 """
 
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
+include(joinpath(@__DIR__, "pdf_output.jl"))
 
 const PAPER = normpath(joinpath(@__DIR__, "..", "..", "paper"))
 const GENERATED = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement"))
@@ -111,7 +113,7 @@ mktempdir() do build
     errors == 0 || fail("$errors LaTeX errors while building the supplement")
     occursin("There were undefined references", log) &&
         fail("undefined supplement references")
-    cp(joinpath(build, "supplement.pdf"), PDF; force=true)
+    update_pdf(joinpath(build, "supplement.pdf"), PDF)
     open(joinpath(GENERATED, "provenance.txt"), "w") do io
         println(io, "dgp_analysis_commit=$(analysis_commits["dgp"])")
         println(io, "structural_analysis_commit=$(analysis_commits["structural"])")
@@ -121,5 +123,5 @@ mktempdir() do build
         println(io, "manuscript_commit=$(REPORTING_PROVENANCE.commit)")
         println(io, "manuscript_source_clean=$(REPORTING_PROVENANCE.source_clean)")
     end
-    println("wrote $PDF ($(length(figures)) figures, 0 errors)")
+    println("supplement validated ($(length(figures)) figures, 0 errors)")
 end

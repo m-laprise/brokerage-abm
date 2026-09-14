@@ -68,12 +68,14 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "paper/appendices/model_specifications.tex",
     "paper/appendices/simulation_pseudocode.tex",
     "scripts/paper/figures.jl",
+    "scripts/figure_style.jl",
     "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",
     "scripts/paper/build_supplement.jl",
     "scripts/paper/build_manuscript.jl",
     "scripts/paper/build_appendices.jl",
     "scripts/paper/build_publication.jl",
+    "scripts/paper/pdf_output.jl",
     "scripts/paper/README.md",
     "scripts/assessment_access/main_figure.jl",
     "scripts/assessment_access/figure_2.jl",
@@ -81,6 +83,7 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "scripts/assessment_access/paper_values.jl",
     "scripts/reporting_provenance.jl",
     "test/test_assessment_access_reporting.jl",
+    "test/test_pdf_output.jl",
     "test/test_reporting_provenance.jl",
 )
 

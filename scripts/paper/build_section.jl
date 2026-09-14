@@ -210,7 +210,6 @@ mktempdir() do build
 \\documentclass[11pt]{article}
 \\usepackage[letterpaper,margin=1in]{geometry}
 \\usepackage{amsmath,amssymb,graphicx,booktabs}
-\\usepackage{placeins}
 \\usepackage[font=small,labelfont=bf]{caption}
 \\graphicspath{{$(GENERATED)/}}
 % preview readability only (this wrapper is a smoke test, not the real paper):

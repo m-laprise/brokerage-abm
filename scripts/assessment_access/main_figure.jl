@@ -3,7 +3,7 @@ Render the retained main-figure alternative and the complementarity supplement.
 
 Turnover is horizontal and outcomes are vertical. Zero turnover is displayed in
 a separate strip; positive turnover uses a linear axis. Service modes are offset
-horizontally for visibility. Market output uses the saved seed-paired differences
+horizontally for visibility. Net output uses the saved seed-paired differences
 from full service; other panels show condition means.
 
 The --complementarity option renders the supplementary comparison of adding
@@ -37,11 +37,11 @@ const MODES = ("full", "assessment_only", "access_only")
 const MODE_LABELS = ("Full service", "Assessment only", "Access only")
 const MODE_STYLES = Dict(
     "full" =>
-        (color=Makie.to_color("#222222"), marker=:circle, linestyle=:solid, offset=-1),
+        (color=Makie.to_color("#333A40"), marker=:rect, linestyle=:dot, offset=-1),
     "assessment_only" =>
-        (color=Makie.to_color("#4477AA"), marker=:rect, linestyle=:dash, offset=0),
+        (color=Makie.to_color("#237A93"), marker=:circle, linestyle=:solid, offset=0),
     "access_only" =>
-        (color=Makie.to_color("#CC6677"), marker=:utriangle, linestyle=:dashdot, offset=1),
+        (color=Makie.to_color("#BA5A3A"), marker=:utriangle, linestyle=:dash, offset=1),
 )
 const PANEL_SPECS = (
     (
@@ -53,7 +53,7 @@ const PANEL_SPECS = (
         relative=false,
     ),
     (
-        title="B. Market net output",
+        title="B. Net output to principals",
         metric="net_output_per_requested_position",
         ylabel="Difference from full service\n(per requested position)",
         ylimits=(-0.45, 0.10),
@@ -166,7 +166,7 @@ function draw_series!(axis, summaries, contrasts, mode, panel; zero=false)
     return nothing
 end
 
-"""Recover the overview's annotations from retained simulation and analysis metadata."""
+"""Validate the overview's design against retained simulation and analysis metadata."""
 function overview_design(data)
     trajectories = JLD2.load(TRAJECTORY_DATA)
     trajectories["manifest_hash"] == data["manifest_hash"] || error("manifest mismatch")
@@ -201,7 +201,8 @@ function make_figure(data)
     design = overview_design(data)
     summaries = interval_index(data["summary_rows"])
     contrasts = interval_index(data["contrast_rows"])
-    fig = Figure(; size=(1160, 840), fontsize=18, figure_padding=22)
+    publication_theme!()
+    fig = Figure(; size=(1160, 760), fontsize=19, figure_padding=24)
 
     for (panel_index, panel) in enumerate(PANEL_SPECS)
         row, column = divrem(panel_index - 1, 2) .+ (1, 1)
@@ -280,20 +281,6 @@ function make_figure(data)
         labelsize=21,
         colgap=30,
         padding=(0, 0, 5, 0),
-    )
-    composition = design.rho == design.delta ? "ρ = δ = $(design.rho)" :
-        "ρ = $(design.rho), δ = $(design.delta)"
-    Label(
-        fig[3, 1:2],
-        "$composition   |   t = $(design.late_start)-$(design.horizon)   |   " *
-        "$(design.interval_percent)% Monte Carlo intervals\n" *
-        "Zero turnover shown separately; positive turnover on a linear scale. Series offset for visibility.\n" *
-        "Shaded band: baseline turnover ($(design.baseline_seeds) seeds); " *
-        "other rates: $(design.other_seeds) seeds.";
-        fontsize=17,
-        color=:gray30,
-        lineheight=1.25,
-        tellwidth=false,
     )
     rowgap!(fig.layout, 22)
     colgap!(fig.layout, 30)
@@ -379,11 +366,12 @@ end
 
 """Draw the supplementary comparison with shared scales and no embedded caption."""
 function make_complementarity_figure(data)
+    publication_theme!()
     selected = complementarity_estimates(data)
     styles = (
-        (color="#687580", marker=:circle, linestyle=:dot),
-        (color="#377DA5", marker=:rect, linestyle=:dash),
-        (color="#B65343", marker=:utriangle, linestyle=:solid),
+        (color=PUB_ETA_COLORS[0.0], marker=:circle, linestyle=:dot),
+        (color=PUB_ETA_COLORS[0.01], marker=:rect, linestyle=:dash),
+        (color=PUB_ETA_COLORS[0.03], marker=:utriangle, linestyle=:solid),
     )
     length(selected.etas) == length(styles) || error("turnover legend needs updating")
     bounds = extrema(
@@ -485,7 +473,7 @@ function make_complementarity_figure(data)
         [iszero(eta) ? "No turnover (η = 0)" : "η = $eta" for eta in selected.etas],
         "Turnover";
         orientation=:horizontal,
-        titleposition=:left,
+        titleposition=:top,
         framevisible=false,
         labelsize=TICK_FS,
         titlesize=TICK_FS,

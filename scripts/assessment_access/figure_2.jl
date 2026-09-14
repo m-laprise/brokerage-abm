@@ -17,6 +17,7 @@ using CairoMakie
 using JLD2
 using Printf: @sprintf
 
+include(joinpath(@__DIR__, "..", "figure_style.jl"))
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
@@ -465,6 +466,7 @@ end
 
 """Build four publication panels; the manuscript supplies the title and caption."""
 function make_figure(estimates, centrality)
+    publication_theme!()
     fig = Figure(; size=(1160, 840), fontsize=19, figure_padding=(28, 28, 24, 20))
     Legend(
         fig[1, 1],

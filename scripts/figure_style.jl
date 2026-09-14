@@ -1,8 +1,8 @@
 """
     figure_style.jl
 
-Shared figure style for exploration scripts. Provides consistent colors,
-font sizes, legend style, and helper functions for ensemble time-series plots.
+Shared plotting helpers and an opt-in publication theme. Exploration scripts
+retain their defaults unless they call `publication_theme!`.
 
 Include this file from any script that produces dynamics panels:
     include(joinpath(@__DIR__, "figure_style.jl"))
@@ -37,6 +37,109 @@ const LABEL_FS = 22
 const TICK_FS = 19
 const ROW_LABEL_FS = 22
 const FOOTER_FS = 18
+
+# Ordered parameter colors and redundant symbols, shared by the publication
+# figures. Service-mode colors are separate from these parameter encodings.
+const PUB_RHO_COLORS = Dict(
+    zip(
+        (0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0),
+        ("#46327E", "#365C8D", "#277F8E", "#1F9D8A", "#6CAE75", "#A8BE50", "#C5A532"),
+    ),
+)
+const PUB_RHO_MARKERS = Dict(
+    zip(
+        (0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0),
+        (:circle, :rect, :utriangle, :diamond, :dtriangle, :cross, :hexagon),
+    ),
+)
+const PUB_DELTA_COLORS = Dict(
+    zip(
+        (0.0, 0.25, 0.5, 0.75, 1.0),
+        ("#0072B2", "#D55E00", "#009E73", "#A845A0", "#111111"),
+    ),
+)
+const PUB_DELTA_MARKERS = Dict(
+    zip((0.0, 0.25, 0.5, 0.75, 1.0), (:circle, :rect, :diamond, :utriangle, :dtriangle)),
+)
+const PUB_ETA_COLORS = Dict(
+    zip(
+        (0.0, 0.001, 0.01, 0.02, 0.03),
+        ("#111111", "#A845A0", "#0072B2", "#D55E00", "#009E73"),
+    ),
+)
+const PUB_CENTRALITY = "#756291"
+const PUB_ACCESS = "#B38232"
+const PUB_BROKER = "#BA5A3A"
+const PUB_PRINCIPAL = "#237A93"
+const PUB_RHO_LABEL = "General-quality share (ρ)"
+const PUB_LEGEND = (;
+    labelsize=19,
+    titlesize=19,
+    framevisible=false,
+    orientation=:horizontal,
+    titleposition=:top,
+    patchsize=(28, 16),
+    colgap=20,
+    rowgap=6,
+    padding=(0, 0, 0, 0),
+    tellwidth=false,
+)
+
+"""Apply the publication theme without changing exploration defaults or data."""
+function publication_theme!()
+    set_theme!(;
+        fontsize=TICK_FS,
+        figure_padding=(24, 26, 20, 20),
+        Axis=(;
+            titlealign=:left,
+            titlegap=14,
+            titlesize=TITLE_FS,
+            xlabelsize=LABEL_FS,
+            ylabelsize=LABEL_FS,
+            xticklabelsize=TICK_FS,
+            yticklabelsize=TICK_FS,
+            topspinevisible=false,
+            rightspinevisible=false,
+            xgridvisible=false,
+            ygridcolor=(:black, 0.065),
+            ygridwidth=0.8,
+            spinewidth=0.8,
+            bottomspinecolor=:gray45,
+            leftspinecolor=:gray45,
+            xtickcolor=:gray45,
+            ytickcolor=:gray45,
+        ),
+    )
+    return nothing
+end
+
+"""Separate difficulty levels from the general-quality boundary in a compact legend."""
+function difficulty_legend!(slot, values; nbanks=2)
+    elements = [
+        [
+            LineElement(; color=PUB_DELTA_COLORS[v], linewidth=2),
+            MarkerElement(;
+                color=PUB_DELTA_COLORS[v], marker=PUB_DELTA_MARKERS[v], markersize=9
+            ),
+        ] for v in values
+    ]
+    boundary = [MarkerElement(; color=:gray25, marker=:diamond, markersize=10)]
+    return Legend(
+        slot, [elements, boundary], [string.(values), ["ρ = 1"]],
+        ["Difficulty (δ)", "General quality only\n(δ has no effect)"];
+        PUB_LEGEND..., nbanks, groupgap=40,
+    )
+end
+
+"""Add an external legend for the general-quality share, with redundant symbols."""
+function composition_legend!(slot, values; nbanks=2)
+    elements = [
+        MarkerElement(;
+            color=PUB_RHO_COLORS[v], marker=PUB_RHO_MARKERS[v], markersize=11
+        ) for v in values
+    ]
+    return Legend(slot, elements, string.(values), PUB_RHO_LABEL; PUB_LEGEND..., nbanks)
+end
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared kwargs

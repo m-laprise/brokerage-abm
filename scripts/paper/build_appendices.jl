@@ -4,9 +4,12 @@
 Compile the standalone simulation pseudocode and model specifications from
 `paper/appendices/` into `output/appendices/`. Auxiliary files are created in a
 temporary directory and discarded.
+Existing PDFs are preserved when only build dates or document IDs differ.
 
 Usage: julia --project --threads=auto scripts/paper/build_appendices.jl
 """
+
+include(joinpath(@__DIR__, "pdf_output.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const SOURCE_DIR = joinpath(ROOT, "paper", "appendices")
@@ -40,7 +43,6 @@ for source_name in APPENDICES
         pdf_name = replace(source_name, r"\.tex$" => ".pdf")
         pdf_path = joinpath(build, pdf_name)
         isfile(pdf_path) || error("pdflatex did not create $pdf_path")
-        cp(pdf_path, joinpath(OUTPUT_DIR, pdf_name); force=true)
-        println("wrote $(joinpath(OUTPUT_DIR, pdf_name))")
+        update_pdf(pdf_path, joinpath(OUTPUT_DIR, pdf_name))
     end
 end

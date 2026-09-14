@@ -5,6 +5,7 @@ Compile the editable manuscript and generated results section. The builder write
 the main manuscript PDF and a complete working-paper PDF containing the manuscript,
 Appendix A, Appendix B, and the Supplementary Material. LaTeX staging files are
 created in a temporary directory and discarded.
+Existing PDFs are preserved when only build dates or document IDs differ.
 
 Run `scripts/paper/build_section.jl` first whenever the results prose, values,
 captions, figures, or analysis provenance changes. This script never edits or
@@ -14,6 +15,7 @@ Usage: julia --project --threads=auto scripts/paper/build_manuscript.jl
 """
 
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
+include(joinpath(@__DIR__, "pdf_output.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const PAPER = joinpath(ROOT, "paper")
@@ -107,7 +109,7 @@ mktempdir() do build
 
     artifact = joinpath(build, "manuscript.pdf")
     isfile(artifact) || fail("latexmk did not create $artifact")
-    cp(artifact, MAIN_PDF; force=true)
+    update_pdf(artifact, MAIN_PDF)
 end
 
 pdfunite = Sys.which("pdfunite")
@@ -119,10 +121,10 @@ mktempdir() do build
     process = run(ignorestatus(Cmd([pdfunite, components..., combined])); wait=true)
     success(process) || fail("pdfunite failed while assembling the complete PDF")
     isfile(combined) || fail("pdfunite did not create the complete PDF")
-    cp(combined, COMPLETE_PDF; force=true)
+    update_pdf(combined, COMPLETE_PDF)
 end
 
-println("wrote manuscript PDFs to $OUTPUT")
+println("manuscript PDFs validated in $OUTPUT")
 println("  $(basename(MAIN_PDF)): main manuscript without appendices")
 println("  compile check: OK")
 println(

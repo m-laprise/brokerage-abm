@@ -30,6 +30,8 @@ include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 using JLD2
 
+publication_theme!()
+
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figures"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
@@ -40,25 +42,11 @@ const ROLLW = 5                       # rolling-mean window, in observations
 const MEASINT = 20                    # network-measure interval, periods
 const TSTART = 30                     # displayed axes start here; data never cut
 const SPECTRUM_COMPONENTS = 25
-const RHO_COLORS = Dict(
-    0.0 => :seagreen,
-    0.15 => :royalblue,
-    0.3 => :mediumaquamarine,
-    0.5 => :goldenrod,
-    0.7 => :darkorange,
-    0.85 => :orangered,
-    1.0 => :firebrick,
-)
-const DELTA_COLORS = Dict(
-    0.0 => :steelblue,
-    0.25 => :cadetblue,
-    0.5 => :goldenrod,
-    0.75 => :darkorange,
-    1.0 => :firebrick,
-)
+const RHO_COLORS = PUB_RHO_COLORS
+const DELTA_COLORS = PUB_DELTA_COLORS
 # the two alternative structural measures, with the keys used in the extract and
 # the labels printed on the panels
-const CONSTR = ("constraint", "Broker Burt constraint")
+const CONSTR = ("constraint", "Broker constraint")
 const EFFS = ("effective_size", "Broker effective size")
 # the cell-level keys differ from the series keys (extract names them shorter)
 const CELLKEY = Dict("constraint" => "constraint", "effective_size" => "effsize")
@@ -138,7 +126,7 @@ function ywin(curves...)
     (lo - pad, hi + pad)
 end
 
-function draw_interval_series!(axis, series; color=COL_GAP)
+function draw_interval_series!(axis, series; color=PUB_CENTRALITY)
     x, estimate, lower, upper = series
     band!(axis, x, lower, upper; color=(color, 0.16))
     scatterlines!(axis, x, estimate; color, linewidth=2.2, markersize=6)
@@ -152,13 +140,17 @@ function type_geometry()
     types = geometry["type_projection"]
     curve_parameter = geometry["curve_parameter"]
     projections = ((1, 2), (1, 3), (2, 3))
-    fig = Figure(; size=(1260, 410))
+    fig = Figure(; size=(1200, 420))
+    Legend(fig[0, 1:3],
+        [MarkerElement(; color=:gray55, marker=:circle, markersize=8),
+         LineElement(; color=PUB_PRINCIPAL, linewidth=2.4)],
+        ["Principal types", "Latent curve"]; PUB_LEGEND...)
     for (column, (horizontal, vertical)) in enumerate(projections)
         axis = Axis(
             fig[1, column];
-            title="Components $horizontal and $vertical",
+            title="$(('A':'C')[column]). Components $horizontal and $vertical",
             xlabel="Component $horizontal",
-            ylabel=column == 1 ? "Component $vertical" : "",
+            ylabel="Component $vertical",
             xticksvisible=false,
             xticklabelsvisible=false,
             yticksvisible=false,
@@ -189,7 +181,6 @@ function type_geometry()
             linewidth=2.4,
             label=column == 1 ? "latent curve" : nothing,
         )
-        column == 1 && axislegend(axis; position=:rt, LEG_KW...)
     end
     Colorbar(
         fig[1, 4];
@@ -200,7 +191,8 @@ function type_geometry()
         ticklabelsize=TICK_FS,
         width=16,
     )
-    colgap!(fig.layout, 14)
+    colgap!(fig.layout, 20)
+    rowgap!(fig.layout, 16)
     savefig("type_geometry.png", fig)
 end
 
@@ -222,27 +214,39 @@ function match_value_surfaces()
     color_limit = maximum(
         abs(value) for matrix in display_matrices for value in matrix if isfinite(value)
     )
-    fig = Figure(; size=(1330, 760))
+    fig = Figure(; size=(900, 650))
     panels = fig[1, 1] = GridLayout()
     for (column, title) in
         enumerate(("Complementarity\nρ = 0", "Mixed\nρ = 0.5", "General quality\nρ = 1"))
-        Label(panels[1, column], title; fontsize=TITLE_FS)
+        Label(panels[1, column + 2], title; fontsize=TITLE_FS, tellwidth=false)
     end
-    Label(fig[1, 0], "General quality of principal i"; rotation=pi / 2, fontsize=LABEL_FS)
-    Label(panels[2, 0], "δ = 0"; rotation=pi / 2, fontsize=LABEL_FS)
-    Label(panels[3, 0], "δ = 1"; rotation=pi / 2, fontsize=LABEL_FS)
-    Label(fig[2, 1], "General quality of principal j"; fontsize=LABEL_FS)
+    Label(panels[2:3, 1], "General quality of principal i";
+        rotation=pi / 2, fontsize=LABEL_FS, tellheight=false)
+    Label(panels[2, 2], "Low difficulty (δ = 0)";
+        rotation=pi / 2, fontsize=LABEL_FS, tellheight=false)
+    Label(panels[3, 2], "High difficulty (δ = 1)";
+        rotation=pi / 2, fontsize=LABEL_FS, tellheight=false)
+    Label(panels[4, 3:5], "General quality of principal j";
+        fontsize=LABEL_FS, tellwidth=false)
 
-    panel_positions = ((2, 1), (2, 2), (2, 3), (3, 1), (3, 2))
-    for ((row, column), matrix) in zip(panel_positions, display_matrices)
+    panel_positions = ((2, 3), (2, 4), (2, 5), (3, 3), (3, 4))
+    for (index, ((row, column), matrix)) in enumerate(zip(panel_positions, display_matrices))
         axis = Axis(
             panels[row, column];
+            title=string(('A':'E')[index]),
+            titlesize=TITLE_FS,
+            titlegap=4,
             xticksvisible=false,
             xticklabelsvisible=false,
             yticksvisible=false,
             yticklabelsvisible=false,
             xgridvisible=false,
             ygridvisible=false,
+            leftspinevisible=false,
+            bottomspinevisible=false,
+            halign=:left,
+            width=210,
+            height=210,
             aspect=DataAspect(),
         )
         heatmap!(
@@ -254,25 +258,27 @@ function match_value_surfaces()
             rasterize=true,
         )
     end
-    Label(panels[3, 3], "δ has no effect\nwhen ρ = 1"; fontsize=LABEL_FS, color=:gray35)
+    Label(panels[3, 5], "Difficulty has\nno effect at ρ = 1";
+        fontsize=LABEL_FS, color=:gray35, tellwidth=false)
     Colorbar(
-        panels[2:3, 4];
+        panels[2:3, 6];
         colormap=:vik,
         limits=(-color_limit, color_limit),
-        label="Expected match value (centered)",
+        label="Expected match output (centered)",
         labelsize=LABEL_FS,
         ticklabelsize=TICK_FS,
         width=18,
     )
-    colsize!(fig.layout, 1, Relative(0.94))
-    rowsize!(fig.layout, 1, Relative(0.92))
-    for column in 1:3
-        colsize!(panels, column, Relative(0.29))
+    for column in 3:5
+        colsize!(panels, column, Auto(1))
     end
-    rowsize!(panels, 2, Relative(0.46))
-    rowsize!(panels, 3, Relative(0.46))
-    colgap!(panels, 12)
+    rowsize!(panels, 2, Auto(1))
+    rowsize!(panels, 3, Auto(1))
+    colgap!(panels, 14)
+    colgap!(panels, 1, 6)
+    colgap!(panels, 2, 8)
     rowgap!(panels, 12)
+    resize_to_layout!(fig)
     savefig("match_value_surfaces.png", fig)
 end
 
@@ -289,11 +295,11 @@ end
 function effective_dimensionality()
     displayed_rhos = [0.0, 0.15, 0.5, 0.85, 1.0]
     components = 1:SPECTRUM_COMPONENTS
-    fig = Figure(; size=(1390, 480))
+    fig = Figure(; size=(1200, 520))
     spectrum_axis = Axis(
         fig[1, 1];
-        title="Singular-value spectrum",
-        xlabel="Singular values (largest to smallest)",
+        title="A. Singular-value spectrum",
+        xlabel="Component rank (largest first)",
         ylabel="Relative magnitude (σₖ / σ₁)",
         yticks=0.0:0.25:1.0,
         limits=((0.5, SPECTRUM_COMPONENTS + 0.5), (-0.015, 1.05)),
@@ -318,19 +324,20 @@ function effective_dimensionality()
             components,
             [summary.mean for summary in summaries];
             color=RHO_COLORS[rho],
+            marker=PUB_RHO_MARKERS[rho],
             linewidth=2.2,
             markersize=5,
             label="ρ = $rho",
         )
     end
-    axislegend(spectrum_axis; position=:rt, LEG_KW...)
+    composition_legend!(fig[2, 1], displayed_rhos; nbanks=3)
 
     rank_axis = Axis(
         fig[1, 2];
-        title="Effective dimensionality",
-        xlabel="ρ (complementarity vs quality)",
-        ylabel="Components capturing 90% variation",
-        xticks=DGP_FD["rho_values"],
+        title="B. Effective dimensionality",
+        xlabel=PUB_RHO_LABEL,
+        ylabel="Components explaining\n90% of variation",
+        xticks=[0, 0.5, 1],
         titlesize=TITLE_FS,
         xlabelsize=LABEL_FS,
         ylabelsize=LABEL_FS,
@@ -366,6 +373,7 @@ function effective_dimensionality()
             [point.rho for point in points],
             [point.mean for point in points];
             color=DELTA_COLORS[delta],
+            marker=PUB_DELTA_MARKERS[delta],
             linewidth=2.0,
             markersize=9,
             label="δ = $delta",
@@ -391,8 +399,9 @@ function effective_dimensionality()
         markersize=11,
         label="ρ = 1 boundary",
     )
-    Legend(fig[1, 3], rank_axis, "Difficulty"; LEG_KW...)
-    colgap!(fig.layout, 16)
+    difficulty_legend!(fig[2, 2], DGP_FD["delta_values"]; nbanks=3)
+    colgap!(fig.layout, 38)
+    rowgap!(fig.layout, 22)
     savefig("effective_dimensionality.png", fig)
 end
 
@@ -404,15 +413,15 @@ function alternative_measures_grid()
     length(unique(c["rel"] for c in boundary_cells)) == 1 ||
         error("rho = 1 grid coordinates do not share one effective realization")
     boundary_cell = first(boundary_cells)
-    fig = Figure(; size=(1180, 470))
+    fig = Figure(; size=(1200, 500))
+    difficulty_legend!(fig[0, 1:2], dls)
     for (ci, (key, lab)) in enumerate((CONSTR, EFFS))
         ck = CELLKEY[key]
         ax = Axis(
             fig[1, ci];
-            title=lab,
-            xlabel="ρ (complementarity vs quality)",
-            ylabel=ci == 1 ? "late-window mean" : "",
-            xticks=[0, 0.3, 0.5, 0.7, 0.85, 1],
+            title="$(('A':'B')[ci]). $lab",
+            xlabel=PUB_RHO_LABEL,
+            xticks=[0, 0.5, 1],
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
             ylabelsize=LABEL_FS,
@@ -447,6 +456,7 @@ function alternative_measures_grid()
                 [point.rho for point in pts],
                 [point.mean for point in pts];
                 color=DELTA_COLORS[d],
+                marker=PUB_DELTA_MARKERS[d],
                 linewidth=2.0,
                 markersize=10,
                 strokewidth=0.4,
@@ -475,9 +485,9 @@ function alternative_measures_grid()
             strokecolor=:gray20,
             label="ρ = 1 boundary",
         )
-        ci == 1 && axislegend(ax, "Difficulty"; position=:rt, LEG_KW...)
     end
-    colgap!(fig.layout, 16)
+    colgap!(fig.layout, 40)
+    rowgap!(fig.layout, 24)
     savefig("alternative_measures_grid.png", fig)
 end
 
@@ -486,14 +496,14 @@ end
 function alternative_measures_position()
     cells = STRUCTURAL_FD["oat_cells"]
     ac = [c["access"] for c in cells]
-    fig = Figure(; size=(1180, 860))
+    fig = Figure(; size=(1200, 650))
     for (ri, (key, lab)) in enumerate(((CONSTR), (EFFS)))
         # left: the measure over time at baseline (no access-fraction series)
         series = measseries(key)
         axl = Axis(
             fig[ri, 1];
-            title=ri == 1 ? "Over time, at baseline" : "",
-            xlabel=ri == 2 ? "period" : "",
+            title="$(ri == 1 ? 'A' : 'C'). Baseline dynamics",
+            xlabel="Period",
             ylabel=lab,
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
@@ -508,8 +518,8 @@ function alternative_measures_position()
         yv = [c[CELLKEY[key]] for c in cells]
         axr = Axis(
             fig[ri, 2];
-            title=ri == 1 ? "Across regimes" : "",
-            xlabel=ri == 2 ? "access fraction" : "",
+            title="$(ri == 1 ? 'B' : 'D'). Across regimes",
+            xlabel="Access fraction",
             ylabel=lab,
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
@@ -517,10 +527,11 @@ function alternative_measures_position()
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
         )
-        scatter!(axr, ac, yv; color=:black, markersize=13)
+        scatter!(axr, ac, yv; color=(PUB_CENTRALITY, 0.85), markersize=11,
+            strokecolor=:white, strokewidth=0.6)
     end
-    colgap!(fig.layout, 16);
-    rowgap!(fig.layout, 12)
+    colgap!(fig.layout, 34)
+    rowgap!(fig.layout, 26)
     savefig("alternative_measures_position.png", fig)
 end
 
@@ -530,16 +541,19 @@ function alternative_measures_advantage()
     rho = [c["rho"] for c in bc]
     xs = [(CONSTR[2], [c["constraint"] for c in bc]), (EFFS[2], [c["effsize"] for c in bc])]
     ys = [
-        ("Rank-correlation difference", [c["rankgap"] for c in bc]),
-        ("Output gap q", [c["qgap"] for c in bc]),
+        ("Rank correlation:\nbroker minus principal", [c["rankgap"] for c in bc]),
+        ("Match output:\nbroker minus self-search", [c["qgap"] for c in bc]),
     ]
-    fig = Figure(; size=(1150, 940))
+    titles = ["A. Ranking advantage" "B. Ranking advantage";
+              "C. Match-output difference" "D. Match-output difference"]
+    fig = Figure(; size=(1200, 860))
+    composition_legend!(fig[0, 1:2], sort(unique(rho)))
     for (ri, (ylab, yv)) in enumerate(ys), (ci, (xlab, xv)) in enumerate(xs)
         ax = Axis(
             fig[ri, ci];
-            xlabel=ri == 2 ? xlab : "",
+            xlabel=xlab,
             ylabel=ci == 1 ? ylab : "",
-            title=ri == 1 ? xlab : "",
+            title=titles[ri, ci],
             titlesize=TITLE_FS,
             xlabelsize=LABEL_FS,
             ylabelsize=LABEL_FS,
@@ -553,23 +567,15 @@ function alternative_measures_advantage()
                 xv[mm],
                 yv[mm];
                 color=(RHO_COLORS[rv], 0.8),
+                marker=PUB_RHO_MARKERS[rv],
                 markersize=MARKER_SIZE,
                 strokewidth=0.3,
                 strokecolor=:gray30,
             )
         end
-        if ri == 1 && ci == 2
-            rvs = sort(unique(rho))
-            els = [
-                MarkerElement(;
-                    marker=:circle, color=RHO_COLORS[v], markersize=MARKER_SIZE
-                ) for v in rvs
-            ]
-            axislegend(ax, els, ["ρ = $v" for v in rvs]; position=:rt, LEG_KW...)
-        end
     end
-    colgap!(fig.layout, 16);
-    rowgap!(fig.layout, 12)
+    colgap!(fig.layout, 34)
+    rowgap!(fig.layout, 24)
     savefig("alternative_measures_advantage.png", fig)
 end
 
@@ -604,6 +610,14 @@ open(
     println(io, "\\pvDefine{suppRollWin}{$ROLLW}")
     println(io, "\\pvDefine{suppMeasInterval}{$MEASINT}")
     println(io, "\\pvDefine{suppAxisStart}{$TSTART}")
+    println(io, "\\pvDefine{suppBaselineSeeds}{$(length(STRUCTURAL_FD["baseline_seeds"]))}")
+    other_seeds = only(unique(
+        n for n in values(STRUCTURAL_FD["meta"]["condition_seed_counts"])
+        if n != length(STRUCTURAL_FD["baseline_seeds"])
+    ))
+    println(io, "\\pvDefine{suppOtherSeeds}{$other_seeds}")
+    println(io, "\\pvDefine{suppRegimeN}{$(length(STRUCTURAL_FD["regime_cells"]))}")
+    println(io, "\\pvDefine{suppOatN}{$(length(STRUCTURAL_FD["oat_cells"]))}")
     println(io, "\\pvDefine{suppDgpSeeds}{$(length(DGP_FD["seeds"]))}")
     println(io, "\\pvDefine{suppDgpN}{$(DGP_FD["design"]["N"])}")
     println(io, "\\pvDefine{suppDgpHeatmapN}{$(DGP_FD["design"]["heatmap_display_N"])}")

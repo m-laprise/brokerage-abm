@@ -85,7 +85,12 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
 
         reporting_paths = filter(
             path -> startswith(path, "scripts/assessment_access/") ||
-                path == "test/test_assessment_access_reporting.jl",
+                path in (
+                    "test/test_assessment_access_reporting.jl",
+                    "scripts/paper/pdf_output.jl",
+                    "scripts/figure_style.jl",
+                    "test/test_pdf_output.jl",
+                ),
             MANUSCRIPT_ITERATION_PATHS,
         )
         for path in reporting_paths
