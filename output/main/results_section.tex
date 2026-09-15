@@ -1,10 +1,10 @@
 % results_section.tex: GENERATED, do not edit.
-% Built by scripts/paper/build_section.jl on 2026-09-14 22:39
+% Built by scripts/paper/build_section.jl on 2026-09-14 23:13
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge, ablation, and assessment-access values + figmeta.tex + supplement figure order;
-% sweep 2026-09-05_adeaa06_nn; analysis commit 6b8bfbb52fcced1dfccaba3658db407be9dfc21b;
+% sweep 2026-09-05_adeaa06_nn; analysis commit 78aca30174ee31db965ab19cd12807a2d61d71f7;
 % assessment-access analysis commit 99024c548648adbf353258ca3679614f7642722c;
-% manuscript commit b7dcd6a893a90a130634eac694e9f98e2814fe32; uncommitted manuscript/build changes included.
+% manuscript commit 78aca30174ee31db965ab19cd12807a2d61d71f7; uncommitted manuscript/build changes included.
 % Every number was computed from the saved sweep data by the reporting scripts.
 
 \section{How Brokers Accumulate Informational and Structural Advantage: A Formal Illustration}
@@ -35,7 +35,7 @@ Neural-network performance depends on the learning rate and the number of traini
 
 To show that the findings do not depend on neural-network learning, I repeat the complete design with Ridge regression. In the unrestricted Ridge specification, principals use candidate characteristics, while the broker uses both parties' characteristics and interactions between them. Ridge penalties were calibrated at the baseline using ranking performance on randomly sampled candidates. Three additional Ridge experiments, conducted at the baseline and across the $\rho\times\delta$ grid, restrict the broker by giving it the same number of observations as a typical principal, retaining only one party's characteristics from each match, or omitting interactions between the two parties' characteristics.
 
-Ensemble means are averages across random seeds. Window means are taken by first averaging over periods within seeds, and then averaging over seeds. Late-window is $t\in[481,500]$; early-window is $t\in[50,70]$. Cross-regime summaries give each regime equal weight. Intervals for differences are calculated within each random seed before being combined across seeds. Unless otherwise noted in a figure caption, time-series figures begin at $t=30$ to omit the initialization transient. Monte Carlo convergence was assessed in two ways. For each regime and reported outcome, I calculated a two-sided 95\% confidence interval for the mean across independent random seeds using the $t$ distribution. I also compared nested estimates based on the first 10 versus all 20 seeds outside the baseline and the first 20 versus all 50 seeds at the baseline. Across the 14 outcomes included in the convergence summary, the median across regimes of the confidence-interval half-width divided by the absolute estimate based on all available seeds ranged from 0.3\% to 8.3\%. The median across regimes of the absolute difference between the nested estimates, divided by the same full estimate, ranged from 0.1\% to 4.8\%. These relative quantities are not reported when the full-sample interval includes zero to avoid division by near zero; those cases are assessed in the outcome's original units.
+Ensemble means are averages across random seeds. Window means are taken by first averaging over periods within seeds, and then averaging over seeds. Late-window is $t\in[481,500]$; early-window is $t\in[51,70]$. Cross-regime summaries give each regime equal weight. Intervals for differences are calculated within each random seed before being combined across seeds. Unless otherwise noted in a figure caption, time-series figures begin at $t=30$ to omit the initialization transient. Monte Carlo convergence was assessed in two ways. For each regime and reported outcome, I calculated a two-sided 95\% confidence interval for the mean across independent random seeds using the $t$ distribution. I also compared nested estimates based on the first 10 versus all 20 seeds outside the baseline and the first 20 versus all 50 seeds at the baseline. Across the 14 outcomes included in the convergence summary, the median across regimes of the confidence-interval half-width divided by the absolute estimate based on all available seeds ranged from 0.3\% to 8.3\%. The median across regimes of the absolute difference between the nested estimates, divided by the same full estimate, ranged from 0.1\% to 4.8\%. These relative quantities are not reported when the full-sample interval includes zero to avoid division by near zero; those cases are assessed in the outcome's original units.
 
 \subsection{The Broker Primarily Provides Assessment, Not Access}
 
@@ -60,7 +60,7 @@ Measure & early & late & late, median \\
 \midrule
 \multicolumn{4}{l}{\emph{Market use and access}} \\
 \quad Outsourcing rate & $0.78$ & $0.97$ & $0.96$ \\
-\quad Output gap (broker $-$ self) & $-0.39$ & $+1.71$ & $+1.54$ \\
+\quad Output gap (broker $-$ self) & $-0.38$ & $+1.71$ & $+1.54$ \\
 \quad Access fraction & $0.20$ & $0.11$ & $0.11$ \\
 \addlinespace
 \multicolumn{4}{l}{\emph{Assessment quality}} \\
@@ -70,7 +70,7 @@ Measure & early & late & late, median \\
 \end{tabular}
 \end{table}
 
-At the baseline, the broker's realized-output advantage develops as the market evolves: the output gap (broker minus self-search) changes from $-0.39$ early to $+1.71$ late. Across regimes, mean realized output is higher through the broker channel in 66 of 80 regimes, and the late output gap averages $+1.14$. Paired 95\% Monte Carlo intervals are above zero in 65 regimes and below zero in 14. The negative gaps occur in 14 regimes, all with no or nearly no turnover ($\eta\in\{0,0.001\}$). Principals choose a channel using satisfaction scores that include unfilled requests, fees, and search costs, whereas the output gap compares realized output among completed matches. Outsourcing is therefore not itself evidence that the broker always produces better matches.
+At the baseline, the broker's realized-output advantage develops as the market evolves: the output gap (broker minus self-search) changes from $-0.38$ early to $+1.71$ late. Across regimes, mean realized output is higher through the broker channel in 66 of 80 regimes, and the late output gap averages $+1.14$. Paired 95\% Monte Carlo intervals are above zero in 65 regimes and below zero in 14. The negative gaps occur in 14 regimes, all with no or nearly no turnover ($\eta\in\{0,0.001\}$). Principals choose a channel using satisfaction scores that include unfilled requests, fees, and search costs, whereas the output gap compares realized output among completed matches. Outsourcing is therefore not itself evidence that the broker always produces better matches.
 
 The broker's assessment advantage appears more consistently in ranking candidates than in predicting expected output levels. Among randomly sampled potential partners (Appendix~A~\S8), its rank correlation is 0.95 at the baseline and has a median of 0.94 across regimes, compared with 0.63 and 0.64 for principals. The broker-minus-principal difference in rank correlation is positive in 80 of 80 regimes, with paired 95\% intervals above zero in 80 regimes. Ranking determines which candidates are considered first, while predicted levels also determine whether offers clear the reservation threshold. Accurate ranking is therefore more important than accurate prediction of expected output levels, although both can affect matching.
 

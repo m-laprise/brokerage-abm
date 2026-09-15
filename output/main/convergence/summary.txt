@@ -1,7 +1,7 @@
-generated=2026-09-07T13:04:20.430
+generated=2026-09-14T23:08:07.808
 sweep=2026-09-05_adeaa06_nn
 manifest=a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c
-analysis_commit=6b8bfbb52fcced1dfccaba3658db407be9dfc21b
+analysis_commit=78aca30174ee31db965ab19cd12807a2d61d71f7
 analysis_source_clean=true
 effective_realizations=80
 general_nested_comparison=first 10 versus all 20 seeds
