@@ -9,7 +9,7 @@ conventions only (window bounds, baseline parameter values, display rounding).
 
 Conventions:
   late mean  = time average over the final 20 periods
-  early mean = time average over t in [50, 70]
+  early mean = time average over t in [51, 70]
   "across regimes" = unweighted mean over effective model realizations
   (each realization first averaged over its planned seeds)
 
@@ -30,7 +30,7 @@ const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."))
 )
 const LATE_WIDTH = 20
-const EARLY = (50, 70)
+const EARLY = (51, 70)
 const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere else)
 
 nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
