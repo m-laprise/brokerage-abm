@@ -13,6 +13,8 @@ output/assessment_access/paper_values.tex (generated from the retained experimen
 paper/supplement.tex (supplementary figure labels and their order),
 and the figures in output/main/figures/. Output: output/main/results_section.tex, a flattened,
 \\input-ready fragment with literal numbers and captions inlined.
+Reported estimates use at most two decimal places and percentages use whole
+percentage points. Exact parameter settings retain their source precision.
 
 The build fails loudly on: a \\pv reference with no definition, a definition never
 referenced, a \\pvcaption reference with no caption block, a caption block never
@@ -23,6 +25,7 @@ Usage: julia --project --threads=auto scripts/paper/build_section.jl
 """
 
 using Dates
+using Printf: @sprintf
 
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
@@ -49,6 +52,22 @@ const REPORTING_PROVENANCE = manuscript_git_provenance(
 )
 
 fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
+
+"""Round displayed estimates and percentages without changing exact parameter settings."""
+function display_value(key::AbstractString, value::AbstractString)
+    key in ("aaRho", "aaDelta", "aaEta") && return value
+    decimal = match(r"^[+-]?\d+\.(\d+)$", value)
+    isnothing(decimal) && return value
+    percentage = endswith(key, "Percent")
+    !percentage && length(decimal[1]) <= 2 && return value
+    number = parse(BigFloat, value)
+    shown = percentage ? @sprintf("%.0f", number) : @sprintf("%.2f", number)
+    # A rounded zero has no meaningful direction.
+    if iszero(parse(BigFloat, shown))
+        return percentage ? "0" : "0.00"
+    end
+    return startswith(value, "+") ? "+" * shown : shown
+end
 
 isfile(SRC) || fail("missing $SRC")
 isfile(VALS) || fail("missing $VALS (run scripts/paper/stats.jl first)")
@@ -179,7 +198,13 @@ for f in figs
 end
 
 # flatten ("\pv{" is 4 characters, so the key is m[5:end-1])
-flat = replace(src, r"\\pv\{([^}]+)\}" => m -> defs[m[5:(end - 1)]])
+flat = replace(
+    src,
+    r"\\pv\{([^}]+)\}" => m -> begin
+        key = m[5:(end - 1)]
+        display_value(key, defs[key])
+    end,
+)
 occursin("\\pv{", flat) && fail("unflattened \\pv reference remains")
 
 source_state = if REPORTING_PROVENANCE.source_clean
@@ -196,6 +221,8 @@ header = """
 % assessment-access analysis commit $ASSESSMENT_ACCESS_ANALYSIS_COMMIT;
 % manuscript commit $(REPORTING_PROVENANCE.commit); $source_state.
 $(FIXTURE_NOTE)% Every number was computed from the saved sweep data by the reporting scripts.
+% Display: estimates at most two decimals; percentages rounded to whole points.
+% Exact parameter settings retain their source precision.
 """
 mkpath(GENERATED)
 write(OUT, header * flat * "\n")

@@ -165,9 +165,6 @@ function manuscript_values(retained, estimates, data)
     loss_rates = filter(
         eta -> output_effects[(assessment.mode, eta)].upper < 0, TURNOVER_RATES
     )
-    small_rate = first(filter(>(0), TURNOVER_RATES))
-    small_effect = output_effects[(assessment.mode, small_rate)]
-    small_effect.lower <= 0 <= small_effect.upper || error("small-turnover claim changed")
     output_effects[(assessment.mode, first(TURNOVER_RATES))].lower > 0 ||
         error("zero-turnover assessment-only advantage changed")
     all(output_effects[(access.mode, eta)].upper < 0 for eta in TURNOVER_RATES) ||
@@ -183,9 +180,6 @@ function manuscript_values(retained, estimates, data)
         "aaEta" => rate_string(design.eta),
         "aaEtaCount" => string(length(TURNOVER_RATES)),
         "aaAccessLossEtas" => join(rate_string.(loss_rates), ","),
-        "aaEtaSmall" => rate_string(small_rate),
-        "aaEtaLower" => rate_string(first(loss_rates)),
-        "aaEtaUpper" => rate_string(last(TURNOVER_RATES)),
         "aaLateWidth" => string(design.late_width),
         "aaLateStart" => string(design.horizon - design.late_width + 1),
         "aaHorizon" => string(design.horizon),
@@ -206,15 +200,15 @@ function manuscript_values(retained, estimates, data)
     for (label, service) in
         (("Full", FULL_SERVICE), ("Assessment", assessment), ("Access", access))
         outsourcing = checked_summary(retained, estimates, service.mode, "outsourcing_rate")
-        degree = checked_summary(retained, estimates, service.mode, "mean_degree")
-        append!(
+        push!(
             defs,
-            [
-                "aa$(label)OutPercent" => @sprintf("%.1f", 100 * outsourcing.estimate),
-                "aa$(label)Degree" => fmt(degree.estimate),
-            ],
+            "aa$(label)OutPercent" => @sprintf("%.1f", 100 * outsourcing.estimate),
         )
-        if service.mode != FULL_SERVICE.mode
+        if service.mode != assessment.mode
+            degree = checked_summary(retained, estimates, service.mode, "mean_degree")
+            push!(defs, "aa$(label)Degree" => fmt(degree.estimate))
+        end
+        if service.mode == access.mode
             centrality = checked_effect(retained, estimates, service, "betweenness")
             append!(
                 defs,
