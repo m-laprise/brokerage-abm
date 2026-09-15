@@ -43,63 +43,56 @@
 
 \begin{document}
 
-\begin{center}
-{\large\bfseries Supplementary Material}\\[2pt]
-{\large Model Structure, Assessment and Access, and Network Measures}
-\end{center}
-
-Figure~\ref{fig:supp-type-geometry} illustrates the baseline type distribution. Figures~\ref{fig:supp-dgp-structure}--\ref{fig:supp-dgp-dimension} describe the match-value function under that distribution. Within each realization, principal types and the matching-function objects $c$, $A$, and $B$ are held fixed while $\rho$ and $\delta$ vary. The match-value figures show the conditional value $E[q_{ij}\mid x_i,x_j]=Q+f(x_i,x_j)$, without match noise. They therefore isolate the structure principals and the broker must learn rather than variation from one set of noisy outcomes.
-
-Figure~\ref{fig:supp-assessment-access} compares the contributions of assessment and access across matching composition and turnover.
-
-Figures~\ref{fig:supp-grid}--\ref{fig:supp-advantage} reproduce the main structural analyses using Burt's aggregate network constraint and effective size. Constraint summarizes the concentration of the broker's direct and indirect ties. Effective size discounts contacts that are connected to one another. Both are computed for the broker every \pv{suppMeasInterval} periods. A regime is one scientifically distinct parameter configuration; duplicate grid coordinates and inactive parameters do not create additional regimes.
-
 \begin{figure}[htbp]
 \centering
+\begin{center}
+{\large\bfseries Supplementary Material}
+\end{center}
+
 \includegraphics[width=\linewidth]{type_geometry.png}
-\caption{\textbf{Principal types and their latent curve.} Three projections of all \pv{suppDgpN} baseline principal types in realization \pv{suppDgpHeatmapSeed}. Types are drawn around a smooth latent curve and projected to the unit sphere in eight-dimensional type space. A--C show pairs of the curve's first three principal components. Gray points are realized types; the colored line is the latent curve, with color indicating position along it. These projections are for visualization only; matching and learning use the full eight-dimensional types.}
+\caption{\textbf{Principal types and their latent curve.} All \pv{suppDgpN} baseline types from realization \pv{suppDgpHeatmapSeed}, projected onto pairs of the curve's first three principal components (A--C). Gray points are realized types; the line shows the latent curve, colored by position along it. Matching and learning use the full eight-dimensional types, not these projections.}
 \label{fig:supp-type-geometry}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{match_value_surfaces.png}
-\caption{\textbf{Expected match output across pairs of principal types.} Centered conditional output for \pv{suppDgpHeatmapN} types selected at evenly spaced general-quality ranks from a $\pv{suppDgpN}$-principal realization (seed \pv{suppDgpHeatmapSeed}). Columns vary general-quality share $\rho$; rows compare low and high difficulty $\delta$. The pure-general-quality condition ($\rho=1$), where difficulty is inactive, is shown once. Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. General quality increases from left to right and bottom to top. Only the upper triangle of each symmetric matrix is shown; self-matches on the diagonal are excluded. Colors use one shared scale. Matrices exclude match noise and subtract the grand mean. Normalization uses separate reference markets whose average within-market variance in predictable output across possible pairs equals one.}
+\caption{\textbf{Expected match output across pairs of principal types.} \pv{suppDgpHeatmapN} types selected at evenly spaced general-quality ranks from realization \pv{suppDgpHeatmapSeed} (\pv{suppDgpN} principals). Columns vary general-quality share $\rho$; rows vary difficulty $\delta$. The $\rho=1$ condition appears once because difficulty is inactive. Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. General quality increases rightward and upward. Only the upper triangle of each symmetric matrix is shown, excluding self-matches. A shared color scale shows expected output minus the grand mean, without match noise.}
 \label{fig:supp-dgp-structure}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{effective_dimensionality.png}
-\caption{\textbf{Dimensionality of expected match output.} Summaries of the centered conditional-output matrix over \pv{suppDgpSeeds} independently generated sets of types and matching-function objects. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, each divided by the largest singular value within its realization. B: the minimum number of singular components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values, calculated within each realization. Lines and markers are means across realizations; ribbons and whiskers are pointwise 95\% Monte Carlo intervals. Colors and symbols identify general-quality share $\rho$ in A and difficulty $\delta$ in B. General-quality share runs from pure complementarity (0) to pure general quality (1). In B, the $\rho=1$ boundary, where difficulty is inactive, is shown once and unconnected.}
+\caption{\textbf{Dimensionality of expected match output.} Centered conditional-output matrices, without match noise, summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function objects $c$, $A$, and $B$ are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest singular components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values within each realization. Lines and markers are means; ribbons and whiskers are pointwise 95\% Monte Carlo intervals. Colors and symbols identify general-quality share $\rho$ in A and difficulty $\delta$ in B. N/A denotes the unconnected gray diamond at $\rho=1$: difficulty affects only complementarity and is not applicable under pure general quality.}
 \label{fig:supp-dgp-dimension}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{complementarity_contributions.png}
-\caption{\textbf{Contributions of assessment and access across matching composition.} A: full service minus access-only in net output to principals per requested position. B: full service minus assessment-only. Broker models are defined in the main text. Net output deducts search costs and broker fees; unfilled positions remain in the denominator. Colors and symbols identify turnover $\eta$. Parameters other than general-quality share $\rho$ and turnover remain at baseline, including $\delta=\pv{aaDelta}$. Outcomes are averaged over $t=\pv{aaLateStart}$--$\pv{aaHorizon}$ within each seed. Within-seed differences are then averaged across \pv{aaOtherSeeds} seeds per condition. Bars are two-sided, pointwise \pv{aaIntervalPercent}\% Student-$t$ Monte Carlo intervals. Positive values indicate higher net output under full service. Panels share a vertical scale; lines connect tested conditions as visual guides.}
+\caption{\textbf{Contributions of assessment and access across matching composition.} A: full service minus access-only in net output to principals per requested position. B: full service minus assessment-only. Broker models and net output are defined in the main text. Colors and symbols identify turnover $\eta$. Parameters other than general-quality share $\rho$ and turnover remain at baseline. Points are paired late-window differences over \pv{aaOtherSeeds} seeds per condition; bars are pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals. Positive values indicate higher net output under full service. Panels share a vertical scale; lines connect tested conditions as visual guides.}
 \label{fig:supp-assessment-access}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_grid.png}
-\caption{\textbf{Alternative structural measures across the matching problem.} A: the broker's Burt constraint. B: the broker's effective size. General-quality share $\rho$ runs from pure complementarity (0) to pure general quality (1); colors and symbols identify difficulty $\delta$. Other parameters remain at baseline. The $\rho=1$ boundary, where difficulty is inactive, is shown once as an unconnected gray diamond. Points average periods 481--500 within each seed, then across seeds (\pv{suppBaselineSeeds} at baseline, \pv{suppOtherSeeds} otherwise). Whiskers are 95\% Monte Carlo intervals.}
+\caption{\textbf{Alternative structural measures across the matching problem.} A: Burt constraint, the concentration of the broker's direct and indirect ties. B: effective size, which discounts broker contacts connected to one another. Points are late-window means across the $\rho\times\delta$ design, with other parameters at baseline. Colors and symbols identify difficulty $\delta$. N/A denotes the unconnected gray diamond at $\rho=1$: difficulty affects only complementarity and is not applicable under pure general quality. Whiskers are 95\% Monte Carlo intervals.}
 \label{fig:supp-grid}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_position.png}
-\caption{\textbf{Alternative structural measures over time and against access.} Top: the broker's Burt constraint. Bottom: the broker's effective size. A and C: baseline dynamics over \pv{suppBaselineSeeds} seeds. Measures are recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean. Lines are ensemble means; ribbons are pointwise 95\% Monte Carlo intervals. Time starts at $t=\pv{suppAxisStart}$ to omit initialization. B and D: the \pv{suppOatN} regimes that vary one parameter at a time from baseline. Points average periods 481--500 within each seed, then across seeds (\pv{suppBaselineSeeds} at baseline, \pv{suppOtherSeeds} otherwise). Access fraction is the share of brokered placements between principals with no pre-existing tie. Vertical scales differ between baseline dynamics and cross-regime comparisons.}
+\caption{\textbf{Alternative structural measures over time and against access.} Top: the broker's Burt constraint. Bottom: the broker's effective size. A and C: baseline dynamics, recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean. Lines are ensemble means; ribbons are pointwise 95\% Monte Carlo intervals. Time starts at $t=\pv{suppAxisStart}$. B and D: late-window means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline. Vertical scales differ between baseline dynamics and cross-regime comparisons.}
 \label{fig:supp-position}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_advantage.png}
-\caption{\textbf{Ranking and output differences by alternative structural measures.} A--B: difference in rank correlation between predicted and expected match output, broker minus principal. C--D: mean realized output per completed brokered match minus that per self-search match, before costs and fees. Horizontal axes show the broker's Burt constraint (A, C) or effective size (B, D). Each point represents one of the \pv{suppRegimeN} tested regimes, averaging periods 481--500 within each seed, then across seeds (\pv{suppBaselineSeeds} at baseline, \pv{suppOtherSeeds} otherwise). Colors and symbols identify general-quality share $\rho$, from pure complementarity (0) to pure general quality (1).}
+\caption{\textbf{Ranking and output differences by alternative structural measures.} A--B: ranking advantage, broker minus principal. C--D: mean realized output per completed match, broker minus self-search, before costs and fees. Horizontal axes show the broker's Burt constraint (A, C) or effective size (B, D). Each point is a late-window mean for one of the \pv{suppRegimeN} tested regimes. Colors and symbols identify general-quality share $\rho$.}
 \label{fig:supp-advantage}
 \end{figure}
 

@@ -214,11 +214,11 @@ function match_value_surfaces()
     color_limit = maximum(
         abs(value) for matrix in display_matrices for value in matrix if isfinite(value)
     )
-    fig = Figure(; size=(900, 650))
+    fig = Figure(; size=(1200, 850))
     panels = fig[1, 1] = GridLayout()
     for (column, title) in
         enumerate(("Complementarity\nρ = 0", "Mixed\nρ = 0.5", "General quality\nρ = 1"))
-        Label(panels[1, column + 2], title; fontsize=TITLE_FS, tellwidth=false)
+        Label(panels[1, column + 2], title; fontsize=LABEL_FS, tellwidth=false)
     end
     Label(panels[2:3, 1], "General quality of principal i";
         rotation=pi / 2, fontsize=LABEL_FS, tellheight=false)
@@ -245,8 +245,8 @@ function match_value_surfaces()
             leftspinevisible=false,
             bottomspinevisible=false,
             halign=:left,
-            width=210,
-            height=210,
+            width=320,
+            height=320,
             aspect=DataAspect(),
         )
         heatmap!(
@@ -610,12 +610,6 @@ open(
     println(io, "\\pvDefine{suppRollWin}{$ROLLW}")
     println(io, "\\pvDefine{suppMeasInterval}{$MEASINT}")
     println(io, "\\pvDefine{suppAxisStart}{$TSTART}")
-    println(io, "\\pvDefine{suppBaselineSeeds}{$(length(STRUCTURAL_FD["baseline_seeds"]))}")
-    other_seeds = only(unique(
-        n for n in values(STRUCTURAL_FD["meta"]["condition_seed_counts"])
-        if n != length(STRUCTURAL_FD["baseline_seeds"])
-    ))
-    println(io, "\\pvDefine{suppOtherSeeds}{$other_seeds}")
     println(io, "\\pvDefine{suppRegimeN}{$(length(STRUCTURAL_FD["regime_cells"]))}")
     println(io, "\\pvDefine{suppOatN}{$(length(STRUCTURAL_FD["oat_cells"]))}")
     println(io, "\\pvDefine{suppDgpSeeds}{$(length(DGP_FD["seeds"]))}")

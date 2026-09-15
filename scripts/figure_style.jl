@@ -113,7 +113,7 @@ function publication_theme!()
     return nothing
 end
 
-"""Separate difficulty levels from the general-quality boundary in a compact legend."""
+"""List difficulty levels, ending with N/A for the pure-general-quality boundary."""
 function difficulty_legend!(slot, values; nbanks=2)
     elements = [
         [
@@ -123,11 +123,10 @@ function difficulty_legend!(slot, values; nbanks=2)
             ),
         ] for v in values
     ]
-    boundary = [MarkerElement(; color=:gray25, marker=:diamond, markersize=10)]
+    push!(elements, [MarkerElement(; color=:gray25, marker=:diamond, markersize=10)])
     return Legend(
-        slot, [elements, boundary], [string.(values), ["ρ = 1"]],
-        ["Difficulty (δ)", "General quality only\n(δ has no effect)"];
-        PUB_LEGEND..., nbanks, groupgap=40,
+        slot, elements, [string.(values); "N/A"], "Difficulty (δ)";
+        PUB_LEGEND..., nbanks,
     )
 end
 

@@ -162,11 +162,16 @@ function information_sources()
         ylabelsize=LABEL_FS,
         xticklabelsize=TICK_FS,
         yticklabelsize=TICK_FS,
+        yminorticks=IntervalsBetween(2),
+        yminorgridvisible=true,
+        yminorgridcolor=(:black, 0.045),
+        yminorgridwidth=0.6,
     )
     ax_baseline = Axis(
         fig[1, 1];
         title="A. Effects at baseline",
         ylabel="Change in ranking advantage\nfrom the full pair model",
+        yticks=-1.0:0.1:0.0,
         xticks=(1:length(variants), [model.label for model in variants]),
         limits=((0.5, length(variants) + 0.5), nothing),
         axis_style...,
@@ -198,6 +203,7 @@ function information_sources()
         fig[1, 2];
         title="B. Ranking advantage across regimes",
         ylabel="Ranking advantage\n(broker minus principal)",
+        yticks=-1.0:0.2:1.0,
         xticks=(1:length(models), [model.label for model in models]),
         limits=((0.5, length(models) + 0.5), nothing),
         axis_style...,
@@ -388,7 +394,7 @@ function matching_grid()
     length(unique(c["rel"] for c in boundary_cells)) == 1 ||
         error("rho = 1 grid coordinates do not share one effective realization")
     boundary_cell = first(boundary_cells)
-    # Structural panels start at zero; access uses the requested 0-0.5 scale.
+    # Structural panels start at zero; access uses the requested 0-0.25 scale.
     # Prediction and output panels retain their data-driven limits.
     keys = [
         "Betweenness centrality" "Broker rank correlation" "Rank correlation gap";
@@ -417,8 +423,9 @@ function matching_grid()
             xlabelsize=LABEL_FS,
             xticklabelsize=TICK_FS,
             yticklabelsize=TICK_FS,
-            limits=cc == 1 ? (nothing, (0, rr == 1 ? 1.02 : 0.5)) : (nothing, nothing),
+            limits=cc == 1 ? (nothing, (0, rr == 1 ? 1.02 : 0.25)) : (nothing, nothing),
         )
+        rr == 2 && cc == 1 && (ax.yticks = 0.0:0.05:0.25)
         for d in dls
             pts = sort(
                 [
