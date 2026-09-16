@@ -16,10 +16,11 @@ and the figures in output/main/figures/. Output: output/main/results_section.tex
 Reported estimates use at most two decimal places and percentages use whole
 percentage points. Exact parameter settings retain their source precision.
 
-The build fails loudly on: a \\pv reference with no definition, a definition never
-referenced, a \\pvcaption reference with no caption block, a caption block never
+The build fails loudly on: a \\pv reference with no definition, duplicate value
+definitions, a \\pvcaption reference with no caption block, a caption block never
 referenced, or a missing figure file. It then compiles the fragment inside a
-throwaway wrapper as a smoke test.
+throwaway wrapper as a smoke test. Unquoted values in the retained statistical
+catalogue are reported but do not require reanalysis when the prose changes.
 
 Usage: julia --project --threads=auto scripts/paper/build_section.jl
 """
@@ -96,6 +97,13 @@ length(unique(analysis_commits)) == 1 || fail(
     join(unique(analysis_commits), ", "),
 )
 const ANALYSIS_COMMIT = only(unique(analysis_commits))
+comparison_match = match(
+    r"(?m)^% NN-Ridge comparison analysis commit: (\S+)$", read(RIDGE_VALS, String)
+)
+isnothing(comparison_match) && fail("Ridge values lack paired-comparison provenance")
+const RIDGE_COMPARISON_ANALYSIS_COMMIT = validate_analysis_commit(
+    REPORTING_PROVENANCE, comparison_match[1]; artifact="NN-Ridge comparison values"
+)
 # The later experiment has its own retained analysis commit. Validate it
 # independently without relabeling it or relaxing the original inputs' agreement.
 const ASSESSMENT_ACCESS_ANALYSIS_COMMIT = validate_analysis_commit(
@@ -189,7 +197,7 @@ refs = Set(m[1] for m in eachmatch(r"\\pv\{([^}]+)\}", src))
 undef = sort(collect(setdiff(refs, keys(defs))))
 unused = sort(collect(setdiff(keys(defs), refs)))
 isempty(undef) || fail("undefined \\pv references: " * join(undef, ", "))
-isempty(unused) || fail("unused values.tex definitions: " * join(unused, ", "))
+isempty(unused) || println("Unquoted retained values: " * join(unused, ", "))
 
 # figure files must exist
 figs = [m[1] for m in eachmatch(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", src)]
@@ -219,6 +227,7 @@ header = """
 % Ridge, ablation, and assessment-access values + figmeta.tex + supplement figure order;
 % sweep $SWEEP; analysis commit $ANALYSIS_COMMIT;
 % assessment-access analysis commit $ASSESSMENT_ACCESS_ANALYSIS_COMMIT;
+% NN-Ridge comparison analysis commit $RIDGE_COMPARISON_ANALYSIS_COMMIT;
 % manuscript commit $(REPORTING_PROVENANCE.commit); $source_state.
 $(FIXTURE_NOTE)% Every number was computed from the saved sweep data by the reporting scripts.
 % Display: estimates at most two decimals; percentages rounded to whole points.

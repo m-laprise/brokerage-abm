@@ -68,6 +68,8 @@ const MANUSCRIPT_ITERATION_PATHS = (
     "paper/appendices/model_specifications.tex",
     "paper/appendices/simulation_pseudocode.tex",
     "scripts/paper/figures.jl",
+    "scripts/paper/access_windows.jl",
+    "scripts/paper/ridge_supplement.jl",
     "scripts/figure_style.jl",
     "scripts/paper/supp_figures.jl",
     "scripts/paper/build_section.jl",

@@ -43,8 +43,8 @@ A--B: ranking advantage, broker minus principal. C--D: mean realized output per 
 \end{pcaption}
 
 \begin{ptitle}{dynamics}
-Baseline dynamics
+Broker use, access, and assessment accuracy
 \end{ptitle}
 \begin{pcaption}{dynamics}
-A: outsourcing rate. B: completed matches per principal, counting both participants in each match. C: mean and median principal degree, including links to the broker when present. D: access fraction. E: broker betweenness centrality. Lines are ensemble means after a \pv{rollWin}-observation rolling mean within each seed. Ribbons are pointwise 95\% Monte Carlo intervals; some are narrower than the lines. Betweenness is measured every \pv{betwInterval} periods; other measures are recorded every period.
+A: baseline outsourcing rate and access fraction, with thick solid lines for neural-network learning and thin dashed lines for Ridge regression. Lines are ensemble means after a \pv{rollWin}-observation rolling mean within each seed; ribbons are pointwise 95\% Monte Carlo intervals. Shaded bands mark the early and late windows. B: early- versus late-mean access fraction. C: late-mean outsourcing rate and access fraction. D: late-mean principal and broker rank correlation. In B--D, each point represents one of \pv{nRegimes} regimes for neural-network learning (blue) or Ridge regression (orange); outlined diamonds identify the baseline. Marginal curves show smoothed distributions of regime means, with equal weight per regime and common smoothing across learners. Dashed diagonals in B and D mark equality, not fitted relationships. Means use \pv{nBaselineSeeds} seeds at baseline and \pv{nGeneralSeeds} elsewhere.
 \end{pcaption}

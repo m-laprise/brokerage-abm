@@ -56,22 +56,33 @@ scientific results.
 Local tier (uses retained data; no access to the raw sweep is needed):
 
 5. `julia --project --threads=auto scripts/paper/figures.jl`
-   Renders the five results assets at print resolution, including the two-panel
-   information-source figure. It reads `output/main/figure_data.jld2`,
-   `output/ridge/ablations/figure_data.jld2`, and the condition audit under
+   Renders five results assets at print resolution, including the four-panel
+   assessment figure and the two-panel information-source figure. It reads
+   `output/main/figure_data.jld2`, `output/ridge/{paired,ablations}/figure_data.jld2`,
+   and the condition audit under
    `output/main/convergence/`; it also writes
    `output/main/figmeta.tex` (the display conventions quoted in captions:
    rolling window, measurement interval, axis start).
+   Add `--assessment-not-access` to render only `assessment_not_access.png`.
+   Raw early/late counts are retained in `output/main/access_windows.jld2` and
+   `output/ridge/paired/access_windows.jld2`. Extract them from each completed sweep with
+   `julia --project --threads=auto scripts/paper/access_windows.jl`, using
+   `BROKERAGE_ABM_SWEEP_DIR` and `BROKERAGE_ABM_ACCESS_WINDOWS_PATH` for the input and output.
+   Ridge late means also use `output/ridge/paired/analysis/condition_comparison.tsv`.
+   Marginal densities weight regimes equally, share a pooled Silverman bandwidth
+   between learners for each measure, and use Gaussian kernels reflected at the
+   measure's bounds (0–1 for shares; −1–1 for rank correlations).
 6. `julia --project --threads=auto scripts/paper/ridge_supplement.jl`
-   Computes the four base Ridge values quoted in the section from the retained
-   seed-level figure data.
+   Computes the Ridge and NN comparison values quoted in the section from retained
+   figure data and the paired condition comparison, checking their provenance.
 7. `julia --project --threads=auto scripts/paper/build_section.jl`
    Flattens `paper/section_source.tex` (canonical prose; numbers appear only as
    `\pv{key}` references, titles and captions as `\pvtitle{name}` /
    `\pvcaption{name}` references resolved from `paper/captions.tex`) into
    `output/main/results_section.tex`, an `\input`-ready fragment with literal numbers
-   and a provenance header. Fails on any undefined or unused value, title, or
-   caption block, or missing figure, then compile-checks the fragment in a
+   and a provenance header. Fails on undefined or duplicate values, undefined or
+   unused titles or captions, or missing figures. Unquoted retained values are
+   reported without requiring reanalysis. It compile-checks the fragment in a
    temporary directory. The results section contains six figures, numbered by
    their order of first citation rather than by their asset filenames. Needs
    only stock Julia and `pdflatex`.
@@ -124,8 +135,8 @@ Check figures and quoted outsourcing values against retained data with
 
 ## Base Ridge figure supplement
 
-The base Ridge analysis reproduces the full content of Main Figures 1--4 with
-NN and base Ridge in the same assets and shared axes. Direct NN-Ridge and
+The base Ridge analysis compares NN and Ridge outcomes in four research figures
+with shared axes. Direct NN-Ridge and
 ablation contrasts use intervals on common-seed differences. To create its compact
 Ridge input dataset on the cluster, point the general extractor at the paired
 Ridge sweep and a separate output file:

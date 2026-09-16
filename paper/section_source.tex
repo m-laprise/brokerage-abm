@@ -46,42 +46,22 @@ In the results sections that follow, I describe five salient and sometimes count
 
 \subsection{The Broker Primarily Provides Assessment, Not Access}
 
-Across the tested regimes, the broker is usually the dominant channel in the market. The outsourcing rate as a share of demand is \pv{outBaselineLate} at the baseline (late mean, up from an early mean of \pv{outBaselineEarly}) and has a median of \pv{outBaseMed} across regimes. It exceeds one-half in \pv{outBaseDominantN} of \pv{nRegimes} regimes; the remaining regimes all have no turnover. Yet the broker primarily assesses options within the existing network rather than providing access beyond it. The access fraction (the share of brokered placements between principals with no pre-existing tie) has a late mean of \pv{accessAcrossBaseLate} across regimes, down from \pv{accessAcrossBaseEarly} early, and never exceeds \pv{accessBaseMax}. \ifnum\pv{accessDeclineCIN}=\pv{nRegimes}\relax It declines over time in all regimes, and its paired 95\% interval is below zero in every regime.\else It declines significantly in \pv{accessDeclineCIN} of \pv{nRegimes} regimes.\fi\ Most brokered matches therefore connect principals already tied to each other. Figure~\ref{fig:dynamics} and Table~\ref{tab:baseline-measures} summarize these baseline dynamics and the main measures.
+Most brokered placements involve counterparties that principals could already reach through ordinary self-search. In all \pv{nRegimes} regimes, the late-mean share of brokered placements reusing an existing tie exceeds \pv{assessmentShareFloorPercent}\%. Yet principals route a majority of their matching requests through the broker in \pv{outBaseDominantN} regimes (late means; Figure~\ref{fig:dynamics}, Panel~C). Extensive use of brokerage therefore coexists with relatively little provision of new access. For most placements, the broker assesses and arranges a match between already connected principals.
+
+This assessment role becomes more pronounced over time. At baseline, the outsourcing rate rises from an early mean of \pv{outBaselineEarlyPercent}\% to a late mean of \pv{outBaselineLatePercent}\%, while the access fraction falls from \pv{accessBaselineEarlyPercent}\% to \pv{accessBaselineLatePercent}\% (Figure~\ref{fig:dynamics}, Panel~A). The early-to-late decline in the access fraction occurs in every regime, with paired 95\% intervals below zero throughout (Panel~B). Principals thus continue outsourcing as the broker's work becomes increasingly concentrated within existing relationships.
 
 \begin{figure}
 \centering
-\includegraphics[width=\linewidth]{figures/baseline_dynamics.png}
+\includegraphics[width=\linewidth]{figures/assessment_not_access.png}
 \caption{\textbf{\pvtitle{dynamics}.} \pvcaption{dynamics}}
 \label{fig:dynamics}
 \end{figure}
 
-\begin{table}[t]
-\centering\small
-\caption{\textbf{Broker use, access, and assessment quality.} Baseline columns report early- and late-window ensemble means; the across-regime column reports the median late-window mean across the \pv{nRegimes} regimes. Outsourcing rate is outsourced requested positions divided by all requested positions.}
-\label{tab:baseline-measures}
-\begin{tabular}{lccc}
-\toprule
- & \multicolumn{2}{c}{Baseline} & Across regimes \\
-\cmidrule(lr){2-3}
-Measure & early & late & late, median \\
-\midrule
-\multicolumn{4}{l}{\emph{Market use and access}} \\
-\quad Outsourcing rate & $\pv{outBaselineEarly}$ & $\pv{outBaselineLate}$ & $\pv{outBaseMed}$ \\
-\quad Output gap (broker $-$ self) & $\pv{ogapBaselineEarly}$ & $\pv{ogapBaselineLate}$ & $\pv{ogapBaseMed}$ \\
-\quad Access fraction & $\pv{accessBaselineEarly}$ & $\pv{accessBaselineLate}$ & $\pv{accessBaseMed}$ \\
-\addlinespace
-\multicolumn{4}{l}{\emph{Assessment quality}} \\
-\quad Broker rank correlation & $\pv{brokerRankBaselineEarly}$ & $\pv{brokerRankBaseline}$ & $\pv{brokerRankBaseMed}$ \\
-\quad Principal rank correlation & $\pv{agentRankBaselineEarly}$ & $\pv{agentRankBaseline}$ & $\pv{agentRankBaseMed}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+Assessment guides the broker's selection of counterparties: its predictions of match output determine how candidates are ranked and which offers are made first. The ranking diagnostic evaluates this component of the service by comparing the broker's and principals' predicted rankings against rankings by true expected match output on the same randomly sampled candidates. At baseline, late-mean rank correlation is \pv{brokerRankBaseline} for the broker and \pv{agentRankBaseline} for principals, with a paired 95\% interval of [\pv{rankGapBaselineLower}, \pv{rankGapBaselineUpper}] for the ranking advantage. That advantage is positive in every regime, with all paired intervals above zero (Figure~\ref{fig:dynamics}, Panel~D).
 
-At the baseline, the broker's realized-output advantage develops as the market evolves: the output gap (broker minus self-search) changes from $\pv{ogapBaselineEarly}$ early to $\pv{ogapBaselineLate}$ late. Across regimes, mean realized output is higher through the broker channel in \pv{ogapBasePosN} of \pv{nRegimes} regimes, and the late output gap averages $\pv{ogapBaseMean}$. Paired 95\% Monte Carlo intervals are above zero in \pv{ogapBaseCIPosN} regimes and below zero in \pv{ogapBaseCINegN}. The negative gaps occur in \pv{ogapBaseNegN} regimes, all with no or nearly no turnover ($\eta\in\{0,0.001\}$). Principals choose a channel using satisfaction scores that include unfilled requests, fees, and search costs, whereas the output gap compares realized output among completed matches. Outsourcing is therefore not itself evidence that the broker always produces better matches.
+The predominance of assessment compared to access also persists when the broker and the principals use Ridge regression to make their predictions instead of neural-network learning. In the Ridge variant, late-mean outsourcing exceeds one-half in \pv{ridgeOutDominantN} of \pv{nRegimes} regimes, and the late-mean share of brokered placements reusing existing ties exceeds \pv{assessmentShareFloorPercent}\% in every regime (Figure~\ref{fig:dynamics}, Panel~C). Neural-network learning raises principals' late-mean ranking accuracy in all \pv{nnPrincipalRankHigherN} regimes and narrows the broker's ranking advantage in \pv{nnRankGapNarrowerN} (Panel~D), yet extensive outsourcing and the predominance of assessment persist.
 
-The broker's assessment advantage appears more consistently in ranking candidates than in predicting expected output levels. Among randomly sampled potential partners (Appendix~A~\S8), its rank correlation is \pv{brokerRankBaseline} at the baseline and has a median of \pv{brokerRankBaseMed} across regimes, compared with \pv{agentRankBaseline} and \pv{agentRankBaseMed} for principals. The broker-minus-principal difference in rank correlation is positive in \pv{rankGapNNPosN} of \pv{nRegimes} regimes, with paired 95\% intervals above zero in \pv{rankGapNNCiPosN} regimes. Ranking determines which candidates are considered first, while predicted levels also determine whether offers clear the reservation threshold. Accurate ranking is therefore more important than accurate prediction of expected output levels, although both can affect matching.
-
-Across regimes, most brokered placements therefore reuse ties that principals could search directly; relatively few expand the principal network.
+Together, these findings identify assessment rather than new access as the broker's predominant service. Principals outsource the evaluation and arrangement of matches even when the counterparties involved are already reachable.
 
 \subsection{The Value and Structural Consequences of Access and Assessment}
 \label{sec:assessment-access}
@@ -160,7 +140,7 @@ The assessment and access experiment provides direct evidence for this role of c
 
 \subsection{A Broker Can Be Highly Central While Doing Little Bridging}
 
-In most regimes, the broker's structural position strengthens over time while principals have fewer direct ties on average. At the baseline, mean principal degree falls from \pv{degBaselineEarly} to \pv{degBaselineLate}, while broker betweenness centrality rises from \pv{betwBaselineEarly} to \pv{betwBaselineLate} (early to late means; Fig.~\ref{fig:dynamics}). This combination occurs in \pv{comoveN} of \pv{nRegimes} regimes, and principal degree falls in \pv{degFallsN} of them. In most regimes, direct ties do not accumulate fast enough to offset turnover. The broker's structural advantage therefore does not disappear as brokered matches create direct ties. Because outsourcing connects current clients to the broker, sustained use converts the value of assessment into structural centrality.
+In most regimes, the broker's structural position strengthens over time while principals have fewer direct ties on average. At the baseline, mean principal degree falls from \pv{degBaselineEarly} to \pv{degBaselineLate}, while broker betweenness centrality rises from \pv{betwBaselineEarly} to \pv{betwBaselineLate} (early to late means). This combination occurs in \pv{comoveN} of \pv{nRegimes} regimes, and principal degree falls in \pv{degFallsN} of them. In most regimes, direct ties do not accumulate fast enough to offset turnover. The broker's structural advantage therefore does not disappear as brokered matches create direct ties. Because outsourcing connects current clients to the broker, sustained use converts the value of assessment into structural centrality.
 
 The assessment and access experiment provides direct evidence of these structural consequences. At baseline turnover, full service produces higher mean principal degree and lower broker centrality than assessment-only (Figure~\ref{fig:assessment-access}, Panels B--D). Providing access alongside assessment strengthens principals' connectivity while weakening the broker's structural position. This is why the full-service broker usually gains centrality in the main simulations. As its work becomes increasingly assessment-based, relatively few brokered matches create new ties among principals. Valuable assessments sustain outsourcing, which connects principals to the broker, while turnover removes ties and renews opportunities for brokerage.
 
