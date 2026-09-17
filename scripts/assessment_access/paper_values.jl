@@ -81,9 +81,14 @@ function checked_effect(retained, estimates, service, metric; eta=BASELINE_ETA)
     )
 end
 
-"""Check output and outsourcing comparisons across every retained condition."""
+"""Check quoted output, outsourcing, and structural comparisons across regimes."""
 function check_service_comparisons(retained, estimates)
     cells = sort!(unique((key[2], key[3]) for key in keys(estimates.summaries)))
+    rhos = unique(first.(cells))
+    common_positive_rates = sort!(filter(unique(last.(cells))) do eta
+        eta > 0 && all((rho, eta) in cells for rho in rhos)
+    end)
+    isempty(common_positive_rates) && error("no positive turnover rates shared across compositions")
     output_metric = "net_output_per_requested_position"
     output_differences = Dict{Tuple{Float64,Float64},NamedTuple}()
     access_outsourcing = Float64[]
@@ -115,10 +120,38 @@ function check_service_comparisons(retained, estimates)
         abs(access.estimate) < assessment.estimate ||
             error("access outsourcing effect is no longer smaller: $rho, $eta")
         push!(access_outsourcing, access.estimate)
+
+        access_output = checked_pair(
+            retained, estimates.contrasts[("access", rho, eta, output_metric)],
+            "assessment_only", "full", output_metric; rho, eta,
+        )
+        if iszero(eta)
+            access_output.upper < 0 || error("zero-turnover access cost changed: $rho")
+        elseif eta in common_positive_rates
+            access_output.lower > 0 || error("positive-turnover access benefit changed: $rho, $eta")
+        end
+        for metric in ("mean_degree", "betweenness")
+            effect = checked_pair(
+                retained, estimates.contrasts[("access", rho, eta, metric)],
+                "assessment_only", "full", metric; rho, eta,
+            )
+            supported = metric == "mean_degree" ? effect.lower > 0 : effect.upper < 0
+            supported || error("access structural effect changed: $rho, $eta, $metric")
+        end
+        if rho == BASELINE_RHO
+            effect = checked_pair(
+                retained, estimates.contrasts[("assessment", rho, eta, "betweenness")],
+                "access_only", "full", "betweenness"; rho, eta,
+            )
+            effect.lower > 0 || error("assessment centrality gain changed: $rho, $eta")
+        end
     end
     any(>(0), access_outsourcing) && any(<(0), access_outsourcing) ||
         error("access outsourcing effects are no longer mixed")
-    return output_differences[(BASELINE_RHO, BASELINE_ETA)]
+    return (;
+        output=output_differences[(BASELINE_RHO, BASELINE_ETA)],
+        regime_count=length(cells), common_positive_rates,
+    )
 end
 
 """Check plotted trajectories against the retained per-seed late-window means."""
@@ -151,7 +184,8 @@ end
 """Build only the definitions used by the experiment prose and caption."""
 function manuscript_values(retained, estimates, data)
     check_trajectory_late_means(retained, data)
-    assessment_access_output = check_service_comparisons(retained, estimates)
+    comparisons = check_service_comparisons(retained, estimates)
+    assessment_access_output = comparisons.output
     design = FIGURE_DESIGN
     rate_string(x) = iszero(x) ? "0" : string(x)
     fmt(x) = @sprintf("%.3f", x)
@@ -179,6 +213,11 @@ function manuscript_values(retained, estimates, data)
         "aaDelta" => rate_string(design.delta),
         "aaEta" => rate_string(design.eta),
         "aaEtaCount" => string(length(TURNOVER_RATES)),
+        "aaRegimeN" => string(comparisons.regime_count),
+        "aaCommonPositiveTurnoverPercents" => join(
+            [@sprintf("%.0f", 100eta) * "\\%" for eta in comparisons.common_positive_rates],
+            " or ",
+        ),
         "aaAccessLossEtas" => join(rate_string.(loss_rates), ","),
         "aaLateWidth" => string(design.late_width),
         "aaLateStart" => string(design.horizon - design.late_width + 1),
@@ -192,6 +231,8 @@ function manuscript_values(retained, estimates, data)
             only(unique(n for (eta, n) in design.seed_counts if eta != design.eta))
         ),
         "aaAccessOutputLoss" => fmt(baseline_loss),
+        "aaAccessOutputLower" => fmt(-output_effects[(assessment.mode, design.eta)].upper),
+        "aaAccessOutputUpper" => fmt(-output_effects[(assessment.mode, design.eta)].lower),
         "aaAssessmentOutputLoss" => fmt(baseline_assessment_loss),
         "aaAssessmentAccessOutputDifference" => fmt(assessment_access_output.estimate),
         "aaAssessmentAccessOutputLower" => fmt(assessment_access_output.lower),
@@ -204,9 +245,11 @@ function manuscript_values(retained, estimates, data)
             defs,
             "aa$(label)OutPercent" => @sprintf("%.1f", 100 * outsourcing.estimate),
         )
-        if service.mode != assessment.mode
-            degree = checked_summary(retained, estimates, service.mode, "mean_degree")
-            push!(defs, "aa$(label)Degree" => fmt(degree.estimate))
+        degree = checked_summary(retained, estimates, service.mode, "mean_degree")
+        push!(defs, "aa$(label)Degree" => fmt(degree.estimate))
+        if service.mode != access.mode
+            centrality = checked_summary(retained, estimates, service.mode, "betweenness")
+            push!(defs, "aa$(label)Centrality" => fmt(centrality.estimate))
         end
         if service.mode == access.mode
             centrality = checked_effect(retained, estimates, service, "betweenness")

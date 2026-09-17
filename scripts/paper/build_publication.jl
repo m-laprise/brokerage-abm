@@ -18,6 +18,7 @@ const BUILD_STEPS = (
     ("scripts/paper/supp_figures.jl",),
     ("scripts/assessment_access/main_figure.jl",),
     ("scripts/assessment_access/figure_2.jl",),
+    ("scripts/assessment_access/figure_2.jl", "--subsection-two"),
     ("scripts/assessment_access/main_figure.jl", "--complementarity"),
     ("scripts/assessment_access/paper_values.jl",),
     ("scripts/paper/build_section.jl",),

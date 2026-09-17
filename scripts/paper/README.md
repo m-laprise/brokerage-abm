@@ -126,12 +126,15 @@ Run these scripts with `julia --project --threads=auto scripts/assessment_access
 | --- | --- |
 | `main_figure.jl` | `main/figures/assessment_access.{png,pdf}` |
 | `figure_2.jl` | `main/figures/assessment_access_2.png` |
+| `figure_2.jl --subsection-two` | `main/figures/assessment_access_3.png` |
+| `figure_2.jl --structure-arrows` | `main/figures/assessment_access_structure_arrows.png` |
 | `main_figure.jl --complementarity` | `supplement/figures/complementarity_contributions.png` |
 | `paper_values.jl` | `assessment_access/paper_values.tex` |
 
 Check figures and quoted outsourcing values against retained data with
 `julia --project --threads=auto test/test_assessment_access_reporting.jl`.
-`build_publication.jl` includes all three figures and the generated values.
+`build_publication.jl` renders the manuscript figure (`assessment_access_3.png`),
+the two alternative main figures, the supplementary figure, and the generated values.
 
 ## Base Ridge figure supplement
 
