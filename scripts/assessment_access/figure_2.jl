@@ -1,33 +1,13 @@
 """
-Render the assessment vs access figures from retained data.
+Render the manuscript assessment-access figure from retained seed-level data.
 
-Panels show net-output differences across turnover, baseline principal degree,
-seed-paired late-mean centrality differences, and baseline broker centrality.
-The manuscript caption supplies design and interval details. Degree retains all
-recorded periods; centrality trajectories use measured periods, while its late
-means preserve the retained cached records.
-Intervals use the existing seed-level Student-t method. No simulation is changed.
-The original figure is not read or overwritten.
+Panels show output and outsourcing contributions, paired structural changes,
+and baseline broker betweenness centrality. The caption is in paper/captions.tex.
 
 Usage: julia --project --threads=auto scripts/assessment_access/figure_2.jl
-Output: output/main/figures/assessment_access_2.png
-
-Use --subsection-two for the manuscript's four-panel figure: contributions
-to principals' net output and outsourcing, paired structural changes across regimes,
-and baseline broker betweenness centrality. This writes assessment_access_3.png
-without replacing either existing figure. Turnover points are offset slightly
-for visibility; estimates and uncertainty use the retained seed-level data.
-Panel B uses baseline matching composition across turnover; dashed grey lines
-connect the two contrasts within each regime.
-
-Use --structure-arrows for a standalone comparison of absolute network positions
-at baseline matching composition.
-Arrows run from full service to each restricted service within the same regime.
-Solid arrows remove assessment; dashed arrows remove access. Color identifies
-turnover; marker shape identifies the service.
-This writes output/main/figures/assessment_access_structure_arrows.png. Bars show
-intervals for absolute means, not paired differences; arrows are not trajectories.
+Output: output/main/figures/assessment_access_3.png
 """
+
 
 using CairoMakie
 using JLD2
@@ -39,7 +19,7 @@ include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const DATA_PATH = joinpath(ROOT, "output", "assessment_access", "figure_data.jld2")
-const OUTPUT_PATH = joinpath(ROOT, "output", "main", "figures", "assessment_access_2.png")
+const OUTPUT_PATH = joinpath(ROOT, "output", "main", "figures", "assessment_access_3.png")
 const CENTRALITY_PATH = joinpath(
     ROOT, "output", "assessment_access", "centrality_trajectories.jld2"
 )
@@ -138,6 +118,8 @@ end
 function read_estimates(path=DATA_PATH)
     data = JLD2.load(path)
     data["analysis_source_clean"] === true || error("analysis sources were dirty")
+    get(data, "net_output_definition", nothing) == "net_output_per_principal" ||
+        error("regenerate assessment-access analysis with net output per principal")
     data["interval_level"] == FIGURE_DESIGN.level || error("interval level mismatch")
     data["late_width"] == FIGURE_DESIGN.late_width || error("late window mismatch")
     return (;
@@ -244,53 +226,6 @@ function degree_series(data, mode)
     trajectory_series(data["degree_periods"], data["degree_values"][mode])
 end
 
-"""Draw measured centrality levels on the full zero-to-one scale."""
-function centrality_panel!(slot, data)
-    ylimits = (0.0, 1.0)
-    axis = Axis(
-        slot;
-        title="D. Broker centrality over time",
-        titlealign=:left,
-        titlesize=25,
-        xlabel="Period",
-        ylabel="Broker betweenness",
-        xlabelsize=21,
-        ylabelsize=21,
-        limits=((0, 1.03 * FIGURE_DESIGN.horizon), ylimits),
-        xticks=range(0, FIGURE_DESIGN.horizon; length=6),
-        yticks=0:0.2:1,
-        xticklabelsize=19,
-        yticklabelsize=19,
-        topspinevisible=false,
-        rightspinevisible=false,
-        xgridvisible=false,
-        ygridcolor=(:black, 0.07),
-    )
-    for service in (FULL_SERVICE, SERVICES...)
-        series = centrality_series(data, service.mode)
-        all(ylimits[1] .<= series.lower .<= series.upper .<= ylimits[2]) ||
-            error("centrality interval would be clipped")
-        band!(axis, series.periods, series.lower, series.upper; color=(service.color, 0.14))
-        lines!(
-            axis,
-            series.periods,
-            series.estimate;
-            color=service.color,
-            linestyle=service.linestyle,
-            linewidth=2.7,
-        )
-        scatter!(
-            axis,
-            series.periods,
-            series.estimate;
-            color=service.color,
-            marker=service.marker,
-            markersize=6,
-        )
-    end
-    return axis
-end
-
 """Return a broker model minus full service, optionally in percentage points."""
 function service_effect(index, service, rho, eta, metric; scale=1.0)
     scale > 0 || throw(ArgumentError("display scale must be positive"))
@@ -327,253 +262,10 @@ function effect_point!(axis, x, value, service, ylimits; markersize=10, linewidt
     return nothing
 end
 
-"""Draw the seed-paired late-mean centrality differences at baseline."""
-function centrality_difference_panel!(slot, index)
-    ylimits = (-0.23, 0.12)
-    axis = Axis(
-        slot;
-        title="C. Late-mean centrality difference",
-        titlealign=:left,
-        titlesize=25,
-        ylabel="Betweenness difference\nfrom full service",
-        ylabelsize=21,
-        limits=((0.45, 2.55), ylimits),
-        xticks=([1, 2], [s.label for s in SERVICES]),
-        yticks=-0.2:0.1:0.1,
-        xticklabelsize=20,
-        yticklabelsize=19,
-        topspinevisible=false,
-        rightspinevisible=false,
-        xgridvisible=false,
-        ygridcolor=(:black, 0.07),
-        xticksize=0,
-    )
-    hlines!(axis, [0.0]; color=:gray45, linewidth=1.2)
-    for (x, service) in enumerate(SERVICES)
-        value = service_effect(index, service, BASELINE_RHO, BASELINE_ETA, "betweenness")
-        effect_point!(axis, x, value, service, ylimits; markersize=14, linewidth=2.5)
-        text!(
-            axis,
-            x,
-            value.upper + 0.035 * (ylimits[2] - ylimits[1]);
-            text=@sprintf("%+.3f", value.estimate),
-            align=(:center, :bottom),
-            color=service.color,
-            fontsize=24,
-            font=:bold,
-        )
-    end
-    return axis
-end
-
-"""Draw baseline principal-degree trajectories from the retained period records."""
-function degree_panel!(slot, data)
-    ylimits = (0.0, 30.0)
-    axis = Axis(
-        slot;
-        title="B. Principal connectivity over time",
-        titlealign=:left,
-        titlesize=25,
-        xlabel="Period",
-        ylabel="Mean principal degree",
-        xlabelsize=21,
-        ylabelsize=21,
-        limits=((0, 1.03 * FIGURE_DESIGN.horizon), ylimits),
-        xticks=range(0, FIGURE_DESIGN.horizon; length=6),
-        yticks=0:5:30,
-        xticklabelsize=19,
-        yticklabelsize=19,
-        topspinevisible=false,
-        rightspinevisible=false,
-        xgridvisible=false,
-        ygridcolor=(:black, 0.07),
-    )
-    for service in (FULL_SERVICE, SERVICES...)
-        series = degree_series(data, service.mode)
-        all(ylimits[1] .<= series.lower .<= series.upper .<= ylimits[2]) ||
-            error("degree interval would be clipped")
-        band!(axis, series.periods, series.lower, series.upper; color=(service.color, 0.14))
-        lines!(
-            axis,
-            series.periods,
-            series.estimate;
-            color=service.color,
-            linestyle=service.linestyle,
-            linewidth=2.7,
-        )
-        scatter!(
-            axis,
-            data["periods"],
-            series.estimate[data["periods"]];
-            color=service.color,
-            marker=service.marker,
-            markersize=6,
-        )
-    end
-    return axis
-end
-
-"""Draw net-output differences with zero turnover in a separate shaded strip."""
-function output_panel!(slot, index)
-    ylimits = (-0.43, 0.13)
-    grid = GridLayout(slot)
-    panel_axes = Axis[]
-    for (column, zero) in enumerate((true, false))
-        rates = zero ? TURNOVER_RATES[1:1] : TURNOVER_RATES[2:end]
-        axis = Axis(
-            grid[1, column];
-            title=zero ? "A. Net output to principals" : "",
-            titlealign=:left,
-            titlesize=25,
-            xlabel=zero ? "" : "Turnover rate (η)",
-            xlabelsize=21,
-            ylabel=zero ? "Difference from full service\nper requested position" : "",
-            ylabelsize=21,
-            limits=(
-                if zero
-                    (-0.7, 0.7)
-                else
-                    (-TURNOVER_RATES[2], last(TURNOVER_RATES) + 2 * TURNOVER_RATES[2])
-                end,
-                ylimits,
-            ),
-            xticks=(collect(rates), zero ? ["0"] : string.(collect(rates))),
-            yticks=-0.4:0.1:0.1,
-            xticklabelsize=19,
-            yticklabelsize=19,
-            yticklabelsvisible=zero,
-            yticksvisible=zero,
-            leftspinevisible=zero,
-            topspinevisible=false,
-            rightspinevisible=false,
-            xgridvisible=false,
-            ygridcolor=(:black, 0.065),
-            backgroundcolor=zero ? (:black, 0.025) : :white,
-        )
-        push!(panel_axes, axis)
-        if !zero
-            band_width = minimum(diff(collect(TURNOVER_RATES)))
-            vspan!(
-                axis,
-                BASELINE_ETA - band_width,
-                BASELINE_ETA + band_width;
-                color=(:black, 0.045),
-            )
-            text!(
-                axis,
-                BASELINE_ETA,
-                0.105;
-                text="baseline",
-                align=(:center, :center),
-                color=:gray40,
-                fontsize=16,
-            )
-        end
-        hlines!(axis, [0.0]; color=:gray45, linewidth=1.2)
-        for (service_index, service) in enumerate(SERVICES)
-            values = [
-                service_effect(
-                    index, service, BASELINE_RHO, eta, "net_output_per_requested_position"
-                ) for eta in rates
-            ]
-            # Match the original figure's horizontal offsets without changing estimates.
-            positions = collect(rates) .+ (service_index - 1) * (zero ? 0.27 : 0.0005)
-            if !zero
-                lines!(
-                    axis,
-                    positions,
-                    [v.estimate for v in values];
-                    color=service.color,
-                    linestyle=service.linestyle,
-                    linewidth=2.4,
-                )
-            end
-            for (eta, position, value) in zip(rates, positions, values)
-                baseline = eta == BASELINE_ETA
-                effect_point!(
-                    axis,
-                    position,
-                    value,
-                    service,
-                    ylimits;
-                    markersize=baseline ? 11 : 8,
-                    linewidth=1.5,
-                )
-            end
-        end
-    end
-    linkyaxes!(panel_axes...)
-    colsize!(grid, 1, Fixed(60))
-    colgap!(grid, 17)
-    return panel_axes
-end
-
-"""Build four publication panels; the manuscript supplies the title and caption."""
-function make_figure(estimates, centrality)
-    publication_theme!()
-    fig = Figure(; size=(1160, 840), fontsize=19, figure_padding=(28, 28, 24, 20))
-    Legend(
-        fig[1, 1],
-        [
-            [
-                LineElement(;
-                    color=service.color, linestyle=service.linestyle, linewidth=2.4
-                ),
-                MarkerElement(; color=service.color, marker=service.marker, markersize=11),
-            ] for service in (FULL_SERVICE, SERVICES...)
-        ],
-        [
-            "$(service.label)\n($(service.detail))" for
-            service in (FULL_SERVICE, SERVICES...)
-        ];
-        orientation=:horizontal,
-        framevisible=false,
-        labelsize=18,
-        colgap=30,
-        halign=:center,
-        padding=(0, 0, 0, 0),
-    )
-    panels = GridLayout(fig[2, 1])
-    output_panel!(panels[1, 1], estimates.contrasts)
-    degree_panel!(panels[1, 2], centrality)
-    centrality_difference_panel!(panels[2, 1], estimates.contrasts)
-    centrality_panel!(panels[2, 2], centrality)
-    rowsize!(panels, 1, Auto(1))
-    rowsize!(panels, 2, Auto(1))
-    rowgap!(fig.layout, 25)
-    rowgap!(panels, 30)
-    colgap!(panels, 45)
-    return fig
-end
-
-"""Write the alternative PNG, leaving the existing figure untouched."""
-function main(; output_path=OUTPUT_PATH)
-    provenance = manuscript_git_provenance(
-        ROOT;
-        sources=(
-            @__FILE__,
-            "scripts/monte_carlo.jl",
-            "scripts/figure_style.jl",
-        ),
-    )
-    data = read_centrality()
-    validate_analysis_commit(
-        provenance, data["retained_analysis_git_commit"]; artifact="assessment-access analysis"
-    )
-    validate_analysis_commit(
-        provenance, data["sweep_git_commit"]; artifact="assessment-access simulation"
-    )
-    fig = make_figure(read_estimates(), data)
-    mkpath(dirname(output_path))
-    save(output_path, fig; px_per_unit=2)
-    println("Wrote $output_path")
-    return nothing
-end
-
 """Reconstruct all displayed late means and paired intervals from retained seeds."""
 function validate_argument_estimates(retained, estimates, centrality)
     metrics = (
-        "net_output_per_requested_position", "outsourcing_rate", "mean_degree", "betweenness",
+        "net_output_per_principal", "outsourcing_rate", "mean_degree", "betweenness",
     )
     groups = Dict{Tuple{String,Float64,Float64,String},Dict{Int,Float64}}()
     for row in retained["seed_rows"]
@@ -647,7 +339,7 @@ function argument_turnover_panel!(slot, estimates, kind)
         (; SERVICES[1]..., label="Adding assessment\nFull service − access-only", contrast="assessment"),
         (; SERVICES[2]..., label="Adding access\nFull service − assessment-only", contrast="access"),
     )
-    metric = output ? "net_output_per_requested_position" : "outsourcing_rate"
+    metric = output ? "net_output_per_principal" : "outsourcing_rate"
     scale = output ? 1.0 : 100.0
     interval(service, eta) = begin
         value = estimates.contrasts[(service.contrast, BASELINE_RHO, eta, metric)]
@@ -655,20 +347,16 @@ function argument_turnover_panel!(slot, estimates, kind)
             lower=scale * value.lower, upper=scale * value.upper, n=value.n)
     end
     shown = [interval(service, eta) for service in series for eta in TURNOVER_RATES]
-    tick_step = output ? 0.1 : 5.0
-    legend_space = output ? 0.0 : tick_step
-    ylimits = (
-        min(0, floor(minimum(v.lower for v in shown) / tick_step) * tick_step),
-        ceil(maximum(v.upper for v in shown) / tick_step) * tick_step + legend_space,
-    )
-    ticks = ylimits[1]:tick_step:ylimits[2]
+    display = interval_axis([v for p in shown for v in (p.lower, p.upper)];
+        upper_padding=output ? 0 : 1)
+    ylimits, ticks = display.limits, display.ticks
     axes = Axis[]
     for (column, zero) in enumerate((true, false))
         rates = zero ? TURNOVER_RATES[1:1] : TURNOVER_RATES[2:end]
         spacing = minimum(diff(collect(TURNOVER_RATES)))
         ax = Axis(plot_grid[1, column];
             xlabel=zero ? "" : "Turnover rate (η)",
-            ylabel=zero ? (output ? "Change in net output to principals\nper requested position" :
+            ylabel=zero ? (output ? "Change in net output to principals\nper principal" :
                 "Change in requested positions\noutsourced (percentage points)") : "",
             limits=(zero ? (-0.7, 0.7) : (-spacing, last(TURNOVER_RATES) + 2spacing), ylimits),
             xticks=(collect(rates), zero ? ["0"] : string.(collect(rates))), yticks=ticks,
@@ -794,8 +482,21 @@ function argument_trajectory_panel!(slot, centrality)
     return ax
 end
 
-"""Render the manuscript's assessment-access figure, preserving older images."""
-function subsection_two_figure(; output_path=joinpath(dirname(OUTPUT_PATH), "assessment_access_3.png"))
+"""Build the manuscript's four panels without writing an output file."""
+function make_figure(estimates, centrality)
+    publication_theme!()
+    fig = Figure(; size=(1420, 1010), figure_padding=(28, 32, 26, 24))
+    argument_turnover_panel!(fig[1, 1], estimates, :output)
+    argument_structure_panel!(fig[1, 2], estimates)
+    argument_turnover_panel!(fig[2, 1], estimates, :outsourcing)
+    argument_trajectory_panel!(fig[2, 2], centrality)
+    colgap!(fig.layout, 52)
+    rowgap!(fig.layout, 34)
+    return fig
+end
+
+"""Render the manuscript assessment-access figure from validated retained results."""
+function main(; output_path=OUTPUT_PATH)
     provenance = manuscript_git_provenance(
         ROOT;
         sources=(
@@ -811,14 +512,7 @@ function subsection_two_figure(; output_path=joinpath(dirname(OUTPUT_PATH), "ass
     validate_analysis_commit(provenance, centrality["sweep_git_commit"];
         artifact="assessment-access simulation")
     validation = validate_argument_estimates(retained, estimates, centrality)
-    publication_theme!()
-    fig = Figure(; size=(1420, 1010), figure_padding=(28, 32, 26, 24))
-    argument_turnover_panel!(fig[1, 1], estimates, :output)
-    argument_structure_panel!(fig[1, 2], estimates)
-    argument_turnover_panel!(fig[2, 1], estimates, :outsourcing)
-    argument_trajectory_panel!(fig[2, 2], centrality)
-    colgap!(fig.layout, 52)
-    rowgap!(fig.layout, 34)
+    fig = make_figure(estimates, centrality)
     mkpath(dirname(output_path))
     save(output_path, fig; px_per_unit=2)
     println("Wrote $output_path")
@@ -828,127 +522,7 @@ function subsection_two_figure(; output_path=joinpath(dirname(OUTPUT_PATH), "ass
     return fig
 end
 
-"""Render arrows for removing each service component, colored by turnover."""
-function structure_arrows_figure(;
-    output_path=joinpath(dirname(OUTPUT_PATH), "assessment_access_structure_arrows.png"),
-)
-    provenance = manuscript_git_provenance(
-        ROOT;
-        sources=(
-            @__FILE__,
-            "scripts/monte_carlo.jl",
-            "scripts/figure_style.jl",
-        ),
-    )
-    retained = JLD2.load(DATA_PATH)
-    estimates, centrality = read_estimates(), read_centrality()
-    analysis_commit = validate_analysis_commit(provenance, retained["analysis_git_commit"];
-        artifact="assessment-access analysis")
-    validation = validate_argument_estimates(retained, estimates, centrality)
-    regimes = sort!(unique((key[2], key[3]) for key in keys(estimates.summaries)
-        if key[2] == BASELINE_RHO))
-    turnover_rates = sort!(unique(last.(regimes)))
-    turnover_rates == FIGURE_DESIGN.turnover || error("arrow panel turnover coverage differs")
-    all(eta -> haskey(PUB_ETA_COLORS, eta), turnover_rates) ||
-        error("missing publication color for a turnover rate")
-    services = (FULL_SERVICE, SERVICES...)
-    positions = Dict(
-        (service.mode, rho, eta) => (
-            x=estimates.summaries[(service.mode, rho, eta, "mean_degree")],
-            y=estimates.summaries[(service.mode, rho, eta, "betweenness")],
-        ) for service in services for (rho, eta) in regimes
-    )
-    removals = (
-        (; mode="access_only", contrast="assessment",
-            linestyle=:solid, label="Removing assessment"),
-        (; mode="assessment_only", contrast="access",
-            linestyle=:dash, label="Removing access"),
-    )
-    publication_theme!()
-    fig = Figure(; size=(1040, 790), figure_padding=(28, 30, 26, 24))
-    level = round(Int, 100FIGURE_DESIGN.level)
-    xmax = ceil(maximum(p.x.upper for p in values(positions)) / 10) * 10
-    grid = argument_panel_layout!(fig[1, 1], "Removing assessment or access",
-        "Late means and $level% intervals · ρ = $BASELINE_RHO · $(length(regimes)) regimes")
-    ax = Axis(grid[3, 1]; xlabel="Mean principal degree",
-        ylabel="Broker betweenness centrality", limits=((0, xmax), (0, 1)),
-        xticks=0:20:xmax, yticks=0:0.2:1)
-    for removal in removals
-        for (rho, eta) in regimes
-            origin = positions[(FULL_SERVICE.mode, rho, eta)]
-            destination = positions[(removal.mode, rho, eta)]
-            origin.x.n == origin.y.n == destination.x.n == destination.y.n ||
-                error("absolute network positions have different seed counts")
-            for (metric, difference) in (
-                ("mean_degree", destination.x.estimate - origin.x.estimate),
-                ("betweenness", destination.y.estimate - origin.y.estimate),
-            )
-                paired = estimates.contrasts[(removal.contrast, rho, eta, metric)]
-                isapprox(difference, -paired.estimate; atol=1e-12, rtol=1e-10) ||
-                    error("removal arrow displacement differs from reversed paired contrast")
-            end
-            start = Point2d(origin.x.estimate, origin.y.estimate)
-            stop = Point2d(destination.x.estimate, destination.y.estimate)
-            lines!(ax, [start, stop]; color=(PUB_ETA_COLORS[eta], 0.85),
-                linewidth=1.5, linestyle=removal.linestyle)
-            # Draw the head separately so access-removal shafts can be dashed.
-            arrows2d!(ax, [start], [stop];
-                argmode=:endpoint, color=(PUB_ETA_COLORS[eta], 0.85),
-                shaftwidth=1.5, shaftcolor=:transparent, taillength=0,
-                strokemask=0, tipwidth=9, tiplength=8)
-        end
-    end
-    for (rho, eta) in regimes, service in services
-        p = positions[(service.mode, rho, eta)]
-        color = PUB_ETA_COLORS[eta]
-        rangebars!(ax, [p.y.estimate], [p.x.lower], [p.x.upper];
-            direction=:x, color=(color, 0.35), linewidth=0.9, whiskerwidth=4)
-        rangebars!(ax, [p.x.estimate], [p.y.lower], [p.y.upper];
-            color=(color, 0.35), linewidth=0.9, whiskerwidth=4)
-        scatter!(ax, [p.x.estimate], [p.y.estimate]; marker=service.marker,
-            color=service.mode == FULL_SERVICE.mode ? color : :white,
-            strokecolor=color, strokewidth=1.1, markersize=7)
-    end
-    elements = Any[[
-        LineElement(; color=:gray45, linewidth=2, linestyle=removal.linestyle),
-        MarkerElement(; color=:gray45, marker=:rtriangle, markersize=9,
-            points=[Point2f(0.9, 0.5)]),
-    ] for removal in removals]
-    append!(elements, [MarkerElement(; marker=s.marker, markersize=9,
-        color=s.mode == FULL_SERVICE.mode ? :gray25 : :white,
-        strokecolor=:gray45, strokewidth=1.1) for s in services])
-    labels = vcat([removal.label for removal in removals], [s.label for s in services])
-    axislegend(ax, elements, labels; position=:rt, framevisible=false,
-        labelsize=FOOTER_FS - 1, rowgap=8, patchsize=(36, 14),
-        backgroundcolor=(:white, 0.9), padding=(6, 6, 6, 6))
-    turnover_elements = [[
-        LineElement(; color=PUB_ETA_COLORS[eta], linewidth=2),
-        MarkerElement(; color=PUB_ETA_COLORS[eta], marker=:rtriangle, markersize=9,
-            points=[Point2f(0.9, 0.5)]),
-    ] for eta in turnover_rates]
-    Legend(fig[2, 1], turnover_elements,
-        [@sprintf("%g%%", 100eta) for eta in turnover_rates], "Turnover per period";
-        orientation=:horizontal, titleposition=:left, framevisible=false,
-        labelsize=FOOTER_FS, titlesize=FOOTER_FS, patchsize=(30, 14),
-        colgap=24, padding=(0, 0, 8, 0), tellwidth=false)
-    rowgap!(fig.layout, 20)
-    mkpath(dirname(output_path))
-    save(output_path, fig; px_per_unit=2)
-    println("Wrote $output_path")
-    println("Verified $(validation.summary_count) means, $(validation.contrast_count) paired intervals, and $(length(regimes) * length(removals)) removal-arrow displacements.")
-    println("Analysis commit: $analysis_commit")
-    println("Rendering commit: $(provenance.commit); source clean: $(provenance.source_clean)")
-    return fig
-end
-
 if abspath(PROGRAM_FILE) == abspath(@__FILE__)
-    if isempty(ARGS)
-        main()
-    elseif ARGS == ["--subsection-two"]
-        subsection_two_figure()
-    elseif ARGS == ["--structure-arrows"]
-        structure_arrows_figure()
-    else
-        error("usage: figure_2.jl [--subsection-two | --structure-arrows]")
-    end
+    isempty(ARGS) || error("usage: figure_2.jl")
+    main()
 end

@@ -16,6 +16,7 @@ using Statistics: mean
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
 include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
 include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
+include(normpath(joinpath(@__DIR__, "..", "net_output_data.jl")))
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const ANALYSIS_PROVENANCE = reporting_git_provenance(
@@ -24,6 +25,8 @@ const ANALYSIS_PROVENANCE = reporting_git_provenance(
         @__FILE__,
         "scripts/sweep/sweep_results.jl",
         "scripts/monte_carlo.jl",
+        "scripts/net_output_data.jl",
+        "scripts/net_output.jl",
     ),
 )
 const SWEEP_ROOT = get(ENV, "BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR") do
@@ -58,9 +61,10 @@ const METRICS = (
     :outsourcing_rate,
     :self_fill_rate,
     :broker_fill_rate,
-    :self_net_output_per_requested_position,
-    :broker_net_output_per_requested_position,
-    :net_output_per_requested_position,
+    :gross_match_output,
+    :total_search_cost,
+    :total_broker_fees,
+    :net_output_per_principal,
     :q_gap,
     :access_fraction,
     :betweenness,
@@ -157,9 +161,9 @@ function baseline_figure(index)
     fig = Figure(; size=(1050, 430), fontsize=16)
     panels = (
         (
-            metric=:broker_net_output_per_requested_position,
-            title="A. Brokered net output per requested position",
-            ylabel="Net output",
+            metric=:net_output_per_principal,
+            title="A. Net output to principals",
+            ylabel="Net output per principal",
         ),
         (metric=:outsourcing_rate, title="B. Outsourcing", ylabel="Share of demand"),
     )
@@ -232,6 +236,7 @@ end
 
 function main()
     dataset = load_sweep_dataset(SWEEP_ROOT)
+    output_accounting = NetOutputData.reconstruct_dataset!(dataset, SWEEP_ROOT, REPO_ROOT)
     dataset.meta[:scope] in (:assessment_access, :broker_services) ||
         error("unexpected sweep scope")
     validate_analysis_commit(
@@ -240,10 +245,11 @@ function main()
         artifact="broker assessment vs access sweep",
     )
     index = result_index(dataset)
-    expected_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS)
-    length(dataset.results) == length(expected_keys) ||
-        error("unexpected number of assessment vs access conditions")
-    Set(keys(index)) == expected_keys || error("assessment vs access design mismatch")
+    base_cells = vcat([(0.5, 0.02)], GRID_CELLS)
+    base_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in base_cells)
+    complete_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS)
+    Set(keys(index)) in (base_keys, complete_keys) || error("assessment vs access design mismatch")
+    contrast_cells = sort!(unique((key[2], key[3]) for key in keys(index)))
 
     mkpath(FIGURE_DIR)
     seed_rows = Vector{Vector{Any}}()
@@ -289,7 +295,7 @@ function main()
     )
 
     contrast_rows = Vector{Vector{Any}}()
-    for (rho, eta) in CONTRAST_CELLS, metric in METRICS
+    for (rho, eta) in contrast_cells, metric in METRICS
         for (label, reference, comparison) in (
             ("assessment", :access_only, :full),
             ("access", :assessment_only, :full),
@@ -323,9 +329,9 @@ function main()
     baseline_figure(index)
     contrast_figure(
         index,
-        :net_output_per_requested_position,
+        :net_output_per_principal,
         "net_output_contributions.png",
-        "Full service minus restricted service",
+        "Change in net output per principal",
     )
     jldsave(
         joinpath(OUT_DIR, "figure_data.jld2");
@@ -339,6 +345,8 @@ function main()
         source_root=abspath(SWEEP_ROOT),
         late_width=LATE_WIDTH,
         interval_level=LEVEL,
+        net_output_definition="net_output_per_principal",
+        output_accounting,
     )
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "analysis_git_commit=$(ANALYSIS_PROVENANCE.commit)")

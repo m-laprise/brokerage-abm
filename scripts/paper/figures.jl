@@ -13,8 +13,8 @@ to output/main/figures/ and the display-convention keys to output/main/figmeta.t
 
   assessment_not_access
                       broker use, access, and assessment accuracy
-  information_sources
-                      sources of the broker's ranking advantage
+  information_sources_net_output_channels
+                      ranking and net-output evidence for the broker's advantage
   matching_grid       six outcomes across the rho x delta grid, lines per delta
                       with 95% Monte Carlo interval whiskers
   centrality_and_access
@@ -25,11 +25,14 @@ to output/main/figures/ and the display-convention keys to output/main/figmeta.t
 Usage: julia --project --threads=auto scripts/paper/figures.jl
 Subsection-1 figure only:
     julia --project --threads=auto scripts/paper/figures.jl --assessment-not-access
+Subsection-3 figure only:
+    julia --project --threads=auto scripts/paper/figures.jl --information-sources
 """
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
+include(joinpath(@__DIR__, "information_sources.jl"))
 using JLD2
 using SHA: sha256
 using Statistics: mean, median
@@ -59,6 +62,7 @@ const REPORTING_PROVENANCE = manuscript_git_provenance(
         @__FILE__,
         "scripts/monte_carlo.jl",
         "scripts/figure_style.jl",
+        "scripts/paper/information_sources.jl",
     ),
 )
 const DATA_ANALYSIS_COMMIT = validate_analysis_commit(
@@ -78,8 +82,6 @@ const INFORMATION_ANALYSIS_COMMIT = validate_analysis_commit(
 INFORMATION_META["analysis_source_clean"] == true ||
     error("Ridge ablation figure data were extracted from dirty analysis sources")
 const PER = FD["period"]
-const SER = FD["series"]
-const SER_SEEDS = FD["series_seed_values"]
 const TEND = maximum(PER)
 const TIME_TICK_STEP = TEND <= 250 ? 50 : 100
 const TIME_TICKS = TIME_TICK_STEP:TIME_TICK_STEP:TEND
@@ -88,165 +90,12 @@ function savefig(fname, fig)
     (save(joinpath(OUT, fname), fig; px_per_unit=PXU); println("  $fname done"))
 end
 
-function summarized_series(key; measured=false)
-    indices = if measured
-        [index for index in eachindex(PER) if PER[index] % BETWINT == 0]
-    else
-        collect(eachindex(PER))
-    end
-    raw = SER_SEEDS[key][indices, :]
-    smoothed = reduce(
-        hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
-    )
-    summaries = [
-        monte_carlo_interval(view(smoothed, period_index, :)) for
-        period_index in axes(smoothed, 1)
-    ]
-    return (
-        PER[indices],
-        [summary.mean for summary in summaries],
-        [summary.lower for summary in summaries],
-        [summary.upper for summary in summaries],
-    )
-end
-
-function draw_interval_series!(
-    axis, series, color; label=nothing, points=false, linestyle=:solid, linewidth=2.2
-)
-    x, estimate, lower, upper = series
-    band!(axis, x, lower, upper; color=(color, 0.16))
-    keywords = isnothing(label) ? (;) : (; label)
-    if points
-        scatterlines!(
-            axis, x, estimate; color, linewidth, markersize=6, linestyle, keywords...
-        )
-    else
-        lines!(axis, x, estimate; color, linewidth, linestyle, keywords...)
-    end
-    return nothing
-end
-
+"""Render Figure 3 from the clean retained Ridge analysis."""
 function information_sources()
-    models = (
-        (key="pair", label="Full pair\nmodel", color="#333A40"),
-        (key="size_matched", label="Fewer\nobservations", color="#BC9331"),
-        (key="single_principal", label="One party\nonly", color="#399775"),
-        (key="additive", label="No pair\ninteractions", color="#377DA5"),
+    InformationSources.render(
+        INFORMATION_FD;
+        output_path=joinpath(OUT, "information_sources_net_output_channels.png"),
     )
-    variants = models[2:end]
-    conditions = INFORMATION_FD["conditions"]
-    length(conditions) == INFORMATION_META["n_conditions"] ||
-        error("Ridge ablation condition count does not match its metadata")
-    baseline = only(
-        filter(
-            condition -> condition["result_reldir"] == INFORMATION_META["baseline_reldir"],
-            conditions,
-        ),
-    )
-    length(baseline["seeds"]) == 50 || error("expected 50 baseline ablation seeds")
-    all(
-        length(condition["seeds"]) ==
-        (condition["result_reldir"] == INFORMATION_META["baseline_reldir"] ? 50 : 20) for
-        condition in conditions
-    ) || error("unexpected Ridge ablation seed plan")
-
-    pair_baseline = baseline["rank_gaps"]["pair"]
-    baseline_intervals = [
-        paired_monte_carlo_interval(pair_baseline, baseline["rank_gaps"][model.key]) for
-        model in variants
-    ]
-    condition_values = Dict(
-        model.key => [
-            monte_carlo_interval(condition["rank_gaps"][model.key]).mean for
-            condition in conditions
-        ] for model in models
-    )
-
-    fig = Figure(; size=(1200, 520))
-    axis_style = (;
-        titlesize=TITLE_FS,
-        ylabelsize=LABEL_FS,
-        xticklabelsize=TICK_FS,
-        yticklabelsize=TICK_FS,
-        yminorticks=IntervalsBetween(2),
-        yminorgridvisible=true,
-        yminorgridcolor=(:black, 0.045),
-        yminorgridwidth=0.6,
-    )
-    ax_baseline = Axis(
-        fig[1, 1];
-        title="A. Effects at baseline",
-        ylabel="Change in ranking advantage\nfrom the full pair model",
-        yticks=-1.0:0.1:0.0,
-        xticks=(1:length(variants), [model.label for model in variants]),
-        limits=((0.5, length(variants) + 0.5), nothing),
-        axis_style...,
-    )
-    hlines!(ax_baseline, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.4)
-    for (index, (model, interval)) in enumerate(zip(variants, baseline_intervals))
-        rangebars!(
-            ax_baseline,
-            [index],
-            [interval.lower],
-            [interval.upper];
-            color=model.color,
-            linewidth=1.6,
-            whiskerwidth=12,
-        )
-        scatter!(
-            ax_baseline,
-            [index],
-            [interval.mean];
-            color=model.color,
-            marker=:diamond,
-            markersize=15,
-            strokecolor=:gray20,
-            strokewidth=0.5,
-        )
-    end
-
-    ax_conditions = Axis(
-        fig[1, 2];
-        title="B. Ranking advantage across regimes",
-        ylabel="Ranking advantage\n(broker minus principal)",
-        yticks=-1.0:0.2:1.0,
-        xticks=(1:length(models), [model.label for model in models]),
-        limits=((0.5, length(models) + 0.5), nothing),
-        axis_style...,
-    )
-    hlines!(ax_conditions, [0.0]; color=:gray55, linestyle=:dash, linewidth=1.4)
-    for condition_index in eachindex(conditions)
-        lines!(
-            ax_conditions,
-            1:length(models),
-            [condition_values[model.key][condition_index] for model in models];
-            color=(:gray45, 0.20),
-            linewidth=0.8,
-        )
-    end
-    for (index, model) in enumerate(models)
-        values = condition_values[model.key]
-        scatter!(
-            ax_conditions,
-            fill(index, length(values)),
-            values;
-            color=(model.color, 0.58),
-            markersize=6,
-        )
-        scatter!(
-            ax_conditions,
-            [index],
-            [median(values)];
-            color=model.color,
-            marker=:diamond,
-            markersize=16,
-            strokecolor=:gray20,
-            strokewidth=0.6,
-        )
-    end
-    colgap!(fig.layout, 38)
-    colsize!(fig.layout, 1, Relative(0.45))
-    savefig("information_sources.png", fig)
     return nothing
 end
 
@@ -544,74 +393,6 @@ function structural_advantage()
     colgap!(fig.layout, 34)
     rowgap!(fig.layout, 24)
     savefig("structural_advantage.png", fig)
-end
-
-# ── Retained baseline-only diagnostic ──
-function baseline_dynamics()
-    # Each seed is smoothed first. The line and pointwise interval are then
-    # computed across seeds; display trimming remains axis-only.
-    ot(key) = summarized_series(key)
-    otb() = summarized_series("betweenness"; measured=true)
-    yrange(ss...) = (
-        v=filter(
-            !isnan,
-            vcat((vcat(s[3][s[1] .>= TSTART], s[4][s[1] .>= TSTART]) for s in ss)...),
-        );   # displayed window only
-        hi=maximum(v);
-        (0, hi + 0.06 * (hi + eps()))
-    )   # all y-axes start at zero
-    mpa = ot("mpa")
-    dmean, dmedian = ot("mean_degree"), ot("median_degree")
-    betweenness = otb()
-    access = ot("access")
-    outsourcing = ot("outsourcing")
-    yl = (
-        yrange(mpa), yrange(dmean, dmedian), yrange(betweenness), yrange(access), (0, 1.02)
-    )
-
-    fig = Figure(; size=(1200, 660))
-    T4, L4, K4 = TITLE_FS, LABEL_FS, TICK_FS
-    mk(row, column, ttl, ylim) = Axis(
-        fig[row, column];
-        title=ttl,
-        xlabel="Period",
-        xticks=TIME_TICKS,
-        titlesize=T4,
-        xlabelsize=L4,
-        xticklabelsize=K4,
-        yticklabelsize=K4,
-        limits=((TSTART, TEND + 1), ylim),
-    )
-    # a `label` keyword is only passed when a label is requested: a plot with
-    # label="" would still register a (blank) legend entry
-    drw!(ax, s, col; lbl=nothing, ls=:solid, pts=false, lw=2.2) = draw_interval_series!(
-        ax, s, col; label=lbl, points=pts, linestyle=ls, linewidth=lw
-    )
-    let a = mk(1, 1, "A. Outsourcing rate", yl[5])
-        drw!(a, outsourcing, PUB_BROKER)
-    end
-    let a = mk(1, 2, "B. Matches per principal", yl[1])
-        drw!(a, mpa, PUB_PRINCIPAL)
-    end
-    let a = mk(1, 3, "C. Principal degree", yl[2])
-        drw!(a, dmean, PUB_PRINCIPAL; lbl="Mean")
-        drw!(a, dmedian, :gray55; lbl="Median", ls=:dash)
-        axislegend(a; position=:cb, orientation=:horizontal, labelsize=18,
-            framevisible=true, framecolor=:gray65, framewidth=0.8,
-            backgroundcolor=:white, padding=(8, 8, 5, 5))
-    end
-    let a = mk(2, 1, "D. Access fraction", yl[4])
-        drw!(a, access, PUB_ACCESS)
-    end
-    let a = mk(2, 2, "E. Broker betweenness", yl[3])
-        drw!(a, betweenness, PUB_CENTRALITY; pts=true)
-    end
-    for column in 1:3
-        colsize!(fig.layout, column, Auto(1))
-    end
-    colgap!(fig.layout, 24)
-    rowgap!(fig.layout, 26)
-    savefig("baseline_dynamics.png", fig)
 end
 
 """Summarize smoothed baseline trajectories without treating periods as replications."""
@@ -1020,6 +801,8 @@ end
 
 if ARGS == ["--assessment-not-access"]
     assessment_not_access()
+elseif ARGS == ["--information-sources"]
+    information_sources()
 elseif isempty(ARGS)
     foreach(
         function_name -> function_name(),
@@ -1055,5 +838,5 @@ elseif isempty(ARGS)
     end
     println("main figures done (+ figmeta.tex)")
 else
-    error("usage: figures.jl [--assessment-not-access]")
+    error("usage: figures.jl [--assessment-not-access | --information-sources]")
 end

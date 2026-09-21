@@ -85,11 +85,12 @@ end
 function check_service_comparisons(retained, estimates)
     cells = sort!(unique((key[2], key[3]) for key in keys(estimates.summaries)))
     rhos = unique(first.(cells))
-    common_positive_rates = sort!(filter(unique(last.(cells))) do eta
-        eta > 0 && all((rho, eta) in cells for rho in rhos)
+    common_rates = sort!(filter(unique(last.(cells))) do eta
+        all((rho, eta) in cells for rho in rhos)
     end)
+    common_positive_rates = filter(>(0), common_rates)
     isempty(common_positive_rates) && error("no positive turnover rates shared across compositions")
-    output_metric = "net_output_per_requested_position"
+    output_metric = "net_output_per_principal"
     output_differences = Dict{Tuple{Float64,Float64},NamedTuple}()
     access_outsourcing = Float64[]
     for (rho, eta) in cells
@@ -102,7 +103,6 @@ function check_service_comparisons(retained, estimates)
             rho,
             eta,
         )
-        output.lower > 0 || error("assessment-only output advantage changed: $rho, $eta")
         output_differences[(rho, eta)] = output
         assessment, access =
             map(("assessment", "access"), ("access_only", "assessment_only")) do label, mode
@@ -148,22 +148,31 @@ function check_service_comparisons(retained, estimates)
     end
     any(>(0), access_outsourcing) && any(<(0), access_outsourcing) ||
         error("access outsourcing effects are no longer mixed")
+    stable_output = output_differences[(0.0, 0.0)]
+    high_turnover = last(common_positive_rates)
+    high_turnover_output = output_differences[(0.0, high_turnover)]
+    stable_output.lower > 0 ||
+        error("assessment-only output advantage under stable pure complementarity changed")
+    high_turnover_output.upper < 0 ||
+        error("access-only output advantage under high-turnover pure complementarity changed")
     return (;
-        output=output_differences[(BASELINE_RHO, BASELINE_ETA)],
-        regime_count=length(cells), common_positive_rates,
+        stable_output, high_turnover, high_turnover_output,
+        regime_count=length(cells), common_positive_rates, common_rates,
+        composition_count=length(rhos),
+        common_regime_count=length(rhos) * length(common_rates),
     )
 end
+
 
 """Build only the definitions used by the experiment prose and caption."""
 function manuscript_values(retained, estimates, data)
     check_trajectory_late_means(retained, data)
     comparisons = check_service_comparisons(retained, estimates)
-    assessment_access_output = comparisons.output
     design = FIGURE_DESIGN
     rate_string(x) = iszero(x) ? "0" : string(x)
-    fmt(x) = @sprintf("%.3f", x)
+    fmt(x) = @sprintf("%.2f", x)
     assessment, access = SERVICES
-    output_metric = "net_output_per_requested_position"
+    output_metric = "net_output_per_principal"
     output_effects = Dict(
         (service.mode, eta) =>
             checked_effect(retained, estimates, service, output_metric; eta) for
@@ -187,6 +196,12 @@ function manuscript_values(retained, estimates, data)
         "aaEta" => rate_string(design.eta),
         "aaEtaCount" => string(length(TURNOVER_RATES)),
         "aaRegimeN" => string(comparisons.regime_count),
+        "aaCommonRegimeN" => string(comparisons.common_regime_count),
+        "aaMatchingCompositionN" => string(comparisons.composition_count),
+        "aaCommonTurnoverPercents" => join(
+            [@sprintf("%.0f", 100eta) * "\\%" for eta in comparisons.common_rates],
+            ", ", ", and ",
+        ),
         "aaCommonPositiveTurnoverPercents" => join(
             [@sprintf("%.0f", 100eta) * "\\%" for eta in comparisons.common_positive_rates],
             " or ",
@@ -207,16 +222,22 @@ function manuscript_values(retained, estimates, data)
         "aaAccessOutputLower" => fmt(-output_effects[(assessment.mode, design.eta)].upper),
         "aaAccessOutputUpper" => fmt(-output_effects[(assessment.mode, design.eta)].lower),
         "aaAssessmentOutputLoss" => fmt(baseline_assessment_loss),
-        "aaAssessmentAccessOutputDifference" => fmt(assessment_access_output.estimate),
-        "aaAssessmentAccessOutputLower" => fmt(assessment_access_output.lower),
-        "aaAssessmentAccessOutputUpper" => fmt(assessment_access_output.upper),
+        "aaAssessmentOutputLower" => fmt(-output_effects[(access.mode, design.eta)].upper),
+        "aaAssessmentOutputUpper" => fmt(-output_effects[(access.mode, design.eta)].lower),
+        "aaStableAssessmentGain" => fmt(comparisons.stable_output.estimate),
+        "aaStableAssessmentLower" => fmt(comparisons.stable_output.lower),
+        "aaStableAssessmentUpper" => fmt(comparisons.stable_output.upper),
+        "aaHighTurnoverPercent" => @sprintf("%.0f", 100 * comparisons.high_turnover),
+        "aaHighTurnoverAccessGain" => fmt(-comparisons.high_turnover_output.estimate),
+        "aaHighTurnoverAccessLower" => fmt(-comparisons.high_turnover_output.upper),
+        "aaHighTurnoverAccessUpper" => fmt(-comparisons.high_turnover_output.lower),
     ]
     for (label, service) in
         (("Full", FULL_SERVICE), ("Assessment", assessment), ("Access", access))
         outsourcing = checked_summary(retained, estimates, service.mode, "outsourcing_rate")
         push!(
             defs,
-            "aa$(label)OutPercent" => @sprintf("%.1f", 100 * outsourcing.estimate),
+            "aa$(label)OutPercent" => @sprintf("%.0f", 100 * outsourcing.estimate),
         )
         degree = checked_summary(retained, estimates, service.mode, "mean_degree")
         push!(defs, "aa$(label)Degree" => fmt(degree.estimate))

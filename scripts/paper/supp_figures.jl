@@ -17,7 +17,7 @@ effective size:
   S7  rank-correlation difference and output gap against each measure, colored by rho
       (the advantage analysis, with the alternative measures in place of betweenness)
 
-Figure S4 is rendered by scripts/assessment_access/main_figure.jl --complementarity.
+Figure S4 is rendered by scripts/assessment_access/supplement_figure.jl.
 This script reads only `output/supplement/dgp_figure_data.jld2` and
 `output/supplement/structural_figure_data.jld2`. It performs no simulation and writes
 print-resolution PNGs plus the display-convention keys used by the captions.

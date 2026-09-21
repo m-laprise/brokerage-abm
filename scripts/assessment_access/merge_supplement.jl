@@ -18,6 +18,7 @@ const REPO_ROOT = normpath(
 include(joinpath(REPO_ROOT, "scripts", "sweep", "sweep_results.jl"))
 include(joinpath(REPO_ROOT, "scripts", "monte_carlo.jl"))
 include(joinpath(REPO_ROOT, "scripts", "reporting_provenance.jl"))
+include(joinpath(REPO_ROOT, "scripts", "net_output_data.jl"))
 
 const LATE_WIDTH = 20
 const LEVEL = 0.95
@@ -30,9 +31,10 @@ const METRICS = (
     :outsourcing_rate,
     :self_fill_rate,
     :broker_fill_rate,
-    :self_net_output_per_requested_position,
-    :broker_net_output_per_requested_position,
-    :net_output_per_requested_position,
+    :gross_match_output,
+    :total_search_cost,
+    :total_broker_fees,
+    :net_output_per_principal,
     :q_gap,
     :access_fraction,
     :betweenness,
@@ -107,6 +109,8 @@ function main()
         error("expected base data, supplemental sweep, and output directory")
     base_path, supplement_root, output_dir = ARGS
     base = load(base_path)
+    get(base, "net_output_definition", nothing) == "net_output_per_principal" ||
+        error("regenerate the base analysis with net output per principal before merging")
     base["analysis_source_clean"] == true || error("base analysis source was not clean")
     base["late_width"] == LATE_WIDTH || error("late-window mismatch")
     base["interval_level"] == LEVEL || error("interval-level mismatch")
@@ -117,6 +121,8 @@ function main()
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
             "scripts/monte_carlo.jl",
+            "scripts/net_output_data.jl",
+            "scripts/net_output.jl",
         ),
     )
     validate_analysis_commit(
@@ -126,6 +132,7 @@ function main()
     )
 
     dataset = load_sweep_dataset(supplement_root)
+    output_accounting = NetOutputData.reconstruct_dataset!(dataset, supplement_root, REPO_ROOT)
     dataset.schema_version == base["schema_version"] || error("schema mismatch")
     base_provenance = joinpath(dirname(base_path), "provenance.txt")
     simulation_commit = provenance_value(base_provenance, "sweep_git_commit")
@@ -239,6 +246,8 @@ function main()
         merge_script_sha256=script_hash,
         late_width=LATE_WIDTH,
         interval_level=LEVEL,
+        net_output_definition="net_output_per_principal",
+        output_accounting=Dict("base" => base["output_accounting"], "supplement" => output_accounting),
     )
     open(joinpath(output_dir, "provenance.txt"), "w") do io
         println(io, "analysis_git_commit=$(analysis_provenance.commit)")

@@ -72,6 +72,7 @@ end
 
 function main()
     pilot = load_pilot_results()
+    output_accounting = NetOutputData.reconstruct_dataset!(pilot, SWEEP_ROOT, REPO_ROOT)
     index = Dict(condition_key(result) => result for result in pilot.results)
     mkpath(FIGURE_DIR)
 
@@ -118,6 +119,8 @@ function main()
         analysis_source_clean=PILOT_PROVENANCE.source_clean,
         late_width=LATE_WIDTH,
         interval_level=LEVEL,
+        net_output_definition="net_output_per_principal",
+        output_accounting,
     )
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
         println(io, "analysis_git_commit=$(PILOT_PROVENANCE.commit)")

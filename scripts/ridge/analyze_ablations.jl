@@ -30,6 +30,8 @@ using Statistics: cor, mean, median, quantile, std
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
 include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
 include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
+include(normpath(joinpath(@__DIR__, "..", "net_output_data.jl")))
+include(normpath(joinpath(@__DIR__, "..", "paper", "information_sources.jl")))
 
 const PAIR_ROOT = get(ENV, "BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR") do
     error("BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR is required")
@@ -79,6 +81,7 @@ const METRICS = (
     :broker_holdout_r2,
     :r2_gap,
     :output_gap,
+    :net_output_per_principal,
     :outsourcing_rate,
     :access_fraction,
     :betweenness,
@@ -452,6 +455,10 @@ function main()
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
             "scripts/monte_carlo.jl",
+            "scripts/net_output_data.jl",
+            "scripts/net_output.jl",
+            "scripts/paper/information_sources.jl",
+            "scripts/figure_style.jl",
         ),
     )
     mkpath(OUT_DIR)
@@ -459,6 +466,17 @@ function main()
     pair = load_sweep_dataset(PAIR_ROOT)
     datasets = Dict(variant.key => load_sweep_dataset(variant.root) for variant in VARIANTS)
     design = validate_design(pair, datasets)
+    output_accounting = Dict(
+        "pair" => NetOutputData.reconstruct_dataset!(
+            pair, PAIR_ROOT, provenance.root; results=collect(values(design.pair_by_design)),
+        ),
+    )
+    for variant in VARIANTS
+        output_accounting[String(variant.key)] = NetOutputData.reconstruct_dataset!(
+            datasets[variant.key], variant.root, provenance.root;
+            results=collect(values(design.datasets_by_design[variant.key])),
+        )
+    end
     design_keys = design.ordered_keys
     baseline_key = design.baseline_key
     pair_by_design = design.pair_by_design
@@ -574,8 +592,32 @@ function main()
                 "result_reldir" => reference.rel,
                 "rho" => reference.cfg["rho"],
                 "delta" => reference.cfg["delta"],
+                "N" => Int(reference.cfg["N"]),
                 "seeds" => seeds,
                 "rank_gaps" => rank_gaps,
+                "broker_ranks" => Dict(
+                    String(key) => seed_values(result_for(key, design_key), :broker_holdout_rank; seeds)
+                    for key in all_keys
+                ),
+                "principal_ranks" => Dict(
+                    String(key) => seed_values(result_for(key, design_key), :agent_holdout_rank; seeds)
+                    for key in all_keys
+                ),
+                "channel_values" => Dict(
+                    String(key) => begin
+                        result = result_for(key, design_key)
+                        index = Dict(seed => i for (i, seed) in enumerate(result.seeds))
+                        [
+                            InformationSources.late_channel_values(
+                                result.mdfs[index[seed]], Int(reference.cfg["N"]), LATE_WIDTH
+                            ) for seed in seeds
+                        ]
+                    end for key in all_keys
+                ),
+                "net_output" => Dict(
+                    String(key) => seed_values(result_for(key, design_key), :net_output_per_principal; seeds)
+                    for key in all_keys
+                ),
             ),
         )
     end
@@ -585,7 +627,11 @@ function main()
             "analysis_source_clean" => provenance.source_clean,
             "n_conditions" => length(design_keys),
             "baseline_reldir" => datasets_by_design[:size_matched][baseline_key].rel,
+            "baseline_difficulty" => pair_by_design[baseline_key].cfg["delta"],
             "late_width" => LATE_WIDTH,
+            "interval_level" => MC_LEVEL,
+            "net_output_definition" => "net_output_per_principal",
+            "output_accounting" => output_accounting,
         ),
         "conditions" => figure_conditions,
     )
@@ -796,18 +842,7 @@ function main()
         end
     end
 
-    value_by_key = Dict(values)
-    paper_values = (
-        "ablationConditionN" => value_by_key["nConditions"],
-        "ablationPairMedianGap" => value_by_key["pairMedian_rank_gap"],
-        "ablationSizeMedianGap" => value_by_key["size_matchedMedian_rank_gap"],
-        "ablationSizePositiveN" => value_by_key["size_matchedPositiveN_rank_gap"],
-        "ablationSingleMedianGap" => value_by_key["single_principalMedian_rank_gap"],
-        "ablationSinglePositiveN" => value_by_key["single_principalPositiveN_rank_gap"],
-        "ablationAdditiveBeatsSingleN" =>
-            value_by_key["singleMinusAdditiveLessN_rank_gap"],
-        "ablationPairBeatsAdditiveN" => value_by_key["additiveLessN_rank_gap"],
-    )
+    paper_values = InformationSources.manuscript_values(figure_data)
     open(PAPER_VALUES, "w") do io
         println(io, "% Generated by scripts/ridge/analyze_ablations.jl on $(now()).")
         println(io, "% Analysis commit: $(provenance.commit)")

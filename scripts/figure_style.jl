@@ -113,6 +113,20 @@ function publication_theme!()
     return nothing
 end
 
+"""Choose readable limits and ticks from interval bounds, always including zero."""
+function interval_axis(bounds; target_intervals=6, upper_padding=0)
+    lower, upper = extrema(bounds)
+    all(isfinite, (lower, upper)) || error("nonfinite display bounds")
+    lower, upper = min(0.0, lower), max(0.0, upper)
+    span = upper - lower
+    raw_step = iszero(span) ? 1.0 : span / target_intervals
+    magnitude = 10.0^floor(log10(raw_step))
+    step = first(x for x in (1.0, 2.0, 2.5, 5.0, 10.0) if x >= raw_step / magnitude) * magnitude
+    limits = (floor(lower / step) * step, ceil(upper / step) * step + upper_padding * step)
+    limits[1] == limits[2] && (limits = (-step, step))
+    return (; limits, ticks=limits[1]:step:limits[2], step)
+end
+
 """List difficulty levels, ending with N/A for the pure-general-quality boundary."""
 function difficulty_legend!(slot, values; nbanks=2)
     elements = [

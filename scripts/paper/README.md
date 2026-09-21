@@ -11,6 +11,10 @@ display conventions like window bounds or baseline parameter values.
 
 The pipeline has two tiers, so figures and prose iterate locally.
 
+Net output per principal is derived from saved metrics by `scripts/net_output_data.jl`
+using `scripts/net_output.jl`. Reporting discards the legacy per-request net-output
+columns. Simulation code and saved simulation files are unchanged.
+
 Cluster tier (needs the sweep; set `BROKERAGE_ABM_SWEEP_DIR` to its root; run on a compute
 node, `srun --partition=cpu --mem=8G`):
 
@@ -49,20 +53,21 @@ revisions are marked uncommitted and retain their source hashes and patches.
    `BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR`, and
    `BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR`. It writes the detailed ablation
    report inputs under `output/ridge/ablations/analysis/`, the small set of
-   main-text values in `paper_values.tex`, and the seed-level main-figure data
-   in `output/ridge/ablations/figure_data.jld2`.
+   main-text values in `paper_values.tex`, and seed-level rankings and channel
+   net output in `output/ridge/ablations/figure_data.jld2`.
 
 Local tier (uses retained data; no access to the raw sweep is needed):
 
 5. `julia --project --threads=auto scripts/paper/figures.jl`
    Renders five results assets at print resolution, including the four-panel
-   assessment figure and the two-panel information-source figure. It reads
+   assessment and information-source figures. It reads
    `output/main/figure_data.jld2`, `output/ridge/{paired,ablations}/figure_data.jld2`,
    and the condition audit under
    `output/main/convergence/`; it also writes
    `output/main/figmeta.tex` (the display conventions quoted in captions:
    rolling window, measurement interval, axis start).
    Add `--assessment-not-access` to render only `assessment_not_access.png`.
+   Add `--information-sources` to render only `information_sources_net_output_channels.png`.
    Raw early/late counts are retained in `output/main/access_windows.jld2` and
    `output/ridge/paired/access_windows.jld2`. Extract them from each completed sweep with
    `julia --project --threads=auto scripts/paper/access_windows.jl`, using
@@ -123,17 +128,16 @@ Run these scripts with `julia --project --threads=auto scripts/assessment_access
 
 | Script | Output under `output/` |
 | --- | --- |
-| `main_figure.jl` | `main/figures/assessment_access.{png,pdf}` |
-| `figure_2.jl` | `main/figures/assessment_access_2.png` |
-| `figure_2.jl --subsection-two` | `main/figures/assessment_access_3.png` |
-| `figure_2.jl --structure-arrows` | `main/figures/assessment_access_structure_arrows.png` |
-| `main_figure.jl --complementarity` | `supplement/figures/complementarity_contributions.png` |
+| `figure_2.jl` | `main/figures/assessment_access_3.png` |
+| `supplement_figure.jl` | `supplement/figures/complementarity_contributions.png` |
 | `paper_values.jl` | `assessment_access/paper_values.tex` |
 
-Check figures and quoted outsourcing values against retained data with
+Check structural measurements with
 `julia --project --threads=auto test/test_assessment_access_reporting.jl`.
-`build_publication.jl` renders the manuscript figure (`assessment_access_3.png`),
-the two alternative main figures, the supplementary figure, and the generated values.
+Check reconstructed net output, manuscript values, and current figures with
+`julia --project --threads=auto test/test_net_output_reporting.jl`.
+`build_publication.jl` renders the manuscript figure, the supplementary figure,
+and the generated values.
 
 ## Base Ridge figure supplement
 
@@ -192,7 +196,7 @@ Local tier (uses retained data):
    Renders Supplementary Figures S1--S3 and S5--S7 from the two retained datasets and writes
    `output/supplement/figmeta.tex`, which records each dataset's analysis commit
    and the display conventions quoted in the captions.
-4. `julia --project --threads=auto scripts/assessment_access/main_figure.jl --complementarity`
+4. `julia --project --threads=auto scripts/assessment_access/supplement_figure.jl`
    Renders Figure S4 from the retained assessment-access contrasts, checking them
    against the saved seed-level values. The caption is in `paper/supplement.tex`.
    Generate its caption values with
