@@ -131,7 +131,7 @@ function make_complementarity_figure(data)
             grid[2, 1];
             xlabel="General-quality share (ρ)",
             ylabel=if column == 1
-                "Change in net output to principals\nper principal"
+                "Change in net output\nper principal"
             else
                 ""
             end,

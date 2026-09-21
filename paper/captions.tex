@@ -18,14 +18,24 @@ A: broker betweenness against mean principal degree, including links to the brok
 Brokerage with access, assessment, or both
 \end{ptitle}
 \begin{pcaption}{assessment_access}
-All panels use $\rho=\pv{aaRho}$ and $\delta=\pv{aaDelta}$, with other parameters at baseline except turnover. A--C show late-mean contributions of adding assessment (full service minus access-only, blue circles) and adding access (full service minus assessment-only, orange triangles) across \pv{aaEtaCount} turnover rates. A: change in net output to principals per requested position. B: change in broker betweenness centrality against change in mean principal degree. Dashed grey lines connect the two contrasts within each regime. Degree includes each principal's tie to the broker when present. C: change in outsourcing, in percentage points. In A and C, zero turnover is shown separately, positive rates use a linear scale, and baseline turnover is shaded. Horizontal offsets separate series; connecting lines are visual guides. D: broker betweenness centrality at baseline turnover ($\eta=\pv{aaEta}$). Lines join unsmoothed ensemble means measured at $t=\pv{aaCentralityFirst},\pv{aaCentralitySecond},\ldots,\pv{aaHorizon}$; shading marks the late window. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C. Each service version uses \pv{aaBaselineSeeds} seeds at baseline and \pv{aaOtherSeeds} elsewhere.
+All panels use $\rho=\pv{aaRho}$ and $\delta=\pv{aaDelta}$, with other parameters at baseline except turnover. A--C show late-mean contributions of adding assessment (full service minus access-only, blue circles) and adding access (full service minus assessment-only, orange triangles) across \pv{aaEtaCount} turnover rates. A: change in net output per principal. B: change in broker betweenness centrality against change in mean principal degree. Dashed grey lines connect the two contrasts within each regime. Degree includes each principal's tie to the broker when present. C: change in outsourcing, in percentage points. In A and C, zero turnover is shown separately, positive rates use a linear scale, and baseline turnover is shaded. Horizontal offsets separate series; connecting lines are visual guides. D: broker betweenness centrality at baseline turnover ($\eta=\pv{aaEta}$). Lines join unsmoothed ensemble means measured at $t=\pv{aaCentralityFirst},\pv{aaCentralitySecond},\ldots,\pv{aaHorizon}$; shading marks the late window. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C. Each service version uses \pv{aaBaselineSeeds} seeds at baseline and \pv{aaOtherSeeds} elsewhere.
 \end{pcaption}
 
 \begin{ptitle}{information}
-Sources of the broker's ranking advantage
+Sources of the broker's advantage
 \end{ptitle}
 \begin{pcaption}{information}
-Ridge broker models described in Model and Methods. A: each restriction minus the full pair model in late-window ranking advantage at baseline. Diamonds are mean differences paired by random seed; whiskers are 95\% Monte Carlo intervals. Negative values indicate a smaller ranking advantage. B: late-window ranking advantages across the \pv{ablationConditionN} regimes in the $\rho\times\delta$ design. Small points are regime means, lines connect the same regime across models, and diamonds mark medians across regimes. Dashed lines mark zero.
+Principals and the broker use Ridge regression in all versions. All outcomes use
+late means.
+Rank correlations in A and C compare predicted rankings with rankings by true
+expected match output on the same randomly sampled candidates.
+In C--D, difficulty is fixed at $\delta=\pv{infoBaselineDifficulty}$ and parameters other than $\rho$
+remain at baseline; difficulty is inapplicable at $\rho=1$. Grey lines connect
+the same regime across versions. Whiskers show pointwise
+\pv{infoIntervalPercent}\% Monte Carlo intervals. C uses within-seed broker-minus-principal differences;
+B and D report means of seed-level net-output shares.
+B's right-hand percentages compare ensemble-mean total net output with the
+reference version.
 \end{pcaption}
 
 \begin{ptitle}{grid}

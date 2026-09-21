@@ -519,7 +519,8 @@ Definition
 \endlastfoot
 Access vs.~assessment & For each accepted broker-directed offer, record whether receiver \(j\) was a direct neighbor of sender \(i\) in \(G\) at the time of the offer. Non-neighbor receivers indicate access; neighbor receivers indicate assessment. \\
 Realized match output by channel & Average realized match output \(\bar{q}_c^t\), where \(c \in \{\text{self}, \text{brokered}\}\). \\
-Requested-position outcomes & For each channel, record the share of requested positions filled and realized output net of channel costs per requested position. Market-wide net output sums the two channel numerators and divides by all requested positions. Unfilled positions contribute zero output and remain in the denominator. \\
+Requested-position fill rates & For each channel, accepted directed offers divided by requested positions. \\
+Net output per principal & Total realized output from completed relationships, counting each relationship once, minus all self-search costs and broker fees, divided by \(N\). Self-search costs apply to every self-search request, successful or not. Broker fees apply to each accepted broker-directed offer, including both offers when a reciprocal relationship fulfills two brokered requests. \\
 Mean channel satisfaction & Cross-agent means \(N^{-1}\sum_i s_{i,\text{self}}^t\) and \(N^{-1}\sum_i s_{i,\text{broker}}^t\). \\
 Outsourcing rate & Outsourced requested positions divided by total requested positions. \\
 Broker access size & \(\|\mathcal{A}_b^t\| = \|\text{Roster}^t \cup D^t\|\), measured after outsourcing decisions form \(D^t\) and before entry/exit. \\

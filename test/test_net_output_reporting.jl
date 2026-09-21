@@ -332,10 +332,10 @@ end
     # Validate manuscript values in memory. Review data are never promoted to
     # clean publication inputs or written over the retained analysis.
     retained = ServicePanels.JLD2.load(ServicePanels.DATA_PATH)
-    old_metrics = Set(string.(NetOutputReview.NetOutputData.OLD_METRICS))
-    filter!(row -> !(row[5] in old_metrics), retained["seed_rows"])
-    filter!(row -> !(row[4] in old_metrics), retained["summary_rows"])
-    filter!(row -> !(row[4] in old_metrics), retained["contrast_rows"])
+    replaced_metrics = Set([string.(NetOutputReview.NetOutputData.OLD_METRICS); metric])
+    filter!(row -> !(String(row[5]) in replaced_metrics), retained["seed_rows"])
+    filter!(row -> !(String(row[4]) in replaced_metrics), retained["summary_rows"])
+    filter!(row -> !(String(row[4]) in replaced_metrics), retained["contrast_rows"])
     for ((mode, rho, eta), c) in data["access"]
         append!(retained["seed_rows"], [
             Any[mode, rho, eta, seed, metric, value] for
@@ -403,7 +403,7 @@ end
             display.limits[2]
     end
     @test_throws ErrorException NetOutputReview.interval_axis((NaN, 1.0))
-    # Render only the approved main figure from reconstructed output and unchanged structure.
+    # Render the approved figures from reconstructed output and unchanged structure.
     ServicePanels.validate_argument_estimates(retained, manuscript_estimates, centrality)
     fig = ServicePanels.make_figure(manuscript_estimates, centrality)
     axes = filter(block -> block isa ServicePanels.Axis, fig.content)
@@ -413,6 +413,15 @@ end
     supplementary = SupplementPanels.complementarity_estimates(retained)
     @test length(supplementary.shown) ==
         length(supplementary.panels) * length(supplementary.rhos) * length(supplementary.etas)
+    supplement_figure = SupplementPanels.make_complementarity_figure(retained)
+    supplement_axes = filter(block -> block isa SupplementPanels.Axis, supplement_figure.content)
+    @test length(supplement_axes) == 2
+    @test supplement_axes[1].ylabel[] == "Change in net output\nper principal"
+    @test supplement_axes[1].limits[][2] == supplement_axes[2].limits[][2]
+    @test all(values(supplementary.shown)) do value
+        lower, upper = supplement_axes[1].limits[][2]
+        lower <= value.lower <= value.upper <= upper
+    end
     invalid = deepcopy(retained)
     row = first(filter(row -> String(row[4]) == metric, invalid["contrast_rows"]))
     row[5] += 1
@@ -422,5 +431,8 @@ end
         path = joinpath(temp, "assessment_access.png")
         ServicePanels.save(path, fig)
         @test filesize(path) > 0
+        supplement_path = joinpath(temp, "complementarity_contributions.png")
+        SupplementPanels.save(supplement_path, supplement_figure)
+        @test filesize(supplement_path) > 0
     end
 end
