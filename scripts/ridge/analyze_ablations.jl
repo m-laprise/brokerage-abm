@@ -638,8 +638,8 @@ function main()
     mkpath(dirname(FIGDATA))
     jldsave(FIGDATA; figdata=figure_data)
 
-    values = Pair{String,String}[]
-    add(key, value; formatter=f3) = push!(values, key => formatter(value))
+    tex_values = Pair{String,String}[]
+    add(key, value; formatter=f3) = push!(tex_values, key => formatter(value))
     lambda_agents = unique(
         Float64(result.cfg["ridge_lambda_agent"]) for result in pair.results
     )
@@ -837,7 +837,7 @@ function main()
             raw"\newcommand{\ravDefine}[2]{\expandafter\newcommand\csname rav@#1\endcsname{#2}}",
         )
         println(io, raw"\newcommand{\rav}[1]{\csname rav@#1\endcsname}")
-        for (key, value) in values
+        for (key, value) in tex_values
             println(io, "\\ravDefine{$key}{$value}")
         end
     end
