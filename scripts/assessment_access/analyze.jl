@@ -18,7 +18,14 @@ include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
 include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const ANALYSIS_PROVENANCE = reporting_git_provenance(REPO_ROOT)
+const ANALYSIS_PROVENANCE = reporting_git_provenance(
+    REPO_ROOT;
+    sources=(
+        @__FILE__,
+        "scripts/sweep/sweep_results.jl",
+        "scripts/monte_carlo.jl",
+    ),
+)
 const SWEEP_ROOT = get(ENV, "BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR") do
     error("BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR is required")
 end

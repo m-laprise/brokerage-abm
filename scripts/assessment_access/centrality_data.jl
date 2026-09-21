@@ -135,7 +135,14 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
         source_hashes["$rel/data.jld2"] = bytes2hex(sha256(read(path)))
         configs[mode] = result.cfg
     end
-    extraction = reporting_git_provenance(CENTRALITY_ROOT; require_clean=false)
+    extraction = reporting_git_provenance(
+        CENTRALITY_ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/sweep/sweep_results.jl",
+        ),
+        require_clean=false,
+    )
     mkpath(dirname(output_path))
     jldsave(
         output_path;

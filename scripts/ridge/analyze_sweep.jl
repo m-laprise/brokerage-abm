@@ -324,7 +324,13 @@ function comparison_figure(nn, ridge, rows)
 end
 
 function main()
-    provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
+    provenance = reporting_git_provenance(
+        normpath(joinpath(@__DIR__, "..", ".."));
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+        ),
+    )
     mkpath(OUT_DIR)
     mkpath(FIGURE_DIR)
     nn = load_comparison_sweep(NN_ROOT)

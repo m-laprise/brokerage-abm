@@ -2,8 +2,8 @@
     scripts/paper/build_publication.jl
 
 Run the publication build steps that do not require raw sweep access. Run this
-script from a clean committed worktree so all generated artifacts receive valid
-provenance.
+script after refreshing the required analysis inputs. Each input retains its own
+analysis commit; presentation changes are recorded separately.
 
 Usage: julia --project --threads=auto scripts/paper/build_publication.jl
 """

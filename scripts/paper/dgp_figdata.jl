@@ -241,7 +241,15 @@ end
 
 function main()
     exploratory = "--exploratory" in ARGS
-    provenance = reporting_git_provenance(REPO; require_clean=!exploratory)
+    provenance = reporting_git_provenance(
+        REPO;
+        sources=(
+            @__FILE__,
+            "src",
+            "scripts/sweep/sweep_config.jl",
+        ),
+        require_clean=!exploratory,
+    )
     data = build_dgp_figure_data()
     data["meta"] = Dict(
         "source" => "scripts/paper/dgp_figdata.jl",

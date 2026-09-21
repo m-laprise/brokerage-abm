@@ -49,7 +49,13 @@ const CAPS = joinpath(PAPER, "captions.tex")
 const SUPPLEMENT = joinpath(PAPER, "supplement.tex")
 const OUT = joinpath(GENERATED, "results_section.tex")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    sources=(
+        @__FILE__,
+        "paper/section_source.tex",
+        "paper/captions.tex",
+        "paper/supplement.tex",
+    ),
 )
 
 fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
@@ -84,33 +90,13 @@ isfile(ASSESSMENT_ACCESS_VALS) || fail(
 isfile(FIGMETA) || fail("missing $FIGMETA (run scripts/paper/figures.jl first)")
 isfile(CAPS) || fail("missing $CAPS (hand-edited caption source)")
 isfile(SUPPLEMENT) || fail("missing $SUPPLEMENT (supplementary figure labels)")
-provenance_files = (VALS, CONVERGENCE_VALS, RIDGE_VALS, ABLATION_VALS, FIGMETA)
-analysis_commits = [
-    validate_analysis_commit(
-        REPORTING_PROVENANCE,
-        recorded_analysis_commit(provenance_file);
-        artifact=basename(provenance_file),
-    ) for provenance_file in provenance_files
-]
-length(unique(analysis_commits)) == 1 || fail(
-    "reporting inputs record different analysis commits: " *
-    join(unique(analysis_commits), ", "),
-)
-const ANALYSIS_COMMIT = only(unique(analysis_commits))
-comparison_match = match(
-    r"(?m)^% NN-Ridge comparison analysis commit: (\S+)$", read(RIDGE_VALS, String)
-)
-isnothing(comparison_match) && fail("Ridge values lack paired-comparison provenance")
-const RIDGE_COMPARISON_ANALYSIS_COMMIT = validate_analysis_commit(
-    REPORTING_PROVENANCE, comparison_match[1]; artifact="NN-Ridge comparison values"
-)
-# The later experiment has its own retained analysis commit. Validate it
-# independently without relabeling it or relaxing the original inputs' agreement.
-const ASSESSMENT_ACCESS_ANALYSIS_COMMIT = validate_analysis_commit(
+const INPUT_PROVENANCE = analysis_input_provenance(
     REPORTING_PROVENANCE,
-    recorded_analysis_commit(ASSESSMENT_ACCESS_VALS);
-    artifact="assessment-access values",
+    (VALS, CONVERGENCE_VALS, RIDGE_VALS, ABLATION_VALS, ASSESSMENT_ACCESS_VALS, FIGMETA),
 )
+any(first(record) == "nn-ridge comparison analysis commit"
+    for record in recorded_analysis_commits(RIDGE_VALS)) ||
+    fail("Ridge values lack paired-comparison provenance")
 
 # sweep id: taken from the header stats.jl writes into values.tex, so the
 # provenance always names the data actually used
@@ -225,14 +211,25 @@ header = """
 % Built by scripts/paper/build_section.jl on $(Dates.format(now(), "yyyy-mm-dd HH:MM"))
 % from section_source.tex + captions.tex + values.tex + convergence/values.tex +
 % Ridge, ablation, and assessment-access values + figmeta.tex + supplement figure order;
-% sweep $SWEEP; analysis commit $ANALYSIS_COMMIT;
-% assessment-access analysis commit $ASSESSMENT_ACCESS_ANALYSIS_COMMIT;
-% NN-Ridge comparison analysis commit $RIDGE_COMPARISON_ANALYSIS_COMMIT;
+% sweep $SWEEP; each input retains its own analysis provenance below.
 % manuscript commit $(REPORTING_PROVENANCE.commit); $source_state.
 $(FIXTURE_NOTE)% Every number was computed from the saved sweep data by the reporting scripts.
 % Display: estimates at most two decimals; percentages rounded to whole points.
 % Exact parameter settings retain their source precision.
 """
+header *= sprint() do io
+    for input in INPUT_PROVENANCE
+        println(io, "% Input: ", input.path, "; SHA256: ", input.sha256)
+        for (label, commit) in input.commits
+            println(io, "% Input commit: ", input.path, "; ", label, ": ", commit)
+        end
+    end
+    for figure in figs
+        println(io, "% Figure SHA256: ", figure, " ",
+            bytes2hex(sha256(read(joinpath(GENERATED, figure)))))
+    end
+    write_source_provenance(io, REPORTING_PROVENANCE)
+end
 mkpath(GENERATED)
 write(OUT, header * flat * "\n")
 println("wrote $OUT ($(length(refs)) values inlined, $(length(figs)) figures)")

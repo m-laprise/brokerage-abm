@@ -30,7 +30,12 @@ const ASSESSMENT_VALUES = normpath(
 const FIGDIR = joinpath(GENERATED, "figures")
 const PDF = joinpath(GENERATED, "supplement.pdf")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    sources=(
+        @__FILE__,
+        "scripts/paper/pdf_output.jl",
+        "paper/supplement.tex",
+    ),
 )
 
 fail(msg) = (println("BUILD FAILED: ", msg); exit(1))

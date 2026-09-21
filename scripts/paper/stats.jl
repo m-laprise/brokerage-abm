@@ -27,7 +27,12 @@ const ROOT = get(ENV, "BROKERAGE_ABM_SWEEP_DIR") do
 end
 const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "values.tex"))
 const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    sources=(
+        @__FILE__,
+        "scripts/sweep/sweep_results.jl",
+        "scripts/monte_carlo.jl",
+    ),
 )
 const LATE_WIDTH = 20
 const EARLY = (51, 70)

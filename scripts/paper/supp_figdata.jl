@@ -35,7 +35,11 @@ const OUTFILE = normpath(
     joinpath(@__DIR__, "..", "..", "output", "supplement", "structural_figure_data.jld2")
 )
 const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    sources=(
+        @__FILE__,
+        "scripts/sweep/sweep_results.jl",
+    ),
 )
 const LATE_WIDTH = 20   # final-period summary window, matching figdata.jl
 const SWEEP = load_sweep_dataset(ROOT)

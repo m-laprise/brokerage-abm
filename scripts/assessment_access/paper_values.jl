@@ -154,33 +154,6 @@ function check_service_comparisons(retained, estimates)
     )
 end
 
-"""Check plotted trajectories against the retained per-seed late-window means."""
-function check_trajectory_late_means(retained, data)
-    design = FIGURE_DESIGN
-    late_periods = (design.horizon - design.late_width + 1):design.horizon
-    centrality_rows = [searchsortedlast(data["periods"], t) for t in late_periods]
-    all(>(0), centrality_rows) || error("late window precedes centrality measurement")
-    for service in (FULL_SERVICE, SERVICES...)
-        centrality = retained_seed_values(retained, service.mode, "betweenness")
-        degree = retained_seed_values(retained, service.mode, "mean_degree")
-        Set(keys(centrality)) == Set(keys(degree)) == Set(data["seeds"]) ||
-            error("trajectory seeds do not match retained seeds")
-        for (column, seed) in enumerate(data["seeds"])
-            isapprox(
-                mean(data["values"][service.mode][centrality_rows, column]),
-                centrality[seed];
-                atol=1e-12,
-            ) || error("cached centrality late mean mismatch")
-            isapprox(
-                mean(data["degree_values"][service.mode][late_periods, column]),
-                degree[seed];
-                atol=1e-12,
-            ) || error("degree late mean mismatch")
-        end
-    end
-    return nothing
-end
-
 """Build only the definitions used by the experiment prose and caption."""
 function manuscript_values(retained, estimates, data)
     check_trajectory_late_means(retained, data)
@@ -275,7 +248,15 @@ end
 
 """Write validated values with original-data and current-formatting provenance."""
 function write_manuscript_values(; output_path=VALUES_PATH)
-    provenance = manuscript_git_provenance(ROOT)
+    provenance = manuscript_git_provenance(
+        ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/assessment_access/figure_2.jl",
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     retained = JLD2.load(DATA_PATH)
     data = read_centrality()
     analysis_commit = validate_analysis_commit(
@@ -300,6 +281,7 @@ function write_manuscript_values(; output_path=VALUES_PATH)
         println(io, "% Supplement manifest: ", retained["supplement_manifest_hash"])
         println(io, "% Manuscript formatting commit: ", provenance.commit)
         println(io, "% Manuscript formatting source clean: ", provenance.source_clean)
+        write_source_provenance(io, provenance)
         println(io, "% Formatter SHA256: ", bytes2hex(sha256(read(@__FILE__))))
         println(io, "% Figure data SHA256: ", bytes2hex(sha256(read(DATA_PATH))))
         println(io, "% Trajectory data SHA256: ", bytes2hex(sha256(read(CENTRALITY_PATH))))

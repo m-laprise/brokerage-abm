@@ -170,8 +170,9 @@ end
 function overview_design(data)
     trajectories = JLD2.load(TRAJECTORY_DATA)
     trajectories["manifest_hash"] == data["manifest_hash"] || error("manifest mismatch")
-    trajectories["retained_analysis_git_commit"] == data["analysis_git_commit"] ||
-        error("trajectory analysis commit mismatch")
+    for commit in (trajectories["retained_analysis_git_commit"], data["analysis_git_commit"])
+        validate_analysis_commit((; root=REPO_ROOT), commit; artifact="assessment-access analysis")
+    end
     config = trajectories["configs"]["full"]
     config["rho"] == RHO || error("overview does not select the reporting baseline")
     summaries = interval_index(data["summary_rows"])
@@ -291,7 +292,14 @@ end
 function main(; output_base=FIGURE_BASE, formats=("png", "pdf"))
     isfile(FIGURE_DATA) || error("missing figure data: $FIGURE_DATA")
     data = JLD2.load(FIGURE_DATA)
-    provenance = manuscript_git_provenance(REPO_ROOT)
+    provenance = manuscript_git_provenance(
+        REPO_ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     validate_analysis_commit(
         provenance, data["analysis_git_commit"]; artifact="assessment-access figure data"
     )
@@ -489,7 +497,14 @@ end
 """Save the complementarity figure from validated retained analysis inputs."""
 function complementarity_figure()
     data = JLD2.load(FIGURE_DATA)
-    provenance = manuscript_git_provenance(REPO_ROOT)
+    provenance = manuscript_git_provenance(
+        REPO_ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     validate_analysis_commit(
         provenance, data["analysis_git_commit"]; artifact="assessment-access figure data"
     )

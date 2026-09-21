@@ -446,7 +446,14 @@ function ablation_grid_figure(pair::SweepDataset, datasets)
 end
 
 function main()
-    provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
+    provenance = reporting_git_provenance(
+        normpath(joinpath(@__DIR__, "..", ".."));
+        sources=(
+            @__FILE__,
+            "scripts/sweep/sweep_results.jl",
+            "scripts/monte_carlo.jl",
+        ),
+    )
     mkpath(OUT_DIR)
     mkpath(FIGURE_DIR)
     pair = load_sweep_dataset(PAIR_ROOT)

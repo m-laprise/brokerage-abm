@@ -186,9 +186,37 @@ function read_centrality(path=CENTRALITY_PATH; retained_path=DATA_PATH)
     retained = JLD2.load(retained_path)
     data["manifest_hash"] == retained["manifest_hash"] ||
         error("centrality manifest mismatch")
-    data["retained_analysis_git_commit"] == retained["analysis_git_commit"] ||
-        error("centrality analysis commit mismatch")
+    for commit in (data["retained_analysis_git_commit"], retained["analysis_git_commit"])
+        validate_analysis_commit((; root=ROOT), commit; artifact="assessment-access analysis")
+    end
+    check_trajectory_late_means(retained, data)
     return data
+end
+
+"""Validate cached trajectories against retained seed values, independently of analysis commit."""
+function check_trajectory_late_means(retained, data)
+    for service in (FULL_SERVICE, SERVICES...)
+        config = data["configs"][service.mode]
+        late = (config["T"] - retained["late_width"] + 1):config["T"]
+        for (metric, field, indices) in (
+            ("mean_degree", "degree_values", late),
+            ("betweenness", "values", searchsortedlast.(Ref(data["periods"]), late)),
+        )
+            all(>(0), indices) || error("late window precedes trajectory measurements")
+            rows = filter(retained["seed_rows"]) do row
+                (String(row[1]), row[2], row[3], String(row[5])) ==
+                    (service.mode, config["rho"], config["eta"], metric)
+            end
+            expected = Dict(Int(row[4]) => Float64(row[6]) for row in rows)
+            length(expected) == length(rows) == length(data["seeds"]) ||
+                error("trajectory seed coverage differs")
+            Set(keys(expected)) == Set(data["seeds"]) || error("trajectory seeds differ")
+            all(isapprox(mean(data[field][service.mode][indices, column]), expected[seed]; atol=1e-12)
+                for (column, seed) in enumerate(data["seeds"])) ||
+                error("trajectory late means differ from retained $metric")
+        end
+    end
+    return nothing
 end
 
 """Summarize each recorded period with a pointwise seed-mean interval."""
@@ -520,7 +548,14 @@ end
 
 """Write the alternative PNG, leaving the existing figure untouched."""
 function main(; output_path=OUTPUT_PATH)
-    provenance = manuscript_git_provenance(ROOT)
+    provenance = manuscript_git_provenance(
+        ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     data = read_centrality()
     validate_analysis_commit(
         provenance, data["retained_analysis_git_commit"]; artifact="assessment-access analysis"
@@ -761,7 +796,14 @@ end
 
 """Render the manuscript's assessment-access figure, preserving older images."""
 function subsection_two_figure(; output_path=joinpath(dirname(OUTPUT_PATH), "assessment_access_3.png"))
-    provenance = manuscript_git_provenance(ROOT)
+    provenance = manuscript_git_provenance(
+        ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     retained = JLD2.load(DATA_PATH)
     estimates, centrality = read_estimates(), read_centrality()
     analysis_commit = validate_analysis_commit(provenance, retained["analysis_git_commit"];
@@ -790,7 +832,14 @@ end
 function structure_arrows_figure(;
     output_path=joinpath(dirname(OUTPUT_PATH), "assessment_access_structure_arrows.png"),
 )
-    provenance = manuscript_git_provenance(ROOT)
+    provenance = manuscript_git_provenance(
+        ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/monte_carlo.jl",
+            "scripts/figure_style.jl",
+        ),
+    )
     retained = JLD2.load(DATA_PATH)
     estimates, centrality = read_estimates(), read_centrality()
     analysis_commit = validate_analysis_commit(provenance, retained["analysis_git_commit"];

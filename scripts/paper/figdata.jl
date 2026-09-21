@@ -45,7 +45,11 @@ const DEFAULT_OUTFILE = normpath(
 )
 const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE))
 const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."))
+    normpath(joinpath(@__DIR__, "..", ".."));
+    sources=(
+        @__FILE__,
+        "scripts/sweep/sweep_results.jl",
+    ),
 )
 const LATE_WIDTH = 20   # final-period summary window
 const SWEEP = load_sweep_dataset(ROOT)

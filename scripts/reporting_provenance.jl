@@ -1,172 +1,159 @@
-"""
-    scripts/reporting_provenance.jl
+"""Track reporting dependencies and validate each artifact's commits independently."""
 
-Commit-provenance helpers shared by scientific reporting scripts. Generated files
-under `output/` and research notes under `notes/` are excluded from the cleanliness
-check because neither is an input to reporting computations. Scientific analysis
-inputs must match a recorded commit. Manuscript builders may include explicitly
-identified, uncommitted presentation changes, which remain marked as dirty in
-downstream provenance. Retained analysis inputs may record an earlier ancestor
-commit.
-"""
+using SHA: sha256
+using Base64: base64encode
+
+"""Resolve explicit source dependencies, including the Julia environment and this helper."""
+function reporting_source_files(root, sources)
+    isempty(sources) && error("reporting requires explicit source dependencies")
+    root = realpath(root)
+    paths = String[]
+    for source in sources
+        path = normpath(joinpath(root, source))
+        ispath(path) && (path = realpath(path))
+        relative = relpath(path, root)
+        (relative == ".." || startswith(relative, "../") || relative == ".") &&
+            error("reporting dependency must be inside the repository: $source")
+        if isdir(path)
+            for (directory, _, files) in walkdir(path), file in files
+                push!(paths, relpath(joinpath(directory, file), root))
+            end
+        elseif isfile(path)
+            push!(paths, relative)
+        else
+            error("missing reporting dependency: $source")
+        end
+    end
+    for file in ("Project.toml", "Manifest.toml", "scripts/reporting_provenance.jl")
+        isfile(joinpath(root, file)) && push!(paths, file)
+    end
+    isempty(paths) && error("no reporting source files were selected")
+    return sort!(unique(paths))
+end
 
 """
-    reporting_git_provenance(path; require_clean=true, allowed_dirty_paths=())
+    reporting_git_provenance(path; sources, require_clean=true)
 
-Return the repository root and current Git commit. When `require_clean` is
-true, fail if any path outside the top-level `output/` and `notes/` directories
-and `allowed_dirty_paths` differs from the commit. `source_clean` reports whether
-all files that can affect the generated artifact match the commit.
+Check only declared source dependencies against HEAD. Scientific analyses require
+committed dependencies. Presentation steps may record uncommitted revisions.
 """
-function reporting_git_provenance(
-    path;
-    require_clean::Bool=true,
-    allowed_dirty_paths=(),
-)
+function reporting_git_provenance(path; sources, require_clean::Bool=true)
     root = readchomp(`git -C $path rev-parse --show-toplevel`)
     commit = readchomp(`git -C $root rev-parse HEAD`)
-    status_args = [
-        "git",
-        "-C",
-        root,
-        "status",
-        "--porcelain=v1",
-        "--untracked-files=all",
-        "--",
-        ".",
-        ":(exclude)output",
-        ":(exclude)notes",
-    ]
-    source_status = strip(read(Cmd(status_args), String))
-    source_clean = isempty(source_status)
-    permitted_args = copy(status_args)
-    append!(permitted_args, [":(exclude)$dirty_path" for dirty_path in allowed_dirty_paths])
-    unpermitted_status = strip(read(Cmd(permitted_args), String))
-    if require_clean && !isempty(unpermitted_status)
-        error(
-            "reporting source does not match commit $commit; commit or remove " *
-            "these unpermitted changes before generating " *
-            "scientific artifacts:\n" * unpermitted_status,
-        )
+    files = reporting_source_files(root, sources)
+    pathspecs = [":(literal)$file" for file in files]
+    source_status = strip(read(
+        `git -C $root status --porcelain=v1 --untracked-files=all -- $pathspecs`, String
+    ))
+    tracked = Set(split(read(`git -C $root ls-files -z -- $pathspecs`, String), '\0'))
+    # Ignored, untracked sources must not be mistaken for committed dependencies.
+    untracked = setdiff(files, tracked)
+    source_clean = isempty(source_status) && isempty(untracked)
+    if !isempty(untracked)
+        source_status *= "\nUncommitted dependencies: " * join(untracked, ", ")
     end
+    require_clean && !source_clean && error(
+        "reporting dependencies do not match commit $commit; commit these sources " *
+        "before generating scientific analysis:\n$source_status",
+    )
+    source_hashes = Dict(file => bytes2hex(sha256(read(joinpath(root, file)))) for file in files)
+    fingerprint = bytes2hex(sha256(join(["$file=$(source_hashes[file])" for file in files], "\n")))
     return (;
-        root,
-        commit,
-        short_commit=first(commit, 7),
-        source_clean,
-        source_status,
+        root, commit, short_commit=first(commit, 7), source_clean, source_status,
+        source_files=files, source_hashes, source_fingerprint=fingerprint,
     )
 end
 
-const MANUSCRIPT_ITERATION_PATHS = (
-    ".gitignore", # Inclusion of retained figure-input artifacts in the commit.
-    "paper/manuscript.tex",
-    "paper/section_source.tex",
-    "paper/captions.tex",
-    "paper/supplement.tex",
-    "paper/references.bib",
-    "paper/appendices/model_specifications.tex",
-    "paper/appendices/simulation_pseudocode.tex",
-    "scripts/paper/figures.jl",
-    "scripts/paper/access_windows.jl",
-    "scripts/paper/ridge_supplement.jl",
-    "scripts/figure_style.jl",
-    "scripts/paper/supp_figures.jl",
-    "scripts/paper/build_section.jl",
-    "scripts/paper/build_supplement.jl",
-    "scripts/paper/build_manuscript.jl",
-    "scripts/paper/build_appendices.jl",
-    "scripts/paper/build_publication.jl",
-    "scripts/paper/pdf_output.jl",
-    "scripts/paper/README.md",
-    "scripts/assessment_access/main_figure.jl",
-    "scripts/assessment_access/figure_2.jl",
-    "scripts/assessment_access/centrality_data.jl",
-    "scripts/assessment_access/paper_values.jl",
-    "scripts/reporting_provenance.jl",
-    "test/test_assessment_access_reporting.jl",
-    "test/test_pdf_output.jl",
-    "test/test_reporting_provenance.jl",
-)
-
-"""
-    manuscript_git_provenance(path)
-
-Return provenance for a manuscript build while allowing explicitly listed prose,
-appendix, figure-presentation, and builder edits, including the assessment-access
-renderers, retained-data extractor, value formatter, and their focused checks.
-Changes to model or original experiment-analysis code, other tests, or other
-source files still stop the build, except for this helper's focused test.
-"""
-function manuscript_git_provenance(path)
-    return reporting_git_provenance(
-        path;
-        allowed_dirty_paths=MANUSCRIPT_ITERATION_PATHS,
-    )
+"""Record actual presentation dependencies without blocking uncommitted revisions."""
+function manuscript_git_provenance(path; sources)
+    return reporting_git_provenance(path; sources, require_clean=false)
 end
 
 """
-    validate_analysis_commit(provenance, recorded; artifact="analysis input")
-
-Resolve the commit recorded by a retained analysis input and require it to be an
-ancestor of the current clean manuscript or rendering commit. Return the full
-recorded commit. This permits presentation-only iteration without relabeling old
-analysis artifacts as if they had been regenerated.
+Resolve an immutable recorded commit. Independent artifacts may use different
+commits or branches; compatibility is established from their data, not ancestry.
 """
 function validate_analysis_commit(provenance, recorded; artifact="analysis input")
     candidate = strip(String(recorded))
-    isempty(candidate) && error("$artifact has an empty analysis commit")
-    resolve = Cmd([
-        "git",
-        "-C",
-        provenance.root,
-        "rev-parse",
-        "--verify",
-        "$(candidate)^{commit}",
-    ])
-    resolved = try
-        readchomp(resolve)
+    occursin(r"^[0-9a-fA-F]{7,40}$", candidate) ||
+        error("$artifact must record a commit hash, not a mutable revision: $candidate")
+    return try
+        readchomp(pipeline(
+            `git -C $(provenance.root) rev-parse --verify $(candidate * "^{commit}")`;
+            stderr=devnull,
+        ))
     catch
         error("$artifact records an unknown analysis commit: $candidate")
     end
-    ancestor = run(
-        ignorestatus(
-            Cmd([
-                "git",
-                "-C",
-                provenance.root,
-                "merge-base",
-                "--is-ancestor",
-                resolved,
-                provenance.commit,
-            ]),
-        ),
-    )
-    success(ancestor) || error(
-        "$artifact records analysis commit $resolved, which is not an ancestor " *
-        "of manuscript commit $(provenance.commit)",
-    )
-    return resolved
 end
 
-"""
-    recorded_analysis_commit(path)
-
-Read the analysis commit recorded in a generated text artifact. New two-layer
-headers use `Data analysis commit`; legacy headers use `Analysis commit` or
-`analysis_commit=`.
-"""
-function recorded_analysis_commit(path)
-    source = read(path, String)
-    patterns = (
-        r"(?im)^%\s*data analysis commit:\s*([0-9a-f]{7,40})\s*$",
-        r"(?im)^%\s*analysis commit:\s*([0-9a-f]{7,40})\s*$",
-        r"(?im)^data_analysis_commit=([0-9a-f]{7,40})\s*$",
-        r"(?im)^analysis_commit=([0-9a-f]{7,40})\s*$",
-    )
-    for pattern in patterns
-        match_result = match(pattern, source)
-        isnothing(match_result) || return String(match_result[1])
+"""Read every labeled analysis commit from a generated text artifact."""
+function recorded_analysis_commits(path)
+    pattern = r"(?im)^(?:%\s*)?([^\n:=]*analysis(?:[ _]git)?[ _]commit)\s*[:=]\s*([0-9a-f]{7,40})\s*$"
+    records = Pair{String,String}[]
+    for found in eachmatch(pattern, read(path, String))
+        label = lowercase(strip(found[1]))
+        any(record -> first(record) == label, records) &&
+            error("duplicate analysis provenance label in $path: $label")
+        push!(records, label => String(found[2]))
     end
-    error("generated artifact records no analysis commit: $path")
+    isempty(records) && error("generated artifact records no analysis commit: $path")
+    return records
+end
+
+"""Read the primary analysis commit of a single-analysis artifact."""
+function recorded_analysis_commit(path)
+    records = Dict(recorded_analysis_commits(path))
+    for label in ("data analysis commit", "analysis commit", "data_analysis_commit", "analysis_commit", "analysis_git_commit")
+        haskey(records, label) && return records[label]
+    end
+    length(records) == 1 && return only(values(records))
+    error("artifact has multiple analysis commits but no primary label: $path")
+end
+
+"""Validate independent analysis records and identify the exact consumed files."""
+function analysis_input_provenance(provenance, paths)
+    return map(collect(paths)) do path
+        commits = [
+            label => validate_analysis_commit(provenance, commit; artifact=path)
+            for (label, commit) in recorded_analysis_commits(path)
+        ]
+        (; path=relpath(path, provenance.root), sha256=bytes2hex(sha256(read(path))), commits)
+    end
+end
+
+"""Check recorded source content instead of requiring the current repository commit."""
+function validate_source_hashes(provenance, artifact, paths)
+    records = Dict(
+        found[1] => found[2] for found in eachmatch(
+            r"(?m)^% Source SHA256: (.+) ([0-9a-f]{64})$", read(artifact, String)
+        )
+    )
+    for path in paths
+        relative = relpath(joinpath(provenance.root, path), provenance.root)
+        haskey(records, relative) || error("$artifact lacks source hash for $relative; rebuild it")
+        records[relative] == bytes2hex(sha256(read(joinpath(provenance.root, path)))) ||
+            error("$artifact is stale: $relative changed; rebuild it")
+    end
+    return nothing
+end
+
+"""Write source hashes and archive dirty presentation revisions as commented text."""
+function write_source_provenance(io, provenance; prefix="% ")
+    println(io, prefix, "Source fingerprint: ", provenance.source_fingerprint)
+    for file in provenance.source_files
+        println(io, prefix, "Source SHA256: ", file, " ", provenance.source_hashes[file])
+    end
+    if !provenance.source_clean
+        pathspecs = [":(literal)$file" for file in provenance.source_files]
+        patch = read(`git -C $(provenance.root) diff --binary HEAD -- $pathspecs`, String)
+        # Encoding keeps archived TeX out of downstream command/reference scans.
+        println(io, prefix, "Source patch (base64): ", base64encode(patch))
+        tracked = Set(split(read(`git -C $(provenance.root) ls-files -z -- $pathspecs`, String), '\0'))
+        for file in setdiff(provenance.source_files, tracked)
+            println(io, prefix, "Untracked source (base64): ", file, " ",
+                base64encode(read(joinpath(provenance.root, file))))
+        end
+    end
+    return nothing
 end

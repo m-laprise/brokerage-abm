@@ -111,7 +111,14 @@ function main()
     base["late_width"] == LATE_WIDTH || error("late-window mismatch")
     base["interval_level"] == LEVEL || error("interval-level mismatch")
 
-    analysis_provenance = reporting_git_provenance(REPO_ROOT)
+    analysis_provenance = reporting_git_provenance(
+        REPO_ROOT;
+        sources=(
+            @__FILE__,
+            "scripts/sweep/sweep_results.jl",
+            "scripts/monte_carlo.jl",
+        ),
+    )
     validate_analysis_commit(
         analysis_provenance,
         base["analysis_git_commit"];

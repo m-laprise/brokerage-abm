@@ -14,6 +14,10 @@ include(normpath(joinpath(@__DIR__, "..", "sweep", "shard_validation.jl")))
 using JLD2: jldopen
 
 const PILOT_SEEDS = collect(1:5)
+const PILOT_PROVENANCE = reporting_git_provenance(
+    REPO_ROOT;
+    sources=(ANALYSIS_PROVENANCE.source_files..., @__FILE__, "scripts/sweep/shard_validation.jl"),
+)
 
 function load_pilot_results()
     manifest_path = joinpath(SWEEP_ROOT, "manifest.jld2")
@@ -29,8 +33,7 @@ function load_pilot_results()
         end
     meta[:scope] in (:assessment_access, :broker_services) ||
         error("unexpected sweep scope")
-    meta[:git_commit] == ANALYSIS_PROVENANCE.commit ||
-        error("sweep and analysis commits differ")
+    validate_analysis_commit(PILOT_PROVENANCE, meta[:git_commit]; artifact="pilot simulation")
     baseline_conditions = filter(conditions) do condition
         params = condition[:resolved_params]
         params[:rho] == 0.5 && params[:eta] == 0.02
@@ -111,14 +114,14 @@ function main()
         summary_rows=rows,
         manifest_hash=pilot.manifest_hash,
         schema_version=pilot.schema_version,
-        analysis_git_commit=ANALYSIS_PROVENANCE.commit,
-        analysis_source_clean=ANALYSIS_PROVENANCE.source_clean,
+        analysis_git_commit=PILOT_PROVENANCE.commit,
+        analysis_source_clean=PILOT_PROVENANCE.source_clean,
         late_width=LATE_WIDTH,
         interval_level=LEVEL,
     )
     open(joinpath(OUT_DIR, "provenance.txt"), "w") do io
-        println(io, "analysis_git_commit=$(ANALYSIS_PROVENANCE.commit)")
-        println(io, "analysis_source_clean=$(ANALYSIS_PROVENANCE.source_clean)")
+        println(io, "analysis_git_commit=$(PILOT_PROVENANCE.commit)")
+        println(io, "analysis_source_clean=$(PILOT_PROVENANCE.source_clean)")
         println(io, "sweep_git_commit=$(pilot.meta[:git_commit])")
         println(io, "manifest_hash=$(pilot.manifest_hash)")
         println(io, "schema_version=$(pilot.schema_version)")

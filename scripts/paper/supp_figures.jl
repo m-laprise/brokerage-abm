@@ -62,10 +62,8 @@ const DGP_FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figure_data.jld2"))
 )["figdata"]
 const EXPLORATORY = "--exploratory" in ARGS
-const REPORTING_PROVENANCE = reporting_git_provenance(
-    normpath(joinpath(@__DIR__, "..", ".."));
-    require_clean=!EXPLORATORY,
-    allowed_dirty_paths=(MANUSCRIPT_ITERATION_PATHS..., "scripts/paper/supp_figures.jl"),
+const REPORTING_PROVENANCE = manuscript_git_provenance(
+    normpath(joinpath(@__DIR__, "..", "..")); sources=(@__FILE__, "scripts/monte_carlo.jl", "scripts/figure_style.jl",),
 )
 const DGP_ANALYSIS_COMMIT = validate_analysis_commit(
     REPORTING_PROVENANCE, DGP_FD["meta"]["analysis_git_commit"]; artifact="DGP figure data"
@@ -601,6 +599,7 @@ open(
     println(io, "% DGP data analysis commit: $DGP_ANALYSIS_COMMIT")
     println(io, "% Structural data analysis commit: $STRUCTURAL_ANALYSIS_COMMIT")
     println(io, "% Rendering commit: $(REPORTING_PROVENANCE.commit)")
+    write_source_provenance(io, REPORTING_PROVENANCE)
     println(io, "% Exploratory DGP artifact: $(get(DGP_FD["meta"], "exploratory", false))")
     println(io, "% Exploratory rendering: $EXPLORATORY")
     println(

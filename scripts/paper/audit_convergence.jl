@@ -116,7 +116,14 @@ function write_tsv(path, header, rows)
 end
 
 function main()
-    provenance = reporting_git_provenance(normpath(joinpath(@__DIR__, "..", "..")))
+    provenance = reporting_git_provenance(
+        normpath(joinpath(@__DIR__, "..", ".."));
+        sources=(
+            @__FILE__,
+            "scripts/sweep/sweep_results.jl",
+            "scripts/monte_carlo.jl",
+        ),
+    )
     mkpath(OUT_DIR)
     sweep = load_sweep_dataset(ROOT)
     length(sweep.results) == 80 || error("expected 80 effective realizations")

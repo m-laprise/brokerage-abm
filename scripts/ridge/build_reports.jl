@@ -13,7 +13,14 @@ include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const NOTES = joinpath(REPO_ROOT, "notes")
-const REPORTING_PROVENANCE = reporting_git_provenance(REPO_ROOT)
+const REPORTING_PROVENANCE = manuscript_git_provenance(
+    REPO_ROOT;
+    sources=(
+        @__FILE__,
+        "notes/ridge_experiment.tex",
+        "notes/ridge_ablation_experiment.tex",
+    ),
+)
 const REPORTS = (
     (
         source="ridge_experiment.tex",
@@ -37,20 +44,7 @@ const REPORTS = (
 function build_report(report)
     source_path = joinpath(NOTES, report.source)
     isfile(source_path) || error("missing report source: $source_path")
-    analysis_commits = String[]
-    for provenance_path in report.provenance
-        isfile(provenance_path) || error("missing report provenance: $provenance_path")
-        push!(
-            analysis_commits,
-            validate_analysis_commit(
-                REPORTING_PROVENANCE,
-                recorded_analysis_commit(provenance_path);
-                artifact=provenance_path,
-            ),
-        )
-    end
-    length(unique(analysis_commits)) == 1 ||
-        error("report inputs record different analysis commits for $(report.source)")
+    analysis_input_provenance(REPORTING_PROVENANCE, report.provenance)
     mkpath(dirname(report.output))
     mktempdir() do build
         log_path = joinpath(build, "lualatex.out")

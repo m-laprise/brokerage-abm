@@ -27,7 +27,7 @@ function main()
         joinpath(REPO, "output", "main", "access_windows.jld2"),
     )
     provenance = reporting_git_provenance(
-        REPO; allowed_dirty_paths=("scripts/paper/access_windows.jl", "scripts/paper/figures.jl"),
+        REPO; sources=(@__FILE__, "scripts/sweep/sweep_results.jl",),
     )
     sweep = load_sweep_dataset(root)
     horizon = Int(sweep.meta[:T])

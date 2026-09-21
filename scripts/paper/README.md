@@ -16,14 +16,13 @@ node, `srun --partition=cpu --mem=8G`):
 
 The reporting root must contain 20 seeds for every effective realization and
 50 seeds for the baseline, for 1,630 runs in total. The data extractors check
-this seed plan before writing outputs. Every reporting stage also requires all
-source, paper, specification, and test files to match the current Git commit.
-Generated files under `output/` may differ. Data-derived inputs retain the clean
-analysis commit that produced them. Figure renderers and manuscript builders may
-consume inputs from an earlier ancestor analysis commit, while recording the
-current rendering or manuscript commit separately. This permits rapid iteration
-on prose, captions, and presentation without relabeling or recomputing unchanged
-scientific results.
+this seed plan before writing outputs. Scientific analyses require their declared
+dependencies to match the recorded Git commit. Unrelated
+manuscript, plotting, and test edits do not block analysis. Each input retains its
+own analysis commit; different commits or branches are allowed. Combined inputs
+must agree on the relevant manifests, seeds, windows, and outcome definitions.
+Manuscript assembly records input hashes and per-input commits. Presentation
+revisions are marked uncommitted and retain their source hashes and patches.
 
 1. `julia --project --threads=auto scripts/paper/stats.jl`
    Computes every statistic quoted in the section and writes `output/main/values.tex`
