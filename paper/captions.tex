@@ -8,10 +8,10 @@
 % Convention: captions describe elements and derivations only, no interpretation.
 
 \begin{ptitle}{position}
-Broker centrality, principal connectivity, and bridging behavior
+Assessment, principal connectivity, and broker betweenness centrality
 \end{ptitle}
 \begin{pcaption}{position}
-A: broker betweenness against mean principal degree, including links to the broker when present. B: broker betweenness against access fraction. Points are late-window means for the same \pv{rhoEtaConditionN} combinations of general-quality share $\rho$ and turnover $\eta$, with other parameters at baseline. Color identifies $\eta$, shape identifies $\rho$, and whiskers show pointwise 95\% Monte Carlo intervals on both axes. Lines connect $\rho<1$ within each turnover rate as visual guides; the pure-general-quality boundary ($\rho=1$) is unconnected. Panels share the same vertical scale.
+Points are ensemble means of seed-level late means; whiskers show pointwise \pv{centralIntervalPercent}\% Monte Carlo intervals. A and C show the same \pv{centralGridCount} combinations of matching composition and turnover, with difficulty fixed at $\delta=\pv{centralBaselineDelta}$ and other parameters at baseline. B uses baseline turnover ($\eta=\pv{centralBaselineEta}$); principal degree includes the broker tie when present, and the maximum is calculated within each period before averaging. Its vertical axis is logarithmic. A--C use neural-network learning; symbols identify $\rho$, and colors in A and C identify turnover. Lines connect $\rho<1$ within each series; pure general quality ($\rho=1$) is shown separately. D uses Ridge regression at baseline; lines connect estimates of the same measure across learning restrictions, with no ordering implied. Means use \pv{centralBaselineSeeds} seeds at baseline and \pv{centralOtherSeeds} elsewhere.
 \end{pcaption}
 
 \begin{ptitle}{assessment_access}
@@ -36,20 +36,6 @@ the same regime across versions. Whiskers show pointwise
 B and D report means of seed-level net-output shares.
 B's right-hand percentages compare ensemble-mean total net output with the
 reference version.
-\end{pcaption}
-
-\begin{ptitle}{grid}
-Outcomes across the matching problem ($\rho\times\delta$)
-\end{ptitle}
-\begin{pcaption}{grid}
-Late-window means across all \pv{rhoDeltaEffectiveN} regimes in the $\rho\times\delta$ design, with other parameters at baseline. A: broker betweenness. B and E: broker and principal rank correlation. C: ranking advantage, broker minus principal. D: access fraction. F: mean realized output per completed match, broker minus self-search, before costs and fees. Colors and symbols identify difficulty $\delta$. N/A denotes the unconnected gray diamond at $\rho=1$: difficulty affects only complementarity and is not applicable under pure general quality. Whiskers are 95\% Monte Carlo intervals.
-\end{pcaption}
-
-\begin{ptitle}{advantage}
-Ranking and output differences by centrality and access
-\end{ptitle}
-\begin{pcaption}{advantage}
-A--B: ranking advantage, broker minus principal. C--D: mean realized output per completed match, broker minus self-search, before costs and fees. Horizontal axes show broker betweenness (A, C) or access fraction (B, D). Each point is a late-window mean for one of the \pv{nRegimes} tested regimes. Colors and symbols identify general-quality share $\rho$.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}

@@ -336,8 +336,8 @@ function argument_turnover_panel!(slot, estimates, kind)
         "Late-mean differences · matching composition ρ = $BASELINE_RHO")
     plot_grid = GridLayout(grid[3, 1])
     series = (
-        (; SERVICES[1]..., label="Adding assessment\nFull service − access-only", contrast="assessment"),
-        (; SERVICES[2]..., label="Adding access\nFull service − assessment-only", contrast="access"),
+        (; SERVICES[1]..., label="Adding assessment", contrast="assessment"),
+        (; SERVICES[2]..., label="Adding access", contrast="access"),
     )
     metric = output ? "net_output_per_principal" : "outsourcing_rate"
     scale = output ? 1.0 : 100.0
@@ -409,8 +409,8 @@ function argument_structure_panel!(slot, estimates)
         if key[2] == BASELINE_RHO))
     last.(regimes) == FIGURE_DESIGN.turnover || error("structural panel turnover coverage differs")
     series = (
-        (; SERVICES[1]..., label="Adding assessment\nFull service − access-only", contrast="assessment"),
-        (; SERVICES[2]..., label="Adding access\nFull service − assessment-only", contrast="access"),
+        (; SERVICES[1]..., label="Adding assessment", contrast="assessment"),
+        (; SERVICES[2]..., label="Adding access", contrast="access"),
     )
     value(service, rho, eta, metric) = estimates.contrasts[(service.contrast, rho, eta, metric)]
     points = [

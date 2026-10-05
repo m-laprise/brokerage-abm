@@ -131,6 +131,10 @@ end
                 "% NN-Ridge comparison analysis commit: $second_commit\n",
             "output/ridge/ablations/analysis/paper_values.tex" => "% Analysis commit: $second_commit\n",
             "output/assessment_access/paper_values.tex" => "% Data analysis commit: $second_commit\n",
+            "output/main/centrality_values.tex" => "% Data analysis commit: $second_commit\n" *
+                "% Input: output/main/centrality_data.jld2; SHA256: " *
+                bytes2hex(sha256("centrality fixture\n")) * "\n",
+            "output/main/centrality_data.jld2" => "centrality fixture\n",
             "output/main/figmeta.tex" => "% Data analysis commit: $first_commit\n" *
                 "% Ridge ablation analysis commit: $second_commit\n",
             # Assembly checks file identity, not image decoding or TeX layout.
@@ -156,7 +160,7 @@ end
         @test occursin("1.25", result) && !occursin("\\pv{example}", result)
         @test occursin("analysis commit: $first_commit", result)
         @test occursin("analysis commit: $second_commit", result)
-        @test length(collect(eachmatch(r"(?m)^% Input: ", result))) == 6
+        @test length(collect(eachmatch(r"(?m)^% Input: ", result))) == 7
         @test occursin("% Figure SHA256: figures/test.png ", result)
         @test isnothing(validate_source_hashes((; root=repository), output,
             ("paper/section_source.tex", "paper/captions.tex", "paper/supplement.tex")))

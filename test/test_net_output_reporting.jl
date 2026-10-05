@@ -1,11 +1,13 @@
 """
-Check reconstructed review data and output panels without publication writes.
+Check publication inputs, retained review evidence, and output panels without
+publication writes.
 
 Usage: julia --project --threads=auto test/test_net_output_reporting.jl
 """
 
 using Test
 using DataFrames: DataFrame
+using JLD2: load
 using Statistics: mean, std
 using Distributions: TDist, quantile
 using Printf: @sprintf
@@ -17,12 +19,8 @@ end
 
 @testset "Information-source manuscript and figure" begin
     root = normpath(joinpath(@__DIR__, ".."))
-    path = joinpath(root, "output", "main", "net_output_review.jld2")
-    data = NetOutputReview.checked_net_output_review(path)
-    channels = NetOutputReview.checked_channel_review(
-        joinpath(root, "output", "main", "net_output_channels.jld2"), path, data
-    )
-    fd = NetOutputReview.channel_review_figure_data(data, channels)
+    path = joinpath(root, "output", "ridge", "ablations", "figure_data.jld2")
+    fd = load(path)["figdata"]
     reporting = NetOutputReview.InformationSources
     defs = Dict(reporting.manuscript_values(fd))
     expected = Dict(
@@ -43,7 +41,7 @@ end
         "infoSingleOutputPercent" => "90", "infoAdditiveOutputPercent" => "90",
     )
     @test all(defs[key] == value for (key, value) in expected)
-    @test fd["meta"]["review_only"] && !fd["meta"]["analysis_source_clean"]
+    @test fd["meta"]["analysis_source_clean"] && !get(fd["meta"], "review_only", false)
     source = read(joinpath(root, "paper", "section_source.tex"), String)
     captions = read(joinpath(root, "paper", "captions.tex"), String)
     refs = Set(m[1] for m in eachmatch(r"\\pv\{(info\w+)\}", source * captions))
@@ -250,10 +248,26 @@ end
     ]
     @test all(channel_checks)
     models = [(; key=model) for model in sort!(collect(keys(channels["ridge"])))]
-    ranking = NetOutputReview.channel_review_ranking_data(data, channels, models)
-    selected = filter(c -> c["rho"] == 1 || c["delta"] == 0.5, ranking.conditions)
-    @test length(selected) == length(unique(c["rho"] for c in ranking.conditions))
-    @test Set(c["rho"] for c in selected) == Set(c["rho"] for c in ranking.conditions)
+    publication = load(joinpath(
+        @__DIR__, "..", "output", "ridge", "ablations", "figure_data.jld2"
+    ))["figdata"]
+    rank_conditions = publication["conditions"]
+    @test all(publication["meta"][key] == data["meta"][key] for key in
+        ("late_width", "interval_level", "baseline_reldir"))
+    @test all(Set(c["result_reldir"] for c in rank_conditions) ==
+        Set(keys(channels["ridge"][model.key])) for model in models)
+    @test all(
+        begin
+            retained = channels["ridge"][model.key][c["result_reldir"]]
+            c["seeds"] == retained.seeds &&
+                c["broker_ranks"][model.key] ≈ retained.broker_rank &&
+                c["principal_ranks"][model.key] ≈ retained.principal_rank &&
+                c["rank_gaps"][model.key] ≈ retained.broker_rank .- retained.principal_rank
+        end for model in models for c in rank_conditions
+    )
+    selected = filter(c -> c["rho"] == 1 || c["delta"] == 0.5, rank_conditions)
+    @test length(selected) == length(unique(c["rho"] for c in rank_conditions))
+    @test Set(c["rho"] for c in selected) == Set(c["rho"] for c in rank_conditions)
     @test all(c -> c["delta"] == 0.5, filter(c -> c["rho"] != 1, selected))
     rank_interval_checks = [
         begin

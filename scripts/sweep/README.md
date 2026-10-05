@@ -146,5 +146,5 @@ resolve to the same scientific regime reference the same canonical shards, so
 they are neither simulated nor weighted more than once.
 
 After a sweep completes, use the
-[`scripts/paper/` reporting pipeline](../paper/README.md) to generate the paper
-statistics, figure data, figures, and TeX outputs.
+[paper reproduction instructions](../../README.md#reproducing-the-paper) to
+generate the paper statistics, figure data, figures, and TeX outputs.

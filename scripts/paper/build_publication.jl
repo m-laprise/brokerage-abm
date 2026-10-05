@@ -13,6 +13,7 @@ const JULIA = Base.julia_cmd()
 const BUILD_STEPS = (
     ("scripts/paper/build_appendices.jl",),
     ("scripts/paper/figures.jl",),
+    ("scripts/paper/centrality_and_assessment.jl",),
     ("scripts/paper/ridge_supplement.jl",),
     ("scripts/ridge/paired_figures.jl",),
     ("scripts/paper/supp_figures.jl",),

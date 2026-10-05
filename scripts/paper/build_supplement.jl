@@ -12,7 +12,7 @@ Auxiliary files are created in a temporary directory and discarded.
 Existing PDFs are preserved when only build dates or document IDs differ.
 
 With retained data available, render the required figures and generate the
-assessment-access manuscript values first. See scripts/paper/README.md.
+assessment-access manuscript values first. See "Reproducing the paper" in README.md.
 
 Usage: julia --project --threads=auto scripts/paper/build_supplement.jl
 """
