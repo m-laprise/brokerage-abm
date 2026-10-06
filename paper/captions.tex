@@ -8,39 +8,35 @@
 % Convention: captions describe elements and derivations only, no interpretation.
 
 \begin{ptitle}{position}
-Assessment, principal connectivity, and broker betweenness centrality
+Bridging position and bridging behavior
 \end{ptitle}
 \begin{pcaption}{position}
-Points are ensemble means of seed-level late means; whiskers show pointwise \pv{centralIntervalPercent}\% Monte Carlo intervals. A and C show the same \pv{centralGridCount} combinations of matching composition and turnover, with difficulty fixed at $\delta=\pv{centralBaselineDelta}$ and other parameters at baseline. B uses baseline turnover ($\eta=\pv{centralBaselineEta}$); principal degree includes the broker tie when present, and the maximum is calculated within each period before averaging. Its vertical axis is logarithmic. A--C use neural-network learning; symbols identify $\rho$, and colors in A and C identify turnover. Lines connect $\rho<1$ within each series; pure general quality ($\rho=1$) is shown separately. D uses Ridge regression at baseline; lines connect estimates of the same measure across learning restrictions, with no ordering implied. Means use \pv{centralBaselineSeeds} seeds at baseline and \pv{centralOtherSeeds} elsewhere.
+Points show ensemble late means; whiskers show pointwise \pv{centralIntervalPercent}\% Monte Carlo intervals. A--C use neural-network learning; parameters not varied in each panel remain at baseline. Principal degree includes the broker tie when present; maximum degree is calculated within each period before averaging. Lines connect matching compositions at fixed turnover in A and C and serve as visual guides across learning restrictions in D.
 \end{pcaption}
 
 \begin{ptitle}{assessment_access}
 Brokerage with access, assessment, or both
 \end{ptitle}
 \begin{pcaption}{assessment_access}
-All panels use $\rho=\pv{aaRho}$ and $\delta=\pv{aaDelta}$, with other parameters at baseline except turnover. A--C show late-mean contributions of adding assessment (full service minus access-only, blue circles) and adding access (full service minus assessment-only, orange triangles) across \pv{aaEtaCount} turnover rates. A: change in net output per principal. B: change in broker betweenness centrality against change in mean principal degree. Dashed grey lines connect the two contrasts within each regime. Degree includes each principal's tie to the broker when present. C: change in outsourcing, in percentage points. In A and C, zero turnover is shown separately, positive rates use a linear scale, and baseline turnover is shaded. Horizontal offsets separate series; connecting lines are visual guides. D: broker betweenness centrality at baseline turnover ($\eta=\pv{aaEta}$). Lines join unsmoothed ensemble means measured at $t=\pv{aaCentralityFirst},\pv{aaCentralitySecond},\ldots,\pv{aaHorizon}$; shading marks the late window. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C. Each service version uses \pv{aaBaselineSeeds} seeds at baseline and \pv{aaOtherSeeds} elsewhere.
+Parameters other than turnover remain at baseline. A--C show late-mean differences: adding assessment is full service minus access-only; adding access is full service minus assessment-only. In B, dashed lines connect contrasts within each regime; principal degree includes the broker tie when present. Zero turnover is plotted separately in A and C. D shows unsmoothed ensemble means. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C.
 \end{pcaption}
 
 \begin{ptitle}{information}
 Sources of the broker's advantage
 \end{ptitle}
 \begin{pcaption}{information}
-Principals and the broker use Ridge regression in all versions. All outcomes use
-late means.
-Rank correlations in A and C compare predicted rankings with rankings by true
-expected match output on the same randomly sampled candidates.
-In C--D, difficulty is fixed at $\delta=\pv{infoBaselineDifficulty}$ and parameters other than $\rho$
-remain at baseline; difficulty is inapplicable at $\rho=1$. Grey lines connect
-the same regime across versions. Whiskers show pointwise
-\pv{infoIntervalPercent}\% Monte Carlo intervals. C uses within-seed broker-minus-principal differences;
-B and D report means of seed-level net-output shares.
-B's right-hand percentages compare ensemble-mean total net output with the
-reference version.
+Ensemble late means from the Ridge experiments. Rank correlations use the same
+randomly sampled candidates for principals and the broker. In C--D, parameters
+other than $\rho$ remain at baseline; grey lines connect the same regime across
+versions. Whiskers show pointwise \pv{infoIntervalPercent}\% Monte Carlo intervals.
+C uses within-seed broker-minus-principal differences; B and D average seed-level
+net-output shares. B's right-hand percentages compare ensemble-mean total net
+output with the reference version.
 \end{pcaption}
 
 \begin{ptitle}{dynamics}
 Broker use, access, and assessment accuracy
 \end{ptitle}
 \begin{pcaption}{dynamics}
-A: baseline outsourcing rate and access fraction, with thick solid lines for neural-network learning and thin dashed lines for Ridge regression. Lines are ensemble means after a \pv{rollWin}-observation rolling mean within each seed; ribbons are pointwise 95\% Monte Carlo intervals. Shaded bands mark the early and late windows. B: early- versus late-mean access fraction. C: late-mean outsourcing rate and access fraction. D: late-mean principal and broker rank correlation. In B--D, each point represents one of \pv{nRegimes} regimes for neural-network learning (blue) or Ridge regression (orange); outlined diamonds identify the baseline. Marginal curves show smoothed distributions of regime means, with equal weight per regime and common smoothing across learners. Dashed diagonals in B and D mark equality, not fitted relationships. Means use \pv{nBaselineSeeds} seeds at baseline and \pv{nGeneralSeeds} elsewhere.
+A: ensemble means after a \pv{rollWin}-observation rolling mean within each seed, with pointwise 95\% Monte Carlo intervals. B--D: ensemble means for \pv{nRegimes} regimes; C--D use late means. Marginal curves show smoothed distributions of regime means, with equal weight per regime and common smoothing across learners.
 \end{pcaption}

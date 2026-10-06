@@ -408,7 +408,7 @@ function render(data)
     access_axis = interval_axis(access_bounds; target_intervals=4)
     b = Axis(
         fig[1, 1];
-        title="A. Bridging behavior",
+        title="A. Broker centrality and access fraction",
         xlabel="Broker betweenness centrality",
         ylabel="Access fraction (%)",
         xticks=0:0.2:1,
@@ -425,7 +425,7 @@ function render(data)
     degree_ticks = 10 .^ (0:floor(Int, log10(degree_upper)))
     c = Axis(
         fig[1, 2];
-        title="B. Principal degree distribution",
+        title="B. Principal ties",
         subtitle="Baseline turnover (η = $baseline_eta)",
         subtitlesize=TICK_FS,
         subtitlecolor=:gray40,
@@ -443,7 +443,7 @@ function render(data)
     degree_axis = interval_axis(degree_bounds; target_intervals=5)
     d = Axis(
         fig[2, 1];
-        title="C. Principal connectivity",
+        title="C. Broker centrality and principal ties",
         xlabel="Broker betweenness centrality",
         ylabel="Mean principal degree",
         xticks=0:0.2:1,

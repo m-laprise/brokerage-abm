@@ -19,12 +19,16 @@ input identity and compatibility; independent analyses may use different commits
 - [Figure 1: Assessment, not access](main/figures/assessment_not_access.png)
 - [Figure 2: Brokerage with access, assessment, or both](main/figures/assessment_access_3.png)
 - [Figure 3: Sources of the broker's advantage](main/figures/information_sources_net_output_channels.png)
-- [Figure 4: Matching grid](main/figures/matching_grid.png)
-- [Figure 5: Position and work](main/figures/centrality_and_access.png)
-- [Figure 6: Structural advantage](main/figures/structural_advantage.png)
+- [Figure 4: Bridging position and bridging behavior](main/figures/centrality_and_assessment.png)
+- Figure 4 inputs and manuscript estimates: `main/centrality_data.jld2` and
+  `main/centrality_values.tex`
 - Monte Carlo convergence diagnostics: `main/convergence/condition_audit.tsv`
   and `main/convergence/outcome_summary.tsv`. These are reproducibility
   diagnostics and do not appear as paper figures or appendix analyses.
+
+Additional retained figures: [matching grid](main/figures/matching_grid.png),
+[position and work](main/figures/centrality_and_access.png), and
+[structural advantage](main/figures/structural_advantage.png).
 
 ## Manuscript appendices and Supplementary Material
 
@@ -73,7 +77,8 @@ input identity and compatibility; independent analyses may use different commits
 ## Canonical generators
 
 - Main results: `scripts/paper/stats.jl`, `figdata.jl`, `figures.jl`,
-  `audit_convergence.jl`, `ridge_supplement.jl`, and `build_section.jl`
+  `centrality_and_assessment.jl`, `audit_convergence.jl`, `ridge_supplement.jl`,
+  and `build_section.jl`
 - Supplement: `scripts/paper/dgp_figdata.jl`, `supp_figdata.jl`,
   `supp_figures.jl`, and `build_supplement.jl`
 - Ridge analyses: `scripts/ridge/analyze_sweep.jl` and

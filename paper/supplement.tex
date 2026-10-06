@@ -57,42 +57,42 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{match_value_surfaces.png}
-\caption{\textbf{Expected match output across pairs of principal types.} \pv{suppDgpHeatmapN} types selected at evenly spaced general-quality ranks from realization \pv{suppDgpHeatmapSeed} (\pv{suppDgpN} principals). Columns vary general-quality share $\rho$; rows vary difficulty $\delta$. The $\rho=1$ condition appears once because difficulty is inactive. Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. General quality increases rightward and upward. Only the upper triangle of each symmetric matrix is shown, excluding self-matches. A shared color scale shows expected output minus the grand mean, without match noise.}
+\caption{\textbf{Expected match output across pairs of principal types.} \pv{suppDgpHeatmapN} types selected at evenly spaced general-quality ranks from realization \pv{suppDgpHeatmapSeed} (\pv{suppDgpN} principals). Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. General quality increases rightward and upward. Upper triangles exclude self-matches; colors show expected output minus the grand mean, without match noise.}
 \label{fig:supp-dgp-structure}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{effective_dimensionality.png}
-\caption{\textbf{Dimensionality of expected match output.} Centered conditional-output matrices, without match noise, summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function objects $c$, $A$, and $B$ are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest singular components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values within each realization. Lines and markers are means; ribbons and whiskers are pointwise 95\% Monte Carlo intervals. Colors and symbols identify general-quality share $\rho$ in A and difficulty $\delta$ in B. N/A denotes the unconnected gray diamond at $\rho=1$: difficulty affects only complementarity and is not applicable under pure general quality.}
+\caption{\textbf{Dimensionality of expected match output.} Centered expected-output matrices without match noise, summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function draws are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values. Lines and markers are means; ribbons and whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes pure general quality ($\rho=1$), where difficulty is inapplicable.}
 \label{fig:supp-dgp-dimension}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{complementarity_contributions.png}
-\caption{\textbf{Contributions of assessment and access across matching composition.} A: full service minus access-only. B: full service minus assessment-only. Both panels show changes in net output per principal. The \pv{aaCommonRegimeN} regimes combine \pv{aaMatchingCompositionN} matching compositions with turnover rates of \pv{aaCommonTurnoverPercents} per period; other parameters remain at baseline. Difficulty is inapplicable under pure general quality ($\rho=1$). Points show late-mean differences paired by random seed, using \pv{aaOtherSeeds} seeds per service version and regime. Bars show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals. Positive values indicate higher net output under full service; connecting lines are visual guides.}
+\caption{\textbf{Contributions of assessment and access across matching composition.} Late-mean differences paired by seed: A, full service minus access-only; B, full service minus assessment-only. Parameters other than matching composition and turnover remain at baseline. Points average \pv{aaOtherSeeds} seeds per regime; bars show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals. Connecting lines are visual guides.}
 \label{fig:supp-assessment-access}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_grid.png}
-\caption{\textbf{Alternative structural measures across the matching problem.} A: Burt constraint, the concentration of the broker's direct and indirect ties. B: effective size, which discounts broker contacts connected to one another. Points are late-window means across the $\rho\times\delta$ design, with other parameters at baseline. Colors and symbols identify difficulty $\delta$. N/A denotes the unconnected gray diamond at $\rho=1$: difficulty affects only complementarity and is not applicable under pure general quality. Whiskers are 95\% Monte Carlo intervals.}
+\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes pure general quality ($\rho=1$), where difficulty is inapplicable.}
 \label{fig:supp-grid}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_position.png}
-\caption{\textbf{Alternative structural measures over time and against access.} Top: the broker's Burt constraint. Bottom: the broker's effective size. A and C: baseline dynamics, recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean. Lines are ensemble means; ribbons are pointwise 95\% Monte Carlo intervals. Time starts at $t=\pv{suppAxisStart}$. B and D: late-window means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline. Vertical scales differ between baseline dynamics and cross-regime comparisons.}
+\caption{\textbf{Alternative structural measures over time and against access.} A and C: baseline measures recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean, shown from $t=\pv{suppAxisStart}$. Lines are ensemble means; ribbons show pointwise 95\% Monte Carlo intervals. B and D: ensemble late means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline.}
 \label{fig:supp-position}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_advantage.png}
-\caption{\textbf{Ranking and output differences by alternative structural measures.} A--B: ranking advantage, broker minus principal. C--D: mean realized output per completed match, broker minus self-search, before costs and fees. Horizontal axes show the broker's Burt constraint (A, C) or effective size (B, D). Each point is a late-window mean for one of the \pv{suppRegimeN} tested regimes. Colors and symbols identify general-quality share $\rho$.}
+\caption{\textbf{Ranking and output differences by alternative structural measures.} Points show ensemble late means for \pv{suppRegimeN} regimes. C--D compare mean realized output per completed match (brokered minus self-search), before costs and fees.}
 \label{fig:supp-advantage}
 \end{figure}
 
