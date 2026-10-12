@@ -515,6 +515,12 @@ function main(; output_path=OUTPUT_PATH)
     fig = make_figure(estimates, centrality)
     mkpath(dirname(output_path))
     save(output_path, fig; px_per_unit=2)
+    record_publication_stage(provenance;
+        stage="scripts/assessment_access/figure_2.jl",
+        inputs=(DATA_PATH, CENTRALITY_PATH),
+        outputs=(output_path,),
+        analysis_commits=Dict("data analysis commit" => analysis_commit),
+    )
     println("Wrote $output_path")
     println("Verified $(validation.summary_count) means and $(validation.contrast_count) paired intervals against retained seeds.")
     println("Analysis commit: $analysis_commit")

@@ -8,8 +8,7 @@ A population of market participants, called principals, repeatedly forms
 pairwise matches. Principals can search through their own networks or outsource
 search to a broker. The broker
 observes the matches it mediates and pools data across clients; each principal
-learns only from its own matches. Match value can depend on general quality,
-pair-specific complementarity, or both. Satisfaction affects later channel
+learns only from its own matches. Satisfaction affects later channel
 choice, and turnover continually changes the network.
 
 The default model uses neural networks for learning and prediction. Parallel
@@ -83,6 +82,12 @@ checks manifests, seeds, reporting windows, outcome definitions, and input
 hashes. Undefined manuscript values fail the build; retained values not quoted
 in the manuscript are allowed.
 
+Publication provenance is recorded in `output/publication.toml`, separately from
+the generated TeX. It identifies each step's sources, inputs, outputs, and analysis
+commits. Draft builds allow uncommitted presentation edits and record their file
+hashes, not copies of their contents. Git retains source history. Reproducing an
+archived release requires committing the relevant sources before its final build.
+
 For a fresh full sweep, follow the
 [`scripts/sweep/` guide](scripts/sweep/README.md).
 
@@ -121,12 +126,23 @@ analysis inputs, without accessing raw sweeps or rerunning simulations:
 julia --project --threads=auto scripts/paper/build_publication.jl
 ```
 
+Unchanged steps are skipped by content hash. Use `--force` to run every publication
+step. Neither command runs simulations or reanalyzes raw sweeps.
+
 For individual figure changes, run the relevant renderer listed in
 [`build_publication.jl`](scripts/paper/build_publication.jl), then rebuild the
 affected documents. `scripts/paper/figures.jl` accepts `--assessment-not-access`
-or `--information-sources` to render only that figure.
+or `--information-sources` to render only that figure, and `--metadata` to update
+caption display values without rendering.
 `scripts/paper/centrality_and_assessment.jl` renders Figure 4 and generates its
 manuscript values from `output/main/centrality_data.jld2`.
+
+Overleaf is a separate editing copy, not a publication output. After updating the
+generated Results, export it with:
+
+```bash
+julia --project --threads=auto scripts/paper/export_overleaf.jl
+```
 
 ### Regenerate analysis inputs from completed sweeps
 

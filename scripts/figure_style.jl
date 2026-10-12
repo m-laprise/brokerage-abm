@@ -71,7 +71,7 @@ const PUB_CENTRALITY = "#756291"
 const PUB_ACCESS = "#B38232"
 const PUB_BROKER = "#BA5A3A"
 const PUB_PRINCIPAL = "#237A93"
-const PUB_RHO_LABEL = "General-quality share (ρ)"
+const PUB_RHO_LABEL = "Individual-quality share (ρ)"
 const PUB_LEGEND = (;
     labelsize=19,
     titlesize=19,
@@ -127,7 +127,7 @@ function interval_axis(bounds; target_intervals=6, upper_padding=0)
     return (; limits, ticks=limits[1]:step:limits[2], step)
 end
 
-"""List difficulty levels, ending with N/A for the pure-general-quality boundary."""
+"""List difficulty levels, with N/A at rho = 1 where difficulty is inactive."""
 function difficulty_legend!(slot, values; nbanks=2)
     elements = [
         [
@@ -144,7 +144,6 @@ function difficulty_legend!(slot, values; nbanks=2)
     )
 end
 
-"""Add an external legend for the general-quality share, with redundant symbols."""
 function composition_legend!(slot, values; nbanks=2)
     elements = [
         MarkerElement(;

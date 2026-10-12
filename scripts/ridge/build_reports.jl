@@ -27,7 +27,7 @@ const REPORTS = (
         output=joinpath(NOTES, "ridge_experiment.pdf"),
         provenance=(
             joinpath(REPO_ROOT, "output", "ridge", "paired", "analysis", "provenance.txt"),
-            joinpath(REPO_ROOT, "output", "ridge", "paired", "figure_provenance.txt"),
+            joinpath(REPO_ROOT, "output", "ridge", "paired", "figure_values.tex"),
         ),
     ),
     (

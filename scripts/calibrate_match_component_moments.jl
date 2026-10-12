@@ -1,10 +1,10 @@
 """
     scripts/calibrate_match_component_moments.jl
 
-Estimate the fixed population moments used to put general quality and
-complementarity on common scales. The calibration averages within-market
-moments across 50 independently generated markets of 1,000 principals. It uses
-seeds 10,001 through 10,050, which are separate from the simulation sweep.
+Estimate fixed moments for standardizing the matching components. The calibration
+averages within-market moments across 50 independently generated markets of
+1,000 principals. It uses seeds 10,001 through 10,050, which are separate from the
+simulation sweep.
 
 Usage: julia --project --threads=auto scripts/calibrate_match_component_moments.jl
 """

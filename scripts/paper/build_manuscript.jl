@@ -69,17 +69,9 @@ length(findall(SOURCE_GRAPHICSPATH, source)) == 1 ||
     fail("editable root must contain exactly one repo-local graphics path")
 occursin(FORMAL_ILLUSTRATION_SECTION, results) ||
     fail("generated fragment does not contain the formal-illustration section")
-results_commit = match(r"(?m)^% manuscript commit ([0-9a-f]{7,40});", results)
-isnothing(results_commit) && fail("generated results section lacks manuscript provenance")
-validate_analysis_commit(MANUSCRIPT_PROVENANCE, results_commit[1]; artifact="generated results")
-validate_source_hashes(
-    MANUSCRIPT_PROVENANCE, RESULTS,
-    ("paper/section_source.tex", "paper/captions.tex", "paper/supplement.tex"),
-)
-for input in eachmatch(r"(?m)^% Input: (.+); SHA256: ([0-9a-f]{64})$", results)
-    path = joinpath(ROOT, input[1])
-    isfile(path) && bytes2hex(sha256(read(path))) == input[2] ||
-        fail("generated results use a different version of $(input[1]); rebuild the section")
+validate_publication_output(ROOT, RESULTS)
+for path in (PSEUDOCODE, SPECIFICATIONS, SUPPLEMENT)
+    validate_publication_output(ROOT, path)
 end
 
 figure_paths = unique([
@@ -89,10 +81,6 @@ isempty(figure_paths) && fail("generated results section references no figures")
 for relative_path in figure_paths
     isfile(joinpath(MAIN_OUTPUT, relative_path)) ||
         fail("missing generated figure $relative_path")
-    expected = "% Figure SHA256: $relative_path " *
-        bytes2hex(sha256(read(joinpath(MAIN_OUTPUT, relative_path))))
-    occursin(expected, results) ||
-        fail("generated results do not identify the current $relative_path; rebuild the section")
 end
 
 mkpath(OUTPUT)
@@ -147,6 +135,12 @@ mktempdir() do build
 end
 
 println("manuscript PDFs validated in $OUTPUT")
+record_publication_stage(MANUSCRIPT_PROVENANCE;
+    stage="scripts/paper/build_manuscript.jl",
+    inputs=(RESULTS, PSEUDOCODE, SPECIFICATIONS, SUPPLEMENT,
+        joinpath.(MAIN_OUTPUT, figure_paths)...),
+    outputs=(MAIN_PDF, COMPLETE_PDF),
+)
 println("  $(basename(MAIN_PDF)): main manuscript without appendices")
 println("  compile check: OK")
 println(

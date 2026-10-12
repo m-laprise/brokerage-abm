@@ -44,23 +44,7 @@ isfile(SRC) || fail("missing $SRC")
 isfile(FIGMETA) || fail("missing $FIGMETA (run scripts/paper/supp_figures.jl first)")
 isfile(ASSESSMENT_VALUES) ||
     fail("missing $ASSESSMENT_VALUES (run scripts/assessment_access/paper_values.jl first)")
-figmeta_source = read(FIGMETA, String)
-analysis_commits = Dict{String,String}()
-for label in ("DGP", "Structural")
-    match_result = match(
-        Regex("(?im)^%\\s*$label data analysis commit:\\s*([0-9a-f]{7,40})\\s*\$"),
-        figmeta_source,
-    )
-    isnothing(match_result) && fail("figmeta.tex records no $label analysis commit")
-    analysis_commits[lowercase(label)] = validate_analysis_commit(
-        REPORTING_PROVENANCE, match_result[1]; artifact="$label supplement figure data"
-    )
-end
-analysis_commits["assessment_access"] = validate_analysis_commit(
-    REPORTING_PROVENANCE,
-    recorded_analysis_commit(ASSESSMENT_VALUES);
-    artifact="assessment-access manuscript values",
-)
+input_provenance = analysis_input_provenance(REPORTING_PROVENANCE, (FIGMETA, ASSESSMENT_VALUES))
 
 defs = Set{String}()
 figmeta_defs = Set{String}()
@@ -119,14 +103,12 @@ mktempdir() do build
     occursin("There were undefined references", log) &&
         fail("undefined supplement references")
     update_pdf(joinpath(build, "supplement.pdf"), PDF)
-    open(joinpath(GENERATED, "provenance.txt"), "w") do io
-        println(io, "dgp_analysis_commit=$(analysis_commits["dgp"])")
-        println(io, "structural_analysis_commit=$(analysis_commits["structural"])")
-        println(
-            io, "assessment_access_analysis_commit=$(analysis_commits["assessment_access"])"
-        )
-        println(io, "manuscript_commit=$(REPORTING_PROVENANCE.commit)")
-        println(io, "manuscript_source_clean=$(REPORTING_PROVENANCE.source_clean)")
-    end
+    record_publication_stage(REPORTING_PROVENANCE;
+        stage="scripts/paper/build_supplement.jl",
+        inputs=(FIGMETA, ASSESSMENT_VALUES, joinpath.(FIGDIR, figures)...),
+        outputs=(PDF,),
+        analysis_commits=Dict("$(input.path): $label" => commit
+            for input in input_provenance for (label, commit) in input.commits),
+    )
     println("supplement validated ($(length(figures)) figures, 0 errors)")
 end

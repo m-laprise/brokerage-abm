@@ -1,6 +1,6 @@
 using Test
 using SHA: sha256
-using Base64: base64decode
+using TOML
 
 include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
 
@@ -40,16 +40,35 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
         presentation = manuscript_git_provenance(repository; sources=("paper/manuscript.tex",))
         @test !presentation.source_clean
         @test !occursin("analysis.jl", presentation.source_status)
-        snapshot = sprint(io -> write_source_provenance(io, presentation))
-        @test occursin("Source SHA256: paper/manuscript.tex", snapshot)
-        patch = match(r"(?m)^% Source patch \(base64\): (.+)$", snapshot)[1]
-        @test occursin("+Revised manuscript.", String(base64decode(patch)))
         artifact = joinpath(repository, "artifact.tex")
-        write(artifact, snapshot)
-        @test isnothing(validate_source_hashes(presentation, artifact, ("paper/manuscript.tex",)))
+        @test write_if_changed(artifact, "Generated content.\n")
+        @test !write_if_changed(artifact, "Generated content.\n")
+        record_publication_stage(presentation; stage="draft", outputs=(artifact,),
+            inputs=("analysis.jl",), analysis_commits=Dict("analysis commit" => clean.commit))
+        record = validate_publication_output(repository, artifact)
+        @test record["sources"]["paper/manuscript.tex"] ==
+            bytes2hex(sha256("Revised manuscript.\n"))
+        @test !record["source_clean"]
+        @test publication_stage_current(repository, "draft")
+        @test !publication_stage_current(repository, "absent")
+        manifest_path = joinpath(repository, "output", "publication.toml")
+        manifest_text = read(manifest_path, String)
+        @test !occursin("Revised manuscript.", manifest_text)
+        @test !occursin("base64", manifest_text)
+        record_publication_stage(presentation; stage="draft", outputs=(artifact,),
+            inputs=("analysis.jl",), analysis_commits=Dict("analysis commit" => clean.commit))
+        @test read(manifest_path, String) == manifest_text
+        @test recorded_analysis_commit(artifact) == clean.commit
+        write(artifact, "Wrong content.")
+        @test !publication_stage_current(repository, "draft")
+        @test_throws ErrorException recorded_analysis_commit(artifact)
+        write(artifact, "Generated content.\n")
+        write(joinpath(repository, "analysis.jl"), "# altered input\n")
+        @test_throws ErrorException validate_publication_output(repository, artifact)
+        write(joinpath(repository, "analysis.jl"), "# revised analysis\n")
         write(joinpath(repository, "paper", "manuscript.tex"), "Another revision.\n")
-        @test_throws ErrorException validate_source_hashes(presentation, artifact, ("paper/manuscript.tex",))
-        @test_throws ErrorException validate_source_hashes(presentation, artifact, ("analysis.jl",))
+        @test_throws ErrorException validate_publication_output(repository, artifact)
+        @test_throws ErrorException validate_publication_output(repository, "missing.tex")
         dirty = reporting_git_provenance(repository; sources, require_clean=false)
         @test !dirty.source_clean && dirty.source_fingerprint != clean.source_fingerprint
 
@@ -61,9 +80,12 @@ include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
         @test_throws ErrorException reporting_git_provenance(repository; sources=("ignored.jl",))
         untracked = manuscript_git_provenance(repository; sources=("ignored.jl",))
         @test !untracked.source_clean
-        snapshot = sprint(io -> write_source_provenance(io, untracked))
-        contents = match(r"(?m)^% Untracked source \(base64\): ignored.jl (.+)$", snapshot)[1]
-        @test String(base64decode(contents)) == "# ignored dependency\n"
+        ignored_output = joinpath(repository, "ignored-output.tex")
+        write(ignored_output, "Output.\n")
+        record_publication_stage(untracked; stage="ignored", outputs=(ignored_output,))
+        @test validate_publication_output(repository, ignored_output)["sources"]["ignored.jl"] ==
+            bytes2hex(sha256("# ignored dependency\n"))
+        @test !occursin("# ignored dependency", read(manifest_path, String))
         write(joinpath(repository, "Project.toml"), "[deps]\n# changed environment\n")
         @test_throws ErrorException reporting_git_provenance(repository; sources)
         write(joinpath(repository, "Project.toml"), "[deps]\n")
@@ -158,11 +180,16 @@ end
         output = joinpath(repository, "output", "main", "results_section.tex")
         result = read(output, String)
         @test occursin("1.25", result) && !occursin("\\pv{example}", result)
-        @test occursin("analysis commit: $first_commit", result)
-        @test occursin("analysis commit: $second_commit", result)
-        @test length(collect(eachmatch(r"(?m)^% Input: ", result))) == 7
-        @test occursin("% Figure SHA256: figures/test.png ", result)
-        @test isnothing(validate_source_hashes((; root=repository), output,
-            ("paper/section_source.tex", "paper/captions.tex", "paper/supplement.tex")))
+        @test !occursin("SHA256", result) && !occursin("analysis commit", result)
+        @test !occursin("base64", result)
+        record = validate_publication_output(repository, output)
+        @test Set(values(record["analysis_commits"])) == Set((first_commit, second_commit))
+        @test length(record["inputs"]) == 8
+        @test haskey(record["inputs"], "output/main/figures/test.png")
+        @test publication_stage_current(repository, "scripts/paper/build_section.jl")
+        write(joinpath(repository, "unrelated-note.txt"), "Unrelated change.\n")
+        @test publication_stage_current(repository, "scripts/paper/build_section.jl")
+        write(joinpath(repository, "paper", "captions.tex"), "Changed caption.\n")
+        @test !publication_stage_current(repository, "scripts/paper/build_section.jl")
     end
 end

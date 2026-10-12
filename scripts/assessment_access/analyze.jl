@@ -200,7 +200,7 @@ function contrast_figure(index, metric::Symbol, filename::String, ylabel::String
         axis = Axis(
             fig[1, column];
             title="$(Char(Int('A') + column - 1)). $(contribution.label)",
-            xlabel="General-quality share (ρ)",
+            xlabel="Individual-quality share (ρ)",
             ylabel,
             xticks=([0.0, 0.5, 1.0], ["0", "0.5", "1"]),
         )

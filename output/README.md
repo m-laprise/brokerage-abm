@@ -13,6 +13,7 @@ records the source sweep and manifest hash. Figure-input datasets retain the
 seed-level time series and late-window values used to compute Monte Carlo
 intervals. Each reporting input records its own analysis commit. Builders check
 input identity and compatibility; independent analyses may use different commits.
+Publication build records are in [publication.toml](publication.toml).
 
 - [Results section source](../paper/section_source.tex)
 - [Generated Results section](main/results_section.tex)

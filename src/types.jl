@@ -327,9 +327,10 @@ struct MatchingEnv
     B::Matrix{Float64}       # symmetric regime operator, weighted-orthogonalized against A
     delta::Float64            # gain strength
     sigma_eps::Float64        # match output noise SD
-    quality_weight::Float64      # coefficient on raw general quality
-    interaction_weight::Float64  # coefficient on raw complementarity
-    signal_shift::Float64        # fixed centering adjustment
+    # Weights apply to raw components; the shift supplies centering.
+    quality_weight::Float64
+    interaction_weight::Float64
+    signal_shift::Float64
 end
 
 """Output-scale constants derived from Monte Carlo calibration."""
@@ -478,7 +479,8 @@ struct ModelParams
     s::Int                       # active dimensions of type curve (default 8)
 
     # Matching function
-    rho::Float64                 # general-quality share of systematic variance (default 0.50)
+    # Individual-quality share of summed marginal variances after weighting.
+    rho::Float64
     delta::Float64               # complementarity-boundary strength (default 0.5)
     sigma_x::Float64             # type noise scale (default 0.5)
     sigma_eps::Float64           # match output noise SD (default 0.2841)

@@ -1,23 +1,8 @@
 """
     matching_function.jl
 
-Variance-share matching function:
-    f(x_i, x_j) = s_f [√ρ U*(x_i,x_j) + √(1-ρ) W*_δ(x_i,x_j)] / s_mix
-    g(x_i, x_j) = 1 + δ · sign(x_i'Bx_j)
-
-A is a symmetric positive definite (SPD) interaction matrix drawn at
-initialization. B is a symmetric regime operator constructed to be weakly
-aligned with A under the realized type distribution. All types are on the unit
-sphere. Quality is a dot product with ideal type c. Interaction is a bilinear
-form through A, modulated by a regime-dependent gain determined by B. The gain
-defines high-gain `(1+δ)` and low-gain `(1-δ)` regimes.
-
-U* is standardized general quality and W*_δ is standardized complementarity.
-Their population moments are fixed constants calibrated once over independent
-matching environments. The residual correlation adjustment s_mix holds the
-systematic variance at one, which defines the payoff unit. Observable output is
-q = Q + f(x_i, x_j) + ε, where Q is a constant offset and
-ε ~ N(0, σ_ε²) is match noise.
+Compute deterministic match signals and noisy match output using fixed component
+calibration.
 """
 
 using LinearAlgebra: dot, mul!, norm, tr
@@ -55,10 +40,9 @@ end
 """
     match_signal_coefficients(rho, delta)
 
-Return the calibrated coefficients that make `rho` general quality's share of
-the two components' summed marginal variances. The final scale adjusts for the
-small fixed covariance between standardized components and holds total
-systematic variance at one.
+Return weights on the raw components and a centering shift for the match signal.
+Fixed calibration moments and a covariance adjustment keep the average
+within-market signal variance at one.
 """
 function match_signal_coefficients(rho::Float64, delta::Float64)
     moments = interaction_component_moments(delta)

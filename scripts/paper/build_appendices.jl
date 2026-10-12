@@ -10,11 +10,14 @@ Usage: julia --project --threads=auto scripts/paper/build_appendices.jl
 """
 
 include(joinpath(@__DIR__, "pdf_output.jl"))
+include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const SOURCE_DIR = joinpath(ROOT, "paper", "appendices")
 const OUTPUT_DIR = joinpath(ROOT, "output", "appendices")
 const APPENDICES = ("simulation_pseudocode.tex", "model_specifications.tex")
+const PROVENANCE = manuscript_git_provenance(ROOT;
+    sources=(@__FILE__, "scripts/paper/pdf_output.jl", joinpath.(SOURCE_DIR, APPENDICES)...))
 
 mkpath(OUTPUT_DIR)
 for source_name in APPENDICES
@@ -46,3 +49,7 @@ for source_name in APPENDICES
         update_pdf(pdf_path, joinpath(OUTPUT_DIR, pdf_name))
     end
 end
+record_publication_stage(PROVENANCE;
+    stage="scripts/paper/build_appendices.jl",
+    outputs=joinpath.(OUTPUT_DIR, replace.(APPENDICES, ".tex" => ".pdf")),
+)

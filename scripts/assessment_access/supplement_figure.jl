@@ -111,7 +111,7 @@ function make_complementarity_figure(data)
         if iszero(rho)
             "$(Int(rho))\nComplementarity"
         elseif isone(rho)
-            "$(Int(rho))\nGeneral quality"
+            "$(Int(rho))\nIndividual quality"
         else
             string(rho)
         end for rho in selected.rhos
@@ -129,7 +129,7 @@ function make_complementarity_figure(data)
         )
         axis = Axis(
             grid[2, 1];
-            xlabel="General-quality share (ρ)",
+            xlabel="Individual-quality share (ρ)",
             ylabel=if column == 1
                 "Change in net output\nper principal"
             else
@@ -229,6 +229,11 @@ function complementarity_figure()
     )
     mkpath(dirname(output))
     save(output, fig; px_per_unit=2)
+    record_publication_stage(provenance;
+        stage="scripts/assessment_access/supplement_figure.jl",
+        inputs=(FIGURE_DATA,), outputs=(output,),
+        analysis_commits=Dict("data analysis commit" => data["analysis_git_commit"]),
+    )
     println("Verified all displayed contrasts against retained seed-level data.")
     println("Retained analysis commit: ", data["analysis_git_commit"])
     println("Wrote $output")

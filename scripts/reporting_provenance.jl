@@ -1,7 +1,7 @@
 """Track reporting dependencies and validate each artifact's commits independently."""
 
 using SHA: sha256
-using Base64: base64encode
+using TOML
 
 """Resolve explicit source dependencies, including the Julia environment and this helper."""
 function reporting_source_files(root, sources)
@@ -89,6 +89,13 @@ end
 
 """Read every labeled analysis commit from a generated text artifact."""
 function recorded_analysis_commits(path)
+    root = readchomp(`git -C $(dirname(abspath(path))) rev-parse --show-toplevel`)
+    record = publication_record(root, path)
+    if record !== nothing
+        validate_publication_record(root, record; sources=false)
+        isempty(record["analysis_commits"]) && error("no analysis provenance for $path")
+        return sort!(collect(Pair{String,String}, record["analysis_commits"]); by=first)
+    end
     pattern = r"(?im)^(?:%\s*)?([^\n:=]*analysis(?:[ _]git)?[ _]commit)\s*[:=]\s*([0-9a-f]{7,40})\s*$"
     records = Pair{String,String}[]
     for found in eachmatch(pattern, read(path, String))
@@ -122,38 +129,94 @@ function analysis_input_provenance(provenance, paths)
     end
 end
 
-"""Check recorded source content instead of requiring the current repository commit."""
-function validate_source_hashes(provenance, artifact, paths)
-    records = Dict(
-        found[1] => found[2] for found in eachmatch(
-            r"(?m)^% Source SHA256: (.+) ([0-9a-f]{64})$", read(artifact, String)
-        )
+"""Read the single publication record; scientific analysis manifests remain separate."""
+function publication_manifest(root)
+    path = joinpath(root, "output", "publication.toml")
+    return isfile(path) ? TOML.parsefile(path) : Dict{String,Any}("stages" => Dict{String,Any}())
+end
+
+"""Hash the exact files consumed or produced by a reporting step."""
+function publication_hashes(root, paths)
+    root = realpath(root)
+    return Dict(relpath(realpath(joinpath(root, path)), root) =>
+        bytes2hex(sha256(read(joinpath(root, path)))) for path in paths)
+end
+
+"""Write generated text only when its content changed."""
+function write_if_changed(path, content)
+    isfile(path) && read(path, String) == content && return false
+    mkpath(dirname(path))
+    write(path, content)
+    return true
+end
+
+"""Record a completed reporting step without copying source contents or Git patches."""
+function record_publication_stage(provenance; stage, inputs=(), outputs,
+        analysis_commits=Dict{String,String}(), settings=Dict{String,Any}())
+    root = provenance.root
+    manifest = publication_manifest(root)
+    record = Dict{String,Any}(
+        "source_commit" => provenance.commit,
+        "source_clean" => provenance.source_clean,
+        "sources" => provenance.source_hashes,
+        "inputs" => publication_hashes(root, inputs),
+        "outputs" => publication_hashes(root, outputs),
+        "analysis_commits" => Dict(analysis_commits),
+        "settings" => settings,
+        "julia_version" => string(VERSION),
     )
-    for path in paths
-        relative = relpath(joinpath(provenance.root, path), provenance.root)
-        haskey(records, relative) || error("$artifact lacks source hash for $relative; rebuild it")
-        records[relative] == bytes2hex(sha256(read(joinpath(provenance.root, path)))) ||
-            error("$artifact is stale: $relative changed; rebuild it")
+    # A commit or build date alone must not rewrite an otherwise identical record.
+    previous = get(manifest["stages"], stage, nothing)
+    if previous !== nothing && all(previous[key] == record[key] for key in
+            ("source_clean", "sources", "inputs", "outputs", "analysis_commits", "settings", "julia_version"))
+        return nothing
+    end
+    manifest["stages"][stage] = record
+    write_if_changed(joinpath(root, "output", "publication.toml"),
+        sprint(io -> TOML.print(io, manifest; sorted=true)))
+    return nothing
+end
+
+"""Find the reporting step that produced an artifact."""
+function publication_record(root, artifact)
+    root = realpath(root)
+    path = joinpath(root, artifact)
+    relative = relpath(isfile(path) ? realpath(path) : abspath(path), root)
+    records = [record for record in values(publication_manifest(root)["stages"])
+        if haskey(record["outputs"], relative)]
+    isempty(records) && return nothing
+    length(records) == 1 || error("multiple publication records for $relative")
+    return only(records)
+end
+
+"""Reject changed or missing dependencies and outputs, without comparing Git HEADs."""
+function validate_publication_record(root, record; sources=true)
+    groups = sources ? ("sources", "inputs", "outputs") : ("inputs", "outputs")
+    for group in groups, (relative, expected) in record[group]
+        path = joinpath(root, relative)
+        isfile(path) && bytes2hex(sha256(read(path))) == expected ||
+            error("stale publication output: $relative changed or is missing; rerun its reporting step")
     end
     return nothing
 end
 
-"""Write source hashes and archive dirty presentation revisions as commented text."""
-function write_source_provenance(io, provenance; prefix="% ")
-    println(io, prefix, "Source fingerprint: ", provenance.source_fingerprint)
-    for file in provenance.source_files
-        println(io, prefix, "Source SHA256: ", file, " ", provenance.source_hashes[file])
+"""Validate an artifact against its separate publication record."""
+function validate_publication_output(root, artifact; sources=true)
+    record = publication_record(root, artifact)
+    record === nothing && error("missing publication record for $artifact; rerun its reporting step")
+    validate_publication_record(root, record; sources)
+    return record
+end
+
+"""Return whether a recorded reporting step still matches its files and Julia version."""
+function publication_stage_current(root, stage)
+    record = get(publication_manifest(root)["stages"], stage, nothing)
+    record === nothing && return false
+    get(record, "julia_version", "") == string(VERSION) || return false
+    try
+        validate_publication_record(root, record)
+    catch
+        return false
     end
-    if !provenance.source_clean
-        pathspecs = [":(literal)$file" for file in provenance.source_files]
-        patch = read(`git -C $(provenance.root) diff --binary HEAD -- $pathspecs`, String)
-        # Encoding keeps archived TeX out of downstream command/reference scans.
-        println(io, prefix, "Source patch (base64): ", base64encode(patch))
-        tracked = Set(split(read(`git -C $(provenance.root) ls-files -z -- $pathspecs`, String), '\0'))
-        for file in setdiff(provenance.source_files, tracked)
-            println(io, prefix, "Untracked source (base64): ", file, " ",
-                base64encode(read(joinpath(provenance.root, file))))
-        end
-    end
-    return nothing
+    return true
 end

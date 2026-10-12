@@ -7,7 +7,7 @@ each of 50 seeds, the realized types and matching-function objects are held fixe
 while `rho` and `delta` vary over the effective current grid. No simulation periods
 or match-noise draws are used. S1 projects the realized types and their latent
 curve into three dimensions. S2 displays five distinct matching conditions for
-100 principals sampled at evenly spaced general-quality ranks; S3 uses all 1,000
+100 principals sampled at evenly spaced individual-quality ranks; S3 uses all 1,000
 principals.
 
 The output, `output/supplement/dgp_figure_data.jld2`, contains the centered conditional
@@ -66,8 +66,8 @@ dgp_condition_id(rho::Real, delta::Real) = "rho=$(Float64(rho))|delta=$(Float64(
 """
     dgp_components(agent_types, env) -> NamedTuple
 
-Construct the three fixed matrices that determine conditional pairwise match value:
-the additive general-quality surface, base complementarity, and regime sign.
+Return individual-quality scores and pairwise quality, complementarity, and
+regime-sign matrices.
 """
 function dgp_components(agent_types::Vector{Vector{Float64}}, env::MatchingEnv)
     X = reduce(hcat, agent_types)
@@ -229,9 +229,9 @@ function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
             "sigma_eps" => baseline.sigma_eps,
             "conditional_mean_without_match_noise" => true,
             "matrix_centering" => "grand mean",
-            "ordering" => "general quality x_i'c",
+            "ordering" => "x_i'c",
             "heatmap_display_N" => min(HEATMAP_N, baseline.N),
-            "heatmap_sampling" => "evenly spaced general-quality ranks",
+            "heatmap_sampling" => "evenly spaced ranks of x_i'c",
             "type_projection_components" => 3,
             "type_curve_points" => TYPE_CURVE_POINTS,
             "effective_rank_energy_fraction" => 0.90,

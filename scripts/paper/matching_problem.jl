@@ -226,7 +226,7 @@ function render(data)
         Label(g[2, 1], "ρ = $(Int(data.metadata["difficulty_rho"])) (match output depends entirely on complementarity)";
             fontsize=17, color=:gray35, halign=:left, tellwidth=false)
     end
-    rho_ticks = ([0, 0.5, 1], ["0\nComplementarity", "0.5", "1\nGeneral quality"])
+    rho_ticks = ([0, 0.5, 1], ["0\nComplementarity", "0.5", "1\nIndividual quality"])
     axes = [Axis(grids[i][i <= 2 ? 3 : 4, 1];
         xlabel=i <= 2 ? PUB_RHO_LABEL : "Difficulty (δ)",
         ylabel=i <= 2 ? "Increase in share from\nbrokered matches (percentage points)" :
@@ -405,7 +405,6 @@ function prepare_split!(saved)
     return saved
 end
 
-"""Use the Figure 2 layout, separating pure general quality in a shaded strip."""
 function split_layout(titles, notes; supplement=false)
     publication_theme!()
     fig = Figure(; size=(1420, 1010), figure_padding=(28, 32, 26, 24))
@@ -431,7 +430,7 @@ function split_layout(titles, notes; supplement=false)
             ylabel, xticks=ticks,
             limits=(composition ? (-0.04, 0.90) : (-0.045, 1.045), nothing))
         boundary = if composition
-            ax = Axis(plot_grid[1, 2]; xticks=([1], ["1\nGeneral quality"]),
+            ax = Axis(plot_grid[1, 2]; xticks=([1], ["1\nIndividual quality"]),
                 limits=((0.9, 1.1), nothing), yticklabelsvisible=false,
                 yticksvisible=false, leftspinevisible=false,
                 backgroundcolor=(:gray40, 0.045))
@@ -459,7 +458,7 @@ function draw_split_series!(panel, points; color, marker, linestyle, hollow=fals
     elements = draw_series!(panel.axis, interior; kwargs...)
     if !isnothing(panel.boundary)
         boundary = filter(p -> p.x == 1, points)
-        length(boundary) == 1 || error("expected one pure-general-quality estimate")
+        length(boundary) == 1 || error("expected one estimate at rho = 1")
         draw_series!(panel.boundary, boundary; kwargs..., connect=false)
     end
     return elements
@@ -635,7 +634,7 @@ function prepare_nn_grid!(saved)
     deltas = sort(unique(c["delta"] for c in interior))
     Set((c["rho"], c["delta"]) for c in interior) == Set(Iterators.product(rhos, deltas)) ||
         error("incomplete NN composition/difficulty grid")
-    count(c -> c["rho"] == 1, conditions) == 1 || error("expected one general-quality boundary")
+    count(c -> c["rho"] == 1, conditions) == 1 || error("expected one condition at rho = 1")
     length(conditions) == length(rhos) * length(deltas) + 1 || error("duplicated NN regime")
     turnover = only(unique(c["eta"] for c in conditions))
     rows = NamedTuple[]
@@ -681,7 +680,6 @@ function nn_grid_by_difficulty(data)
     return (; metadata=data.metadata, rows)
 end
 
-"""Show the ordered composition colors, with no line for pure general quality."""
 function nn_composition_legend!(slot, rhos)
     values = [rhos; 1.0]
     elements = [
@@ -740,7 +738,7 @@ function render_nn_grid(data; by_difficulty=false, by_turnover=false)
             leftspinevisible=!by_difficulty,
             limits=(by_difficulty ? (-0.045, 1.045) : (-0.04, 0.90), nothing))
         boundary = Axis(plot_grid[1, boundary_column];
-            xticks=([1], [by_difficulty ? "N/A\nρ = 1" : "1\nGeneral quality"]),
+            xticks=([1], [by_difficulty ? "N/A\nρ = 1" : "1\nIndividual quality"]),
             ylabel=by_difficulty ? ylabels[i] : "", limits=((0.9, 1.1), nothing),
             yticklabelsvisible=by_difficulty, yticksvisible=by_difficulty,
             leftspinevisible=by_difficulty, backgroundcolor=(:gray40, 0.045))
@@ -1057,7 +1055,7 @@ function prepare_ablation_composition!(saved)
             b.seeds == p.seeds == g.seeds == s.seeds || error("NN seed order differs")
             return ablation_observation(b.seeds, b.values, p.values, s.values; gap=g.values)
         end
-        # Difficulty has no effect at pure general quality, represented once.
+        # Difficulty is inactive at rho = 1, so this condition appears once.
         c = only(filter(c -> c["rho"] == rho && (rho == rhos[2] || c["delta"] == difficulty),
             ridge["conditions"]))
         return ablation_observation(c["seeds"], c["broker_ranks"][model], c["principal_ranks"][model],
