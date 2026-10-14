@@ -85,7 +85,7 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Each potential pair's expected match output combines two sources: the agents' average individual quality and a match-specific complementarity between their types. The parameter \(\rho\) moves the matching problem from pure complementarity to pure individual quality. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Expected and realized match output are symmetric in the two agents.
+Each potential pair's expected match output combines two components: the average of the agents' individual-quality scores and complementarity between their types. Each agent's individual-quality score is the same across partners, whereas complementarity depends on the pairing. The parameter \(\rho\) controls the relative contributions of these components. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Expected and realized match output are symmetric in the two agents.
 
 \subsubsection{2a. Match Output}\label{a.-match-output}
 
@@ -105,19 +105,19 @@ f(\mathbf{x}_i,\mathbf{x}_j)
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
 \]
 
-The tildes indicate that individual quality (§2b) and match-specific complementarity (§2c) are centered and scaled using fixed moments. These moments are estimated once from independently generated matching environments. Within each environment, they are calculated across all unordered pairs of distinct agents; they are then averaged across environments and held fixed in every simulation. Individual markets are not rescaled, so they retain ordinary between-market variation.
+The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These moments are estimated once from independently generated matching environments. Within each environment, they are calculated across all unordered pairs of distinct agents; they are then averaged across environments and held fixed in every simulation. Individual markets are not rescaled, so they retain ordinary between-market variation.
 
-Let \(\kappa(\delta)\) denote the fixed covariance between individual quality and complementarity after each component is standardized. The common adjustment
+Let \(\kappa(\delta)\) denote the fixed covariance between the individual-quality and complementarity components after standardization. The common adjustment
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
 accounts for this small covariance. Averaged across the independently generated environments, each standardized component and the resulting systematic component \(f\) have within-market variance one for every \(\rho\) and \(\delta\). Because \(Q\) is constant, expected match output has the same variance. This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
 
-Because the two components have the same marginal variance on this scale, \(\rho\in[0,1]\) is individual quality's share of their summed marginal variances, while \(1-\rho\) is complementarity's share. Thus \(\rho=0\) gives pure complementarity and \(\rho=1\) gives pure individual quality. At \(\rho=1\), \(\delta\) has no effect.
+The standardized components have equal marginal variances. After weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), expected output depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
 
-\subsubsection{2b. Agent Individual Quality}\label{b.-agent-individual-quality}
+\subsubsection{2b. Individual Quality}\label{b.-agent-individual-quality}
 
-\(\mathbf{c}\) is an ideal type vector. An agent's individual-quality score, \(\mathbf{x}_i^\top\mathbf{c}\), measures its alignment with that ideal. Pair-level individual quality is the average of the two agents' scores:
+The vector \(\mathbf{c}\) defines a common ideal type and is fixed within each simulation. Agent \(i\)'s individual-quality score, \(\mathbf{x}_i^\top\mathbf{c}\), measures its alignment with that ideal. A pair's individual-quality component is the average of the two agents' scores:
 
 \[
 U_{ij}=\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c}),

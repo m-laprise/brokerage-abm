@@ -57,14 +57,14 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{match_value_surfaces.png}
-\caption{\textbf{Expected match output across pairs of principal types.} \pv{suppDgpHeatmapN} types selected at evenly spaced individual-quality ranks from realization \pv{suppDgpHeatmapSeed} (\pv{suppDgpN} principals). Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. Individual quality increases rightward and upward. Upper triangles exclude self-matches; colors show expected output minus the grand mean, without match noise.}
+\caption{\textbf{Expected match output across pairs of principal types.} \pv{suppDgpHeatmapN} types selected at evenly spaced ranks of individual quality from realization \pv{suppDgpHeatmapSeed} (\pv{suppDgpN} principals). Types and matching-function objects $c$, $A$, and $B$ are fixed across panels. Individual quality increases rightward and upward. Upper triangles exclude self-matches; colors show expected output minus the grand mean, without match noise.}
 \label{fig:supp-dgp-structure}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{effective_dimensionality.png}
-\caption{\textbf{Dimensionality of expected match output.} Centered expected-output matrices without match noise, summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function draws are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values. Lines and markers are means; ribbons and whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes pure individual quality ($\rho=1$), where difficulty is inapplicable.}
+\caption{\textbf{Dimensionality of expected match output.} Centered expected-output matrices without match noise, summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function draws are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values. Lines and markers are means; ribbons and whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes $\rho=1$, where expected output depends only on individual quality and difficulty is inapplicable.}
 \label{fig:supp-dgp-dimension}
 \end{figure}
 
@@ -78,7 +78,7 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_grid.png}
-\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes pure individual quality ($\rho=1$), where difficulty is inapplicable.}
+\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes $\rho=1$, where expected output depends only on individual quality and difficulty is inapplicable.}
 \label{fig:supp-grid}
 \end{figure}
 
