@@ -201,7 +201,7 @@ X^t,G^t,\\
 \]
 This tuple includes fixed realized model objects and all variables needed for later transitions. Implementation-only scratch buffers and diagnostic-only counters are omitted.
 
-For the fixed reference moments, define
+The fixed calibration moments are calculated across all unordered pairs of distinct agents within each of 50 independently generated calibration markets of 1,000 agents, then averaged with equal weight across markets. Define
 \[
 U_{ij}=\frac{x_i^\top c+x_j^\top c}{2},\qquad
 V_{ij}=x_i^\top A x_j,\qquad
@@ -213,14 +213,14 @@ H_{ij}=\operatorname{sign}(x_i^\top Bx_j)V_{ij},
 \frac{V_{ij}+\delta H_{ij}-(\mu_V+\delta\mu_H)}
 {\sqrt{\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2}}.
 \]
-With \(\kappa(\delta)=\operatorname{Corr}(U,W(\delta))\), the systematic output component is
+With \(\kappa(\delta)\) denoting the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets, the systematic output component is
 \[
 f(x_i,x_j)=
 \frac{\sqrt{\rho}\,\widetilde U_{ij}
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)}
 {\sqrt{1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)}}.
 \]
-Expected match output is \(Q+f(x_i,x_j)\). A completed match produces realized output
+The normalization coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover. Expected match output is \(Q+f(x_i,x_j)\). A completed match produces realized output
 \[
 q_{ij}=Q+f(x_i,x_j)+\varepsilon_{ij},
 \qquad \varepsilon_{ij}\sim\mathcal N(0,\sigma_\varepsilon^2).

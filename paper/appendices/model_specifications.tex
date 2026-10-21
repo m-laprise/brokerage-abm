@@ -105,15 +105,15 @@ f(\mathbf{x}_i,\mathbf{x}_j)
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
 \]
 
-The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These moments are estimated once from independently generated matching environments. Within each environment, they are calculated across all unordered pairs of distinct agents; they are then averaged across environments and held fixed in every simulation. Individual markets are not rescaled, so they retain ordinary between-market variation.
+The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These fixed moments are calculated across all unordered pairs of distinct agents within each of 50 independently generated calibration markets of 1,000 agents, then averaged with equal weight across markets. The resulting coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover.
 
-Let \(\kappa(\delta)\) denote the fixed covariance between the individual-quality and complementarity components after standardization. The common adjustment
+Let \(\kappa(\delta)\) denote the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets. The common adjustment
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
-accounts for this small covariance. Averaged across the independently generated environments, each standardized component and the resulting systematic component \(f\) have within-market variance one for every \(\rho\) and \(\delta\). Because \(Q\) is constant, expected match output has the same variance. This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
+accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. Because \(Q\) is constant, expected match output has the same variance as \(f\). This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
 
-The standardized components have equal marginal variances. After weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), expected output depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
+The standardized components have equal average within-market variances across the calibration markets. On this calibration scale, after weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), expected output depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
 
 \subsubsection{2b. Individual Quality}\label{b.-agent-individual-quality}
 
@@ -171,13 +171,13 @@ The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) a
 
 where \(\delta\in[0,1]\) (default 0.5).
 
-The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different expected output even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. Normalizing \(W_{ij}(\delta)\) separately for each \(\delta\) removes the accompanying change in dispersion. Thus \(\delta\) changes the shape and difficulty of complementarity, not its variance.
+The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different expected output even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. The scale \(\sigma_W(\delta)\) holds the average within-market variance of standardized complementarity at one in the calibration markets as \(\delta\) varies.
 
-\textbf{Boundary construction.} Matrix \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) over the realized type distribution. This ensures that \(\delta\) introduces a distinct boundary rather than merely amplifying the base complementarity pattern. Let
+\textbf{Boundary construction.} At initialization, \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) under the weighted inner product defined by the initial agents\textquotesingle{} empirical second-moment matrix. The resulting boundary remains fixed through turnover. Let
 
 \[\boldsymbol{\Sigma}_x = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top\]
 
-be the uncentered second-moment matrix of the realized type vectors.
+be the uncentered second-moment matrix of the initial type vectors.
 
 Draw \(\mathbf{Z}\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and form a symmetric zero-trace matrix:
 
@@ -195,7 +195,7 @@ then remove the projection of \(\mathbf{B}_0\) onto \(\mathbf{A}\) and normalize
 
 \[\mathbf{B}_{\text{raw}} = \mathbf{B}_0 - \frac{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{B}_0 \boldsymbol{\Sigma}_x \mathbf{A})}{\operatorname{tr}(\boldsymbol{\Sigma}_x \mathbf{A} \boldsymbol{\Sigma}_x \mathbf{A})} \mathbf{A}, \qquad \mathbf{B} = \frac{\mathbf{B}_{\text{raw}}}{\lVert \mathbf{B}_{\text{raw}} \rVert_F}.\]
 
-This gives \(\operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{B}\boldsymbol{\Sigma}_x\mathbf{A})=0\) and \(\|\mathbf{B}\|_F=1\). Weighting by \(\boldsymbol{\Sigma}_x\) removes overlap between the two bilinear scores where agents actually occur, rather than in unused regions of \(\mathbb{R}^d\).
+This gives \(\operatorname{tr}(\boldsymbol{\Sigma}_x\mathbf{B}\boldsymbol{\Sigma}_x\mathbf{A})=0\) and \(\|\mathbf{B}\|_F=1\). Weighting by \(\boldsymbol{\Sigma}_x\) removes overlap between the two bilinear scores under the initial empirical type distribution, rather than in unused regions of \(\mathbb{R}^d\).
 
 Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_j)=f(\mathbf{x}_j,\mathbf{x}_i)\).
 
@@ -269,7 +269,7 @@ Three separate Ridge-only ablations change the broker while leaving every agent'
 
 Matches use a common reservation threshold and channel-specific cost accounting.
 
-At initialization, 10,000 random agent pairs define the calibration mean \(\bar{q}_{\text{cal}} = E[q]\). This calibration quantity scales \(r\), \(\phi\), and \(c_s\).
+At initialization, each simulation computes \(\bar{q}_{\text{cal}}\) as the sample mean of \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\) over 10,000 pairs whose indices are drawn independently and uniformly with replacement from the initial agents. This quantity scales the reservation threshold, broker fee, and self-search cost.
 
 \subsubsection{4a. Outside Options}\label{a.-outside-options}
 
