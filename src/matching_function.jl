@@ -1,7 +1,7 @@
 """
     matching_function.jl
 
-Compute deterministic match signals and noisy match output using fixed component
+Compute deterministic match value and realized match output using fixed component
 calibration.
 """
 
@@ -231,10 +231,8 @@ end
 """
     match_signal(xi, xj, env) -> Float64
 
-Deterministic matching function with fixed component standardization and
-variance-share weights.
-
-Does not include the offset Q or noise ε. Used for holdout evaluation and diagnostics.
+Return `f(x_i, x_j)`, the deterministic component of underlying match value
+`Q + f(x_i, x_j)`.
 """
 function match_signal(xi::AbstractVector, xj::AbstractVector, env::MatchingEnv)::Float64
     quality = 0.5 * (dot(xi, env.c) + dot(xj, env.c))
@@ -267,7 +265,7 @@ end
 """
     match_output(xi, xj, env, rng) -> Float64
 
-Stochastic observable output: q = Q + f(x_i, x_j) + ε, where ε ~ N(0, σ_ε²).
+Return realized match output q = Q + f(x_i, x_j) + ε, where ε ~ N(0, σ_ε²).
 """
 function match_output(
     xi::AbstractVector, xj::AbstractVector, env::MatchingEnv, rng::AbstractRNG

@@ -179,7 +179,7 @@ function type_geometry()
     savefig("type_geometry.png", fig)
 end
 
-# ── S2: conditional match-value surfaces ──
+# ── S2: underlying match-value surfaces ──
 function match_value_surfaces()
     heatmaps = DGP_FD["heatmaps"]
     conditions = DGP_FD["heatmap_conditions"]
@@ -247,7 +247,7 @@ function match_value_surfaces()
         panels[2:3, 6];
         colormap=:vik,
         limits=(-color_limit, color_limit),
-        label="Expected match output (centered)",
+        label="Underlying match value (centered)",
         labelsize=LABEL_FS,
         ticklabelsize=TICK_FS,
         width=18,

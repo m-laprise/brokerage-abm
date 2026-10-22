@@ -135,10 +135,10 @@ $M$ & scalar & Per-call training observation cap. \\
 $G^t=(V,\EG^t)$ & graph & Undirected graph, $V=[N]\cup\{N+1\}$; node $N+1$ is the broker. \\
 $X^t=[x_1^t,\ldots,x_N^t]$ & $\R^{d\times N}$ & Agent type matrix; $x_i^t=X^t_{\cdot i}\in\R^d$. \\
 $\gamma$ & $[0,1]\to\R^d$ & Agent type curve for initial and entrant draws. \\
-$q_{ij}^t$ & scalar & Realized output for match $(i,j)$. \\
+$q_{ij}^t$ & scalar & Realized match output for pair $(i,j)$. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Match-output function}}\\
-$Q$ & scalar & Output offset. \\
+$Q$ & scalar & Additive offset in underlying match value. \\
 $\rho$ & scalar & Controls the relative weighting of individual quality and complementarity: $\rho=0$ gives pure complementarity; $\rho=1$ gives pure individual quality. \\
 $\delta$ & scalar & Strength of the pair boundary in match-specific complementarity. \\
 $\sigma_\varepsilon$ & scalar & Output-noise standard deviation. \\
@@ -148,24 +148,24 @@ $B$ & $\R^{d\times d}$ & Symmetric boundary matrix. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Calibration and costs}}\\
 $\bar q_{\mathrm{cal}}$ & scalar & Calibration mean. \\
-$r$ & scalar & Reservation output. \\
+$r$ & scalar & Reservation threshold. \\
 $\phi$ & scalar & Broker fee. \\
 $c_s$ & scalar & Self-search cost. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Learning and predictions}}\\
 $d_b$ & integer & Broker symmetric pair-feature dimension, $d+d(d+1)/2$. \\
 $\psi_b(x_i,x_j)$ & $\R^{d_b}$ & Symmetric broker pair feature vector. \\
-$\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\in\R^{n_i^t}$ & Agent $i$ history; observation $\ell$ is partner agent type $\Xi_{i,\cdot\ell}^t$ and output $y_{i\ell}^t$. \\
-$\mathcal H_b^t=(X_{b,1}^t,X_{b,2}^t,y_b^t,n_b^t)$ & $X_{b,1}^t,X_{b,2}^t\in\R^{d\times n_b^t}$, $y_b^t\in\R^{n_b^t}$ & Broker history; observation $\ell$ stores the two party types and output $y_{b\ell}^t$. \\
+$\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\in\R^{n_i^t}$ & Agent $i$ history; observation $\ell$ is partner agent type $\Xi_{i,\cdot\ell}^t$ and realized match output $y_{i\ell}^t$. \\
+$\mathcal H_b^t=(X_{b,1}^t,X_{b,2}^t,y_b^t,n_b^t)$ & $X_{b,1}^t,X_{b,2}^t\in\R^{d\times n_b^t}$, $y_b^t\in\R^{n_b^t}$ & Broker history; observation $\ell$ stores the two party types and realized match output $y_{b\ell}^t$. \\
 $\Theta_i^t$ & predictor parameters & Agent $i$ NN weights or Ridge coefficients. \\
 $\Theta_b^t$ & predictor parameters & Broker NN weights or Ridge coefficients. \\
 $\mathcal O_i^t,\mathcal O_b^t$ & Adam states & Persistent NN optimizer moments and step counters; unused by Ridge. \\
 $\Delta_i^t,\Delta_b^t$ & nonnegative integers & Observations added since the learner's previous training call. \\
 $\mathbf p_i^t,\mathbf p_b^t$ & integer sequences & Cumulative history counts at the end of learner initialization (period 0) and each later completed period. \\
-$v_b^t(i,j)$ & scalar & Symmetric broker prediction for unordered pair $\{i,j\}$. \\
+$v_b^t(i,j)$ & scalar & Broker's predicted match value for unordered pair $\{i,j\}$. \\
 $a_{i\to j}^t$ & scalar & Agent $i$'s assessment of candidate $j$. \\
 $w_{j\leftarrow i}^t$ & scalar & Receiver acceptance score. \\
-$\bar q_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed empirical means. \\
+$\bar q_{i\cdot}^t$ & vector & Agent $i$'s mean realized match output by partner. \\
 $C_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed counts. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Period state and market objects}}\\
@@ -213,14 +213,14 @@ H_{ij}=\operatorname{sign}(x_i^\top Bx_j)V_{ij},
 \frac{V_{ij}+\delta H_{ij}-(\mu_V+\delta\mu_H)}
 {\sqrt{\sigma_V^2+2\delta\operatorname{Cov}(V,H)+\delta^2\sigma_H^2}}.
 \]
-With \(\kappa(\delta)\) denoting the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets, the systematic output component is
+With \(\kappa(\delta)\) denoting the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets, the underlying match value excluding \(Q\) is
 \[
 f(x_i,x_j)=
 \frac{\sqrt{\rho}\,\widetilde U_{ij}
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)}
 {\sqrt{1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)}}.
 \]
-The normalization coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover. Expected match output is \(Q+f(x_i,x_j)\). A completed match produces realized output
+The normalization coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover. For a given pair, underlying match value is \(Q+f(x_i,x_j)\). A completed match produces realized match output
 \[
 q_{ij}=Q+f(x_i,x_j)+\varepsilon_{ij},
 \qquad \varepsilon_{ij}\sim\mathcal N(0,\sigma_\varepsilon^2).

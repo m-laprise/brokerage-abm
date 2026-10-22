@@ -36,7 +36,7 @@ This document specifies an agent-based model of brokered matching.
 
 The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same payoff units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
 
-The model specification covers agents (§1), the matching problem (§2), how agents learn to predict expected match output (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
+The model specification covers agents (§1), the matching problem (§2), how agents learn to predict match value (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
 
 \section{Part I. Model Specification}\label{part-i.-model-specification}
 
@@ -85,7 +85,7 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Each potential pair's expected match output combines two components: the average of the agents' individual-quality scores and complementarity between their types. Each agent's individual-quality score is the same across partners, whereas complementarity depends on the pairing. The parameter \(\rho\) controls the relative contributions of these components. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. Expected and realized match output are symmetric in the two agents.
+Each potential pair's underlying match value combines two components: the average of the agents' individual-quality scores and complementarity between their types. Each agent's individual-quality score is the same across partners, whereas complementarity depends on the pairing. The parameter \(\rho\) controls the relative contributions of these components. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. A pair's underlying match value does not depend on which agent initiates the match. Both agents observe the same realized match output.
 
 \subsubsection{2a. Match Output}\label{a.-match-output}
 
@@ -94,7 +94,7 @@ Let \(q_{ij}\) be the realized per-period output of a match between agents \(i\)
 \[q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
 \varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2).\]
 
-The conditional expected output is \(E[q_{ij}\mid\mathbf{x}_i,\mathbf{x}_j]=Q+f(\mathbf{x}_i,\mathbf{x}_j)\). The systematic component \(f\) is fully determined by the two types and by matching-function objects fixed at initialization. The independent, mean-zero shock \(\varepsilon_{ij}\) creates match-specific variation that neither the agents nor the broker can predict.
+A pair's underlying match value is \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\), determined by the two types and the matching-function objects fixed at initialization. Because the shock \(\varepsilon_{ij}\) is independent and has mean zero, underlying match value also equals \(E[q_{ij}\mid\mathbf{x}_i,\mathbf{x}_j]\), holding the matching environment fixed. The shock creates variation in realized match output that neither the agents nor the broker can predict.
 
 The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents:
 
@@ -111,9 +111,9 @@ Let \(\kappa(\delta)\) denote the average within-market covariance between the s
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
-accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. Because \(Q\) is constant, expected match output has the same variance as \(f\). This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
+accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
 
-The standardized components have equal average within-market variances across the calibration markets. On this calibration scale, after weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), expected output depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
+The standardized components have equal average within-market variances across the calibration markets. On this calibration scale, after weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), match value depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
 
 \subsubsection{2b. Individual Quality}\label{b.-agent-individual-quality}
 
@@ -171,7 +171,7 @@ The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) a
 
 where \(\delta\in[0,1]\) (default 0.5).
 
-The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different expected output even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. The scale \(\sigma_W(\delta)\) holds the average within-market variance of standardized complementarity at one in the calibration markets as \(\delta\) varies.
+The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different underlying match values even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. The scale \(\sigma_W(\delta)\) holds the average within-market variance of standardized complementarity at one in the calibration markets as \(\delta\) varies.
 
 \textbf{Boundary construction.} At initialization, \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) under the weighted inner product defined by the initial agents\textquotesingle{} empirical second-moment matrix. The resulting boundary remains fixed through turnover. Let
 
@@ -209,7 +209,7 @@ In the default model, both agents and the broker use a fully-connected network w
 
 \[\hat{q}(\mathbf{z}) = \mathbf{w}_2^\top \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1) + b_2\]
 
-where \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Agents receive raw partner type vectors, the broker receives pairs of them.
+where \(\hat q\) is predicted match value, \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Agents receive raw partner type vectors, the broker receives pairs of them.
 
 \textbf{Training rule.} Network weights minimize MSE with the Adam optimizer on the current training window. Agents and the broker may have separate learning rates, \(\eta_{\mathrm{lr},a}\) and \(\eta_{\mathrm{lr},b}\). No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\mathrm{init},c}\) gradient steps on their seed histories, where \(c\in\{a,b\}\).
 
@@ -357,7 +357,7 @@ then the broker samples without replacement from \(\{1,\ldots,N\}\setminus \wide
 
 \subsubsection{6c. Broker-Mediated Search}\label{c.-broker-mediated-search}
 
-For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match output. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
+For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match value. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
 
 \textbf{Assessment-only.} The broker scores the agent's network neighbors and an independently sampled stranger pool (§6a) using its pair predictions.
 
@@ -467,7 +467,7 @@ where \(d_b\) is the broker's degree and \(t_b\) is the number of ties among the
 
 \subsubsection{Prediction Quality}\label{prediction-quality}
 
-Prediction quality is evaluated on random candidate pairs and accepted directed offers:
+Prediction quality is evaluated on random candidate pairs:
 
 {
 \begin{longtable}[]{@{}
@@ -486,8 +486,7 @@ Reported measures
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Random candidate pairs & Up to 100 agents with non-empty histories; for each sampled agent \(i\), \(\min(40,N-1)\) non-self partners \(j\). Agent and broker predictions are evaluated against noiseless \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\). Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
-Selected offers & Accepted directed offers by channel, self-search or brokered. A reciprocal relationship can represent two directed decisions. & Channel-specific \(R^2\), RMSE, bias, and Spearman rank correlation. \\
+Random candidate pairs & Up to 100 agents with non-empty histories; for each sampled agent \(i\), \(\min(40,N-1)\) non-self partners \(j\). Each predicted match value is evaluated against \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\) for the same sampled pair. Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
 \end{longtable}
 }
 
@@ -499,7 +498,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation evaluates the strict ranking produced from predicted output. Candidates are ordered by predicted output, with each set of equal predictions ordered uniformly at random. Agent and broker tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with expected-output ranks. For selected offers, it compares the produced ranking with realized-output ranks. Equal target values retain their average ranks. Thus a constant predictor produces a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: expected output for random candidate pairs and realized output for selected offers. For selected-offer summaries, \(R^2\), bias, and rank correlation are undefined when \(n < 5\) or \(\operatorname{Var}_{\mathrm{pop}}(q) < \sigma_\varepsilon^2/6\), while RMSE is defined whenever \(n>0\). Random-candidate summaries use common valid-agent support for all four measures: an agent-level candidate set that fails the sample-size or variance condition is excluded from the \(R^2\), RMSE, bias, and rank-correlation means.
+Rank correlation evaluates the ranking produced from predicted match value. Candidates are ordered by predicted match value, with equal predictions ordered uniformly at random. All tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with ranks of underlying match value. Thus a constant predictor would produce a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: underlying match value for random candidate pairs. Random-candidate summaries exclude an agent's candidate set from all four measures if it contains fewer than five pairs or if the population variance of its underlying match values is below \(\sigma_\varepsilon^2/6\). The \(R^2\), RMSE, bias, and rank-correlation means therefore use the same valid-agent sample.
 
 \subsubsection{Other Measures}\label{other-measures}
 

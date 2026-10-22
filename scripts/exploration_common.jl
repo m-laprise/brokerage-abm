@@ -33,7 +33,7 @@ end
 """
     build_ordered_output_matrix(types, env; include_regime=false)
 
-Build the noiseless output matrix after sorting agents by the first principal
+Build the matrix of underlying match values after sorting agents by the first principal
 component of their types. Optionally also return the regime-gain matrix.
 """
 function build_ordered_output_matrix(types, env; include_regime::Bool=false)

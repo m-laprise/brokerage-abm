@@ -10,10 +10,10 @@ curve into three dimensions. S2 displays five distinct matching conditions for
 100 principals sampled at evenly spaced individual-quality ranks; S3 uses all 1,000
 principals.
 
-The output, `output/supplement/dgp_figure_data.jld2`, contains the centered conditional
-type-geometry projection used in S1, conditional match-value matrices used in S2,
-normalized singular spectra and seed-level 90%-energy effective ranks used in S3,
-and complete generation provenance.
+The output, `output/supplement/dgp_figure_data.jld2`, contains the type-geometry
+projection used in S1, centered matrices of underlying match value used in S2,
+normalized singular spectra and seed-level 90%-energy effective ranks used in S3, and
+complete generation provenance.
 
 Usage: julia --project --threads=auto scripts/paper/dgp_figdata.jl
 """
@@ -78,7 +78,7 @@ function dgp_components(agent_types::Vector{Vector{Float64}}, env::MatchingEnv)
     return (; quality_scores, quality_surface, complementarity, regime_sign)
 end
 
-"""Construct `E[q_ij | x_i, x_j]` without drawing match noise."""
+"""Construct the matrix with entries `Q + f(x_i, x_j)` for fixed types and matching environment."""
 function conditional_match_matrix(components, rho::Real, delta::Real)
     r = Float64(rho)
     d = Float64(delta)
@@ -90,7 +90,7 @@ function conditional_match_matrix(components, rho::Real, delta::Real)
            coefficients.interaction_weight .* interaction
 end
 
-"""Subtract the grand mean from a conditional match-value matrix."""
+"""Subtract the grand mean from a matrix of underlying match values."""
 center_match_matrix(matrix::AbstractMatrix) = Matrix{Float64}(matrix .- mean(matrix))
 
 """Return descending singular values of a real symmetric matrix."""
