@@ -8,10 +8,8 @@ calibration.
 using LinearAlgebra: dot, mul!, norm, tr
 using Random: AbstractRNG
 
-# Fixed calibration over 50 independently generated markets with N = 1,000 and
-# seeds 10,001:10,050. Each market contributes equally through its within-market
-# moments over all unordered pairs of distinct principals. The calibration is
-# reproduced by scripts/calibrate_match_component_moments.jl.
+# Adopted calibration moments. The design is recorded in parameters.jl;
+# scripts/calibrate_match_component_moments.jl can reproduce the calculation.
 const MATCH_QUALITY_MEAN = 0.002893596796277548
 const MATCH_QUALITY_VARIANCE = 0.08517176413068542
 const MATCH_BASE_INTERACTION_MEAN = 0.00023232587929797094
@@ -292,7 +290,7 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    calibrate(env, agent_types, params, rng; n_samples=10_000) -> CalibrationConstants
+    calibrate(env, agent_types, params, rng; n_samples=CALIBRATION_PAIRS)
 
 Monte Carlo calibration from random agent pairs. Returns q_cal (mean output),
 r, phi, and c_s.
@@ -302,7 +300,7 @@ function calibrate(
     agent_types::Vector{Vector{Float64}},
     params::ModelParams,
     rng::AbstractRNG;
-    n_samples::Int=10_000,
+    n_samples::Int=CALIBRATION_PAIRS,
 )::CalibrationConstants
     n_agents = length(agent_types)
     d = env.d

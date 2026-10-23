@@ -16,6 +16,27 @@ const MATCH_NOISE_SD_BASE = 0.28406980298637513
 # relationship position, while the broker fee applies to each realized placement.
 const SEARCH_COST_RATE_BASE = 0.05
 
+const CURVE_FREQUENCIES = 1:5
+const BROKER_HISTORY_SEED_CAP = 100
+const HOLDOUT_PRINCIPALS = 100
+const HOLDOUT_PARTNERS = 40
+const CALIBRATION_PAIRS = 10_000
+const MATCH_CALIBRATION_N = 1000
+const MATCH_CALIBRATION_SEEDS = 10_001:10_050
+
+"""Fixed implementation settings to retain with simulation output."""
+function fixed_model_settings()
+    return (;
+        Q=Q_OFFSET, curve_frequencies=collect(CURVE_FREQUENCIES),
+        broker_history_seed_cap=BROKER_HISTORY_SEED_CAP,
+        holdout_principals=HOLDOUT_PRINCIPALS, holdout_partners=HOLDOUT_PARTNERS,
+        calibration_pairs=CALIBRATION_PAIRS,
+        match_calibration_N=MATCH_CALIBRATION_N,
+        match_calibration_seeds=collect(MATCH_CALIBRATION_SEEDS),
+        adam_beta1=ADAM_BETA1, adam_beta2=ADAM_BETA2, adam_epsilon=ADAM_EPS,
+    )
+end
+
 """
     roster_target_size(N::Int, roster_frac::Real) -> Int
 
@@ -67,7 +88,7 @@ function default_params(; seed::Int=42, kwargs...)::ModelParams
         :ridge_lambda_agent => 0.001,
         :ridge_lambda_broker => 0.001,
         :ridge_broker_variant => :pair,
-        # Neural network
+        # Analyst-selected training settings; calibration summaries do not select them.
         :eta_lr_agent => 0.003,
         :eta_lr_broker => 0.03,
         :E_init_agent => 100,

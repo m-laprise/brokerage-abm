@@ -109,8 +109,8 @@ function update_holdout_metrics!(state::ModelState)
     env = state.env
     ws = state.workspace
 
-    n_sample_agents = min(100, N)
-    n_partners = min(40, N - 1)
+    n_sample_agents = min(HOLDOUT_PRINCIPALS, N)
+    n_partners = min(HOLDOUT_PARTNERS, N - 1)
     if n_partners < 5
         state.accum.agent_holdout_r2 = NaN
         state.accum.agent_holdout_bias = NaN

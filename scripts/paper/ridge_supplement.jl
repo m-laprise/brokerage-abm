@@ -1,21 +1,6 @@
-"""
-    scripts/paper/ridge_supplement.jl
+"""Generate NN–Ridge comparison values from retained analyses."""
 
-Emit the Ridge and NN comparison values quoted in the paper. Inputs are retained
-figure data under `output/{main,ridge/paired}/` and the paired condition comparison
-under `output/ridge/paired/analysis/`.
-
-Outputs:
-
-  * `output/ridge/paired/analysis/paper_values.tex`
-
-No raw sweep access is required. Every estimate and count is computed from
-retained data. The Ridge input and output paths can be overridden
-with `BROKERAGE_ABM_RIDGE_FIGDATA_PATH` and
-`BROKERAGE_ABM_RIDGE_PAPER_VALUES_PATH`.
-
-Usage: julia --project --threads=auto scripts/paper/ridge_supplement.jl
-"""
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
@@ -35,17 +20,18 @@ const VALUES = get(
     "BROKERAGE_ABM_RIDGE_PAPER_VALUES_PATH",
     joinpath(REPO, "output", "ridge", "paired", "analysis", "paper_values.tex"),
 )
-const BASELINE_REL = "oat/rho=0.5"
 
 const PROVENANCE = manuscript_git_provenance(
     REPO;
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/monte_carlo.jl",
     ),
 )
 isfile(INPUT) || error("missing base Ridge figure data: $INPUT")
 const FD = JLD2.load(INPUT)["figdata"]
+const RIDGE_SETTINGS = ReportingSettings.validate_figure(FD, ReportingSettings.retained(INPUT, FD))
+const BASELINE_REL = RIDGE_SETTINGS["baseline_reldir"]
 const META = FD["meta"]
 const DATA_ANALYSIS_COMMIT = validate_analysis_commit(
     PROVENANCE,
@@ -59,10 +45,9 @@ META["learning_model"] == "ridge" || error("expected base Ridge figure data")
 const REGIMES = FD["regime_cells"]
 length(REGIMES) == length(META["condition_seed_counts"]) ||
     error("base Ridge effective-realization count does not match its metadata")
-all(length(cell["seeds"]) == (cell["rel"] == BASELINE_REL ? 50 : 20) for cell in REGIMES) ||
-    error("unexpected base Ridge seed plan")
 
-rank_interval(cell) = monte_carlo_interval(cell["seed_values"]["rankgap"])
+
+rank_interval(cell) = monte_carlo_interval(cell["seed_values"]["rankgap"]; level=Float64(RIDGE_SETTINGS["interval_level"]))
 
 const REGIME_POINTS = sort(
     [
@@ -97,8 +82,12 @@ function assessment_values()
         PROVENANCE, provenance["analysis_commit"]; artifact="NN-Ridge comparison"
     )
     provenance["analysis_source_clean"] == "true" || error("paired comparison used dirty sources")
-    early = (51, 70)
-    late = (maximum(nn["period"]) - 19, maximum(nn["period"]))
+    nn_settings = ReportingSettings.validate_figure(nn, ReportingSettings.retained(joinpath(REPO, "output", "main", "figure_data.jld2"), nn))
+    for key in ("baseline_reldir", "early_window", "late_window", "interval_level")
+        nn_settings[key] == RIDGE_SETTINGS[key] || error("NN-Ridge setting mismatch: $key")
+    end
+    early = Tuple(nn_settings["early_window"])
+    late = Tuple(nn_settings["late_window"])
     provenance["late_periods"] == "$(late[1]):$(late[2])" || error("comparison window differs")
     nn["period"] == FD["period"] || error("NN and Ridge periods differ")
     for (prefix, data) in (("nn", nn), ("ridge", FD))
@@ -185,7 +174,7 @@ function write_values()
     write_if_changed(VALUES, content)
     record_publication_stage(PROVENANCE;
         stage="scripts/paper/ridge_supplement.jl",
-        inputs=(INPUT, joinpath(REPO, "output", "main", "figure_data.jld2"),
+        inputs=(ReportingSettings.retained_dependencies(FD)..., INPUT, joinpath(REPO, "output", "main", "figure_data.jld2"),
             joinpath(dirname(INPUT), "analysis", "provenance.txt"),
             joinpath(dirname(INPUT), "analysis", "condition_comparison.tsv")),
         outputs=(VALUES,),

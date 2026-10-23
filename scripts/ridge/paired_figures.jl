@@ -1,22 +1,6 @@
-"""
-    scripts/ridge/paired_figures.jl
+"""Render paired NN–Ridge figures from retained analyses."""
 
-Render the four comparative figure counterparts for the base Ridge
-supplement. The figures reproduce the content and conventions of Main Figures
-1--4, but place the NN and base Ridge results in the same asset with shared
-axes. This makes visual comparisons meaningful without changing the main
-figures.
-
-Inputs default to:
-
-  output/main/figure_data.jld2
-  output/ridge/paired/figure_data.jld2
-
-Set `BROKERAGE_ABM_NN_FIGDATA` or `BROKERAGE_ABM_RIDGE_FIGDATA` to override an
-input. Set `BROKERAGE_ABM_RIDGE_FIGURE_DIR` to override the output directory.
-
-Usage: julia --project --threads=auto scripts/ridge/paired_figures.jl
-"""
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
@@ -48,7 +32,7 @@ const OUT_DIR = normpath(
 )
 const REPORTING_PROVENANCE = manuscript_git_provenance(
     REPO_ROOT;
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/monte_carlo.jl",
         "scripts/figure_style.jl",
@@ -57,10 +41,17 @@ const REPORTING_PROVENANCE = manuscript_git_provenance(
 
 const NN = load(NN_PATH)["figdata"]
 const RIDGE = load(RIDGE_PATH)["figdata"]
+const NN_SETTINGS = ReportingSettings.validate_figure(NN, ReportingSettings.retained(NN_PATH, NN))
+const RIDGE_SETTINGS = ReportingSettings.validate_figure(RIDGE, ReportingSettings.retained(RIDGE_PATH, RIDGE))
+const BASELINE_REL = NN_SETTINGS["baseline_reldir"]
+comparison_interval(values) = monte_carlo_interval(values; level=Float64(NN_SETTINGS["interval_level"]))
+for key in ("baseline_reldir", "network_measure_interval", "late_window", "early_window", "interval_level")
+    NN_SETTINGS[key] == RIDGE_SETTINGS[key] || error("NN and Ridge reporting settings differ: $key")
+end
 const MODELS = ((label="NN", data=NN), (label="Base Ridge", data=RIDGE))
-const ROLLW = 5
-const BETWINT = 20
-const TSTART = 30
+const ROLLW = AnalysisSettings.ROLLING_WIDTH
+const BETWINT = Int(NN_SETTINGS["network_measure_interval"])
+const TSTART = AnalysisSettings.AXIS_START
 const PXU = 2.0
 const FIGURE_VALUES = joinpath(dirname(OUT_DIR), "figure_values.tex")
 const RHO_COLORS = Dict(
@@ -88,9 +79,6 @@ function validate_inputs()
             error("$label effective-realization count does not match its metadata")
         meta["n_runs"] == sum(values(counts)) ||
             error("$label run count does not match its condition seed counts")
-        meta["baseline_n_seeds"] == 50 || error("expected 50 $label baseline seeds")
-        all(rel == "oat/rho=0.5" ? n == 50 : n == 20 for (rel, n) in counts) ||
-            error("unexpected $label seed plan")
         lowercase(String(meta["learning_model"])) == expected_model ||
             error("unexpected $label learning model")
         validate_analysis_commit(
@@ -135,7 +123,7 @@ function measured_series(data, key)
         hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
     )
     summaries = [
-        monte_carlo_interval(view(smoothed, period_index, :)) for
+        comparison_interval(view(smoothed, period_index, :)) for
         period_index in axes(smoothed, 1)
     ]
     return (
@@ -318,7 +306,7 @@ function figure_r2()
         for delta in deltas
             points = sort(
                 [
-                    let interval = monte_carlo_interval(cell["outcome_seed_values"][key])
+                    let interval = comparison_interval(cell["outcome_seed_values"][key])
                         (
                             rho=rho,
                             mean=interval.mean,
@@ -351,7 +339,7 @@ function figure_r2()
                 label="δ = $delta",
             )
         end
-        boundary_interval = monte_carlo_interval(
+        boundary_interval = comparison_interval(
             boundary_cells[model.label]["outcome_seed_values"][key]
         )
         rangebars!(
@@ -507,11 +495,11 @@ end
 function write_provenance()
     nn_counts = NN["meta"]["condition_seed_counts"]
     nonbaseline_seed_counts = unique(
-        n for (rel, n) in nn_counts if rel != "oat/rho=0.5"
+        n for (rel, n) in nn_counts if rel != BASELINE_REL
     )
     length(nonbaseline_seed_counts) == 1 || error("NN nonbaseline seed counts differ")
     record_publication_stage(REPORTING_PROVENANCE;
-        stage="scripts/ridge/paired_figures.jl", inputs=(NN_PATH, RIDGE_PATH),
+        stage="scripts/ridge/paired_figures.jl", inputs=(ReportingSettings.retained_dependencies(NN)..., ReportingSettings.retained_dependencies(RIDGE)..., NN_PATH, RIDGE_PATH),
         outputs=(FIGURE_VALUES, joinpath.(OUT_DIR, ("baseline_dynamics.png",
             "matching_grid.png", "centrality_and_access.png", "structural_advantage.png"))...),
         analysis_commits=Dict("nn analysis commit" => NN["meta"]["analysis_git_commit"],

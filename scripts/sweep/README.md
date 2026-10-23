@@ -60,29 +60,31 @@ scripts `status.sh` and `monitor.sh` provide more detailed progress checks.
 
 The default learning model is the neural network. The main controls are:
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `BROKERAGE_ABM_LEARNING_MODEL` | `nn` or `ridge` | `nn` |
-| `BROKERAGE_ABM_N_SEEDS` | Seeds for each regime | `20` |
-| `BROKERAGE_ABM_BASELINE_N_SEEDS` | Seeds at the baseline | Same as other regimes |
-| `BROKERAGE_ABM_SWEEP_SCOPE` | `full` or `rho_delta` | `full` |
-| `BROKERAGE_ABM_NN_ETA_LR_AGENT` | Principal NN learning rate | `0.003` |
-| `BROKERAGE_ABM_NN_ETA_LR_BROKER` | Broker NN learning rate | `0.03` |
-| `BROKERAGE_ABM_NN_E_INIT_AGENT` | Principal NN initial update budget | `100` |
-| `BROKERAGE_ABM_NN_E_INIT_BROKER` | Broker NN initial update budget | `100` |
-| `BROKERAGE_ABM_NN_TRAIN_STEPS_AGENT` | Principal NN recurrent update floor | `50` |
-| `BROKERAGE_ABM_NN_TRAIN_STEPS_BROKER` | Broker NN recurrent update floor | `50` |
-| `BROKERAGE_ABM_RIDGE_LAMBDA_AGENT` | Principal Ridge penalty | `0.001` |
-| `BROKERAGE_ABM_RIDGE_LAMBDA_BROKER` | Broker Ridge penalty | `0.001` |
-| `BROKERAGE_ABM_RIDGE_BROKER_VARIANT` | Ridge broker specification | `pair` |
-| `BROKERAGE_ABM_TAG` | Output tag | Date and commit based |
-| `BROKERAGE_ABM_CPUS` | CPUs and Julia threads per simulation | `2` |
-| `BROKERAGE_ABM_THROTTLE` | Maximum concurrent simulation tasks | `200` |
-| `BROKERAGE_ABM_TIME` | Simulation-task wall time | `01:01:00` |
-| `BROKERAGE_ABM_TIME_MIN` | Optional lower time limit for backfill scheduling | Unset |
-| `BROKERAGE_ABM_QOS` | Compute QOS | `short` |
+Defaults are defined in [`sweep_config.jl`](sweep_config.jl) and the submission scripts.
 
-The reporting NN sweep uses 20 seeds for every regime and 50 at the baseline:
+| Variable | Purpose |
+|---|---|
+| `BROKERAGE_ABM_LEARNING_MODEL` | `nn` or `ridge` |
+| `BROKERAGE_ABM_N_SEEDS` | Seeds for each regime |
+| `BROKERAGE_ABM_BASELINE_N_SEEDS` | Seeds at the baseline |
+| `BROKERAGE_ABM_SWEEP_SCOPE` | `full` or `rho_delta` |
+| `BROKERAGE_ABM_NN_ETA_LR_AGENT` | Principal NN learning rate |
+| `BROKERAGE_ABM_NN_ETA_LR_BROKER` | Broker NN learning rate |
+| `BROKERAGE_ABM_NN_E_INIT_AGENT` | Principal NN initial update budget |
+| `BROKERAGE_ABM_NN_E_INIT_BROKER` | Broker NN initial update budget |
+| `BROKERAGE_ABM_NN_TRAIN_STEPS_AGENT` | Principal NN recurrent update floor |
+| `BROKERAGE_ABM_NN_TRAIN_STEPS_BROKER` | Broker NN recurrent update floor |
+| `BROKERAGE_ABM_RIDGE_LAMBDA_AGENT` | Principal Ridge penalty |
+| `BROKERAGE_ABM_RIDGE_LAMBDA_BROKER` | Broker Ridge penalty |
+| `BROKERAGE_ABM_RIDGE_BROKER_VARIANT` | Ridge broker specification |
+| `BROKERAGE_ABM_TAG` | Output tag |
+| `BROKERAGE_ABM_CPUS` | CPUs and Julia threads per simulation |
+| `BROKERAGE_ABM_THROTTLE` | Maximum concurrent simulation tasks |
+| `BROKERAGE_ABM_TIME` | Simulation-task wall time |
+| `BROKERAGE_ABM_TIME_MIN` | Optional lower time limit for backfill scheduling |
+| `BROKERAGE_ABM_QOS` | Compute QOS |
+
+For example, to request additional baseline seeds:
 
 ```bash
 export BROKERAGE_ABM_N_SEEDS=20

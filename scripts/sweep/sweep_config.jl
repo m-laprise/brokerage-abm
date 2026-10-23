@@ -25,7 +25,7 @@ structure so the two cannot drift.
 # ─────────────────────────────────────────────────────────────────────────────
 
 """Bump when the shard schema or scientific run semantics change."""
-const SWEEP_SCHEMA_VERSION = 12
+const SWEEP_SCHEMA_VERSION = 13
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Baseline + sweep specification

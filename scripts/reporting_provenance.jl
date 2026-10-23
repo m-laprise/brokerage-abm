@@ -24,6 +24,11 @@ function reporting_source_files(root, sources)
             error("missing reporting dependency: $source")
         end
     end
+    if "scripts/monte_carlo.jl" in paths
+        dependency = "scripts/analysis_settings.jl"
+        isfile(joinpath(root, dependency)) || error("missing reporting dependency: $dependency")
+        push!(paths, dependency)
+    end
     for file in ("Project.toml", "Manifest.toml", "scripts/reporting_provenance.jl")
         isfile(joinpath(root, file)) && push!(paths, file)
     end

@@ -255,4 +255,12 @@ using Graphs: SimpleGraph, add_edge!, degree, has_edge
 
         @test rand(state_with_holdout.rng) == rand(state_reference.rng)
     end
+
+    @testset "holdout sample is bounded by the population" begin
+        state = initialize_model(default_params(N=10, k=4, T=1, seed=98233, learning_model=:ridge))
+        BrokerageABM.update_holdout_metrics!(state)
+        @test all(isfinite, (state.accum.agent_holdout_rank, state.accum.broker_holdout_rank,
+            state.accum.agent_holdout_rmse, state.accum.broker_holdout_rmse))
+        @test isnothing(verify_invariants(state))
+    end
 end

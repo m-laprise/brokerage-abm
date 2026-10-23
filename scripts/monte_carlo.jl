@@ -6,6 +6,8 @@ must represent one independent simulation seed. Intervals are two-sided
 Student-t intervals for the seed mean.
 """
 
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "analysis_settings.jl"))
+
 using Distributions: TDist, quantile
 using Statistics: mean, std
 
@@ -13,13 +15,13 @@ using Statistics: mean, std
 finite_seed_values(values) = filter(isfinite, Float64.(collect(values)))
 
 """
-    monte_carlo_interval(values; level=0.95)
+    monte_carlo_interval(values; level=AnalysisSettings.INTERVAL_LEVEL)
 
 Return the mean, standard error, two-sided Student-t interval, and number of
 finite seed values. The interval bounds and standard error are `NaN` when fewer
 than two finite seeds are available.
 """
-function monte_carlo_interval(values; level::Float64=0.95)
+function monte_carlo_interval(values; level::Float64=AnalysisSettings.INTERVAL_LEVEL)
     0.0 < level < 1.0 || throw(ArgumentError("level must lie strictly between 0 and 1"))
     kept = finite_seed_values(values)
     n = length(kept)
@@ -35,12 +37,12 @@ function monte_carlo_interval(values; level::Float64=0.95)
 end
 
 """
-    paired_monte_carlo_interval(reference, comparison; level=0.95)
+    paired_monte_carlo_interval(reference, comparison; level=AnalysisSettings.INTERVAL_LEVEL)
 
 Return a Student-t interval for the mean seed-level difference `comparison -
 reference`. Nonfinite pairs are removed jointly, preserving pairing.
 """
-function paired_monte_carlo_interval(reference, comparison; level::Float64=0.95)
+function paired_monte_carlo_interval(reference, comparison; level::Float64=AnalysisSettings.INTERVAL_LEVEL)
     length(reference) == length(comparison) ||
         throw(DimensionMismatch("paired vectors must have the same length"))
     differences = Float64[

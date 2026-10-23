@@ -17,11 +17,10 @@ using StableRNGs: StableRNG
 """
     generate_curve_geometry(d, s, rng) -> CurveGeometry
 
-Draw random frequencies f_k ~ U{1,...,5} and phases θ_k ~ U[0,2π) for the
-sinusoidal type curve with s active dimensions.
+Draw frequencies uniformly from `CURVE_FREQUENCIES` and phases from U[0,2π).
 """
 function generate_curve_geometry(d::Int, s::Int, rng::AbstractRNG)::CurveGeometry
-    freqs = [rand(rng, 1:5) for _ in 1:s]
+    freqs = [rand(rng, CURVE_FREQUENCIES) for _ in 1:s]
     phases = [2π * rand(rng) for _ in 1:s]
     return CurveGeometry(d, s, freqs, phases)
 end
@@ -237,7 +236,7 @@ function initialize_model(params::ModelParams)::ModelState
         (edge_i[idx] in broker.roster) && (edge_j[idx] in broker.roster)
     ]
     shuffle!(rng, roster_edge_indices)
-    n_broker_seed = min(100, length(roster_edge_indices))
+    n_broker_seed = min(BROKER_HISTORY_SEED_CAP, length(roster_edge_indices))
     for idx in @view roster_edge_indices[1:n_broker_seed]
         record_broker_history!(
             broker, agents[edge_i[idx]].type, agents[edge_j[idx]].type, edge_q[idx]; rng=rng

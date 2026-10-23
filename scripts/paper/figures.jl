@@ -1,35 +1,7 @@
-"""
-    scripts/paper/figures.jl
+"""Render main figures from retained inputs.
+Options: --assessment-not-access, --information-sources, or --metadata."""
 
-Figure assets for the paper's results section. TeX figure numbers follow their
-placement in `paper/section_source.tex`; the asset filenames remain stable.
-Reads the retained datasets `output/main/figure_data.jld2`,
-`output/ridge/{paired,ablations}/figure_data.jld2`, the NN and Ridge access-window
-archives, the paired Ridge condition comparison, and the condition audit under
-`output/main/convergence/`, so figures render locally without the sweeps. No
-simulation; no hard-coded results
-(literal constants are display conventions only). Outputs print-resolution PNGs
-to output/main/figures/ and the display-convention keys to output/main/figmeta.tex.
-
-  assessment_not_access
-                      broker use, access, and assessment accuracy
-  information_sources_net_output_channels
-                      ranking and net-output evidence for the broker's advantage
-  matching_grid       six outcomes across the rho x delta grid, lines per delta
-                      with 95% Monte Carlo interval whiskers
-  centrality_and_access
-                      centrality against principal degree and access across regimes
-  structural_advantage
-                      structural measures vs informational/output gaps
-
-Usage: julia --project --threads=auto scripts/paper/figures.jl
-Subsection-1 figure only:
-    julia --project --threads=auto scripts/paper/figures.jl --assessment-not-access
-Subsection-3 figure only:
-    julia --project --threads=auto scripts/paper/figures.jl --information-sources
-Caption display values only:
-    julia --project --threads=auto scripts/paper/figures.jl --metadata
-"""
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
@@ -47,20 +19,21 @@ const INFORMATION_FIGDATA = normpath(
 )
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
-# Display conventions, quoted in the captions (paper/captions.tex) via the keys
-# emitted to output/main/figmeta.tex. BETWINT matches the generation-time
-# network_measure_interval; TSTART is the end of burn-in (display trim only).
-const ROLLW = 5                       # rolling-mean window, in observations
-const BETWINT = 20                    # betweenness measurement interval, periods
-const TSTART = 30                     # displayed axes start here; data never cut
+# Display choices are shared; measurement cadence comes from the run.
+const ROLLW = AnalysisSettings.ROLLING_WIDTH
+const TSTART = AnalysisSettings.AXIS_START
 const RHO_COLORS = PUB_RHO_COLORS
 const DELTA_COLORS = PUB_DELTA_COLORS
 
 const MAIN_FIGDATA = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "figure_data.jld2"))
 const FD = JLD2.load(MAIN_FIGDATA)["figdata"]
+const MAIN_SETTINGS = ReportingSettings.validate_figure(FD, ReportingSettings.retained(MAIN_FIGDATA, FD))
+const BETWINT = Int(MAIN_SETTINGS["network_measure_interval"])
+const BASELINE_REL = MAIN_SETTINGS["baseline_reldir"]
+figure_interval(values) = monte_carlo_interval(values; level=Float64(MAIN_SETTINGS["interval_level"]))
 const REPORTING_PROVENANCE = manuscript_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/monte_carlo.jl",
         "scripts/figure_style.jl",
@@ -100,7 +73,7 @@ function information_sources()
     )
     record_publication_stage(REPORTING_PROVENANCE;
         stage="scripts/paper/figures.jl --information-sources",
-        inputs=(MAIN_FIGDATA, INFORMATION_FIGDATA),
+        inputs=(ReportingSettings.retained_dependencies(FD)..., MAIN_FIGDATA, INFORMATION_FIGDATA),
         outputs=(joinpath(OUT, "information_sources_net_output_channels.png"),),
         analysis_commits=Dict("data analysis commit" => INFORMATION_ANALYSIS_COMMIT),
     )
@@ -144,7 +117,7 @@ function principal_degree_intervals(cells)
             parse(Int, row["n_seeds"]) == n_seeds ||
                 error("condition audit seed-count mismatch")
             saved = interval(row)
-            expected = monte_carlo_interval(cell["seed_values"][key])
+            expected = figure_interval(cell["seed_values"][key])
             all(
                 isapprox(
                     getproperty(saved, field), getproperty(expected, field);
@@ -173,8 +146,8 @@ function centrality_and_access()
     rho_values = sort(unique(rho))
     eta_colors = PUB_ETA_COLORS
     rho_markers = PUB_RHO_MARKERS
-    access_intervals = [monte_carlo_interval(c["seed_values"]["access"]) for c in cells]
-    centrality_intervals = [monte_carlo_interval(c["seed_values"]["betw"]) for c in cells]
+    access_intervals = [figure_interval(c["seed_values"]["access"]) for c in cells]
+    centrality_intervals = [figure_interval(c["seed_values"]["betw"]) for c in cells]
     fig = Figure(; size=(1200, 610))
     panels = (
         (
@@ -297,7 +270,7 @@ function matching_grid()
         for d in dls
             pts = sort(
                 [
-                    let interval = monte_carlo_interval(c["outcome_seed_values"][key])
+                    let interval = figure_interval(c["outcome_seed_values"][key])
                         (
                             rho=r,
                             mean=interval.mean,
@@ -330,7 +303,7 @@ function matching_grid()
                 label="δ = $d",
             )
         end
-        boundary_interval = monte_carlo_interval(boundary_cell["outcome_seed_values"][key])
+        boundary_interval = figure_interval(boundary_cell["outcome_seed_values"][key])
         rangebars!(
             ax,
             [1.0],
@@ -411,7 +384,7 @@ function assessment_trajectory(data, key)
         hcat, (rolling_mean(view(raw, :, seed), ROLLW) for seed in axes(raw, 2))
     )
     summaries = [
-        monte_carlo_interval(view(smoothed, period, :)) for period in axes(raw, 1)
+        figure_interval(view(smoothed, period, :)) for period in axes(raw, 1)
     ]
     all(
         summary.n == size(raw, 2) for (period, summary) in
@@ -432,21 +405,22 @@ function access_window_summaries(figure_data, path)
     meta = data["metadata"]
     meta["manifest_hash"] == figure_data["meta"]["manifest_hash"] || error("access-window sweep mismatch")
     meta["schema_version"] == figure_data["meta"]["schema_version"] || error("access-window schema mismatch")
-    validate_analysis_commit(
+    commit = validate_analysis_commit(
         REPORTING_PROVENANCE, meta["repository_commit"]; artifact="access-window reader"
     )
-    bytes2hex(sha256(meta["exporter_source"])) == meta["exporter_sha256"] ||
-        error("access-window exporter source hash mismatch")
-    bytes2hex(sha256(read(joinpath(@__DIR__, "access_windows.jl")))) == meta["exporter_sha256"] ||
-        error("access-window exporter differs from its retained source")
-    bytes2hex(sha256(read(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))) ==
-        meta["reader_sha256"] || error("access-window sweep reader differs")
+    meta["repository_source_clean"] === true || error("access-window analysis source was dirty")
+    for (source, key) in (("scripts/paper/access_windows.jl", "exporter_sha256"),
+        ("scripts/sweep/sweep_results.jl", "reader_sha256"))
+        recorded = read(`git -C $(REPORTING_PROVENANCE.root) show $commit:$source`)
+        bytes2hex(sha256(recorded)) == meta[key] || error("access-window source hash mismatch: $source")
+    end
     early_window, late_window = meta["early_window"], meta["late_window"]
-    early_window == (51, 70) && late_window == (TEND - 19, TEND) ||
+    early_window == Tuple(MAIN_SETTINGS["early_window"]) && late_window == Tuple(MAIN_SETTINGS["late_window"]) ||
         error("access windows differ from the manuscript")
     early_mask = early_window[1] .<= data["periods"] .<= early_window[2]
     late_mask = late_window[1] .<= data["periods"] .<= late_window[2]
-    count(early_mask) == count(late_mask) == 20 || error("incomplete access windows")
+    data["periods"] == [collect(early_window[1]:early_window[2]); collect(late_window[1]:late_window[2])] ||
+        error("incomplete access windows")
     regimes = Dict(regime["rel"] => regime for regime in data["regimes"])
     Set(keys(regimes)) == Set(cell["rel"] for cell in cells) || error("access regime coverage differs")
     summaries = map(cells) do cell
@@ -464,9 +438,9 @@ function access_window_summaries(figure_data, path)
         all(isfinite, [early; late]) || error("missing seed-level access mean")
         all(isapprox.(late, cell["seed_values"]["access"]; atol=1e-12, rtol=1e-10)) ||
             error("raw access counts do not reproduce retained late means")
-        (; early=mean(early), late=mean(late), change=monte_carlo_interval(late .- early))
+        (; early=mean(early), late=mean(late), change=figure_interval(late .- early))
     end
-    baseline = only(findall(cell -> cell["rel"] == "oat/rho=0.5", cells))
+    baseline = only(findall(cell -> cell["rel"] == BASELINE_REL, cells))
     baseline_mask = early_window[1] .<= figure_data["period"] .<= early_window[2]
     expected_early = mean(figure_data["series_seed_values"]["access"][baseline_mask, :])
     isapprox(summaries[baseline].early, expected_early; atol=1e-12, rtol=1e-10) ||
@@ -496,14 +470,14 @@ function ridge_condition_means(ridge, nn_audit)
         REPORTING_PROVENANCE, meta["analysis_commit"]; artifact="Ridge condition comparison"
     )
     meta["analysis_source_clean"] == "true" || error("Ridge comparison used dirty sources")
-    meta["late_periods"] == "$(TEND - 19):$TEND" || error("Ridge comparison window differs")
+    meta["late_periods"] == join(MAIN_SETTINGS["late_window"], ':') || error("Ridge comparison window differs")
     for (prefix, data) in (("nn", FD), ("ridge", ridge))
         meta["$(prefix)_manifest"] == data["meta"]["manifest_hash"] ||
             error("$prefix comparison manifest differs")
         parse(Int, meta["$(prefix)_schema"]) == data["meta"]["schema_version"] ||
             error("$prefix comparison schema differs")
         for cell in data["regime_cells"]
-            key = cell["rel"] == "oat/rho=0.5" ? "baseline_comparison_seeds" : "other_comparison_seeds"
+            key = cell["rel"] == BASELINE_REL ? "baseline_comparison_seeds" : "other_comparison_seeds"
             parse.(Int, split(meta[key], ',')) == cell["seeds"] || error("comparison seeds differ")
         end
     end
@@ -532,8 +506,8 @@ function ridge_condition_means(ridge, nn_audit)
             value(cell, "ridge_rank_gap"); atol=1e-12, rtol=1e-10) ||
             error("Ridge ranking means do not reproduce the paired gap")
     end
-    baseline = only(filter(cell -> cell["rel"] == "oat/rho=0.5", cells))
-    late_mask = ridge["period"] .>= TEND - 19
+    baseline = only(filter(cell -> cell["rel"] == BASELINE_REL, cells))
+    late_mask = first(MAIN_SETTINGS["late_window"]) .<= ridge["period"] .<= last(MAIN_SETTINGS["late_window"])
     isapprox(value(baseline, "ridge_outsourcing_rate"),
         mean(ridge["series_seed_values"]["outsourcing"][late_mask, :]);
         atol=1e-12, rtol=1e-10) || error("Ridge baseline outsourcing differs")
@@ -631,6 +605,10 @@ end
 function assessment_not_access()
     ridge_path = normpath(joinpath(OUT, "..", "..", "ridge", "paired", "figure_data.jld2"))
     ridge = JLD2.load(ridge_path)["figdata"]
+    ridge_settings = ReportingSettings.validate_figure(ridge, ReportingSettings.retained(ridge_path, ridge))
+    for key in ("baseline_reldir", "network_measure_interval", "early_window", "late_window", "interval_level")
+        ridge_settings[key] == MAIN_SETTINGS[key] || error("NN and Ridge settings differ: $key")
+    end
     ridge_meta = ridge["meta"]
     ridge_meta["analysis_source_clean"] == true || error("Ridge analysis sources were dirty")
     ridge_meta["learning_model"] == "ridge" || error("expected Ridge learning")
@@ -655,7 +633,7 @@ function assessment_not_access()
                 error("audit seed count differs for $(cell["rel"]), $outcome")
         end
         for (outcome, key) in (("access_fraction", "access"), ("rank_gap", "rankgap"))
-            interval = monte_carlo_interval(cell["seed_values"][key])
+            interval = figure_interval(cell["seed_values"][key])
             for (column, field) in (("estimate", :mean), ("ci_lower", :lower), ("ci_upper", :upper))
                 isapprox(
                     parse(Float64, row(cell, outcome)[column]), getproperty(interval, field);
@@ -668,7 +646,7 @@ function assessment_not_access()
             value(cell, "rank_gap"); atol=1e-12, rtol=1e-10,
         ) || error("ranking means do not reproduce the paired gap")
     end
-    baseline = only(findall(cell -> cell["rel"] == "oat/rho=0.5", cells))
+    baseline = only(findall(cell -> cell["rel"] == BASELINE_REL, cells))
     outsourcing = [value(cell, "outsourcing_rate") for cell in cells]
     access = [value(cell, "access_fraction") for cell in cells]
     principal_rank = [value(cell, "agent_holdout_rank") for cell in cells]
@@ -688,7 +666,7 @@ function assessment_not_access()
     access_early = [summary.early for summary in windows.summaries]
     ridge_early = [summary.early for summary in ridge_windows.summaries]
     ridge_late = [summary.late for summary in ridge_windows.summaries]
-    ridge_baseline = only(findall(cell -> cell["rel"] == "oat/rho=0.5", ridge["regime_cells"]))
+    ridge_baseline = only(findall(cell -> cell["rel"] == BASELINE_REL, ridge["regime_cells"]))
     ridge_means = ridge_condition_means(ridge, audit)
     all(x -> isfinite(x) && 0 <= x <= 1,
         [ridge_means.outsourcing; ridge_means.principal_rank; ridge_means.broker_rank]) ||
@@ -799,15 +777,13 @@ function assessment_not_access()
     savefig("assessment_not_access.png", fig)
     record_publication_stage(REPORTING_PROVENANCE;
         stage="scripts/paper/figures.jl --assessment-not-access",
-        inputs=(MAIN_FIGDATA, INFORMATION_FIGDATA, ridge_path,
+        inputs=(ReportingSettings.retained_dependencies(FD)..., ReportingSettings.retained_dependencies(ridge)..., MAIN_FIGDATA, INFORMATION_FIGDATA, ridge_path,
             joinpath(dirname(OUT), "access_windows.jld2"),
             joinpath(dirname(ridge_path), "access_windows.jld2"),
             joinpath(dirname(OUT), "convergence", "summary.txt"),
             joinpath(dirname(OUT), "convergence", "condition_audit.tsv"),
             joinpath(dirname(ridge_path), "analysis", "provenance.txt"),
-            joinpath(dirname(ridge_path), "analysis", "condition_comparison.tsv"),
-            joinpath(@__DIR__, "access_windows.jl"),
-            joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")),
+            joinpath(dirname(ridge_path), "analysis", "condition_comparison.tsv")),
         outputs=(joinpath(OUT, "assessment_not_access.png"),),
         analysis_commits=Dict("data analysis commit" => DATA_ANALYSIS_COMMIT,
             "ridge analysis commit" => ridge_commit,
@@ -835,7 +811,7 @@ function write_display_values()
     write_if_changed(path, content)
     record_publication_stage(REPORTING_PROVENANCE;
         stage="scripts/paper/figures.jl --metadata",
-        inputs=(MAIN_FIGDATA, INFORMATION_FIGDATA), outputs=(path,),
+        inputs=(ReportingSettings.retained_dependencies(FD)..., MAIN_FIGDATA, INFORMATION_FIGDATA), outputs=(path,),
         analysis_commits=Dict("data analysis commit" => DATA_ANALYSIS_COMMIT,
             "ridge ablation analysis commit" => INFORMATION_ANALYSIS_COMMIT),
     )

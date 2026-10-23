@@ -2,25 +2,18 @@
 
 ## Penalty calibration
 
-The calibration evaluates separate penalties for principals and the broker at
-the reporting baseline. The screen crosses
-`{0.0003, 0.001, 0.003, 0.01, 0.03}` for the two learners, giving 25
-configurations. Each configuration runs for 500 periods with 10 common seeds
-(9001 through 9010), all excluded from reported simulations.
+The screen crosses separate principal and broker penalties at the reporting
+baseline. Candidate values, windows, horizons, and seed sets are defined in
+[`calibration/config.jl`](calibration/config.jl).
 
-The screen reports each learner's late-period holdout rank correlation, change
-from periods 301--400 to periods 401--500, RMSE, and bias. It preserves the
-complete two-penalty surface and separate marginal summaries for principals and
-the broker. It does not combine the two rank correlations or select penalties
-automatically. Select each penalty by reviewing its learner's own ranking
-performance, late-period stability, and level error across the other learner's
-penalty. If the preferred value lies at an edge of the grid, extend that edge
-before confirming it.
+Review each learner's ranking performance, late-period stability, RMSE, and bias
+across the other learner's penalty. The summaries preserve the full surface and
+marginal comparisons; they do not select penalties automatically. If the preferred
+value is at a grid boundary, extend that boundary before confirmation.
 
-The selected pair is then confirmed together on five new seeds (9011 through
-9015). The confirmation manifest requires the selected values and a concise
-selection rationale. It records the screen-manifest hash so the decision and
-confirmation remain linked to the screened surface.
+Confirmation evaluates the analyst-selected pair on separate seeds. Its manifest
+records the selected values, rationale, and screen-manifest hash. The adopted
+model defaults are codified in [`src/parameters.jl`](../../src/parameters.jl).
 
 All manifests and result shards record the code commit, Julia version, package
 manifest hash, calibration-manifest hash, and schema version. Summarization

@@ -1,22 +1,4 @@
-"""
-    scripts/paper/dgp_figdata.jl
-
-Generate the seed-level data for Supplementary Figures S1--S3 directly from the
-model's initialization-stage data-generating process with 1,000 principals. For
-each of 50 seeds, the realized types and matching-function objects are held fixed
-while `rho` and `delta` vary over the effective current grid. No simulation periods
-or match-noise draws are used. S1 projects the realized types and their latent
-curve into three dimensions. S2 displays five distinct matching conditions for
-100 principals sampled at evenly spaced individual-quality ranks; S3 uses all 1,000
-principals.
-
-The output, `output/supplement/dgp_figure_data.jld2`, contains the type-geometry
-projection used in S1, centered matrices of underlying match value used in S2,
-normalized singular spectra and seed-level 90%-energy effective ranks used in S3, and
-complete generation provenance.
-
-Usage: julia --project --threads=auto scripts/paper/dgp_figdata.jl
-"""
+"""Generate retained DGP diagnostics using the declared diagnostic design."""
 
 module DGPFigureData
 
@@ -28,12 +10,14 @@ using LinearAlgebra: Symmetric, eigvals, svd
 using StableRNGs: StableRNG
 using Statistics: mean
 
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+
 include(joinpath(@__DIR__, "..", "sweep", "sweep_config.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const REPO = normpath(joinpath(@__DIR__, "..", ".."))
 const OUTFILE = joinpath(REPO, "output", "supplement", "dgp_figure_data.jld2")
-const DGP_N = 1000
+const DGP_N = SWEEP_BASELINE.N
 const DGP_SEEDS = collect(1:50)
 const HEATMAP_N = 100
 const HEATMAP_SEED = 1
@@ -100,33 +84,33 @@ function symmetric_singular_values(matrix::AbstractMatrix)
     return values
 end
 
-"""Number of singular components carrying at least 90% of spectral energy."""
-function effective_rank_90(singular_values::AbstractVector)
+"""Number of singular components reaching the specified spectral-energy fraction."""
+function effective_rank(singular_values::AbstractVector; fraction=AnalysisSettings.ENERGY_FRACTION)
+    0 < fraction <= 1 || throw(ArgumentError("energy fraction must lie in (0,1]"))
     energy = sum(abs2, singular_values)
     energy > 0.0 || throw(ArgumentError("singular spectrum has zero energy"))
-    index = findfirst(>=(0.90), cumsum(abs2.(singular_values)) ./ energy)
-    isnothing(index) && error("cumulative spectral energy did not reach 90%")
+    index = findfirst(>=(fraction), cumsum(abs2.(singular_values)) ./ energy)
+    isnothing(index) && error("cumulative spectral energy did not reach the specified fraction")
     return index
 end
 
 """
     type_geometry_projection(agent_types, curve_geo; n_curve=TYPE_CURVE_POINTS)
 
-Project a realized type distribution and its noiseless curve onto the curve's
-first three principal components for visualization only.
+Project realized types and their noiseless curve onto its leading principal components.
 """
 function type_geometry_projection(
     agent_types::Vector{Vector{Float64}}, curve_geo; n_curve::Int=TYPE_CURVE_POINTS
 )
-    n_curve >= 3 || throw(ArgumentError("at least three curve points are required"))
+    n_curve >= AnalysisSettings.PROJECTION_COMPONENTS || throw(ArgumentError("insufficient curve points for the projection"))
     curve_parameter = collect(range(0.0, 1.0; length=n_curve))
     curve_points = reduce(hcat, curve_point.(curve_parameter, Ref(curve_geo)))
     center = vec(mean(curve_points; dims=2))
     centered_curve = curve_points .- center
     decomposition = svd(centered_curve; full=false)
-    size(decomposition.U, 2) >= 3 ||
-        throw(ArgumentError("type geometry must have at least three dimensions"))
-    basis = copy(decomposition.U[:, 1:3])
+    size(decomposition.U, 2) >= AnalysisSettings.PROJECTION_COMPONENTS ||
+        throw(ArgumentError("type geometry has too few dimensions for the projection"))
+    basis = copy(decomposition.U[:, 1:AnalysisSettings.PROJECTION_COMPONENTS])
     for component in axes(basis, 2)
         pivot = argmax(abs.(view(basis, :, component)))
         basis[pivot, component] < 0.0 && (basis[:, component] .*= -1.0)
@@ -137,7 +121,7 @@ function type_geometry_projection(
         "curve_parameter" => Float32.(curve_parameter),
         "curve_projection" => Float32.(basis' * centered_curve),
         "type_projection" => Float32.(basis' * (type_points .- center)),
-        "projection_method" => "first three principal components of the noiseless curve",
+        "projection_method" => "first $(AnalysisSettings.PROJECTION_COMPONENTS) principal components of the noiseless curve",
     )
 end
 
@@ -175,7 +159,7 @@ function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
             centered = center_match_matrix(matrix)
             singular_values = symmetric_singular_values(centered)
             condition_id = dgp_condition_id(condition.rho, condition.delta)
-            push!(rank_values[condition_id], effective_rank_90(singular_values))
+            push!(rank_values[condition_id], effective_rank(singular_values))
 
             if condition.delta == BASELINE_DELTA && condition.rho in SPECTRUM_RHOS
                 push!(
@@ -232,9 +216,9 @@ function build_dgp_figure_data(; seeds=DGP_SEEDS, parameter_overrides=(;))
             "ordering" => "x_i'c",
             "heatmap_display_N" => min(HEATMAP_N, baseline.N),
             "heatmap_sampling" => "evenly spaced ranks of x_i'c",
-            "type_projection_components" => 3,
+            "type_projection_components" => size(type_geometry["curve_projection"], 1),
             "type_curve_points" => TYPE_CURVE_POINTS,
-            "effective_rank_energy_fraction" => 0.90,
+            "effective_rank_energy_fraction" => AnalysisSettings.ENERGY_FRACTION,
         ),
     )
 end
@@ -243,7 +227,7 @@ function main()
     exploratory = "--exploratory" in ARGS
     provenance = reporting_git_provenance(
         REPO;
-        sources=(
+        sources=("scripts/analysis_settings.jl",
             @__FILE__,
             "src",
             "scripts/sweep/sweep_config.jl",

@@ -1,10 +1,8 @@
 """
     scripts/calibrate_match_component_moments.jl
 
-Estimate fixed moments for standardizing the matching components. The calibration
-averages within-market moments across 50 independently generated markets of
-1,000 principals. It uses seeds 10,001 through 10,050, which are separate from the
-simulation sweep.
+Estimate component moments using the recorded calibration design.
+Adopting the estimates as model constants is an analyst decision.
 
 Usage: julia --project --threads=auto scripts/calibrate_match_component_moments.jl
 """
@@ -15,8 +13,8 @@ using LinearAlgebra: dot, mul!
 using StableRNGs: StableRNG
 using Statistics: mean
 
-const CALIBRATION_N = 1000
-const CALIBRATION_SEEDS = 10_001:10_050
+const CALIBRATION_N = BrokerageABM.MATCH_CALIBRATION_N
+const CALIBRATION_SEEDS = BrokerageABM.MATCH_CALIBRATION_SEEDS
 function within_market_moments(types, env)
     n = length(types)
     n_pairs = n * (n - 1) ÷ 2

@@ -1,29 +1,10 @@
-"""
-    scripts/paper/supp_figdata.jl
-
-Extract the supplementary figure dataset from a completed sweep. The output,
-`output/supplement/structural_figure_data.jld2`, contains seed-level constraint and effective
-size summaries used by `scripts/paper/supp_figures.jl`. The script reads saved
-data only and can be run independently of the main figure pipeline.
-
-Contents of structural_figure_data.jld2 (single key "figdata", a Dict):
-  period      per-period time axis of the baseline runs
-  series      per-period ensemble means at the baseline: constraint and
-              effective_size (full per-period vectors; the renderer keeps the
-              measurement periods)
-  series_seed_values
-              period-by-seed matrices underlying the baseline ensemble means
-  oat_cells   late means and seed values per one-at-a-time regime
-  grid_cells  rho, delta, late means, and seed values per grid coordinate
-  regime_cells rho, late means, and seed values per effective realization
-  meta        sweep id, generation time, generating script
-
-Usage:
-  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
-    julia --project --threads=auto scripts/paper/supp_figdata.jl
-"""
+"""Extract supplementary structural measures and settings from a completed sweep.
+Set BROKERAGE_ABM_SWEEP_DIR."""
 
 using JLD2, DataFrames, Statistics, Dates
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
@@ -36,17 +17,18 @@ const OUTFILE = normpath(
 )
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/sweep/sweep_results.jl",
     ),
 )
-const LATE_WIDTH = 20   # final-period summary window, matching figdata.jl
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
 const SWEEP = load_sweep_dataset(ROOT)
-const BASELINE_REL = "oat/rho=0.5"
-length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
-all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP.results) ||
-    error("expected 20 seeds outside the baseline")
+const REPORTING_SETTINGS = merge(
+    ReportingSettings.sweep_metadata(REPORTING_PROVENANCE.root, ReportingSettings.manifest(ROOT)),
+    AnalysisSettings.metadata(Int(SWEEP.meta[:T])),
+)
+const BASELINE_REL = REPORTING_SETTINGS["baseline_reldir"]
 
 # ── shared reducers (kept local so this extract does not depend on figdata.jl) ──
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
@@ -186,6 +168,7 @@ fd["regime_cells"] = let out = Dict{String,Any}[]
 end
 
 fd["meta"] = Dict(
+    "reporting_settings" => REPORTING_SETTINGS,
     "sweep" => basename(ROOT),
     "manifest_hash" => SWEEP.manifest_hash,
     "schema_version" => SWEEP.schema_version,

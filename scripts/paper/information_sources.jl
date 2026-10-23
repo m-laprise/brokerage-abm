@@ -12,7 +12,7 @@ Average seed-level late-mean channel shares with Student-t Monte Carlo intervals
 Saved contributions are per principal. Restore aggregate units for the total
 using the retained principal count `N`; this scaling cancels in each seed's share.
 """
-function channel_output_shares(values, N::Integer; level=0.95)
+function channel_output_shares(values, N::Integer; level=AnalysisSettings.INTERVAL_LEVEL)
     isempty(values) && throw(ArgumentError("no channel observations"))
     N > 0 || throw(ArgumentError("principal count must be positive"))
     all(

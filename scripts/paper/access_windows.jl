@@ -1,21 +1,13 @@
-"""
-Retain raw access and assessment counts for the manuscript's early/late windows.
-
-Reads a completed sweep without running simulations. The renderer computes the
-window means and paired intervals from these counts. The export records its full
-source and the sweep-reader hash separately from the repository commit.
-
-Required: BROKERAGE_ABM_SWEEP_DIR.
-Optional: BROKERAGE_ABM_REPO, BROKERAGE_ABM_ACCESS_WINDOWS_PATH.
-Usage: julia --project --threads=auto scripts/paper/access_windows.jl
-Output: output/main/access_windows.jld2
-"""
+"""Retain access and assessment counts for the declared reporting windows.
+Set BROKERAGE_ABM_SWEEP_DIR; no simulations are run."""
 
 using JLD2
 using SHA: sha256
 
 const REPO = get(ENV, "BROKERAGE_ABM_REPO", normpath(joinpath(@__DIR__, "..", "..")))
 const READER = joinpath(REPO, "scripts", "sweep", "sweep_results.jl")
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+
 include(READER)
 include(joinpath(REPO, "scripts", "reporting_provenance.jl"))
 
@@ -27,12 +19,11 @@ function main()
         joinpath(REPO, "output", "main", "access_windows.jld2"),
     )
     provenance = reporting_git_provenance(
-        REPO; sources=(@__FILE__, "scripts/sweep/sweep_results.jl",),
+        REPO; sources=("scripts/analysis_settings.jl", @__FILE__, "scripts/sweep/sweep_results.jl"),
     )
     sweep = load_sweep_dataset(root)
     horizon = Int(sweep.meta[:T])
-    early = (51, 70)
-    late = (horizon - 19, horizon)
+    early, late = AnalysisSettings.windows(horizon)
     early[2] < late[1] || error("reporting windows overlap")
     periods = [collect(early[1]:early[2]); collect(late[1]:late[2])]
     regimes = map(sweep.results) do result
@@ -56,11 +47,11 @@ function main()
         "schema_version" => sweep.schema_version,
         "repository_commit" => provenance.commit,
         "repository_source_clean" => provenance.source_clean,
-        "exporter_source" => source,
         "exporter_sha256" => bytes2hex(sha256(source)),
         "reader_sha256" => bytes2hex(sha256(read(READER))),
         "early_window" => early,
         "late_window" => late,
+        "interval_level" => AnalysisSettings.INTERVAL_LEVEL,
     )
     mkpath(dirname(output))
     jldsave(output; metadata, periods, regimes)

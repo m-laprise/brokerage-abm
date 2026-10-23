@@ -42,6 +42,14 @@ using StableRNGs: StableRNG
         @test all(all(isfinite, a.type) for a in state.agents)
     end
 
+    @testset "curve frequency bounds preserve the deterministic draw" begin
+        geo = BrokerageABM.generate_curve_geometry(8, 8, StableRNG(98232))
+        rng = StableRNG(98232)
+        @test geo.freqs == [rand(rng, 1:5) for _ in 1:8]
+        @test all(in(BrokerageABM.CURVE_FREQUENCIES), geo.freqs)
+        @test state.broker.history_count <= BrokerageABM.BROKER_HISTORY_SEED_CAP
+    end
+
     @testset "agent IDs match indices" begin
         @test all(state.agents[i].id == i for i in 1:N)
     end

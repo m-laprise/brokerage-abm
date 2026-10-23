@@ -1,19 +1,4 @@
-"""
-    scripts/ridge/analyze_sweep.jl
-
-Compare the base Ridge reporting sweep with the canonical NN reporting sweep.
-The analysis gives each effective model realization one observation. Comparisons
-use the planned seeds common to both sweeps: 50 at baseline and 20 elsewhere.
-
-Required environment:
-
-  BROKERAGE_ABM_NN_SWEEP_DIR
-  BROKERAGE_ABM_RIDGE_SWEEP_DIR
-
-Outputs are written to `output/ridge/paired/analysis/`.
-
-Usage: julia --project --threads=auto scripts/ridge/analyze_sweep.jl
-"""
+"""Compare NN and Ridge using manifest-defined conditions and paired seeds."""
 
 using CairoMakie
 using DataFrames: DataFrame
@@ -21,6 +6,9 @@ using Dates: now
 using JLD2: jldopen
 using Printf: @sprintf
 using Statistics: cor, mean, median, quantile, std
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
 include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
@@ -37,10 +25,10 @@ const OUT_DIR = normpath(
 const FIGURE_DIR = normpath(
     joinpath(@__DIR__, "..", "..", "output", "ridge", "paired", "figures")
 )
-const BASELINE_REL = "oat/rho=0.5"
-const LATE_WIDTH = 20
-const MC_LEVEL = 0.95
-const SUMMARY_QUANTILES = (0.10, 0.90)
+const BASELINE_REL = ReportingSettings.baseline_reldir(NN_ROOT)
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const MC_LEVEL = AnalysisSettings.INTERVAL_LEVEL
+const SUMMARY_QUANTILES = AnalysisSettings.SUMMARY_QUANTILES
 const DESIGN_KEYS = (
     "N",
     "T",
@@ -75,6 +63,7 @@ end
 string_dict(values) = Dict{String,Any}(string(key) => value for (key, value) in values)
 
 function load_comparison_sweep(root::AbstractString)::ComparisonSweep
+    ReportingSettings.manifest(root)
     manifest_path = joinpath(root, "manifest.jld2")
     isfile(manifest_path) || error("missing manifest: $manifest_path")
     grid_cells, conditions, meta, manifest_hash, schema_version =
@@ -196,9 +185,7 @@ function validate_comparison(nn::ComparisonSweep, ridge::ComparisonSweep)
         for key in DESIGN_KEYS
             nr.config[key] == rr.config[key] || error("design mismatch for $rel: $key")
         end
-        expected_seeds = rel == BASELINE_REL ? collect(1:50) : collect(1:20)
-        nr.seeds == expected_seeds || error("unexpected NN seed set: $rel")
-        rr.seeds == expected_seeds || error("unexpected Ridge seed set: $rel")
+        nr.seeds == rr.seeds || error("NN and Ridge seed sets differ: $rel")
     end
     return nothing
 end
@@ -326,7 +313,7 @@ end
 function main()
     provenance = reporting_git_provenance(
         normpath(joinpath(@__DIR__, "..", ".."));
-        sources=(
+        sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
             @__FILE__,
             "scripts/monte_carlo.jl",
         ),
@@ -567,11 +554,12 @@ function main()
         println(io, "ridge_manifest=$(ridge.manifest_hash)")
         println(io, "ridge_schema=$(ridge.schema_version)")
         println(io, "ridge_commit=$(ridge.git_commit)")
+        println(io, "interval_level=$MC_LEVEL")
         println(io, "late_periods=$(late_period_end - LATE_WIDTH + 1):$late_period_end")
         println(io, "weighting=one observation per effective realization")
         println(io, "baseline_comparison_seeds=$(join(common_seeds, ','))")
-        other_seed_count = only(nonbaseline_seed_counts)
-        println(io, "other_comparison_seeds=$(join(1:other_seed_count, ','))")
+        other_seeds = only(unique(result.seeds for (rel, result) in nn.results if rel != BASELINE_REL))
+        println(io, "other_comparison_seeds=$(join(other_seeds, ','))")
     end
 
     comparison_figure(nn, ridge, rows)

@@ -62,12 +62,21 @@ The outputs are written under `runs/exploration/`.
 
 ## Study design and reproducibility
 
-The main reporting ensemble covers 80 scientifically distinct parameter
-regimes. Each regime has 20 independent seeds, and the baseline has 30
-additional seeds, for 1,630 runs over 500 periods. Some displayed grid
-coordinates resolve to the same regime when a parameter is inactive. Such
-duplicates reuse one simulation result and receive no additional analytical
-weight.
+The reporting design is defined by the retained sweep manifests. Missing
+settings for older figure inputs are retained in
+[`output/reporting/settings.toml`](output/reporting/settings.toml). Displayed grid
+coordinates that resolve to the same regime reuse its simulation result and
+receive no additional analytical weight.
+
+Older figure inputs omitted some settings. Their derived settings file can be
+recreated with `julia --project --threads=auto scripts/retain_reporting_settings.jl`
+using the retained manifests and recorded source commits. This reads no raw
+simulation runs and does not alter numerical results. Normal figure regeneration
+reads the retained settings file directly. New extractions embed these settings.
+
+Analysis choices are declared in [`scripts/analysis_settings.jl`](scripts/analysis_settings.jl).
+The selected learner defaults in [`src/parameters.jl`](src/parameters.jl) codify
+analyst decisions; reporting does not select them from calibration results.
 
 Raw sweep shards are generated outside Git. The repository retains the
 reviewable reports, figures, tables, provenance records, and selected seed-level

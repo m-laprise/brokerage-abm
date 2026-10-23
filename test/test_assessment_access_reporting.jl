@@ -16,17 +16,20 @@ include(joinpath(@__DIR__, "..", "scripts", "assessment_access", "figure_2.jl"))
 include(joinpath(@__DIR__, "..", "scripts", "assessment_access", "centrality_data.jl"))
 
 @testset "Centrality extraction and measurement cadence" begin
+    config = (; interval=20, horizon=500, late_width=20)
     recorded = [t < 20 ? 0.0 : (t ÷ 20) / 25 for t in 1:500]
     df = DataFrame(; period=1:500, betweenness=recorded)
     late = mean(recorded[481:500])
-    @test measured_centrality(df, late) == collect(1:25) ./ 25
-    @test_throws ErrorException measured_centrality(df[2:end, :], late)
-    @test_throws ErrorException measured_centrality(df, late + 0.01)
+    @test measured_centrality(df, late; config...) == collect(1:25) ./ 25
+    @test_throws ErrorException measured_centrality(df[2:end, :], late; config...)
+    @test_throws ErrorException measured_centrality(df, late + 0.01; config...)
     changed = deepcopy(df)
     changed.betweenness[21] = 0.1
-    @test_throws ErrorException measured_centrality(changed, late)
+    @test_throws ErrorException measured_centrality(changed, late; config...)
     changed.betweenness[21] = NaN
-    @test_throws ErrorException measured_centrality(changed, late)
+    @test_throws ErrorException measured_centrality(changed, late; config...)
+    short = DataFrame(; period=1:13, betweenness=[t < 3 ? 0.0 : (t ÷ 3) / 4 for t in 1:13])
+    @test measured_centrality(short, mean(short.betweenness[10:13]); interval=3, horizon=13, late_width=4) == [0.25, 0.5, 0.75, 1.0]
 end
 
 @testset "Recorded degree extraction" begin

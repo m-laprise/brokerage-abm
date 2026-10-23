@@ -219,6 +219,9 @@ using Statistics: mean, std
         env = test_env(types)
         p = default_params()
         cal = calibrate(env, types, p, StableRNG(55))
+        explicit = calibrate(env, types, p, StableRNG(55); n_samples=10_000)
+        @test (cal.q_cal, cal.r, cal.phi, cal.c_s) ==
+            (explicit.q_cal, explicit.r, explicit.phi, explicit.c_s)
         @test cal.q_cal > 0.0
         @test cal.r > 0.0
         # r, phi, c_s are independent fractions of q_cal (decoupled).

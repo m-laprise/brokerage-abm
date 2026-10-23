@@ -1,14 +1,6 @@
-"""
-    scripts/paper/supp_figures.jl
+"""Render supplementary figures and display values from retained inputs."""
 
-Render Supplementary Figures S1--S3 and S5--S7 from retained figure-input datasets.
-Figure S4 is rendered by scripts/assessment_access/supplement_figure.jl.
-This script reads only `output/supplement/dgp_figure_data.jld2` and
-`output/supplement/structural_figure_data.jld2`. It performs no simulation and writes
-print-resolution PNGs plus the display-convention keys used by the captions.
-
-Usage: julia --project --threads=auto scripts/paper/supp_figures.jl
-"""
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "figure_style.jl"))   # CairoMakie, COL_*, FS, LEG_KW, rolling_mean
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
@@ -20,13 +12,10 @@ publication_theme!()
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "figures"))
 mkpath(OUT)
 const PXU = 2.0                       # px_per_unit: ~330+ dpi at printed full-page width
-# Display conventions, quoted in the supplement captions via the keys emitted to
-# output/supplement/figmeta.tex. Identical to figures.jl: MEASINT matches the
-# generation-time network_measure_interval; TSTART is the end of burn-in.
-const ROLLW = 5                       # rolling-mean window, in observations
-const MEASINT = 20                    # network-measure interval, periods
-const TSTART = 30                     # displayed axes start here; data never cut
-const SPECTRUM_COMPONENTS = 25
+# Display choices are shared; measurement cadence comes from the run.
+const ROLLW = AnalysisSettings.ROLLING_WIDTH
+const TSTART = AnalysisSettings.AXIS_START
+const SPECTRUM_COMPONENTS = AnalysisSettings.SPECTRUM_COMPONENTS
 const RHO_COLORS = PUB_RHO_COLORS
 const DELTA_COLORS = PUB_DELTA_COLORS
 # the two alternative structural measures, with the keys used in the extract and
@@ -46,9 +35,15 @@ const STRUCTURAL_FD = JLD2.load(
 const DGP_FD = JLD2.load(
     normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "dgp_figure_data.jld2"))
 )["figdata"]
+const STRUCTURAL_PATH = normpath(joinpath(@__DIR__, "..", "..", "output", "supplement", "structural_figure_data.jld2"))
+const STRUCTURAL_SETTINGS = ReportingSettings.validate_figure(STRUCTURAL_FD, ReportingSettings.retained(STRUCTURAL_PATH, STRUCTURAL_FD))
+const MEASINT = Int(STRUCTURAL_SETTINGS["network_measure_interval"])
+supp_interval(values) = monte_carlo_interval(values; level=Float64(STRUCTURAL_SETTINGS["interval_level"]))
+const ENERGY_PERCENT = 100 * DGP_FD["design"]["effective_rank_energy_fraction"]
+const ENERGY_LABEL = isinteger(ENERGY_PERCENT) ? string(Int(ENERGY_PERCENT)) : string(ENERGY_PERCENT)
 const EXPLORATORY = "--exploratory" in ARGS
 const REPORTING_PROVENANCE = manuscript_git_provenance(
-    normpath(joinpath(@__DIR__, "..", "..")); sources=(@__FILE__, "scripts/monte_carlo.jl", "scripts/figure_style.jl",),
+    normpath(joinpath(@__DIR__, "..", "..")); sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl", @__FILE__, "scripts/monte_carlo.jl", "scripts/figure_style.jl",),
 )
 const DGP_ANALYSIS_COMMIT = validate_analysis_commit(
     REPORTING_PROVENANCE, DGP_FD["meta"]["analysis_git_commit"]; artifact="DGP figure data"
@@ -82,7 +77,7 @@ function measseries(key)
         hcat, (rolling_mean(view(raw, :, seed_index), ROLLW) for seed_index in axes(raw, 2))
     )
     summaries = [
-        monte_carlo_interval(view(smoothed, period_index, :)) for
+        supp_interval(view(smoothed, period_index, :)) for
         period_index in axes(smoothed, 1)
     ]
     return (
@@ -266,7 +261,7 @@ function match_value_surfaces()
 end
 
 function spectrum_interval(matrix, component)
-    interval = monte_carlo_interval(view(matrix, component, :))
+    interval = supp_interval(view(matrix, component, :))
     return (
         mean=max(interval.mean, 0.0),
         lower=max(interval.lower, 0.0),
@@ -274,7 +269,7 @@ function spectrum_interval(matrix, component)
     )
 end
 
-# ── S3: singular spectra and 90%-energy effective dimension ──
+# ── S3: singular spectra and effective dimension ──
 function effective_dimensionality()
     displayed_rhos = [0.0, 0.15, 0.5, 0.85, 1.0]
     components = 1:SPECTRUM_COMPONENTS
@@ -319,7 +314,7 @@ function effective_dimensionality()
         fig[1, 2];
         title="B. Effective dimensionality",
         xlabel=PUB_RHO_LABEL,
-        ylabel="Components explaining\n90% of variation",
+        ylabel="Components explaining\n$ENERGY_LABEL% of variation",
         xticks=[0, 0.5, 1],
         titlesize=TITLE_FS,
         xlabelsize=LABEL_FS,
@@ -331,7 +326,7 @@ function effective_dimensionality()
     for delta in DGP_FD["delta_values"]
         points = sort(
             [
-                let interval = monte_carlo_interval(row["rank90_seed_values"])
+                let interval = supp_interval(row["rank90_seed_values"])
                     (
                         rho=row["rho"],
                         mean=interval.mean,
@@ -363,7 +358,7 @@ function effective_dimensionality()
         )
     end
     boundary = only(row for row in rows if row["rho"] == 1.0)
-    boundary_interval = monte_carlo_interval(boundary["rank90_seed_values"])
+    boundary_interval = supp_interval(boundary["rank90_seed_values"])
     rangebars!(
         rank_axis,
         [1.0],
@@ -414,7 +409,7 @@ function alternative_measures_grid()
         for d in dls
             pts = sort(
                 [
-                    let interval = monte_carlo_interval(c["seed_values"][ck])
+                    let interval = supp_interval(c["seed_values"][ck])
                         (
                             rho=c["rho"],
                             mean=interval.mean,
@@ -447,7 +442,7 @@ function alternative_measures_grid()
                 label="δ = $d",
             )
         end
-        boundary_interval = monte_carlo_interval(boundary_cell["seed_values"][ck])
+        boundary_interval = supp_interval(boundary_cell["seed_values"][ck])
         rangebars!(
             ax,
             [1.0],
@@ -590,18 +585,18 @@ content = sprint() do io
     println(io, "\\pvDefine{suppDgpHeatmapSeed}{$(DGP_FD["heatmap_seed"])}")
     println(io, "\\pvDefine{suppDgpDelta}{$(DGP_FD["baseline_delta"])}")
     println(io, "\\pvDefine{suppDgpSpectrumComponents}{$SPECTRUM_COMPONENTS}")
-    println(io, "\\pvDefine{suppDgpRankEnergyPercent}{90}")
+    println(io, "\\pvDefine{suppDgpRankEnergyPercent}{$ENERGY_LABEL}")
 end
 write_if_changed(joinpath(dirname(OUT), "figmeta.tex"), content)
 record_publication_stage(REPORTING_PROVENANCE;
     stage="scripts/paper/supp_figures.jl",
-    inputs=joinpath.(dirname(OUT), ("structural_figure_data.jld2", "dgp_figure_data.jld2")),
+    inputs=(ReportingSettings.retained_dependencies(STRUCTURAL_FD)..., joinpath.(dirname(OUT), ("structural_figure_data.jld2", "dgp_figure_data.jld2"))...),
     outputs=(joinpath(dirname(OUT), "figmeta.tex"), joinpath.(OUT,
         ("type_geometry.png", "match_value_surfaces.png", "effective_dimensionality.png",
             "alternative_measures_grid.png", "alternative_measures_position.png",
             "alternative_measures_advantage.png"))...),
     analysis_commits=Dict("dgp data analysis commit" => DGP_ANALYSIS_COMMIT,
         "structural data analysis commit" => STRUCTURAL_ANALYSIS_COMMIT),
-    settings=Dict("exploratory" => EXPLORATORY),
+    settings=Dict("exploratory" => EXPLORATORY, "rolling_width" => ROLLW, "display_start" => TSTART, "interval_level" => STRUCTURAL_SETTINGS["interval_level"]),
 )
 println("supplement figures done (+ supp_figmeta.tex)")

@@ -42,7 +42,7 @@ const DGP = DGPFigureData
         centered = DGP.center_match_matrix(low_delta)
         @test low_delta == high_delta
         @test rank(centered; atol=1e-10) <= 2
-        @test DGP.effective_rank_90(DGP.symmetric_singular_values(centered)) <= 2
+        @test DGP.effective_rank(DGP.symmetric_singular_values(centered)) <= 2
     end
 
     @testset "quality ordering and failure path are explicit" begin
@@ -51,7 +51,10 @@ const DGP = DGPFigureData
         components = DGP.dgp_components(dgp.agent_types, dgp.env)
         order = sortperm(components.quality_scores)
         @test issorted(components.quality_scores[order])
-        @test_throws ArgumentError DGP.effective_rank_90(zeros(4))
+        @test_throws ArgumentError DGP.effective_rank(zeros(4))
+        @test DGP.effective_rank([3.0, 1.0]; fraction=0.5) == 1
+        @test DGP.effective_rank([3.0, 1.0]; fraction=0.99) == 2
+        @test_throws ArgumentError DGP.effective_rank([3.0, 1.0]; fraction=0.0)
     end
 
     @testset "figure-data assembly preserves seed-level inputs" begin

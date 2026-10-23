@@ -1,24 +1,4 @@
-"""
-    scripts/ridge/analyze_ablations.jl
-
-Compare the three Ridge broker ablations with the base Ridge reference over
-the baseline and rho-by-delta design. Each effective model realization receives
-one observation. Baseline seed contrasts use all 50 common seeds, and all other
-condition contrasts use their 20 common seeds.
-
-Required environment:
-
-  BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR
-  BROKERAGE_ABM_RIDGE_SIZE_MATCHED_SWEEP_DIR
-  BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR
-  BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR
-
-Detailed outputs are written to `output/ridge/ablations/analysis/`. Seed-level
-inputs for the compact main-text figure are written to
-`output/ridge/ablations/figure_data.jld2`.
-
-Usage: julia --project --threads=auto scripts/ridge/analyze_ablations.jl
-"""
+"""Compare Ridge broker restrictions using manifest-defined conditions and paired seeds."""
 
 using CairoMakie
 using DataFrames: DataFrame
@@ -26,6 +6,9 @@ using Dates: now
 using JLD2: jldsave
 using Printf: @sprintf
 using Statistics: cor, mean, median, quantile, std
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
 include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
@@ -69,10 +52,10 @@ const PAPER_VALUES = joinpath(OUT_DIR, "paper_values.tex")
 const FIGDATA = normpath(
     joinpath(@__DIR__, "..", "..", "output", "ridge", "ablations", "figure_data.jld2")
 )
-const BASELINE_REL = "oat/rho=0.5"
-const LATE_WIDTH = 20
-const MC_LEVEL = 0.95
-const SUMMARY_QUANTILES = (0.10, 0.90)
+const BASELINE_REL = ReportingSettings.baseline_reldir(PAIR_ROOT)
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const MC_LEVEL = AnalysisSettings.INTERVAL_LEVEL
+const SUMMARY_QUANTILES = AnalysisSettings.SUMMARY_QUANTILES
 const METRICS = (
     :agent_holdout_rank,
     :broker_holdout_rank,
@@ -232,9 +215,6 @@ function validate_design(pair::SweepDataset, datasets)
                 design_value(result, parameter, variant_baseline_cfg) ||
                     error("$(variant.label) design mismatch for $(result.rel): $parameter")
             end
-            expected_seeds = result.rel == BASELINE_REL ? collect(1:50) : collect(1:20)
-            result.seeds == expected_seeds ||
-                error("unexpected $(variant.label) seed set for $(result.rel)")
             all(seed in pair_result.seeds for seed in result.seeds) ||
                 error("base Ridge reference lacks common seeds for $(result.rel)")
         end
@@ -451,7 +431,7 @@ end
 function main()
     provenance = reporting_git_provenance(
         normpath(joinpath(@__DIR__, "..", ".."));
-        sources=(
+        sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
             "scripts/monte_carlo.jl",
@@ -864,6 +844,7 @@ function main()
             println(io, "$(variant.key)_sweep=$(basename(normpath(variant.root)))")
             println(io, "$(variant.key)_manifest=$(dataset.manifest_hash)")
         end
+        println(io, "interval_level=$MC_LEVEL")
         println(io, "late_periods=$(late_period_end - LATE_WIDTH + 1):$late_period_end")
         println(io, "weighting=one observation per effective realization")
         println(
@@ -871,8 +852,8 @@ function main()
             "realization_matching=resolved parameters in DESIGN_KEYS, with delta canonicalized to baseline when rho=1",
         )
         println(io, "baseline_seeds=$(join(baseline_seeds, ','))")
-        other_seed_count = only(nonbaseline_seed_counts)
-        println(io, "other_seeds=$(join(1:other_seed_count, ','))")
+        other_seeds = only(unique(result.seeds for result in datasets[:size_matched].results if result.rel != BASELINE_REL))
+        println(io, "other_seeds=$(join(other_seeds, ','))")
     end
 
     println("Baseline late-period differences in holdout rank correlation:")

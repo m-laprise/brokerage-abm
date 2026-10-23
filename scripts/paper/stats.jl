@@ -1,22 +1,10 @@
-"""
-    scripts/paper/stats.jl
-
-Compute every statistic quoted in the paper's results section and emit it to
-output/main/values.tex as \\pvDefine{key}{value} pairs, from the saved sweep data ONLY.
-No simulation. No hard-coded results: every emitted value is derived from data.jld2
-files and their config metadata at run time. Literal constants below are selection
-conventions only (window bounds, baseline parameter values, display rounding).
-
-Conventions:
-  late mean  = time average over the final 20 periods
-  early mean = time average over t in [51, 70]
-  "across regimes" = unweighted mean over effective model realizations
-  (each realization first averaged over its planned seeds)
-
-Usage: julia --project --threads=auto scripts/paper/stats.jl
-"""
+"""Generate manuscript statistics from a completed sweep.
+Set BROKERAGE_ABM_SWEEP_DIR; no simulations are run."""
 
 using Statistics, Printf, Dates
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
@@ -28,15 +16,15 @@ end
 const OUTTEX = normpath(joinpath(@__DIR__, "..", "..", "output", "main", "values.tex"))
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/sweep/sweep_results.jl",
         "scripts/monte_carlo.jl",
     ),
 )
-const LATE_WIDTH = 20
-const EARLY = (51, 70)
-const BASELINE_REL = "oat/rho=0.5"   # baseline regime cell (defaults everywhere else)
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const EARLY = AnalysisSettings.EARLY_WINDOW
+const BASELINE_REL = ReportingSettings.baseline_reldir(ROOT)
 
 nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 winm(d, v, (lo, hi)) = nm(v[(d.period .>= lo) .& (d.period .<= hi)])
@@ -72,8 +60,7 @@ const BASELINE_N_SEEDS = length(SWEEP.result_by_rel[BASELINE_REL].seeds)
 const GENERAL_SEED_COUNTS = [
     length(result.seeds) for result in B if result.rel != BASELINE_REL
 ]
-all(==(20), GENERAL_SEED_COUNTS) || error("expected 20 seeds outside the baseline")
-BASELINE_N_SEEDS == 50 || error("expected 50 baseline seeds")
+
 oatb(ax, v) = cellat("oat/$ax=$v")
 function rdcell(rho, delta)
     first(

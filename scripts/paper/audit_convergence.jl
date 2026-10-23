@@ -1,38 +1,13 @@
-"""
-    scripts/paper/audit_convergence.jl
-
-Reproducible Monte Carlo convergence audit for the canonical reporting sweep.
-Each effective realization is evaluated once. For every reported figure
-outcome, the script computes a Student-t 95% interval from seed-level
-late-window means and compares a nested seed estimate with the full estimate:
-the first 10 versus all 20 seeds generally, and the first 20 versus all 50 at
-the baseline.
-
-Relative precision uses the conventional ratio of interval half-width or
-nested-seed change to the absolute full-sample estimate. Relative precision is
-not reported when the 95% interval contains zero; those cells retain their
-absolute intervals in the audit table. R² outcomes remain in the audit tables
-but are excluded from the cross-outcome ranges written for the methods section.
-
-Required environment:
-
-  BROKERAGE_ABM_SWEEP_DIR
-
-Optional environment:
-
-  BROKERAGE_ABM_CONVERGENCE_DIR
-
-The default output directory is `output/main/convergence/`.
-
-Usage:
-  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
-    julia --project --threads=auto scripts/paper/audit_convergence.jl
-"""
+"""Compare interval precision and nested seed estimates for a completed sweep.
+Set BROKERAGE_ABM_SWEEP_DIR; analysis choices are in scripts/analysis_settings.jl."""
 
 using DataFrames: DataFrame
 using Dates: now
 using Printf: @sprintf
 using Statistics: mean, quantile
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "monte_carlo.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
@@ -48,8 +23,8 @@ const OUT_DIR = normpath(
         joinpath(@__DIR__, "..", "..", "output", "main", "convergence"),
     ),
 )
-const BASELINE_REL = "oat/rho=0.5"
-const LATE_WIDTH = 20
+const BASELINE_REL = ReportingSettings.baseline_reldir(ROOT)
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
 const R2_OUTCOMES = Set((:agent_holdout_r2, :broker_holdout_r2, :r2_gap))
 const OUTCOMES = (
     :matches_per_agent,
@@ -118,7 +93,7 @@ end
 function main()
     provenance = reporting_git_provenance(
         normpath(joinpath(@__DIR__, "..", ".."));
-        sources=(
+        sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
             "scripts/monte_carlo.jl",
@@ -126,12 +101,8 @@ function main()
     )
     mkpath(OUT_DIR)
     sweep = load_sweep_dataset(ROOT)
-    length(sweep.results) == 80 || error("expected 80 effective realizations")
     baseline = sweep.result_by_rel[BASELINE_REL]
-    length(baseline.seeds) == 50 || error("expected 50 baseline seeds")
-    all(
-        result.rel == BASELINE_REL || length(result.seeds) == 20 for result in sweep.results
-    ) || error("expected 20 seeds outside the baseline")
+
 
     rows = NamedTuple[]
     for metric in OUTCOMES
@@ -139,7 +110,8 @@ function main()
         for result in sort(sweep.results; by=result -> result.rel)
             values = seed_values(result, metric)
             full = monte_carlo_interval(values)
-            nested_n = result.rel == BASELINE_REL ? 20 : 10
+            nested_n = result.rel == BASELINE_REL ? AnalysisSettings.NESTED_SEEDS.baseline : AnalysisSettings.NESTED_SEEDS.general
+            1 < nested_n < length(values) || error("invalid nested seed count")
             nested = monte_carlo_interval(view(values, 1:nested_n))
             push!(
                 metric_rows,
@@ -270,10 +242,12 @@ function main()
         println(io, "analysis_commit=$(provenance.commit)")
         println(io, "analysis_source_clean=$(provenance.source_clean)")
         println(io, "effective_realizations=$(length(sweep.results))")
-        println(io, "general_nested_comparison=first 10 versus all 20 seeds")
-        println(io, "baseline_nested_comparison=first 20 versus all 50 seeds")
+        println(io, "general_nested_comparison=first $(AnalysisSettings.NESTED_SEEDS.general) versus all $(only(unique(length(r.seeds) for r in sweep.results if r.rel != BASELINE_REL))) seeds")
+        println(io, "baseline_nested_comparison=first $(AnalysisSettings.NESTED_SEEDS.baseline) versus all $(length(baseline.seeds)) seeds")
         println(io, "normalization=absolute full-sample condition estimate")
-        println(io, "relative_precision_exclusion=95% interval contains zero")
+        println(io, "relative_precision_exclusion=$(100 * AnalysisSettings.INTERVAL_LEVEL)% interval contains zero")
+        println(io, "interval_level=$(AnalysisSettings.INTERVAL_LEVEL)")
+        println(io, "late_width=$LATE_WIDTH")
         println(io, "non_r2_outcomes=$(length(non_r2))")
         println(
             io,

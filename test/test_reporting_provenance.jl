@@ -4,6 +4,17 @@ using TOML
 
 include(joinpath(@__DIR__, "..", "scripts", "reporting_provenance.jl"))
 
+@testset "Analysis settings are a Monte Carlo source dependency" begin
+    mktempdir() do root
+        mkpath(joinpath(root, "scripts"))
+        write(joinpath(root, "scripts", "monte_carlo.jl"), "# helper\n")
+        @test_throws ErrorException reporting_source_files(root, ("scripts/monte_carlo.jl",))
+        write(joinpath(root, "scripts", "analysis_settings.jl"), "# choices\n")
+        @test "scripts/analysis_settings.jl" in
+            reporting_source_files(root, ("scripts/monte_carlo.jl",))
+    end
+end
+
 @testset "Scoped reporting provenance" begin
     mktempdir() do repository
         run(`git -C $repository init -q`)

@@ -14,6 +14,8 @@ using JLD2
 using SHA: sha256
 using Statistics: mean
 
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
@@ -24,14 +26,14 @@ const CENTRALITY_OUTPUT = joinpath(
 )
 
 """Validate measurement cadence and recover one seed's observed centrality."""
-function measured_centrality(df, retained_late_value; interval=20, horizon=500)
+function measured_centrality(df, retained_late_value; interval, horizon, late_width)
     collect(df.period) == collect(1:horizon) || error("incomplete period coverage")
     values = Float64.(df.betweenness)
     all(v -> isfinite(v) && 0 <= v <= 1, values) || error("invalid betweenness")
     periods = collect(interval:interval:horizon)
     all(t -> values[t] == values[interval * (t ÷ interval)], interval:horizon) ||
         error("centrality changes between recorded measurement periods")
-    isapprox(mean(values[(horizon - 19):horizon]), retained_late_value; atol=1e-12) ||
+    isapprox(mean(values[(horizon - late_width + 1):horizon]), retained_late_value; atol=1e-12) ||
         error("raw centrality does not match the retained seed-level late value")
     return values[periods]
 end
@@ -53,30 +55,31 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
         joinpath(CENTRALITY_ROOT, "output", "assessment_access", "figure_data.jld2")
     )
     retained["analysis_source_clean"] === true || error("retained analysis was dirty")
-    retained["late_width"] == 20 || error("unexpected late window")
+    late_width = Int(retained["late_width"])
     manifest_path = joinpath(sweep_root, "manifest.jld2")
-    manifest = JLD2.load(manifest_path)
+    manifest = ReportingSettings.manifest(sweep_root)
     manifest["manifest_hash"] == retained["manifest_hash"] || error("manifest mismatch")
     manifest["schema_version"] == retained["schema_version"] || error("schema mismatch")
     meta = manifest["meta"]
     meta[:git_dirty] === false || error("simulation source was dirty")
-    meta[:T] == 500 || error("unexpected simulation horizon")
+    horizon = Int(meta[:T])
+    settings = ReportingSettings.sweep_metadata(CENTRALITY_ROOT, manifest; baseline_overrides=Dict(:broker_service => :full))
+    baseline = settings["baseline"]
+    interval = Int(settings["network_measure_interval"])
     # The aggregate omits default-valued measurement cadence. Verify that default
     # in the recorded simulation commit, not in the current working tree.
     parameter_ref = "$(meta[:git_commit]):src/parameters.jl"
     parameter_source = read(`git -C $CENTRALITY_ROOT show $parameter_ref`, String)
-    occursin(r":network_measure_interval\s*=>\s*20\b", parameter_source) ||
-        error("unexpected measurement default in the simulation source")
-    seeds = Int.(meta[:baseline_seeds])
-    periods = collect(20:20:500)
+    seeds = settings["condition_seeds"][settings["baseline_reldir"]]
+    periods = collect(interval:interval:horizon)
     degree_periods = collect(1:Int(meta[:T]))
     values = Dict{String,Matrix{Float64}}()
     degree_values = Dict{String,Matrix{Float64}}()
     source_hashes = Dict("manifest.jld2" => bytes2hex(sha256(read(manifest_path))))
     configs = Dict{String,Dict{String,Any}}()
     for mode in CENTRALITY_MODES
-        rel = "broker_services/$mode/baseline"
-        condition = only(filter(c -> c[:result_reldir] == rel, manifest["conditions"]))
+        condition = ReportingSettings.baseline_condition(manifest; overrides=Dict(:broker_service => Symbol(mode)))
+        rel = condition[:result_reldir]
         path = joinpath(sweep_root, rel, "data.jld2")
         data = JLD2.load(path)
         provenance = data["provenance"]
@@ -94,16 +97,15 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
             Int.(data["seeds"]),
             Int(data["condition_index"]),
         )
-        validate_result(result, condition, seeds, collect(1:500))
-        get(result.cfg, "network_measure_interval", 20) == 20 ||
-            error("unexpected measurement cadence")
-        (result.cfg["rho"], result.cfg["delta"], result.cfg["eta"], result.cfg["N"]) ==
-        (0.5, 0.5, 0.02, 1000) || error("not the reporting baseline")
+        validate_result(result, condition, seeds, collect(1:horizon))
+        resolved = ReportingSettings.resolved_parameters(CENTRALITY_ROOT, meta[:git_commit], result.cfg)
+        resolved["network_measure_interval"] == interval || error("measurement cadence differs")
+        all(resolved[k] == baseline[k] for k in ("rho", "delta", "eta", "N")) || error("not the reporting baseline")
         late = Dict{Int,Float64}()
         degree_late = Dict{Int,Float64}()
         for row in retained["seed_rows"]
             if (String(row[1]), row[2], row[3], String(row[5])) ==
-                (mode, 0.5, 0.02, "betweenness")
+                (mode, baseline["rho"], baseline["eta"], "betweenness")
                 haskey(late, Int(row[4])) && error("duplicate retained seed")
                 late[Int(row[4])] = Float64(row[6])
             end
@@ -118,7 +120,7 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
             error("retained degree seed set mismatch")
         values[mode] = reduce(
             hcat,
-            [measured_centrality(df, late[seed]) for (df, seed) in zip(result.mdfs, seeds)],
+            [measured_centrality(df, late[seed]; interval, horizon, late_width) for (df, seed) in zip(result.mdfs, seeds)],
         )
         degree_values[mode] = reduce(
             hcat,
@@ -133,11 +135,11 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
             ],
         )
         source_hashes["$rel/data.jld2"] = bytes2hex(sha256(read(path)))
-        configs[mode] = result.cfg
+        configs[mode] = merge(result.cfg, resolved)
     end
     extraction = reporting_git_provenance(
         CENTRALITY_ROOT;
-        sources=(
+        sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
         ),
@@ -153,10 +155,10 @@ function extract_centrality(sweep_root; output_path=CENTRALITY_OUTPUT)
         seeds,
         configs,
         source_hashes,
-        rho=0.5,
-        delta=0.5,
-        eta=0.02,
-        network_measure_interval=20,
+        rho=baseline["rho"],
+        delta=baseline["delta"],
+        eta=baseline["eta"],
+        network_measure_interval=interval,
         parameter_source_sha256=bytes2hex(sha256(parameter_source)),
         manifest_hash=manifest["manifest_hash"],
         sweep_git_commit=meta[:git_commit],

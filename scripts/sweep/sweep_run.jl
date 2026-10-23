@@ -21,6 +21,7 @@ Threads.nthreads() == 1 && @warn "Running single-threaded; start Julia with --th
 
 include(joinpath(@__DIR__, "sweep_config.jl"))
 
+import BrokerageABM
 using BrokerageABM: default_params, run_simulation, verify_invariants
 using DataFrames: DataFrame
 using JLD2: jldsave, jldopen
@@ -110,33 +111,16 @@ function main()
         "reldir" => reldir,
         "result_reldir" => reldir,
         "condition_index" => e[:condition_index],
-        "seed" => seed,
-        "N" => p.N,
-        "T" => p.T,
         "T_burn" => SWEEP_T_BURN,
-        "rho" => p.rho,
-        "eta" => p.eta,
-        "delta" => p.delta,
-        "k" => p.k,
-        "roster_frac" => p.roster_frac,
-        "n_strangers" => p.n_strangers,
-        "broker_service" => string(p.broker_service),
-        "s" => p.s,
-        "reservation_frac" => p.reservation_frac,
-        "learning_model" => string(p.learning_model),
-        "eta_lr_agent" => p.eta_lr_agent,
-        "eta_lr_broker" => p.eta_lr_broker,
-        "E_init_agent" => p.E_init_agent,
-        "E_init_broker" => p.E_init_broker,
-        "train_steps_agent" => p.train_steps_agent,
-        "train_steps_broker" => p.train_steps_broker,
-        "ridge_lambda_agent" => p.ridge_lambda_agent,
-        "ridge_lambda_broker" => p.ridge_lambda_broker,
-        "ridge_broker_variant" => string(p.ridge_broker_variant),
         "quality_weight" => state.env.quality_weight,
         "interaction_weight" => state.env.interaction_weight,
         "signal_shift" => state.env.signal_shift,
     )
+    for field in fieldnames(typeof(p))
+        value = getfield(p, field)
+        config[string(field)] = value isa Symbol ? string(value) : value
+    end
+    config["fixed_model_settings"] = Dict(string(k) => v for (k, v) in pairs(BrokerageABM.fixed_model_settings()))
     for k in (:axis, :key, :value, :pair, :xkey, :xval, :xi, :ykey, :yval, :yi)
         haskey(e, k) && (config[string(k)] = e[k])
     end

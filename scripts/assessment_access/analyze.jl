@@ -13,6 +13,8 @@ using DataFrames: DataFrame
 using JLD2: jldsave
 using Statistics: mean
 
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+
 include(normpath(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl")))
 include(normpath(joinpath(@__DIR__, "..", "monte_carlo.jl")))
 include(normpath(joinpath(@__DIR__, "..", "reporting_provenance.jl")))
@@ -21,7 +23,7 @@ include(normpath(joinpath(@__DIR__, "..", "net_output_data.jl")))
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const ANALYSIS_PROVENANCE = reporting_git_provenance(
     REPO_ROOT;
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/sweep/sweep_results.jl",
         "scripts/monte_carlo.jl",
@@ -40,11 +42,12 @@ const OUT_DIR = normpath(
     ),
 )
 const FIGURE_DIR = joinpath(OUT_DIR, "figures")
-const LATE_WIDTH = 20
-const LEVEL = 0.95
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const LEVEL = AnalysisSettings.INTERVAL_LEVEL
 const MODES = (:full, :assessment_only, :access_only)
-const GRID_CELLS = [(rho, eta) for rho in (0.0, 0.5, 1.0) for eta in (0.0, 0.01, 0.03)]
-const CONTRAST_CELLS = vcat([(0.5, 0.02)], GRID_CELLS, [(0.5, 0.001)])
+const MANIFEST = ReportingSettings.manifest(SWEEP_ROOT)
+const BASELINE_CONFIG = ReportingSettings.baseline_condition(MANIFEST; overrides=Dict(:broker_service => :full))[:resolved_params]
+const CONTRAST_CELLS = sort(unique((c[:resolved_params][:rho], c[:resolved_params][:eta]) for c in MANIFEST["conditions"]))
 const MODE_LABELS = Dict(
     :full => "Full service",
     :assessment_only => "Assessment only",
@@ -170,7 +173,7 @@ function baseline_figure(index)
     for (column, panel) in enumerate(panels)
         axis = Axis(fig[1, column]; title=panel.title, xlabel="Period", ylabel=panel.ylabel)
         for mode in MODES
-            series = ensemble_series(index[(mode, 0.5, 0.02)], panel.metric)
+            series = ensemble_series(index[(mode, BASELINE_CONFIG[:rho], BASELINE_CONFIG[:eta])], panel.metric)
             color = MODE_COLORS[mode]
             band!(axis, series.periods, series.lower, series.upper; color=(color, 0.15))
             lines!(
@@ -193,7 +196,8 @@ function contrast_figure(index, metric::Symbol, filename::String, ylabel::String
         (label="Assessment contribution", reference=:access_only, comparison=:full),
         (label="Access contribution", reference=:assessment_only, comparison=:full),
     )
-    eta_values = (0.0, 0.01, 0.03)
+    rho_values = sort(unique(first.(CONTRAST_CELLS)))
+    eta_values = [eta for eta in sort(unique(last.(CONTRAST_CELLS))) if all((rho, eta) in CONTRAST_CELLS for rho in rho_values)]
     colors = (:steelblue, :goldenrod, :firebrick)
     fig = Figure(; size=(1050, 430), fontsize=16)
     for (column, contribution) in enumerate(contributions)
@@ -202,7 +206,7 @@ function contrast_figure(index, metric::Symbol, filename::String, ylabel::String
             title="$(Char(Int('A') + column - 1)). $(contribution.label)",
             xlabel="Individual-quality share (ρ)",
             ylabel,
-            xticks=([0.0, 0.5, 1.0], ["0", "0.5", "1"]),
+            xticks=(rho_values, string.(rho_values)),
         )
         hlines!(axis, [0.0]; color=:gray65, linewidth=1)
         for (eta_index, eta) in enumerate(eta_values)
@@ -211,16 +215,16 @@ function contrast_figure(index, metric::Symbol, filename::String, ylabel::String
                     index[(contribution.reference, rho, eta)],
                     index[(contribution.comparison, rho, eta)],
                     metric,
-                ) for rho in (0.0, 0.5, 1.0)
+                ) for rho in rho_values
             ]
             estimates = [interval.mean for interval in intervals]
             lower = estimates .- [interval.lower for interval in intervals]
             upper = [interval.upper for interval in intervals] .- estimates
-            color = colors[eta_index]
-            errorbars!(axis, [0.0, 0.5, 1.0], estimates, lower, upper; color)
+            color = colors[mod1(eta_index, length(colors))]
+            errorbars!(axis, rho_values, estimates, lower, upper; color)
             scatterlines!(
                 axis,
-                [0.0, 0.5, 1.0],
+                rho_values,
                 estimates;
                 color,
                 linewidth=2,
@@ -245,10 +249,8 @@ function main()
         artifact="broker assessment vs access sweep",
     )
     index = result_index(dataset)
-    base_cells = vcat([(0.5, 0.02)], GRID_CELLS)
-    base_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in base_cells)
     complete_keys = Set((mode, rho, eta) for mode in MODES for (rho, eta) in CONTRAST_CELLS)
-    Set(keys(index)) in (base_keys, complete_keys) || error("assessment vs access design mismatch")
+    Set(keys(index)) == complete_keys || error("assessment vs access design mismatch")
     contrast_cells = sort!(unique((key[2], key[3]) for key in keys(index)))
 
     mkpath(FIGURE_DIR)
@@ -343,6 +345,7 @@ function main()
         analysis_git_commit=ANALYSIS_PROVENANCE.commit,
         analysis_source_clean=ANALYSIS_PROVENANCE.source_clean,
         source_root=abspath(SWEEP_ROOT),
+        reporting_settings=merge(ReportingSettings.sweep_metadata(REPO_ROOT, MANIFEST; baseline_overrides=Dict(:broker_service => :full)), AnalysisSettings.metadata(Int(dataset.meta[:T]))),
         late_width=LATE_WIDTH,
         interval_level=LEVEL,
         net_output_definition="net_output_per_principal",

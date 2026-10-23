@@ -1,38 +1,10 @@
-"""
-    scripts/paper/figdata.jl
-
-Cluster-side extract for the figure pipeline. Reads the full sweep
-(`BROKERAGE_ABM_SWEEP_DIR`) and writes the small derived dataset from which
-the figure renderer operates. The default output is `output/main/figure_data.jld2`;
-set `BROKERAGE_ABM_FIGDATA_PATH` to generate a counterpart for another sweep.
-The renderer then works locally with no access to the sweep. No hard-coded
-results: every stored value is computed from the saved sweep data at run time.
-
-Rerun only when the underlying numbers change (a new sweep, or a figure needing a
-metric not yet extracted); styling iteration needs only figures.jl.
-
-Contents of figure_data.jld2 (single key "figdata", a Dict):
-  period         per-period time axis of the baseline runs
-  series         per-period ensemble means at the baseline, retained for
-                 convenience
-  series_seed_values
-                 period-by-seed matrices at the baseline:
-                 betweenness, access, mean_degree, median_degree, mpa
-                 (matches per agent, both sides), outsourcing
-  oat_cells      late means and seed values per one-at-a-time regime
-  grid_cells     rho, delta, and the ten named outcome late means per rho x delta
-                 grid coordinate, plus the underlying seed values
-  rho_eta_cells  rho, eta, access, and betweenness late means per rho x eta
-                 grid coordinate, plus the underlying seed values
-  regime_cells   rho, delta, late means, and seed values per effective realization
-  meta           sweep id, generation time, generating script
-
-Usage:
-  BROKERAGE_ABM_SWEEP_DIR=/path/to/sweep \
-    julia --project --threads=auto scripts/paper/figdata.jl
-"""
+"""Extract main-figure data and reporting settings from a completed sweep.
+Set BROKERAGE_ABM_SWEEP_DIR; renderers subsequently need only retained inputs."""
 
 using JLD2, DataFrames, Statistics, Dates
+
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
@@ -46,17 +18,18 @@ const DEFAULT_OUTFILE = normpath(
 const OUTFILE = normpath(get(ENV, "BROKERAGE_ABM_FIGDATA_PATH", DEFAULT_OUTFILE))
 const REPORTING_PROVENANCE = reporting_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
-    sources=(
+    sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
         @__FILE__,
         "scripts/sweep/sweep_results.jl",
     ),
 )
-const LATE_WIDTH = 20   # final-period summary window
+const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
 const SWEEP = load_sweep_dataset(ROOT)
-const BASELINE_REL = "oat/rho=0.5"
-length(SWEEP.result_by_rel[BASELINE_REL].seeds) == 50 || error("expected 50 baseline seeds")
-all(result.rel == BASELINE_REL || length(result.seeds) == 20 for result in SWEEP.results) ||
-    error("expected 20 seeds outside the baseline")
+const REPORTING_SETTINGS = merge(
+    ReportingSettings.sweep_metadata(REPORTING_PROVENANCE.root, ReportingSettings.manifest(ROOT)),
+    AnalysisSettings.metadata(Int(SWEEP.meta[:T])),
+)
+const BASELINE_REL = REPORTING_SETTINGS["baseline_reldir"]
 
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
@@ -242,6 +215,7 @@ fd["regime_cells"] = let out = Dict{String,Any}[]
 end
 
 fd["meta"] = Dict(
+    "reporting_settings" => REPORTING_SETTINGS,
     "sweep" => basename(ROOT),
     "manifest_hash" => SWEEP.manifest_hash,
     "schema_version" => SWEEP.schema_version,

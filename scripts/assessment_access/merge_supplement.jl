@@ -15,13 +15,13 @@ using Statistics: mean
 const REPO_ROOT = normpath(
     get(ENV, "BROKERAGE_ABM_REPO_ROOT", joinpath(@__DIR__, "..", ".."))
 )
+isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+
 include(joinpath(REPO_ROOT, "scripts", "sweep", "sweep_results.jl"))
 include(joinpath(REPO_ROOT, "scripts", "monte_carlo.jl"))
 include(joinpath(REPO_ROOT, "scripts", "reporting_provenance.jl"))
 include(joinpath(REPO_ROOT, "scripts", "net_output_data.jl"))
 
-const LATE_WIDTH = 20
-const LEVEL = 0.95
 const MODES = (:full, :assessment_only, :access_only)
 const METRICS = (
     :agent_holdout_rank,
@@ -60,8 +60,8 @@ function metric_series(df::DataFrame, metric::Symbol)
     return df[!, metric]
 end
 
-function seed_values(result::SweepResult, metric::Symbol)
-    first_period = maximum(result.mdfs[1].period) - LATE_WIDTH + 1
+function seed_values(result::SweepResult, metric::Symbol; late_width)
+    first_period = maximum(result.mdfs[1].period) - late_width + 1
     return Dict(
         seed => finite_mean(
             metric_series(result.mdfs[i], metric)[result.mdfs[i].period .>= first_period],
@@ -69,14 +69,14 @@ function seed_values(result::SweepResult, metric::Symbol)
     )
 end
 
-function paired_interval(reference::SweepResult, comparison::SweepResult, metric::Symbol)
-    reference_values = seed_values(reference, metric)
-    comparison_values = seed_values(comparison, metric)
+function paired_interval(reference::SweepResult, comparison::SweepResult, metric::Symbol; late_width, level)
+    reference_values = seed_values(reference, metric; late_width)
+    comparison_values = seed_values(comparison, metric; late_width)
     seeds = sort!(collect(intersect(keys(reference_values), keys(comparison_values))))
     return paired_monte_carlo_interval(
         [reference_values[seed] for seed in seeds],
         [comparison_values[seed] for seed in seeds];
-        level=LEVEL,
+        level=level,
     )
 end
 
@@ -112,12 +112,12 @@ function main()
     get(base, "net_output_definition", nothing) == "net_output_per_principal" ||
         error("regenerate the base analysis with net output per principal before merging")
     base["analysis_source_clean"] == true || error("base analysis source was not clean")
-    base["late_width"] == LATE_WIDTH || error("late-window mismatch")
-    base["interval_level"] == LEVEL || error("interval-level mismatch")
+    late_width = Int(base["late_width"])
+    level = Float64(base["interval_level"])
 
     analysis_provenance = reporting_git_provenance(
         REPO_ROOT;
-        sources=(
+        sources=("scripts/analysis_settings.jl", "scripts/reporting_settings.jl",
             @__FILE__,
             "scripts/sweep/sweep_results.jl",
             "scripts/monte_carlo.jl",
@@ -145,10 +145,10 @@ function main()
             Float64(result.cfg["eta"]),
         ) => result for result in dataset.results
     )
-    expected = Set((mode, 0.5, 0.001) for mode in MODES)
-    Set(keys(index)) == expected || error("unexpected supplemental conditions")
-    all(result -> result.seeds == collect(1:20), values(index)) ||
-        error("supplemental seed set mismatch")
+    manifest = ReportingSettings.manifest(supplement_root)
+    cells = sort(unique((c[:resolved_params][:rho], c[:resolved_params][:eta]) for c in manifest["conditions"]))
+    expected = Set((mode, rho, eta) for mode in MODES for (rho, eta) in cells)
+    Set(keys(index)) == expected || error("incomplete supplemental service comparisons")
 
     seed_rows = Vector{Vector{Any}}()
     summary_rows = Vector{Vector{Any}}()
@@ -156,11 +156,11 @@ function main()
         mode, rho, eta = key
         result = index[key]
         for metric in METRICS
-            per_seed = seed_values(result, metric)
+            per_seed = seed_values(result, metric; late_width)
             for seed in sort!(collect(keys(per_seed)))
                 push!(seed_rows, Any[mode, rho, eta, seed, metric, per_seed[seed]])
             end
-            interval = monte_carlo_interval(collect(values(per_seed)); level=LEVEL)
+            interval = monte_carlo_interval(collect(values(per_seed)); level=level)
             push!(
                 summary_rows,
                 Any[
@@ -179,21 +179,21 @@ function main()
     end
 
     contrast_rows = Vector{Vector{Any}}()
-    for metric in METRICS
+    for (rho, eta) in cells, metric in METRICS
         for (label, reference, comparison) in (
             ("assessment", :access_only, :full),
             ("access", :assessment_only, :full),
             ("assessment_vs_access", :access_only, :assessment_only),
         )
             interval = paired_interval(
-                index[(reference, 0.5, 0.001)], index[(comparison, 0.5, 0.001)], metric
+                index[(reference, rho, eta)], index[(comparison, rho, eta)], metric; late_width, level
             )
             push!(
                 contrast_rows,
                 Any[
                     label,
-                    0.5,
-                    0.001,
+                    rho,
+                    eta,
                     metric,
                     interval.mean,
                     interval.se,
@@ -244,8 +244,8 @@ function main()
         source_root=base_source_root,
         supplement_source_root=abspath(supplement_root),
         merge_script_sha256=script_hash,
-        late_width=LATE_WIDTH,
-        interval_level=LEVEL,
+        late_width=late_width,
+        interval_level=level,
         net_output_definition="net_output_per_principal",
         output_accounting=Dict("base" => base["output_accounting"], "supplement" => output_accounting),
     )
