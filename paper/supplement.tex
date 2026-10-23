@@ -2,6 +2,7 @@
 % Compiles to output/supplement/supplement.pdf via
 % scripts/paper/build_supplement.jl.
 %
+% The simulation design precedes the supplementary figures.
 % Figures S1--S3 describe the matching-function data-generating process. Figure S4
 % compares assessment and access across matching composition. Figures S5--S7
 % reproduce the structural analyses with two alternative network measures.
@@ -10,11 +11,13 @@
 \documentclass[11pt]{article}
 \usepackage[letterpaper,margin=1in]{geometry}
 \usepackage{amsmath,amssymb,graphicx}
+\usepackage{booktabs,tabularx,array}
 \usepackage[font=small,labelfont=bf]{caption}
 \graphicspath{{../output/supplement/figures/}}
 
 % Supplement figure numbering: S1, S2, ...
 \renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
 
 % Minimal key/value store so generated display conventions appear as \pv{key}
 % rather than literals (mirrors the results pipeline's \pvDefine/\pv contract).
@@ -26,10 +29,13 @@
   \else\csname pv@#1\endcsname\fi}
 \makeatother
 \input{../output/supplement/figmeta.tex}
+\input{../output/manuscript/settings.tex}
 \input{../output/assessment_access/paper_values.tex}
 
 \setlength{\parskip}{0.6\baselineskip}
 \setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{1em}
+\renewcommand{\arraystretch}{1.12}
 \clubpenalty=10000
 \widowpenalty=10000
 \displaywidowpenalty=10000
@@ -43,14 +49,18 @@
 
 \begin{document}
 
-\begin{figure}[htbp]
-\centering
 \begin{center}
 {\large\bfseries Supplementary Material}
 \end{center}
 
+\input{../output/supplement/simulation_design.tex}
+
+\section*{Supplementary figures}
+
+\begin{figure}[htbp]
+\centering
 \includegraphics[width=\linewidth]{type_geometry.png}
-\caption{\textbf{Principal types and their latent curve.} All \pv{suppDgpN} baseline types from realization \pv{suppDgpHeatmapSeed}, projected onto pairs of the curve's first three principal components (A--C). Gray points are realized types; the line shows the latent curve, colored by position along it. Matching and learning use the full eight-dimensional types, not these projections.}
+\caption{\textbf{Principal types and their latent curve.} All \pv{suppDgpN} baseline types from realization \pv{suppDgpHeatmapSeed}, projected onto pairs of the curve's first \pv{settingDgpProjectionWord} principal components (A--C). Gray points are realized types; the line shows the latent curve, colored by position along it. Matching and learning use the full \pv{settingDgpDimensionsWord}-dimensional types, not these projections.}
 \label{fig:supp-type-geometry}
 \end{figure}
 
@@ -64,7 +74,7 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{effective_dimensionality.png}
-\caption{\textbf{Dimensionality of underlying match value.} Matrices of pair-specific underlying match values, centered within each realization and summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function draws are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values. Lines and markers are means; ribbons and whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes $\rho=1$, where underlying match value depends only on individual quality and difficulty is inapplicable.}
+\caption{\textbf{Dimensionality of underlying match value.} Matrices of pair-specific underlying match values, centered within each realization and summarized over \pv{suppDgpSeeds} independent realizations. Types and matching-function draws are fixed within each realization as $\rho$ and $\delta$ vary. A: the first \pv{suppDgpSpectrumComponents} singular values at $\delta=\pv{suppDgpDelta}$, divided by the largest within each realization. B: the fewest components accounting for \pv{suppDgpRankEnergyPercent}\% of the sum of squared singular values. Lines and markers are means; ribbons and whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. N/A denotes $\rho=1$, where underlying match value depends only on individual quality and difficulty is inapplicable.}
 \label{fig:supp-dgp-dimension}
 \end{figure}
 
@@ -78,14 +88,14 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_grid.png}
-\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise 95\% Monte Carlo intervals. N/A denotes $\rho=1$, where underlying match value depends only on individual quality and difficulty is inapplicable.}
+\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. N/A denotes $\rho=1$, where underlying match value depends only on individual quality and difficulty is inapplicable.}
 \label{fig:supp-grid}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{alternative_measures_position.png}
-\caption{\textbf{Alternative structural measures over time and against access.} A and C: baseline measures recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean, shown from $t=\pv{suppAxisStart}$. Lines are ensemble means; ribbons show pointwise 95\% Monte Carlo intervals. B and D: ensemble late means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline.}
+\caption{\textbf{Alternative structural measures over time and against access.} A and C: baseline measures recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean, shown from $t=\pv{suppAxisStart}$. Lines are ensemble means; ribbons show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. B and D: ensemble late means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline.}
 \label{fig:supp-position}
 \end{figure}
 

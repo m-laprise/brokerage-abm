@@ -23,11 +23,15 @@ function overleaf_source()
     main = read(joinpath(ROOT, "paper", "manuscript.tex"), String)
     pseudo = read(joinpath(ROOT, "paper", "appendices", "simulation_pseudocode.tex"), String)
     specs = read(joinpath(ROOT, "paper", "appendices", "model_specifications.tex"), String)
+    settings = Dict(m[1] => m[2] for m in eachmatch(
+        r"(?m)^\\pvDefine\{([^}]+)\}\{(.*)\}\s*$",
+        read(joinpath(ROOT, "output", "manuscript", "settings.tex"), String),
+    ))
     main = replace(main,
         r"\A% Editable manuscript root\..*?\n\n"s =>
             "% Editable review copy. Compile with pdfLaTeX and Biber.\n",
         raw"\usepackage{graphicx,booktabs}" =>
-            raw"\usepackage{graphicx,booktabs,array,calc,longtable}" * "\n" *
+            raw"\usepackage{graphicx,booktabs,array,calc,longtable,tabularx}" * "\n" *
             raw"\usepackage{algorithm}" * "\n" * raw"\usepackage[noend]{algpseudocode}",
         raw"\graphicspath{{output/main/}}" * "\n" => "",
         raw"\addbibresource{paper/references.bib}" => raw"\addbibresource{references.bib}",
@@ -55,9 +59,10 @@ function overleaf_source()
         \\renewcommand{\\theHsection}{appendix$letter.\\arabic{section}}
         \\renewcommand{\\theHsubsection}{appendix$letter.\\arabic{section}.\\arabic{subsection}}
         \\section*{$title}
-        """ * strip(replace(document_body(source), raw"\maketitle" => "")))
+        """ * strip(replace(document_body(source), raw"\maketitle" => "",
+            r"\\pv\{([^}]+)\}" => s -> settings[s[5:(end - 1)]])))
     end
-    definitions = Dict{String,String}()
+    definitions = copy(settings)
     for path in ("output/supplement/figmeta.tex", "output/assessment_access/paper_values.tex")
         validate_publication_output(ROOT, joinpath(ROOT, path))
         for m in eachmatch(r"(?m)^\\pvDefine\{([^}]+)\}\{(.*)\}\s*$", read(joinpath(ROOT, path), String))
@@ -65,6 +70,10 @@ function overleaf_source()
         end
     end
     supplement = document_body(read(joinpath(ROOT, "paper", "supplement.tex"), String))
+    design = joinpath(ROOT, "output", "supplement", "simulation_design.tex")
+    validate_publication_output(ROOT, design)
+    supplement = replace(supplement,
+        raw"\input{../output/supplement/simulation_design.tex}" => read(design, String))
     supplement = replace(supplement, r"\\pv\{([^}]+)\}" => s -> definitions[s[5:(end - 1)]])
     supplement = replace(supplement,
         r"(\\includegraphics(?:\[[^\]]*\])?\{)" => s"\1figures/supplement/")
@@ -73,6 +82,9 @@ function overleaf_source()
     \\setcounter{figure}{0}
     \\renewcommand{\\thefigure}{S\\arabic{figure}}
     \\renewcommand{\\theHfigure}{supp.\\arabic{figure}}
+    \\setcounter{table}{0}
+    \\renewcommand{\\thetable}{S\\arabic{table}}
+    \\renewcommand{\\theHtable}{supp.\\arabic{table}}
     \\setlength{\\parskip}{0.6\\baselineskip}
     \\setlength{\\parindent}{0pt}
     """ * supplement * "\n\n" * raw"\end{document}"

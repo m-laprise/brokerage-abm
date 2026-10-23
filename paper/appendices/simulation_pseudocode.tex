@@ -10,6 +10,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage[hidelinks]{hyperref}
+\input{../../output/manuscript/settings.tex}
 
 \setlength{\emergencystretch}{3em}
 \definecolor{diagblue}{RGB}{0,0,180}
@@ -123,11 +124,11 @@ $k_G$ & scalar & Watts-Strogatz graph degree. \\
 $\omega$ & scalar & Satisfaction EWMA weight. \\
 $\mathsf L$ & learning function & $\mathrm{NN}$ (default) or $\mathrm{Ridge}$. \\
 $\mathsf S_b$ & broker service & Full (default), assessment-only, or access-only. \\
-$\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=0.003$ and $\lambda_b=0.001$. \\
+$\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=\pv{settingridge_lambda_agent}$ and $\lambda_b=\pv{settingridge_lambda_broker}$. \\
 $a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
-$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps; both are 100 in the reporting simulations. \\
-$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call; both are 50 in the reporting simulations. \\
-$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates; reporting values are 0.003 and 0.03, respectively. \\
+$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps; both are \pv{settingE_init_agent} in the reporting simulations. \\
+$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call; both are \pv{settingtrain_steps_agent} in the reporting simulations. \\
+$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates; reporting values are \pv{settingeta_lr_agent} and \pv{settingeta_lr_broker}, respectively. \\
 $W_p$ & scalar & Training-window horizon, in periods. \\
 $M$ & scalar & Per-call training observation cap. \\
 \addlinespace[0.25em]
@@ -201,7 +202,7 @@ X^t,G^t,\\
 \]
 This tuple includes fixed realized model objects and all variables needed for later transitions. Implementation-only scratch buffers and diagnostic-only counters are omitted.
 
-The fixed calibration moments are calculated across all unordered pairs of distinct agents within each of 50 independently generated calibration markets of 1,000 agents, then averaged with equal weight across markets. Define
+The fixed calibration moments are calculated across all unordered pairs of distinct agents within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} agents, then averaged with equal weight across markets. Define
 \[
 U_{ij}=\frac{x_i^\top c+x_j^\top c}{2},\qquad
 V_{ij}=x_i^\top A x_j,\qquad
@@ -281,7 +282,7 @@ $\mathcal L$ & scalar & Full-batch MSE objective. \\
 $\lambda$ & positive scalar & Learner-specific Ridge slope penalty; intercepts are not penalized. \\
 $e$ & integer & Update-step index. \\
 $(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $\mathcal O_i,\mathcal O_b$ are the agent and broker instances. \\
-$\beta_1,\beta_2,\epsilon$ & scalars & Adam constants $(0.9,\,0.999,\,10^{-8})$. \\
+$\beta_1,\beta_2,\epsilon$ & scalars & Adam constants $(\pv{settingAdamBetaOne},\,\pv{settingAdamBetaTwo},\,\pv{settingAdamEpsilon})$. \\
 $n_i,n_b$ & integers & Current values of history lengths $n_i^t$ and $n_b^t$. \\
 $L_i,L_b$ & ordered index sets & Training-window indices from the most recent $W_p$ completed simulation periods, with period 0 included only until $W_p$ later periods exist; subsampled evenly to at most $M$. \\
 $\Delta_i,\Delta_b$ & integers & New observations since last training call. \\
@@ -381,7 +382,7 @@ Calibration draws random pairs $(i_\ell,j_\ell)$ and sets
 \[
 \begin{aligned}
 \bar q_{\mathrm{cal}}
-&=\frac{1}{10{,}000}\sum_{\ell=1}^{10{,}000} \{Q+f(x_{i_\ell},x_{j_\ell})\},\\
+&=\frac{1}{\pv{settingCalibrationPairsGrouped}}\sum_{\ell=1}^{\pv{settingCalibrationPairsGrouped}} \{Q+f(x_{i_\ell},x_{j_\ell})\},\\
 r&=f_r\,\bar q_{\mathrm{cal}},
 \qquad
 \phi=c_s=\lambda_c\,\bar q_{\mathrm{cal}}.
@@ -390,7 +391,7 @@ r&=f_r\,\bar q_{\mathrm{cal}},
 
 \begin{localvartable}{\procInitialize}
 $\lambda_c$ & scalar & Cost rate used to set $\phi$ and $c_s$. \\
-$f_r$ & scalar & Reservation coefficient; sets $r=f_r\,\bar q_{\mathrm{cal}}$ (default 0.60). \\
+$f_r$ & scalar & Reservation coefficient; sets $r=f_r\,\bar q_{\mathrm{cal}}$ (default \pv{settingreservation_fracFixed}). \\
 $(i_\ell,j_\ell)$ & pair in $[N]^2$ & Random calibration pair. \\
 $d_\gamma$ & integer & Number of active curve dimensions. \\
 $p_{\mathrm{rewire}}$ & scalar & Watts-Strogatz rewiring probability. \\
@@ -449,7 +450,7 @@ $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachme
 \begin{algorithmic}[1]
 \Require Parameters $\vartheta$ and seed.
 \Ensure Initial state $S^0$.
-\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{1,\ldots,5\}$ and phases $\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
+\State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{\pv{settingFrequencyMin},\ldots,\pv{settingFrequencyMax}\}$ and phases $\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
 \State Allocate empty agent and broker containers in $S^0$ and store $\gamma$.
 \For{$i=1,\ldots,N$}
     \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
@@ -470,7 +471,7 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
     \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update $\bar q_{ij}^0,C_{ij}^0,\bar q_{ji}^0,C_{ji}^0$.
 \EndFor
-\State Let $\mathcal B_{\mathrm{seed}}\gets \{\{i,j\}\in\EG^0:i,j\in\mathrm{Roster}^0\}$; shuffle and keep at most 100 edges.
+\State Let $\mathcal B_{\mathrm{seed}}\gets \{\{i,j\}\in\EG^0:i,j\in\mathrm{Roster}^0\}$; shuffle and keep at most \pv{settingBrokerSeedCap} edges.
 \For{each $\{i,j\}\in\mathcal B_{\mathrm{seed}}$}
     \State Append $(x_i^0,x_j^0,q_{ij})$ to $\mathcal H_b^0$; increment $n_b^0$.
     \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{single\mbox{-}principal}$, draw and store $r_\ell\sim\mathrm{Unif}\{1,2\}$ for this observation.

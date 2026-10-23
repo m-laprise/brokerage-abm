@@ -1,0 +1,53 @@
+\section*{Simulation design and analysis}
+
+\textbf{Main sweeps.} The main simulations use neural-network learning and run for \(T=500\) periods. Table~\ref{tab:supp-oat} gives the parameters varied one at a time; Table~\ref{tab:supp-grids} gives the crossed designs. Parameters outside each sweep remain at baseline (Appendix B, \S9). The reservation coefficient \(f_r\) sets the threshold \(r=f_r\bar q_{\mathrm{cal}}\).
+
+\begin{table}[htbp]
+\centering
+\caption{Baseline values and one-at-a-time sweeps.}
+\label{tab:supp-oat}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.36\linewidth}cX@{}}
+\toprule
+Parameter & Baseline & Values varied \\
+\midrule
+Matching composition, \(\rho\) & 0.5 & 0, 0.15, 0.3, 0.5, 0.7, 0.85, 1 \\
+Turnover probability, \(\eta\) & 0.02 & 0, 0.001, 0.01, 0.02, 0.03 \\
+Number of principals, \(N\) & 1000 & 500, 1000, 1500 \\
+Reservation coefficient, \(f_r\) & 0.6 & 0.4, 0.6, 0.9, 1.2 \\
+Matching difficulty, \(\delta\) & 0.5 & 0, 0.25, 0.5, 0.75, 1 \\
+Initial ring degree, \(k_G\) & 6 & 4, 6, 12 \\
+Broker roster share, \(\alpha_R\) & 0.2 & 0.1, 0.2, 0.4 \\
+Self-search stranger pool, \(n_{\mathrm{strangers}}\) & 10 & 0, 10, 50 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Crossed designs. Each row includes all combinations of the listed values.}
+\label{tab:supp-grids}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth}XX@{}}
+\toprule
+Parameters & First parameter & Second parameter \\
+\midrule
+\(\rho\times \eta\) & 0, 0.15, 0.5, 0.85, 1 & 0, 0.001, 0.01, 0.02, 0.03 \\
+\(\rho\times f_r\) & 0, 0.5, 1 & 0.4, 0.6, 0.9, 1.2 \\
+\(\eta\times f_r\) & 0, 0.001, 0.01, 0.02, 0.03 & 0.4, 0.6, 0.9, 1.2 \\
+\(\rho\times \delta\) & 0, 0.15, 0.3, 0.5, 0.7, 0.85, 1 & 0, 0.25, 0.5, 0.75, 1 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The sweeps contain 80 distinct regimes. Each uses seeds 1--20; the baseline uses seeds 1--50, giving 1{,}630 runs per learning model. Configurations shared by sweeps use the same runs. At \(\rho=1\), \(\delta\) has no effect, so its grid coordinates share one regime.
+
+\textbf{Learning comparisons.} The complete design is repeated with Ridge regression. Restrictions on the Ridge broker assess the contributions of observation volume and information about both parties: a history capped at the median principal sample size, one party recorded per match, and omission of the interaction term. Each restriction is compared with the unrestricted Ridge broker across the 31 distinct regimes in the \(\rho\times\delta\) grid, including the baseline. Each restriction uses 650 runs with the same seed allocation as the main sweeps. Principal learning rules are unchanged.
+
+\textbf{Broker services.} The neural-network model compares full service, assessment-only service, and access-only service. The comparison crosses \(\rho\in\{0, 0.5, 1\}\) with \(\eta\in\{0, 0.01, 0.03\}\), and adds \((\rho,\eta)=(0.5,0.001)\) and \((\rho,\eta)=(0.5,0.02)\). Other parameters remain at baseline. Each service uses 50 seeds at the baseline and 20 elsewhere: 11 market regimes and 750 runs across all services.
+
+\textbf{Training calibration.} Separate baseline calibration runs select neural-network training settings. The screen varies learning rates \(\{0.003, 0.01, 0.03\}\) and recurrent update budgets \(\{50, 100, 200\}\), one learner at a time, with initial budgets twice the recurrent budget. It uses 17 configurations, 3 seeds per configuration, and 200 periods. Selection considers each learner's ranking performance, its stability across periods and seeds, and runtime. The selected learning rates are 0.003 for principals and 0.03 for the broker, with 100 initial and 50 recurrent steps for both. Confirmation uses 5 seeds, including the screening seeds.
+
+Ridge calibration crosses the penalties \(\{0.0003, 0.001, 0.003, 0.01, 0.03\}\) for principals and the broker, using 10 seeds per combination and 500 periods. Selection considers each learner's ranking performance, stability, and prediction error. The reported experiments use penalties of 0.001 for both learners. Confirmation uses 5 new seeds. Calibration seeds are excluded from the reporting runs.
+
+\textbf{Analysis.} Early and late summaries cover periods 51--70 and 481--500. Window means average periods within runs, then runs across seeds. Comparisons between model versions use differences paired by seed; intervals are pointwise 95\% Student-\(t\) Monte Carlo confidence intervals across independent seeds. Summaries across regimes give each distinct regime equal weight. Outcome definitions and the convergence assessment are reported in Section IV.A.

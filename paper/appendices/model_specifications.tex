@@ -14,6 +14,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage[hidelinks]{hyperref}
+\input{../../output/manuscript/settings.tex}
 
 \setlength{\emergencystretch}{3em}
 \setlength{\parskip}{0.35em plus 0.1em minus 0.05em}
@@ -42,7 +43,7 @@ The model specification covers agents (§1), the matching problem (§2), how age
 
 \subsection{1. Agents and Time}\label{agents-and-time}
 
-The model runs for \(T\) discrete periods (default 500). It has \(N\) agents (default 1000), a single broker, and an undirected network \(G\) over the agents and broker.
+The model runs for \(T\) discrete periods (default \pv{settingT}). It has \(N\) agents (default \pv{settingN}), a single broker, and an undirected network \(G\) over the agents and broker.
 
 Each agent \(i\) is characterized by:
 
@@ -50,7 +51,7 @@ Each agent \(i\) is characterized by:
 \tightlist
 \item \textbf{Type} \(\mathbf{x}_i \in \mathbb{R}^d\): a fixed vector of observable characteristics, drawn as specified below and used by the matching function (§2).
 \item \textbf{Current-period matches} \(M_i^t\): active bilateral relationships involving \(i\) in period \(t\). Each counterparty can appear at most once in \(M_i^t\); incoming accepted offers are not capped.
-\item \textbf{Active demand bound} \(K\): the maximum number of active demands an agent can initiate in a period (default \(K = 5\); §6).
+\item \textbf{Active demand bound} \(K\): the maximum number of active demands an agent can initiate in a period (default \(K = \pv{settingK}\); §6).
 \item \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3a).
 \item \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
 \end{itemize}
@@ -61,7 +62,7 @@ Type vectors are multidimensional but concentrated near a smooth one-dimensional
 
 \[\boldsymbol{\gamma}(u) = \frac{\tilde{\boldsymbol{\gamma}}(u)}{\|\tilde{\boldsymbol{\gamma}}(u)\|}, \qquad \tilde{\gamma}_\ell(u) = \begin{cases} \sin(2\pi \nu_\ell u + \psi_\ell) & \ell = 1, \ldots, d_\gamma \\ 0 & \ell = d_\gamma+1, \ldots, d. \end{cases}\]
 
-The frequencies \(\nu_\ell \sim \operatorname{Unif}\{1,2,3,4,5\}\) and phases \(\psi_\ell \sim \operatorname{Unif}[0,2\pi)\) are drawn once per simulation. The parameter \(d_\gamma\leq d\) is the number of coordinates in which the curve varies.
+The frequencies \(\nu_\ell \sim \operatorname{Unif}\{\pv{settingFrequencies}\}\) and phases \(\psi_\ell \sim \operatorname{Unif}[0,2\pi)\) are drawn once per simulation. The parameter \(d_\gamma\leq d\) is the number of coordinates in which the curve varies.
 
 Each agent is drawn at a random position \(u_i \sim \mathrm{Unif}[0,1]\) on the curve, then perturbed:
 
@@ -105,13 +106,13 @@ f(\mathbf{x}_i,\mathbf{x}_j)
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
 \]
 
-The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These fixed moments are calculated across all unordered pairs of distinct agents within each of 50 independently generated calibration markets of 1,000 agents, then averaged with equal weight across markets. The resulting coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover.
+The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These fixed moments are calculated across all unordered pairs of distinct agents within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} agents, then averaged with equal weight across markets. The resulting coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover.
 
 Let \(\kappa(\delta)\) denote the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets. The common adjustment
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
-accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. This defines the payoff unit. In these units, \(Q=2.84\) and \(\sigma_\varepsilon=0.28\).
+accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. This defines the payoff unit. In these units, \(Q=\pv{settingQ}\) and \(\sigma_\varepsilon=\pv{settingsigma_eps}\).
 
 The standardized components have equal average within-market variances across the calibration markets. On this calibration scale, after weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), match value depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
 
@@ -169,7 +170,7 @@ The trace normalization prevents arbitrary scale differences in \(\mathbf{A}\) a
 
 \[g(\mathbf{x}_i, \mathbf{x}_j) = 1 + \delta \cdot \text{sign}(\mathbf{x}_i^\top \mathbf{B} \mathbf{x}_j)\]
 
-where \(\delta\in[0,1]\) (default 0.5).
+where \(\delta\in[0,1]\) (default \pv{settingdelta}).
 
 The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different underlying match values even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. The scale \(\sigma_W(\delta)\) holds the average within-market variance of standardized complementarity at one in the calibration markets as \(\delta\) varies.
 
@@ -221,15 +222,15 @@ where \(\hat q\) is predicted match value, \(\mathbf{z}\) is the input feature v
 \hat q_b(\mathbf x_i,\mathbf x_j)=\alpha_b+\boldsymbol\gamma_b^\top\psi(\mathbf x_i,\mathbf x_j).
 \]
 
-Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\). The reporting simulations use \(\lambda_a=0.003\) and \(\lambda_b=0.001\).
+Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\). The reporting simulations use \(\lambda_a=\pv{settingridge_lambda_agent}\) and \(\lambda_b=\pv{settingridge_lambda_broker}\).
 
 Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
 \[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\}.\]
 
-where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=0.003\), \(\eta_{\mathrm{lr},b}=0.03\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=100\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=50\).
+where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=\pv{settingeta_lr_agent}\), \(\eta_{\mathrm{lr},b}=\pv{settingeta_lr_broker}\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=\pv{settingE_init_broker}\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=\pv{settingtrain_steps_broker}\).
 
-Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = 40\) completed simulation periods. Before 40 simulation periods are available, the window also includes period 0. Once 40 are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = 2000\) observations, fitting deterministically keeps 2000 spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
+Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = \pv{settingtrain_window_periods}\) completed simulation periods. Before \pv{settingtrain_window_periods} simulation periods are available, the window also includes period 0. Once \pv{settingtrain_window_periods} are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = \pv{settingtrain_max_obs}\) observations, fitting deterministically keeps \pv{settingtrain_max_obs} spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
 
 \subsubsection{\texorpdfstring{3b. Agent \(i\)'s Model}{3b. Agent i's Model}}\label{b.-agent-is-model}
 
@@ -237,7 +238,7 @@ Initialization is period 0 for each learner. Its seed-history count is stored as
 
 \textbf{Input.} The agent's network takes the partner's type as input: \(\mathbf{z} = \mathbf{x}_j\).
 
-The hidden width is \(h_A = 2d\), so the baseline uses 16 hidden units.
+The hidden width is \(h_A = 2d\), so the baseline uses \pv{settingAgentWidth} hidden units.
 
 \subsubsection{3c. Broker's Model}\label{c.-brokers-model}
 
@@ -253,9 +254,9 @@ The hidden width is \(h_A = 2d\), so the baseline uses 16 hidden units.
 \right].
 \]
 
-The half-vectorization \(\operatorname{vech}\) keeps the lower-triangular entries of the symmetric matrix, so the broker input dimension is \(d_B = d + d(d+1)/2\), equal to 44 at \(d = 8\).
+The half-vectorization \(\operatorname{vech}\) keeps the lower-triangular entries of the symmetric matrix, so the broker input dimension is \(d_B = d + d(d+1)/2\), equal to \pv{settingBrokerDimension} at \(d = \pv{settingd}\).
 
-The broker hidden width is \(h_B = 8d\), so the baseline uses 64 hidden units.
+The broker hidden width is \(h_B = 8d\), so the baseline uses \pv{settingBrokerWidth} hidden units.
 
 Because \(\psi(\mathbf{x}_i,\mathbf{x}_j)=\psi(\mathbf{x}_j,\mathbf{x}_i)\), each observed unordered pair contributes one training row.
 
@@ -269,7 +270,7 @@ Three separate Ridge-only ablations change the broker while leaving every agent'
 
 Matches use a common reservation threshold and channel-specific cost accounting.
 
-At initialization, each simulation computes \(\bar{q}_{\text{cal}}\) as the sample mean of \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\) over 10,000 pairs whose indices are drawn independently and uniformly with replacement from the initial agents. This quantity scales the reservation threshold, broker fee, and self-search cost.
+At initialization, each simulation computes \(\bar{q}_{\text{cal}}\) as the sample mean of \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\) over \pv{settingCalibrationPairsGrouped} pairs whose indices are drawn independently and uniformly with replacement from the initial agents. This quantity scales the reservation threshold, broker fee, and self-search cost.
 
 \subsubsection{4a. Outside Options}\label{a.-outside-options}
 
@@ -277,7 +278,7 @@ All agents share a reservation threshold \(r\), calibrated at initialization:
 
 \[r = f_r \cdot \bar{q}_{\text{cal}}\]
 
-where \(\bar{q}_{\text{cal}}\) is the calibration mean and \(f_r\) is the reservation coefficient (default 0.60). Since \(\phi\) and \(c_s\) do not depend on \(r\) (§4c), \(f_r\) may take any nonnegative value, including \(f_r \geq 1\), and is swept as an analysis axis.
+where \(\bar{q}_{\text{cal}}\) is the calibration mean and \(f_r\) is the reservation coefficient (default \pv{settingreservation_fracFixed}). Since \(\phi\) and \(c_s\) do not depend on \(r\) (§4c), \(f_r\) may take any nonnegative value, including \(f_r \geq 1\), and is swept as an analysis axis.
 
 \subsubsection{4b. Participation Constraints}\label{b.-participation-constraints}
 
@@ -291,7 +292,7 @@ The self-search cost and broker fee share one calibrated level:
 \phi = c_s = \lambda_c \cdot \bar{q}_{\text{cal}}.
 \]
 
-\(\lambda_c\) is the shared cost rate (default 0.05). The two symbols differ in payoff accounting:
+\(\lambda_c\) is the shared cost rate (default \pv{settingsearch_cost_rate}). The two symbols differ in payoff accounting:
 
 \begin{itemize}
 \tightlist
@@ -305,7 +306,7 @@ Agents interact through a single undirected network \(G\) that determines search
 
 \subsubsection{5a. Network Initialization}\label{a.-network-initialization}
 
-\(G\) is initialized as a Watts-Strogatz small-world graph on the \(N\) agents (Watts \& Strogatz, 1998), with ring degree \(k_G = 6\), rewiring probability \(p_{\text{rewire}} = 0.1\), and random agent order on the ring.
+\(G\) is initialized as a Watts-Strogatz small-world graph on the \(N\) agents (Watts \& Strogatz, 1998), with ring degree \(k_G = \pv{settingk}\), rewiring probability \(p_{\text{rewire}} = \pv{settingp_rewire}\), and random agent order on the ring.
 
 The broker is added as a permanent node with no type vector. Broker-node edges are synchronized to standing roster members, current-period broker clients, and agents currently engaged in broker-channel matches (§6b).
 
@@ -315,7 +316,7 @@ Each realized match adds an undirected \(i\)-\(j\) edge if one does not already 
 
 \subsubsection{5c. Agent Turnover}\label{c.-agent-turnover}
 
-Agents exit independently each period with probability \(\eta_{\mathrm{exit}}\) (default 0.02). An exiting agent is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing agents sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
+Agents exit independently each period with probability \(\eta_{\mathrm{exit}}\) (default \pv{settingeta}). An exiting agent is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing agents sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
 
 \subsection{6. Search}\label{search}
 
@@ -323,7 +324,7 @@ At the start of each period, each agent draws active relationship demand
 
 \[d_i \sim \text{Binomial}(K,\; p_{\text{demand}}),\]
 
-where \(K\) is the maximum number of active demands the agent can initiate in the period and \(p_{\text{demand}}\) defaults to 0.50. If \(d_i > 0\), the agent chooses \textbf{one channel for the batch} (§7): self-search or broker.
+where \(K\) is the maximum number of active demands the agent can initiate in the period and \(p_{\text{demand}}\) defaults to \pv{settingp_demandFixed}. If \(d_i > 0\), the agent chooses \textbf{one channel for the batch} (§7): self-search or broker.
 
 \subsubsection{6a. Self-Search}\label{a.-self-search}
 
@@ -331,7 +332,7 @@ Agent \(i\)'s self-search candidate pool has two components:
 
 \textbf{Neighbors.} For a direct network neighbor \(j\) with prior pair-specific experience, agent \(i\) uses \(\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}\), where \(n_{ij}\) is the number of times \(i\) and \(j\) have matched. If the graph edge exists but \(n_{ij}=0\), the agent instead uses \(\hat q_i(\mathbf x_j)\). Initial histories seed one observation for every initial graph edge. Unobserved neighbor edges arise after turnover because entrants attach structurally before matching.
 
-\textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) agents uniformly without replacement, where \(n_{\mathrm{strangers}} = 10\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
+\textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) agents uniformly without replacement, where \(n_{\mathrm{strangers}} = \pv{settingn_strangers}\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
 
 Agent \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\). Equal evaluations are ordered uniformly at random, so an agent whose predictions are constant produces a random ranking rather than an undefined ordering.
 
@@ -347,9 +348,9 @@ Current clients expand broker access for the period but do not become standing r
 
 \[R^* = \lceil \alpha_R N \rceil,\]
 
-where the broker roster share \(\alpha_R\) defaults to 0.20. The model draws \(R^*\) agents uniformly at random (default 200 at \(N = 1000\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at 100 observed ties.
+where the broker roster share \(\alpha_R\) defaults to \pv{settingroster_fracFixed}. The model draws \(R^*\) agents uniformly at random (default \pv{settingRosterSize} at \(N = \pv{settingN}\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at \pv{settingBrokerSeedCap} observed ties.
 
-\textbf{Roster refresh.} At the start of each period, each roster member independently exits with probability \(p_{\text{roster}}\) (default \(0.02\)). If \(\widetilde{\text{Roster}}^t\) is the post-churn roster,
+\textbf{Roster refresh.} At the start of each period, each roster member independently exits with probability \(p_{\text{roster}}\) (default \(\pv{settingroster_churn}\)). If \(\widetilde{\text{Roster}}^t\) is the post-churn roster,
 
 \[\widetilde{\text{Roster}}^t = \{i \in \text{Roster}^{t-1} : u_i^t > p_{\text{roster}}\}, \qquad u_i^t \overset{iid}{\sim} \mathrm{Unif}[0,1],\]
 
@@ -391,7 +392,7 @@ Each agent \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search ch
 
 \[s_{i,c}^{t+1} = (1 - \omega)\,s_{i,c}^t + \omega \cdot \tilde{q}\]
 
-where \(\omega = 0.2\) and \(\tilde{q}\) is the period input in the table. The denominator is requested demand \(d_i\), so unfilled requests contribute zero output. A reciprocal relationship can update two channel-specific states, one for each directed offer.
+where \(\omega = \pv{settingomega}\) and \(\tilde{q}\) is the period input in the table. The denominator is requested demand \(d_i\), so unfilled requests contribute zero output. A reciprocal relationship can update two channel-specific states, one for each directed offer.
 
 {
 \begin{longtable}[]{@{}
@@ -444,7 +445,7 @@ Period measures are evaluated after current-period matching, satisfaction, and r
 
 \subsubsection{Network Measures}\label{network-measures}
 
-Broker network-position measures use \(G\), including the broker node (§5a). They are computed when \(t \bmod \Delta_{\mathrm{net}}=0\) (default 20). Other period measures are recorded each period.
+Broker network-position measures use \(G\), including the broker node (§5a). They are computed when \(t \bmod \Delta_{\mathrm{net}}=0\) (default \pv{settingnetwork_measure_interval}). Other period measures are recorded each period.
 
 \textbf{Betweenness centrality.} Freeman betweenness (Freeman, 1977) for the broker node:
 
@@ -486,7 +487,7 @@ Reported measures
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Random candidate pairs & Up to 100 agents with non-empty histories; for each sampled agent \(i\), \(\min(40,N-1)\) non-self partners \(j\). Each predicted match value is evaluated against \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\) for the same sampled pair. Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
+Random candidate pairs & Up to \pv{settingHoldoutPrincipals} agents with non-empty histories; for each sampled agent \(i\), \(\min(\pv{settingHoldoutPartners},N-1)\) non-self partners \(j\). Each predicted match value is evaluated against \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\) for the same sampled pair. Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
 \end{longtable}
 }
 
@@ -498,7 +499,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation evaluates the ranking produced from predicted match value. Candidates are ordered by predicted match value, with equal predictions ordered uniformly at random. All tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with ranks of underlying match value. Thus a constant predictor would produce a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: underlying match value for random candidate pairs. Random-candidate summaries exclude an agent's candidate set from all four measures if it contains fewer than five pairs or if the population variance of its underlying match values is below \(\sigma_\varepsilon^2/6\). The \(R^2\), RMSE, bias, and rank-correlation means therefore use the same valid-agent sample.
+Rank correlation evaluates the ranking produced from predicted match value. Candidates are ordered by predicted match value, with equal predictions ordered uniformly at random. All tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with ranks of underlying match value. Thus a constant predictor would produce a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: underlying match value for random candidate pairs. Random-candidate summaries exclude an agent's candidate set from all four measures if it contains fewer than \pv{settingMinCandidatePairsWord} pairs or if the population variance of its underlying match values is below \(\sigma_\varepsilon^2/\pv{settingVarianceDivisor}\). The \(R^2\), RMSE, bias, and rank-correlation means therefore use the same valid-agent sample.
 
 \subsubsection{Other Measures}\label{other-measures}
 
@@ -548,19 +549,19 @@ The baseline broker provides both access and assessment. The assessment-only and
 \toprule
 Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \midrule
-\(T\) & 500 & §1 & \(f_r\) & 0.60 & §4a \\
-\(N\) & 1000 & §1 & \(\lambda_c\) & 0.05 & §4c \\
-\(d\) & 8 & §1 & \(k_G\) & 6 & §5a \\
-\(d_\gamma\) & 8 & §1 & \(p_{\text{rewire}}\) & 0.1 & §5a \\
-\(\sigma_x\) & 0.5 & §1 & \(\eta_{\mathrm{exit}}\) & 0.02 & §5c \\
-\(Q\) & 2.84 & §2a & \(K\) & 5 & §6 \\
-\(\rho\) & 0.50 & §2a & \(p_{\text{demand}}\) & 0.50 & §6 \\
-\(\delta\) & 0.5 & §2c & \(n_{\mathrm{strangers}}\) & 10 & §6a \\
-\(\sigma_\varepsilon\) & 0.28 & §2a & \(\alpha_R\) & 0.20 & §6b \\
-\(\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}\) & 0.003, 0.03 & §3a & \(p_{\text{roster}}\) & 0.02 & §6b \\
-\(E_{\text{init},a},E_{\text{init},b}\) & 100, 100 & §3a & \(\omega\) & 0.2 & §7a \\
-\(E_{\text{steps},a},E_{\text{steps},b}\) & 50, 50 & §3a & \(\Delta_{\mathrm{net}}\) & 20 & §8 \\
-\(W_p\) & 40 periods & §3a & \(M_{\text{train}}\) & 2000 & §3a \\
+\(T\) & \pv{settingT} & §1 & \(f_r\) & \pv{settingreservation_fracFixed} & §4a \\
+\(N\) & \pv{settingN} & §1 & \(\lambda_c\) & \pv{settingsearch_cost_rate} & §4c \\
+\(d\) & \pv{settingd} & §1 & \(k_G\) & \pv{settingk} & §5a \\
+\(d_\gamma\) & \pv{settings} & §1 & \(p_{\text{rewire}}\) & \pv{settingp_rewire} & §5a \\
+\(\sigma_x\) & \pv{settingsigma_x} & §1 & \(\eta_{\mathrm{exit}}\) & \pv{settingeta} & §5c \\
+\(Q\) & \pv{settingQ} & §2a & \(K\) & \pv{settingK} & §6 \\
+\(\rho\) & \pv{settingrhoFixed} & §2a & \(p_{\text{demand}}\) & \pv{settingp_demandFixed} & §6 \\
+\(\delta\) & \pv{settingdelta} & §2c & \(n_{\mathrm{strangers}}\) & \pv{settingn_strangers} & §6a \\
+\(\sigma_\varepsilon\) & \pv{settingsigma_eps} & §2a & \(\alpha_R\) & \pv{settingroster_fracFixed} & §6b \\
+\(\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}\) & \pv{settingeta_lr_agent}, \pv{settingeta_lr_broker} & §3a & \(p_{\text{roster}}\) & \pv{settingroster_churn} & §6b \\
+\(E_{\text{init},a},E_{\text{init},b}\) & \pv{settingE_init_agent}, \pv{settingE_init_broker} & §3a & \(\omega\) & \pv{settingomega} & §7a \\
+\(E_{\text{steps},a},E_{\text{steps},b}\) & \pv{settingtrain_steps_agent}, \pv{settingtrain_steps_broker} & §3a & \(\Delta_{\mathrm{net}}\) & \pv{settingnetwork_measure_interval} & §8 \\
+\(W_p\) & \pv{settingtrain_window_periods} periods & §3a & \(M_{\text{train}}\) & \pv{settingtrain_max_obs} & §3a \\
 \bottomrule
 \end{tabular}
 \end{center}

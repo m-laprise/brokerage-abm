@@ -1,8 +1,8 @@
 """
     scripts/paper/build_publication.jl
 
-Run the publication build steps that do not require raw sweep access. Run this
-script after refreshing the required analysis inputs. Each input retains its own
+Run the publication build steps from retained analyses and reporting manifests.
+Run this script after refreshing those inputs. Each input retains its own
 analysis commit; presentation changes are recorded in output/publication.toml.
 Unchanged steps are skipped. Overleaf is a separate editing export.
 
@@ -14,6 +14,7 @@ const JULIA = Base.julia_cmd()
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 ARGS in (String[], ["--force"]) || error("usage: build_publication.jl [--force]")
 const BUILD_STEPS = (
+    ("scripts/paper/build_settings.jl",),
     ("scripts/paper/build_appendices.jl",),
     ("scripts/paper/figures.jl", "--assessment-not-access"),
     ("scripts/paper/figures.jl", "--information-sources"),
@@ -26,6 +27,7 @@ const BUILD_STEPS = (
     ("scripts/assessment_access/supplement_figure.jl",),
     ("scripts/assessment_access/paper_values.jl",),
     ("scripts/paper/build_section.jl",),
+    ("scripts/paper/build_simulation_design.jl",),
     ("scripts/paper/build_supplement.jl",),
     ("scripts/paper/build_manuscript.jl",),
 )

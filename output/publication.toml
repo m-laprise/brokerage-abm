@@ -180,18 +180,138 @@ source_commit = "0f6776a9f910ecedca8caf9ee0276846331f5aa3"
     "scripts/paper/build_section.jl" = "be01f252c6fc4abd1c591e07b153f3df6d3d0ad73ed254029ce5755dfe19f87e"
     "scripts/reporting_provenance.jl" = "493e2656a343ccd1d912113891f09a261852ee6ec4374771ca7879adc3534a73"
 
+[stages."scripts/paper/build_settings.jl"]
+julia_version = "1.11.9"
+source_clean = false
+source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
+
+    [stages."scripts/paper/build_settings.jl".analysis_commits]
+    "DGP analysis" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
+    "Ridge simulation" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    "main simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
+    "structural simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
+
+    [stages."scripts/paper/build_settings.jl".inputs]
+    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
+    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
+    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/supplement/dgp_figure_data.jld2" = "5b89335b0491fbe442a13e3102a07df6b84b0512e7a19c167a8b49ff18432df8"
+    "output/supplement/structural_figure_data.jld2" = "e150975ccf935e467d153e7da496c8f1c5394070aac75467e9bc273489ec66df"
+
+    [stages."scripts/paper/build_settings.jl".outputs]
+    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
+
+    [stages."scripts/paper/build_settings.jl".settings.historical_sources]
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:scripts/calibrate_match_component_moments.jl" = "e4803587039547d3eff57910d7a13bab644f8dbc2112bb82b618ec9186a8da55"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/initialization.jl" = "fb0c47ddf5982a41057ca1399bc3a29768c878ad9e641fa6574ca9fb8309bd6e"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/learning.jl" = "5496f19c7a841b0973ca45788250938863dd96580ed35ac060d0cb4de64c6b4d"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/matching_function.jl" = "fc3240aa2f8ed9158542f0f18231aaf105b08ced83dac5f4ccaea497e9d540e6"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/measures.jl" = "7eba59565d9ecac88c4d07c1980b06cb3e715a01712c030170a1148021a78177"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/parameters.jl" = "82580807f4b7e0a83cd1eac2973b4ba26c9430492a2c6a46f91f756066ee07a0"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/step.jl" = "aa628497c20b558b56263928a82868a22d12484c40d9831b7f2fe74381c55536"
+    "adeaa06f0b7098f8789925f0b638abddd935a16b:src/types.jl" = "b63c013c5cfcf139d4137491d5d726500f8e32168d6cbabeb58741bd23141e6a"
+
+    [stages."scripts/paper/build_settings.jl".sources]
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "scripts/paper/build_settings.jl" = "b5675b0f1815143aef332762fa6f931897661141ddb335189a26f280f114bdf9"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
+    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+
+[stages."scripts/paper/build_simulation_design.jl"]
+julia_version = "1.11.9"
+source_clean = false
+source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
+
+    [stages."scripts/paper/build_simulation_design.jl".analysis_commits]
+    "output/assessment_access/provenance.txt: analysis_git_commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
+    "output/main/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/ridge/ablations/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+    "output/ridge/paired/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+
+    [stages."scripts/paper/build_simulation_design.jl".inputs]
+    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
+    "output/assessment_access/provenance.txt" = "c82bbbcb462526ae74ec826dba27428fa45b0be9f8c5f99a13a4e53346e02468"
+    "output/main/access_windows.jld2" = "f3c08a9f79eab78f4e1afa5ba47f0c7b370bb3c958635df9c24100680a687517"
+    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
+    "output/main/values.tex" = "a83b703be50b9c810bb5764d2f578cb9766063e02a4ca518e3fb72efebf36e7e"
+    "output/ridge/ablations/analysis/provenance.txt" = "8b3af96b48ddffd1adfa9d783fae6cc369ba7c6952f69b145315f6d9fc656a08"
+    "output/ridge/ablations/analysis/values.tex" = "88c1da504202929bb6db2387974f0fcf872ced88ad48ced54fb17e8b8f47ad5d"
+    "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
+    "output/ridge/paired/analysis/provenance.txt" = "c579df4e9705372ebfa587289e05451b1214bd29afdfff2c9d42a305902877cf"
+    "output/ridge/paired/analysis/values.tex" = "f8c5ca50aff6b070aff45c526fbaf1d4c77b3c3788595d29fe814ff82656c759"
+    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.jld2" = "2bc7d1166d7ef8624dccd7fbc4c85a75e05062fa3507d0db9b226ef550333963"
+    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.json" = "a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c"
+    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.sha256" = "ce81f8f68777ba772ab081f10826a452b19c2fd7f1a1f8a6ff74fa251c0e2ede"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_additive_lambda_a0.001_lambda_b0.001_rho_delta/manifest.jld2" = "879665193929fab58d3756340bd69fa94a0f4ee774c06b8f2e2fbdd71cf766e3"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_additive_lambda_a0.001_lambda_b0.001_rho_delta/manifest.json" = "e8cbe1895ef17162d1ea92f7a207422174405da5e4c69fef8b54b75fcd58236e"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_additive_lambda_a0.001_lambda_b0.001_rho_delta/manifest.sha256" = "5bbc12ad7eda3b405b100e6763b60fcda756b73c13da421de36a284b916025e7"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.jld2" = "631cc95efb205119a896d8cabe4e758329cead1fac5093581ad28a00e67fedbb"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.json" = "fbe5bddcf4f52957843f88c345226998079fef523c259651dfb15c46d2b1f113"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.sha256" = "a79bfe9679bdca84d6a0b715a987bbfbf0d7adb0f37db031cda0fafe02503550"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_single_principal_lambda_a0.001_lambda_b0.001_rho_delta/manifest.jld2" = "38a174b31df503d92e8c41af4043e5e612cd86ec6da5c7131c26c1e5dee2266b"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_single_principal_lambda_a0.001_lambda_b0.001_rho_delta/manifest.json" = "f42292745954bc150039c15089492dcc6ca09dc99cedf97c39e0d71190c3f41a"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_single_principal_lambda_a0.001_lambda_b0.001_rho_delta/manifest.sha256" = "4234492cfabd27214563d883ccaf8c6965d8a52aab15433ca398a4a072cbcfb8"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_size_matched_lambda_a0.001_lambda_b0.001_rho_delta/manifest.jld2" = "198b3792aa098dd22041fea5f9b3d6824f02eb2f86044845f33445dd056c6f8d"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_size_matched_lambda_a0.001_lambda_b0.001_rho_delta/manifest.json" = "64d58452e643bed9fa62bcb9ff610ad236047f36be5bda5b62a9e8dcd6572026"
+    "runs/sweeps/2026-09-06_c8f181f_ridge_size_matched_lambda_a0.001_lambda_b0.001_rho_delta/manifest.sha256" = "86c75add88a4a0833e3c8bd0a4b97e664db20995278e27932886f55ac7fd9463"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services/manifest.jld2" = "95672594a6e1210930df85ebfe491898e86d3f89cf8ef8b7c3215703ed6a13e3"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services/manifest.json" = "ce48b8c9cbc9d3fa217f2b603b6124f11f1abd71869d6b600bffe0f7ad45c011"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services/manifest.sha256" = "38bbde2954bdf247eadc8547c76aba83d5b2636770a28b085f1c25dc7694f716"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services_eta001/manifest.jld2" = "1e7eff710a820114a9bfd0ea142ed0628262874d0807efd8fb733b86a69f7710"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services_eta001/manifest.json" = "1b9dd482ca66b033b6a46e561d6e0c4fc7d61598131e03557ec720792a146cd3"
+    "runs/sweeps/2026-09-09_eb2f771_broker_services_eta001/manifest.sha256" = "9c0c8706094e017474aa8d8b5248e0117f3288dcc8b5c01d9da1cd1889f35718"
+
+    [stages."scripts/paper/build_simulation_design.jl".outputs]
+    "output/supplement/simulation_design.tex" = "35891f2b0d3ee7927a495a4b4fd254b11d06371c5260c2fae661434bc9267c10"
+
+    [stages."scripts/paper/build_simulation_design.jl".settings.historical_sources."adeaa06f0b7098f8789925f0b638abddd935a16b:scripts/nn_calibration/calibration_config.jl"]
+    commit = "adeaa06f0b7098f8789925f0b638abddd935a16b"
+    sha256 = "750d271d9142199281e12ba7a7417b0728c3c6344dfe73f32bb3c18c19dfc7f1"
+
+    [stages."scripts/paper/build_simulation_design.jl".settings.historical_sources."c8f181fd7b5a8c6839a1e860fa34af9d56b72e12:scripts/ridge/calibration/config.jl"]
+    commit = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    sha256 = "ed9666224c6c1a63601f83dba51aa45d0ad4768c98748c097b4cbed0631eeb1f"
+
+    [stages."scripts/paper/build_simulation_design.jl".settings.simulation_commits]
+    2026-09-05_adeaa06_nn = "adeaa06f0b7098f8789925f0b638abddd935a16b"
+    "2026-09-06_c8f181f_ridge_additive_lambda_a0.001_lambda_b0.001_rho_delta" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    "2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    "2026-09-06_c8f181f_ridge_single_principal_lambda_a0.001_lambda_b0.001_rho_delta" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    "2026-09-06_c8f181f_ridge_size_matched_lambda_a0.001_lambda_b0.001_rho_delta" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    2026-09-09_eb2f771_broker_services = "eb2f77168aa31c4b113cd77c9d3caf92de5b08fa"
+    2026-09-09_eb2f771_broker_services_eta001 = "eb2f77168aa31c4b113cd77c9d3caf92de5b08fa"
+
+    [stages."scripts/paper/build_simulation_design.jl".sources]
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "paper/simulation_design_source.tex" = "2b68f95805bcd1cf3c78a41e7c05a6d4caad9584c0ec56ce3cc9bb50c94c2951"
+    "scripts/paper/build_simulation_design.jl" = "b487cfa0e37ead12fb8c9ac0c0ab002670773b40fc6531ae02a12f90a035fc95"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
+    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+
 [stages."scripts/paper/build_supplement.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "0f6776a9f910ecedca8caf9ee0276846331f5aa3"
+source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
 
     [stages."scripts/paper/build_supplement.jl".analysis_commits]
     "output/assessment_access/paper_values.tex: data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
+    "output/manuscript/settings.tex: DGP analysis" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
+    "output/manuscript/settings.tex: Ridge simulation" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
+    "output/manuscript/settings.tex: main simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
+    "output/manuscript/settings.tex: structural simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
     "output/supplement/figmeta.tex: dgp data analysis commit" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
     "output/supplement/figmeta.tex: structural data analysis commit" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
+    "output/supplement/simulation_design.tex: output/assessment_access/provenance.txt: analysis_git_commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
+    "output/supplement/simulation_design.tex: output/main/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/supplement/simulation_design.tex: output/ridge/ablations/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+    "output/supplement/simulation_design.tex: output/ridge/paired/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/build_supplement.jl".inputs]
     "output/assessment_access/paper_values.tex" = "4cc394d298158cc1b15ff16205913d8128f3d06c217e50cc4a13ea2ae0b3ab2c"
+    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
     "output/supplement/figmeta.tex" = "9e85dc15be40b916b40a32f011f206749794639f391d5534946a561a7dc9207c"
     "output/supplement/figures/alternative_measures_advantage.png" = "4b7ddbbb55c9e10096038bfdd1f39eafe1463f985c2d1ce0479fba84e478c518"
     "output/supplement/figures/alternative_measures_grid.png" = "288ab97bd9fda93c7bee063b8350ad109bc7d68dce3db9cbba37950d099298a3"
@@ -200,19 +320,20 @@ source_commit = "0f6776a9f910ecedca8caf9ee0276846331f5aa3"
     "output/supplement/figures/effective_dimensionality.png" = "480b64cd65367ac2f7c750276f0c1128023c5bd11e50468d5eb5c393db4d6fd8"
     "output/supplement/figures/match_value_surfaces.png" = "d11444e7b7facd72005e9ce85a3903a0eae2e81150462b6f2468f610ff366993"
     "output/supplement/figures/type_geometry.png" = "96ad99968d6b5cb3bd0e149e9e7d37c4ee400653a650d36b747149c180837dfc"
+    "output/supplement/simulation_design.tex" = "35891f2b0d3ee7927a495a4b4fd254b11d06371c5260c2fae661434bc9267c10"
 
     [stages."scripts/paper/build_supplement.jl".outputs]
-    "output/supplement/supplement.pdf" = "d38e41072ded73824e252af8b1f54d483859087f16a7b0d30b5af84460cbeb71"
+    "output/supplement/supplement.pdf" = "8309a0463c09dfa8d9911f54e251194d04ef3e675cc597eda767997640cb0eef"
 
     [stages."scripts/paper/build_supplement.jl".settings]
 
     [stages."scripts/paper/build_supplement.jl".sources]
-    "Manifest.toml" = "f46bb7b8de59a31243453fd46f7d8f56323e3a5c654c05f6372c70233786d00d"
-    "Project.toml" = "f1a16964dc901c82ab1ce764d7b64e04510d55237b1a261f06a204300a694649"
-    "paper/supplement.tex" = "2fa1ec811289827fe2bf915c26648d5d3499210665ad33c8eb48437f60fb3bdb"
-    "scripts/paper/build_supplement.jl" = "6a9ab421baf547f1e871828fa44c0bff78c6135c873f439e928875960968ced7"
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "paper/supplement.tex" = "b7e3a93e42679b4000939d81583105ee818ec63940acdd9e75c02c1739e852cd"
+    "scripts/paper/build_supplement.jl" = "a9aecab6209329652f27622319abc805118c0805ce9c41ba135d4a9f3a1fb7dc"
     "scripts/paper/pdf_output.jl" = "b0f487464042a01c6fc92354f1e4c068d9deb345310fe3a3a0face31372b9f90"
-    "scripts/reporting_provenance.jl" = "493e2656a343ccd1d912113891f09a261852ee6ec4374771ca7879adc3534a73"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
 
 [stages."scripts/paper/centrality_and_assessment.jl"]
 julia_version = "1.11.9"

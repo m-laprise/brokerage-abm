@@ -1,0 +1,43 @@
+\section*{Simulation design and analysis}
+
+\textbf{Main sweeps.} The main simulations use neural-network learning and run for \(T=\pv{HORIZON}\) periods. Table~\ref{tab:supp-oat} gives the parameters varied one at a time; Table~\ref{tab:supp-grids} gives the crossed designs. Parameters outside each sweep remain at baseline (Appendix B, \S9). The reservation coefficient \(f_r\) sets the threshold \(r=f_r\bar q_{\mathrm{cal}}\).
+
+\begin{table}[htbp]
+\centering
+\caption{Baseline values and one-at-a-time sweeps.}
+\label{tab:supp-oat}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.36\linewidth}cX@{}}
+\toprule
+Parameter & Baseline & Values varied \\
+\midrule
+\pv{OAT_ROWS}
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Crossed designs. Each row includes all combinations of the listed values.}
+\label{tab:supp-grids}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth}XX@{}}
+\toprule
+Parameters & First parameter & Second parameter \\
+\midrule
+\pv{GRID_ROWS}
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The sweeps contain \pv{REGIMES} distinct regimes. Each uses seeds \pv{GENERAL_SEEDS}; the baseline uses seeds \pv{BASELINE_SEEDS}, giving \pv{RUNS} runs per learning model. Configurations shared by sweeps use the same runs. At \(\rho=\pv{RHO_BOUNDARY}\), \(\delta\) has no effect, so its grid coordinates share one regime.
+
+\textbf{Learning comparisons.} The complete design is repeated with Ridge regression. Restrictions on the Ridge broker assess the contributions of observation volume and information about both parties: a history capped at the median principal sample size, one party recorded per match, and omission of the interaction term. Each restriction is compared with the unrestricted Ridge broker across the \pv{ABLATION_REGIMES} distinct regimes in the \(\rho\times\delta\) grid, including the baseline. Each restriction uses \pv{ABLATION_RUNS} runs with the same seed allocation as the main sweeps. Principal learning rules are unchanged.
+
+\textbf{Broker services.} The neural-network model compares full service, assessment-only service, and access-only service. The comparison crosses \(\rho\in\{\pv{SERVICE_RHO}\}\) with \(\eta\in\{\pv{SERVICE_ETA}\}\), and adds \pv{SERVICE_EXTRA}. Other parameters remain at baseline. Each service uses \pv{SERVICE_BASELINE_SEEDS} seeds at the baseline and \pv{SERVICE_OTHER_SEEDS} elsewhere: \pv{SERVICE_REGIMES} market regimes and \pv{SERVICE_RUNS} runs across all services.
+
+\textbf{Training calibration.} Separate baseline calibration runs select neural-network training settings. The screen varies learning rates \(\{\pv{NN_RATES}\}\) and recurrent update budgets \(\{\pv{NN_STEPS}\}\), one learner at a time, with initial budgets \pv{NN_RATIO} the recurrent budget. It uses \pv{NN_CONFIGS} configurations, \pv{NN_SCREEN_SEEDS} seeds per configuration, and \pv{NN_HORIZON} periods. Selection considers each learner's ranking performance, its stability across periods and seeds, and runtime. The selected learning rates are \pv{NN_AGENT_RATE} for principals and \pv{NN_BROKER_RATE} for the broker, with \pv{NN_INITIAL} initial and \pv{NN_RECURRENT} recurrent steps for both. Confirmation uses \pv{NN_CONFIRM_SEEDS} seeds, including the screening seeds.
+
+Ridge calibration crosses the penalties \(\{\pv{RIDGE_CANDIDATES}\}\) for principals and the broker, using \pv{RIDGE_SCREEN_SEEDS} seeds per combination and \pv{RIDGE_HORIZON} periods. Selection considers each learner's ranking performance, stability, and prediction error. The reported experiments use penalties of \pv{RIDGE_PENALTIES}. Confirmation uses \pv{RIDGE_CONFIRM_SEEDS} new seeds. Calibration seeds are excluded from the reporting runs.
+
+\textbf{Analysis.} Early and late summaries cover periods \pv{EARLY_WINDOW} and \pv{LATE_WINDOW}. Window means average periods within runs, then runs across seeds. Comparisons between model versions use differences paired by seed; intervals are pointwise \pv{INTERVAL_LEVEL}\% Student-\(t\) Monte Carlo confidence intervals across independent seeds. Summaries across regimes give each distinct regime equal weight. Outcome definitions and the convergence assessment are reported in Section IV.A.

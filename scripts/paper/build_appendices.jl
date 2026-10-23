@@ -5,6 +5,7 @@ Compile the standalone simulation pseudocode and model specifications from
 `paper/appendices/` into `output/appendices/`. Auxiliary files are created in a
 temporary directory and discarded.
 Existing PDFs are preserved when only build dates or document IDs differ.
+Numerical settings come from the retained reporting inputs.
 
 Usage: julia --project --threads=auto scripts/paper/build_appendices.jl
 """
@@ -16,8 +17,10 @@ const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const SOURCE_DIR = joinpath(ROOT, "paper", "appendices")
 const OUTPUT_DIR = joinpath(ROOT, "output", "appendices")
 const APPENDICES = ("simulation_pseudocode.tex", "model_specifications.tex")
+const SETTINGS = joinpath(ROOT, "output", "manuscript", "settings.tex")
 const PROVENANCE = manuscript_git_provenance(ROOT;
     sources=(@__FILE__, "scripts/paper/pdf_output.jl", joinpath.(SOURCE_DIR, APPENDICES)...))
+const INPUT_PROVENANCE = analysis_input_provenance(PROVENANCE, (SETTINGS,))
 
 mkpath(OUTPUT_DIR)
 for source_name in APPENDICES
@@ -51,5 +54,8 @@ for source_name in APPENDICES
 end
 record_publication_stage(PROVENANCE;
     stage="scripts/paper/build_appendices.jl",
+    inputs=(SETTINGS,),
     outputs=joinpath.(OUTPUT_DIR, replace.(APPENDICES, ".tex" => ".pdf")),
+    analysis_commits=Dict("$(input.path): $label" => commit
+        for input in INPUT_PROVENANCE for (label, commit) in input.commits),
 )

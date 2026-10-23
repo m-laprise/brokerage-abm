@@ -156,8 +156,11 @@ end
                 "\\includegraphics{figures/test.png}\n" *
                 "\\caption{\\pvtitle{example}. \\pvcaption{example}}\n\\end{figure}\n",
             "paper/captions.tex" => "\\begin{ptitle}{example}Title\\end{ptitle}\n" *
-                "\\begin{pcaption}{example}Caption\\end{pcaption}\n",
+                "\\begin{pcaption}{example}Caption\\end{pcaption}\n" *
+                "\\begin{ptitle}{unused}Unused title\\end{ptitle}\n" *
+                "\\begin{pcaption}{unused}Unused caption\\end{pcaption}\n",
             "paper/supplement.tex" => "\\begin{figure}\\label{fig:supp-test}\\end{figure}\n",
+            "output/manuscript/settings.tex" => "% Analysis commit: $first_commit\n\\pvDefine{settingRate}{0.003}\n",
             "output/main/values.tex" => "% Analysis commit: $first_commit\n\\pvDefine{example}{1.25}\n",
             "output/main/convergence/values.tex" => "% Analysis commit: $second_commit\n",
             "output/ridge/paired/analysis/paper_values.tex" => "% Data analysis commit: $first_commit\n" *
@@ -190,12 +193,13 @@ end
         Base.include_string(scope, assembly, builder)
         output = joinpath(repository, "output", "main", "results_section.tex")
         result = read(output, String)
+        @test Base.invokelatest(scope.display_value, "settingRate", "0.003") == "0.003"
         @test occursin("1.25", result) && !occursin("\\pv{example}", result)
         @test !occursin("SHA256", result) && !occursin("analysis commit", result)
         @test !occursin("base64", result)
         record = validate_publication_output(repository, output)
         @test Set(values(record["analysis_commits"])) == Set((first_commit, second_commit))
-        @test length(record["inputs"]) == 8
+        @test length(record["inputs"]) == 9
         @test haskey(record["inputs"], "output/main/figures/test.png")
         @test publication_stage_current(repository, "scripts/paper/build_section.jl")
         write(joinpath(repository, "unrelated-note.txt"), "Unrelated change.\n")

@@ -25,7 +25,7 @@ realized match value, brokered access, outsourcing, and structural centrality.
   supplementary analyses, and Ridge experiments
 - [Appendix A: Simulation pseudocode](output/appendices/simulation_pseudocode.pdf)
 - [Appendix B: Model specifications](output/appendices/model_specifications.pdf)
-- [Supplementary Material: Model diagnostics and structural robustness](output/supplement/supplement.pdf)
+- [Supplementary Material: Simulation design, model diagnostics, and structural robustness](output/supplement/supplement.pdf)
 
 ## Quick start
 
@@ -105,7 +105,12 @@ For a fresh full sweep, follow the
 Edit manuscript prose in `paper/manuscript.tex`, Results prose in
 `paper/section_source.tex`, figure captions in `paper/captions.tex`, and the
 supplement and appendices in `paper/supplement.tex` and `paper/appendices/`.
+The supplementary simulation-design prose is in `paper/simulation_design_source.tex`;
+its numerical content is generated from verified reporting inputs.
 Results estimates use `\pv{key}` references resolved from generated values.
+Repeated model and analysis settings use the same references, supplied by
+`scripts/paper/build_settings.jl` from retained run metadata and recorded source
+commits. Selected calibration settings come from the adopted model defaults.
 Generated files are written under `output/` and should not be edited manually.
 
 PDF builds require a TeX installation with `pdflatex`, `latexmk`, and `biber`,
@@ -122,14 +127,20 @@ julia --project --threads=auto scripts/paper/build_manuscript.jl
 ```
 
 For edits confined to `paper/manuscript.tex`, only the second command is needed.
+After refreshing retained settings, run `scripts/paper/build_settings.jl` first.
 After changing appendix sources, run `scripts/paper/build_appendices.jl` first.
 After changing the supplement, run `scripts/paper/build_section.jl` and
 `scripts/paper/build_supplement.jl` before building the manuscript.
+After changing the simulation-design prose or inputs, first run
+`scripts/paper/build_simulation_design.jl`. This step requires the seven reporting
+manifests (`manifest.json`, `manifest.jld2`, and `manifest.sha256`) under
+`runs/sweeps/<tag>/`, with tags taken from the retained analysis provenance.
 The manuscript builder writes PDFs with and without appendices under
 `output/manuscript/`.
 
 To refresh all publication figures, generated values, and PDFs from the retained
-analysis inputs, without accessing raw sweeps or rerunning simulations:
+analysis inputs and reporting manifests, without reading individual simulation
+results or rerunning simulations:
 
 ```bash
 julia --project --threads=auto scripts/paper/build_publication.jl
