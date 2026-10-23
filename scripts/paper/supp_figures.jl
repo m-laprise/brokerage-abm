@@ -520,10 +520,10 @@ function alternative_measures_advantage()
     xs = [(CONSTR[2], [c["constraint"] for c in bc]), (EFFS[2], [c["effsize"] for c in bc])]
     ys = [
         ("Rank correlation:\nbroker minus principal", [c["rankgap"] for c in bc]),
-        ("Match output:\nbroker minus self-search", [c["qgap"] for c in bc]),
+        ("Mean realized match output:\nbrokered minus self-search", [c["qgap"] for c in bc]),
     ]
     titles = ["A. Ranking advantage" "B. Ranking advantage";
-              "C. Match-output difference" "D. Match-output difference"]
+              "C. Difference in mean\nrealized match output" "D. Difference in mean\nrealized match output"]
     fig = Figure(; size=(1200, 860))
     composition_legend!(fig[0, 1:2], sort(unique(rho)))
     for (ri, (ylab, yv)) in enumerate(ys), (ci, (xlab, xv)) in enumerate(xs)

@@ -30,11 +30,13 @@ const FIGMETA = joinpath(GENERATED, "figmeta.tex")
 const CENTRALITY_VALS = joinpath(GENERATED, "centrality_values.tex")
 const CAPS = joinpath(PAPER, "captions.tex")
 const SUPPLEMENT = joinpath(PAPER, "supplement.tex")
+const DESIGN_SOURCE = joinpath(PAPER, "simulation_design_source.tex")
 const OUT = joinpath(GENERATED, "results_section.tex")
 const REPORTING_PROVENANCE = manuscript_git_provenance(
     normpath(joinpath(@__DIR__, "..", ".."));
     sources=(
-        @__FILE__, "paper/section_source.tex", "paper/captions.tex", "paper/supplement.tex"
+        @__FILE__, "paper/section_source.tex", "paper/captions.tex", "paper/supplement.tex",
+        DESIGN_SOURCE,
     ),
 )
 
@@ -151,26 +153,32 @@ for (cmd, defs_d, klen) in (("pvcaption", caps, 12), ("pvtitle", titles, 10))
     )
 end
 
-# Resolve supplementary figure references from their order in the TeX source.
+# Resolve supplementary figure and table references in document order.
+supplement_text = replace(
+    read(SUPPLEMENT, String),
+    raw"\input{../output/supplement/simulation_design.tex}" => read(DESIGN_SOURCE, String),
+)
 supplement_source = join(
-    [line for line in eachline(SUPPLEMENT) if !startswith(lstrip(line), "%")], "\n"
+    [line for line in split(supplement_text, '\n') if !startswith(lstrip(line), "%")], "\n"
 )
 supplement_labels = Dict{String,String}()
-for (number, block) in
-    enumerate(eachmatch(r"\\begin\{figure\}(.*?)\\end\{figure\}"s, supplement_source))
-    labels = collect(eachmatch(r"\\label\{([^}]+)\}", block[1]))
-    length(labels) == 1 || fail("each supplementary figure must have one label")
-    label = only(labels)[1]
-    haskey(supplement_labels, label) && fail("duplicate supplementary figure label: $label")
-    supplement_labels[label] = "S$number"
+for environment in ("figure", "table")
+    pattern = Regex("\\\\begin\\{$environment\\}(.*?)\\\\end\\{$environment\\}", "s")
+    for (number, block) in enumerate(eachmatch(pattern, supplement_source))
+        labels = collect(eachmatch(r"\\label\{([^}]+)\}", block[1]))
+        length(labels) == 1 || fail("each supplementary $environment must have one label")
+        label = only(labels)[1]
+        haskey(supplement_labels, label) && fail("duplicate supplementary label: $label")
+        supplement_labels[label] = "S$number"
+    end
 end
 src = replace(
     src,
-    r"\\ref\{fig:supp-[^}]+\}" =>
+    r"\\ref\{(?:fig|tab):supp-[^}]+\}" =>
         reference -> begin
             label = reference[6:(end - 1)]
             haskey(supplement_labels, label) ||
-                fail("unknown supplementary figure: $label")
+                fail("unknown supplementary reference: $label")
             supplement_labels[label]
         end,
 )

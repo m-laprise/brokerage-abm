@@ -35,28 +35,28 @@
 
 This document specifies an agent-based model of brokered matching.
 
-The model is a discrete-time simulation of a matching market with \emph{agents} and a \emph{broker}. Agents seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same payoff units. All agents use heuristic decision rules. No agent holds beliefs about other agents' strategies.
+The model is a discrete-time simulation of a matching market with \emph{principals} and a \emph{broker}. Principals seeking pairwise matches either search on their own or outsource to the broker. All economic quantities (match output, fees, surplus) are in the same payoff units. All principals use heuristic decision rules. No principal holds beliefs about other principals' strategies.
 
-The model specification covers agents (§1), the matching problem (§2), how agents learn to predict match value (§3), match economics (§4), network structure and agent turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
+The model specification covers principals (§1), the matching problem (§2), how principals learn to predict match value (§3), match economics (§4), network structure and principal turnover (§5), search and broker access (§6), the outsourcing decision (§7), and period measures (§8). Baseline parameter values and reproducibility are documented in Part II (§9).
 
 \section{Part I. Model Specification}\label{part-i.-model-specification}
 
-\subsection{1. Agents and Time}\label{agents-and-time}
+\subsection{1. Principals and Time}\label{agents-and-time}
 
-The model runs for \(T\) discrete periods (default \pv{settingT}). It has \(N\) agents (default \pv{settingN}), a single broker, and an undirected network \(G\) over the agents and broker.
+The model runs for \(T\) discrete periods (default \pv{settingT}). It has \(N\) principals (default \pv{settingN}), a single broker, and an undirected network \(G\) over the principals and broker.
 
-Each agent \(i\) is characterized by:
+Each principal \(i\) is characterized by:
 
 \begin{itemize}
 \tightlist
 \item \textbf{Type} \(\mathbf{x}_i \in \mathbb{R}^d\): a fixed vector of observable characteristics, drawn as specified below and used by the matching function (§2).
 \item \textbf{Current-period matches} \(M_i^t\): active bilateral relationships involving \(i\) in period \(t\). Each counterparty can appear at most once in \(M_i^t\); incoming accepted offers are not capped.
-\item \textbf{Active demand bound} \(K\): the maximum number of active demands an agent can initiate in a period (default \(K = \pv{settingK}\); §6).
+\item \textbf{Active demand bound} \(K\): the maximum number of active demands a principal can initiate in a period (default \(K = \pv{settingK}\); §6).
 \item \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3a).
 \item \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
 \end{itemize}
 
-\subsubsection{Agent Types}\label{agent-types}
+\subsubsection{Principal Types}\label{agent-types}
 
 Type vectors are multidimensional but concentrated near a smooth one-dimensional curve on the unit sphere in \(\mathbb{R}^d\). Let \(u \in [0,1]\) index position along the curve:
 
@@ -64,7 +64,7 @@ Type vectors are multidimensional but concentrated near a smooth one-dimensional
 
 The frequencies \(\nu_\ell \sim \operatorname{Unif}\{\pv{settingFrequencies}\}\) and phases \(\psi_\ell \sim \operatorname{Unif}[0,2\pi)\) are drawn once per simulation. The parameter \(d_\gamma\leq d\) is the number of coordinates in which the curve varies.
 
-Each agent is drawn at a random position \(u_i \sim \mathrm{Unif}[0,1]\) on the curve, then perturbed:
+Each principal is drawn at a random position \(u_i \sim \mathrm{Unif}[0,1]\) on the curve, then perturbed:
 
 \[\mathbf{x}_i = \frac{\boldsymbol{\gamma}(u_i) + \boldsymbol{\epsilon}_i}{\|\boldsymbol{\gamma}(u_i) + \boldsymbol{\epsilon}_i\|}, \qquad \boldsymbol{\epsilon}_i \sim \mathcal{N}\!\left(\mathbf{0}, \frac{\sigma_x^2}{d} \mathbf{I}_d\right).\]
 
@@ -80,24 +80,24 @@ The broker is a permanent node in \(G\) and has no type vector. Its state is:
 \tightlist
 \item \textbf{Experience history} \(\mathcal{H}_b^t = \{(\mathbf{x}_i, \mathbf{x}_j, q_{ij})\}\): (party 1 type, party 2 type, realized match output) triples from mediated matches (§3c). The party labels have no directional meaning because the broker's pair features are symmetric.
 \item \textbf{Roster} \(\text{Roster}^t\): the broker's standing access base (§6b).
-\item \textbf{Current clients} \(D^t\): agents who outsource to the broker in period \(t\) (§6b).
-\item \textbf{Reputation} \(\text{rep}^t\): the average broker satisfaction of current clients (§7).
+\item \textbf{Current clients} \(D^t\): principals who outsource to the broker in period \(t\) (§6b).
+\item \textbf{Reputation} \(\text{rep}_b^t\): the average broker satisfaction of current clients (§7).
 \end{itemize}
 
 \subsection{2. The Matching Problem}\label{the-matching-problem}
 
-Each potential pair's underlying match value combines two components: the average of the agents' individual-quality scores and complementarity between their types. Each agent's individual-quality score is the same across partners, whereas complementarity depends on the pairing. The parameter \(\rho\) controls the relative contributions of these components. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. A pair's underlying match value does not depend on which agent initiates the match. Both agents observe the same realized match output.
+Each potential pair's underlying match value combines two components: the average of the principals' individual-quality scores and complementarity between their types. Each principal's individual-quality score is the same across partners, whereas complementarity depends on the pairing. The parameter \(\rho\) controls the relative contributions of these components. The parameter \(\delta\) makes complementarity harder to predict by increasing the difference between otherwise similar pairs on opposite sides of a boundary in type-pair space. A pair's underlying match value does not depend on which principal initiates the match. Both principals observe the same realized match output.
 
 \subsubsection{2a. Match Output}\label{a.-match-output}
 
-Let \(q_{ij}\) be the realized per-period output of a match between agents \(i\) and \(j\), measured in payoff units:
+Let \(q_{ij}\) be the realized per-period output of a match between principals \(i\) and \(j\), measured in payoff units:
 
 \[q_{ij} = Q + f(\mathbf{x}_i, \mathbf{x}_j) + \varepsilon_{ij}, \qquad
 \varepsilon_{ij} \sim \mathcal{N}(0, \sigma_\varepsilon^2).\]
 
-A pair's underlying match value is \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\), determined by the two types and the matching-function objects fixed at initialization. Because the shock \(\varepsilon_{ij}\) is independent and has mean zero, underlying match value also equals \(E[q_{ij}\mid\mathbf{x}_i,\mathbf{x}_j]\), holding the matching environment fixed. The shock creates variation in realized match output that neither the agents nor the broker can predict.
+A pair's underlying match value is \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\), determined by the two types and the matching-function objects fixed at initialization. Because the shock \(\varepsilon_{ij}\) is independent and has mean zero, underlying match value also equals \(E[q_{ij}\mid\mathbf{x}_i,\mathbf{x}_j]\), holding the matching environment fixed. The shock creates variation in realized match output that neither the principals nor the broker can predict.
 
-The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all agents:
+The function \(f: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}\) is unknown to all principals:
 
 \[
 f(\mathbf{x}_i,\mathbf{x}_j)
@@ -106,19 +106,19 @@ f(\mathbf{x}_i,\mathbf{x}_j)
 +\sqrt{1-\rho}\,\widetilde W_{ij}(\delta)\right].
 \]
 
-The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These fixed moments are calculated across all unordered pairs of distinct agents within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} agents, then averaged with equal weight across markets. The resulting coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover.
+The tildes indicate that the individual-quality component \(U_{ij}\) (§2b) and the complementarity component \(W_{ij}(\delta)\) (§2c) are centered and scaled using fixed moments. These fixed moments are calculated across all unordered pairs of distinct principals within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} principals, then averaged with equal weight across markets. The resulting coefficients depend on \(\rho\) and \(\delta\), are shared across simulations, and remain fixed through turnover.
 
 Let \(\kappa(\delta)\) denote the average within-market covariance between the standardized individual-quality and complementarity components in the calibration markets. The common adjustment
 
 \[s_{\mathrm{mix}}^2(\rho,\delta)=1+2\sqrt{\rho(1-\rho)}\,\kappa(\delta)\]
 
-accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. This defines the payoff unit. In these units, \(Q=\pv{settingQ}\) and \(\sigma_\varepsilon=\pv{settingsigma_eps}\).
+accounts for this covariance. Each standardized component and the combined systematic component \(f\) have unit average within-market variance in the calibration markets for every \(\rho\) and \(\delta\). Realized within-market variance of \(f\) can differ from one and change with turnover. The calibration normalization defines the payoff unit. In these units, \(Q=\pv{settingQ}\) and \(\sigma_\varepsilon=\pv{settingsigma_eps}\).
 
 The standardized components have equal average within-market variances across the calibration markets. On this calibration scale, after weighting, the individual-quality component accounts for a share \(\rho\) of their summed marginal variances, and complementarity accounts for \(1-\rho\). At \(\rho=0\), match value depends only on complementarity; at \(\rho=1\), it depends only on individual quality. At \(\rho=1\), \(\delta\) has no effect.
 
 \subsubsection{2b. Individual Quality}\label{b.-agent-individual-quality}
 
-The vector \(\mathbf{c}\) defines a common ideal type and is fixed within each simulation. Agent \(i\)'s individual-quality score, \(\mathbf{x}_i^\top\mathbf{c}\), measures its alignment with that ideal. A pair's individual-quality component is the average of the two agents' scores:
+The vector \(\mathbf{c}\) defines a common ideal type and is fixed within each simulation. Principal \(i\)'s individual-quality score, \(\mathbf{x}_i^\top\mathbf{c}\), measures its alignment with that ideal. A pair's individual-quality component is the average of the two principals' scores:
 
 \[
 U_{ij}=\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c}),
@@ -126,14 +126,14 @@ U_{ij}=\frac{1}{2}(\mathbf{x}_i^\top\mathbf{c}+\mathbf{x}_j^\top\mathbf{c}),
 \widetilde U_{ij}=\frac{U_{ij}-\mu_U}{\sigma_U}.
 \]
 
-The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the agent type curve:
+The ideal type \(\mathbf{c}\in\mathbb{R}^d\) is drawn at initialization as a perturbation of a random point on the principal type curve:
 
 \[u_c\sim\operatorname{Unif}[0,1],\qquad
 \boldsymbol{\epsilon}_c\sim\mathcal N\!\left(\mathbf 0,\frac{\sigma_x^2}{d}\mathbf I_d\right),\qquad
 \mathbf c=\frac{\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c}
 {\left\|\boldsymbol{\gamma}(u_c)+\boldsymbol{\epsilon}_c\right\|_2}.\]
 
-The normalization places \(\mathbf c\) on the same unit sphere as agent types. The perturbation therefore changes the ideal direction without changing its magnitude.
+The normalization places \(\mathbf c\) on the same unit sphere as principal types. The perturbation therefore changes the ideal direction without changing its magnitude.
 
 \subsubsection{2c. Match-Specific Complementarity}\label{c.-match-specific-complementarity}
 
@@ -154,7 +154,7 @@ The normalized complementarity used in the matching function is
 =\frac{W_{ij}(\delta)-\mu_W(\delta)}{\sigma_W(\delta)}.
 \]
 
-\(\mathbf{A}\) is a symmetric positive definite matrix that gives a smooth bilinear complementarity geometry. Because \(V_{ij}\) depends jointly on both types, it cannot in general be represented as the sum of separate agent scores. A second symmetric matrix, \(\mathbf{B}\), assigns pairs to two regions of type-pair space. Both matrices are fixed for the duration of the simulation.
+\(\mathbf{A}\) is a symmetric positive definite matrix that gives a smooth bilinear complementarity geometry. Because \(V_{ij}\) depends jointly on both types, it cannot in general be represented as the sum of separate principal scores. A second symmetric matrix, \(\mathbf{B}\), assigns pairs to two regions of type-pair space. Both matrices are fixed for the duration of the simulation.
 
 \textbf{Base complementarity.} Draw \(\mathbf{M}_A\in\mathbb{R}^{d\times d}\) with iid \(\mathcal{N}(0,1)\) entries and set
 
@@ -174,7 +174,7 @@ where \(\delta\in[0,1]\) (default \pv{settingdelta}).
 
 The multiplier is \(1+\delta\) when \(\mathbf{x}_i^\top\mathbf{B}\mathbf{x}_j>0\), \(1-\delta\) when it is negative, and 1 when it is zero. At \(\delta=0\), the boundary between the two regions has no effect. For \(\delta>0\), pairs on opposite sides of the boundary can have sharply different underlying match values even when their types are otherwise similar. Increasing \(\delta\) increases this difference, making complementarity harder to learn. The scale \(\sigma_W(\delta)\) holds the average within-market variance of standardized complementarity at one in the calibration markets as \(\delta\) varies.
 
-\textbf{Boundary construction.} At initialization, \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) under the weighted inner product defined by the initial agents\textquotesingle{} empirical second-moment matrix. The resulting boundary remains fixed through turnover. Let
+\textbf{Boundary construction.} At initialization, \(\mathbf{B}\) is made orthogonal to \(\mathbf{A}\) under the weighted inner product defined by the initial principals\textquotesingle{} empirical second-moment matrix. The resulting boundary remains fixed through turnover. Let
 
 \[\boldsymbol{\Sigma}_x = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top\]
 
@@ -202,19 +202,19 @@ Symmetry of \(\mathbf{A}\) and \(\mathbf{B}\) makes \(f(\mathbf{x}_i,\mathbf{x}_
 
 \subsection{3. Learning}\label{learning}
 
-Before searching for matches, agents and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to refit every period. Agent \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each agent is eligible every other period. An eligible model refits only when its history is nonempty and it has received new observations since its previous fitting call. A parameter switch selects the prediction model. Neural-network learning is the default. Ridge regression is the alternate experiment.
+Before searching for matches, principals and the broker may update their prediction models on their accumulated histories. Updated models are used to score candidates (§6). The broker is eligible to refit every period. Principal \(i\) is eligible when \(i\bmod 2=t\bmod 2\), so each principal is eligible every other period. An eligible model refits only when its history is nonempty and it has received new observations since its previous fitting call. A parameter switch selects the prediction model. Neural network (NN) learning is the default. Ridge regression is the alternate experiment.
 
 \subsubsection{3a. Prediction Models and Fitting}\label{a.-architecture-and-fitting}
 
-In the default model, both agents and the broker use a fully-connected network with one hidden layer, ReLU activations, and a single linear output:
+In the default model, both principals and the broker use a fully connected network with one hidden layer, ReLU activations, and a single linear output:
 
 \[\hat{q}(\mathbf{z}) = \mathbf{w}_2^\top \text{ReLU}(\mathbf{W}_1 \mathbf{z} + \mathbf{b}_1) + b_2\]
 
-where \(\hat q\) is predicted match value, \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Agents receive raw partner type vectors, the broker receives pairs of them.
+where \(\hat q\) is predicted match value, \(\mathbf{z}\) is the input feature vector and the remaining symbols are network weights and biases. Principals receive raw partner type vectors; the broker receives pairs of them.
 
-\textbf{Training rule.} Network weights minimize MSE with the Adam optimizer on the current training window. Agents and the broker may have separate learning rates, \(\eta_{\mathrm{lr},a}\) and \(\eta_{\mathrm{lr},b}\). No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\mathrm{init},c}\) gradient steps on their seed histories, where \(c\in\{a,b\}\).
+\textbf{Training rule.} Network weights minimize mean squared error (MSE) with the Adam optimizer on the current training window. Principals and the broker may have separate learning rates, \(\eta_{\mathrm{lr},a}\) and \(\eta_{\mathrm{lr},b}\). No explicit weight regularization is applied. At \(t = 0\), each network sets \(\mathbf W_1\) using He initialization, \(\mathbf b_1=\mathbf 0\), \(\mathbf w_2=\mathbf 0\), and \(b_2=Q\) (§2a). An untrained predictor therefore returns exactly \(Q\) for every input. Networks with seed observations then take \(E_{\mathrm{init},c}\) gradient steps on their seed histories, where \(c\in\{a,b\}\).
 
-\textbf{Alternate Ridge rule.} In the Ridge experiment, agents and the broker instead use
+\textbf{Alternate ridge rule.} In the ridge experiment, principals and the broker instead use
 
 \[
 \hat q_i(\mathbf x_j)=\alpha_i+\boldsymbol\beta_i^\top\mathbf x_j,
@@ -222,21 +222,21 @@ where \(\hat q\) is predicted match value, \(\mathbf{z}\) is the input feature v
 \hat q_b(\mathbf x_i,\mathbf x_j)=\alpha_b+\boldsymbol\gamma_b^\top\psi(\mathbf x_i,\mathbf x_j).
 \]
 
-Agent and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a Ridge predictor has zero slopes and intercept \(Q\). The reporting simulations use \(\lambda_a=\pv{settingridge_lambda_agent}\) and \(\lambda_b=\pv{settingridge_lambda_broker}\).
+Principal and broker fits minimize mean squared error plus \(\lambda_a\) and \(\lambda_b\), respectively, times the squared Euclidean norm of the slope coefficients. Intercepts are not penalized. Raw type and pair features are used without sample standardization. Before its first fit, a ridge predictor has zero slopes and intercept \(Q\). The reporting simulations use \(\lambda_a=\pv{settingridge_lambda_agent}\) and \(\lambda_b=\pv{settingridge_lambda_broker}\).
 
 Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
 \[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\}.\]
 
-where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For an agent, \(n_{\text{new}}\) can span multiple periods because agents fit on an alternating schedule. Agents and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=\pv{settingeta_lr_agent}\), \(\eta_{\mathrm{lr},b}=\pv{settingeta_lr_broker}\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=\pv{settingE_init_broker}\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=\pv{settingtrain_steps_broker}\).
+where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For a principal, \(n_{\text{new}}\) can span multiple periods because principals fit on an alternating schedule. Principals and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=\pv{settingeta_lr_agent}\), \(\eta_{\mathrm{lr},b}=\pv{settingeta_lr_broker}\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=\pv{settingE_init_broker}\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=\pv{settingtrain_steps_broker}\).
 
-Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = \pv{settingtrain_window_periods}\) completed simulation periods. Before \pv{settingtrain_window_periods} simulation periods are available, the window also includes period 0. Once \pv{settingtrain_window_periods} are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = \pv{settingtrain_max_obs}\) observations, fitting deterministically keeps \pv{settingtrain_max_obs} spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and Ridge use the same window, cap, fitting cadence, and histories.
+Initialization is period 0 for each learner. Its seed-history count is stored as the first period boundary. Each later boundary stores cumulative history at the end of a simulation period. A fitting call uses observations from the most recent \(W_p = \pv{settingtrain_window_periods}\) completed simulation periods. Before \pv{settingtrain_window_periods} simulation periods are available, the window also includes period 0. Once \pv{settingtrain_window_periods} are available, the period-0 seed history is excluded. If the selected history block exceeds \(M_{\text{train}} = \pv{settingtrain_max_obs}\) observations, fitting deterministically keeps \pv{settingtrain_max_obs} spaced observations across that block, including its oldest and newest observations. If the cap is one, it keeps the newest observation. The cap changes only the fitting sample, not the stored history or the period window. NN and ridge use the same window, cap, fitting cadence, and histories.
 
-\subsubsection{\texorpdfstring{3b. Agent \(i\)'s Model}{3b. Agent i's Model}}\label{b.-agent-is-model}
+\subsubsection{\texorpdfstring{3b. Principal \(i\)'s Model}{3b. Principal i's Model}}\label{b.-agent-is-model}
 
 \textbf{History.} \(\mathcal{H}_i^t = \{(\mathbf{x}_j, q_{ij})\}_{m=1}^{n_i}\) records the other party's type and realized match output from every match involving \(i\).
 
-\textbf{Input.} The agent's network takes the partner's type as input: \(\mathbf{z} = \mathbf{x}_j\).
+\textbf{Input.} The principal's network takes the partner's type as input: \(\mathbf{z} = \mathbf{x}_j\).
 
 The hidden width is \(h_A = 2d\), so the baseline uses \pv{settingAgentWidth} hidden units.
 
@@ -264,17 +264,17 @@ The broker learns only from mediated matches. It does not observe self-search ou
 
 \subsubsection{3d. Ridge Broker Ablations}\label{d.-ridge-broker-ablations}
 
-Three separate Ridge-only ablations change the broker while leaving every agent's local Ridge model unchanged. \textbf{Size-matched pooled history} uniformly samples the broker's windowed and capped fitting data without replacement, using the smaller of its available sample size and the nearest-integer median sample size among agents with nonempty histories, with half-integers rounded up. \textbf{Single-principal history} randomly retains one endpoint when each broker observation is recorded, fits \(g_b(\mathbf x)=\alpha_b+\boldsymbol\gamma_b^\top\mathbf x\), and scores a pair as \(g_b(\mathbf x_i)+g_b(\mathbf x_j)-\bar q_b\), where \(\bar q_b\) is the current fitting-sample output mean and defaults to \(Q\) before fitting. \textbf{Additive Ridge} uses \(\mathbf x_i+\mathbf x_j\) without bilinear features. All use the calibrated agent and broker penalties, period window, observation cap, and fitting cadence.
+Three separate ridge-only ablations change the broker while leaving every principal's local ridge model unchanged. \textbf{Size-matched pooled history} uniformly samples the broker's windowed and capped fitting data without replacement, using the smaller of its available sample size and the nearest-integer median sample size among principals with nonempty histories, with half-integers rounded up. \textbf{Single-principal history} randomly retains one endpoint when each broker observation is recorded, fits \(g_b(\mathbf x)=\alpha_b+\boldsymbol\gamma_b^\top\mathbf x\), and scores a pair as \(g_b(\mathbf x_i)+g_b(\mathbf x_j)-\bar q_b\), where \(\bar q_b\) is the current fitting-sample output mean and defaults to \(Q\) before fitting. \textbf{Additive ridge} uses \(\mathbf x_i+\mathbf x_j\) without bilinear features. All use the calibrated principal and broker penalties, period window, observation cap, and fitting cadence.
 
 \subsection{4. Match Economics}\label{match-economics}
 
 Matches use a common reservation threshold and channel-specific cost accounting.
 
-At initialization, each simulation computes \(\bar{q}_{\text{cal}}\) as the sample mean of \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\) over \pv{settingCalibrationPairsGrouped} pairs whose indices are drawn independently and uniformly with replacement from the initial agents. This quantity scales the reservation threshold, broker fee, and self-search cost.
+At initialization, each simulation computes \(\bar{q}_{\text{cal}}\) as the sample mean of \(Q+f(\mathbf{x}_i,\mathbf{x}_j)\) over \pv{settingCalibrationPairsGrouped} pairs whose indices are drawn independently and uniformly with replacement from the initial principals. This quantity scales the reservation threshold, broker fee, and self-search cost.
 
 \subsubsection{4a. Outside Options}\label{a.-outside-options}
 
-All agents share a reservation threshold \(r\), calibrated at initialization:
+All principals share a reservation threshold \(r\), calibrated at initialization:
 
 \[r = f_r \cdot \bar{q}_{\text{cal}}\]
 
@@ -302,43 +302,43 @@ The self-search cost and broker fee share one calibrated level:
 
 \subsection{5. Network Structure and Turnover}\label{network-structure-and-turnover}
 
-Agents interact through a single undirected network \(G\) that determines search opportunities and structural position.
+Principals interact through a single undirected network \(G\) that determines search opportunities and structural position.
 
 \subsubsection{5a. Network Initialization}\label{a.-network-initialization}
 
-\(G\) is initialized as a Watts-Strogatz small-world graph on the \(N\) agents (Watts \& Strogatz, 1998), with ring degree \(k_G = \pv{settingk}\), rewiring probability \(p_{\text{rewire}} = \pv{settingp_rewire}\), and random agent order on the ring.
+\(G\) is initialized as a Watts-Strogatz small-world graph on the \(N\) principals (Watts \& Strogatz, 1998), with ring degree \(k_G = \pv{settingk}\), rewiring probability \(p_{\text{rewire}} = \pv{settingp_rewire}\), and random principal order on the ring.
 
-The broker is added as a permanent node with no type vector. Broker-node edges are synchronized to standing roster members, current-period broker clients, and agents currently engaged in broker-channel matches (§6b).
+The broker is added as a permanent node with no type vector. Broker-node edges are synchronized to standing roster members, current-period broker clients, and principals currently engaged in broker-channel matches (§6b).
 
 \subsubsection{5b. Match Tie Formation}\label{b.-match-tie-formation}
 
 Each realized match adds an undirected \(i\)-\(j\) edge if one does not already exist. Ties persist until either node exits.
 
-\subsubsection{5c. Agent Turnover}\label{c.-agent-turnover}
+\subsubsection{5c. Principal Turnover}\label{c.-agent-turnover}
 
-Agents exit independently each period with probability \(\eta_{\mathrm{exit}}\) (default \pv{settingeta}). An exiting agent is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing agents sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
+Principals exit independently each period with probability \(\eta\) (default \pv{settingeta}). An exiting principal is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing principals sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
 
 \subsection{6. Search}\label{search}
 
-At the start of each period, each agent draws active relationship demand
+At the start of each period, each principal draws active relationship demand
 
 \[d_i \sim \text{Binomial}(K,\; p_{\text{demand}}),\]
 
-where \(K\) is the maximum number of active demands the agent can initiate in the period and \(p_{\text{demand}}\) defaults to \pv{settingp_demandFixed}. If \(d_i > 0\), the agent chooses \textbf{one channel for the batch} (§7): self-search or broker.
+where \(K\) is the maximum number of active demands the principal can initiate in the period and \(p_{\text{demand}}\) defaults to \pv{settingp_demandFixed}. If \(d_i > 0\), the principal chooses \textbf{one channel for the batch} (§7): self-search or broker.
 
 \subsubsection{6a. Self-Search}\label{a.-self-search}
 
-Agent \(i\)'s self-search candidate pool has two components:
+Principal \(i\)'s self-search candidate pool has two components:
 
-\textbf{Neighbors.} For a direct network neighbor \(j\) with prior pair-specific experience, agent \(i\) uses \(\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}\), where \(n_{ij}\) is the number of times \(i\) and \(j\) have matched. If the graph edge exists but \(n_{ij}=0\), the agent instead uses \(\hat q_i(\mathbf x_j)\). Initial histories seed one observation for every initial graph edge. Unobserved neighbor edges arise after turnover because entrants attach structurally before matching.
+\textbf{Neighbors.} For a direct network neighbor \(j\) with prior pair-specific experience, principal \(i\) uses \(\bar{q}_{ij} = \frac{1}{n_{ij}} \sum q_{ij}^{(m)}\), where \(n_{ij}\) is the number of times \(i\) and \(j\) have matched. If the graph edge exists but \(n_{ij}=0\), the principal instead uses \(\hat q_i(\mathbf x_j)\). Initial histories seed one observation for every initial graph edge. Unobserved neighbor edges arise after turnover because entrants attach structurally before matching.
 
-\textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) agents uniformly without replacement, where \(n_{\mathrm{strangers}} = \pv{settingn_strangers}\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
+\textbf{Strangers.} Each self-searching demander \(i\) independently samples a pool \(U_i^t\) of \(\min(n_{\mathrm{strangers}}, N)\) principals uniformly without replacement, where \(n_{\mathrm{strangers}} = \pv{settingn_strangers}\) (default). The demander evaluates pool members that are not current neighbors using \(\hat{q}_i(\mathbf{x}_j)\) (§3b).
 
-Agent \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\). Equal evaluations are ordered uniformly at random, so an agent whose predictions are constant produces a random ranking rather than an undefined ordering.
+Principal \(i\) orders feasible self-search candidates by these evaluations and emits up to \(d_i\) directed offers to candidates above \(r\). Equal evaluations are ordered uniformly at random, so a principal whose predictions are constant produces a random ranking rather than an undefined ordering.
 
 \subsubsection{6b. Broker Roster and Access}\label{b.-broker-roster-and-access}
 
-The broker maintains a \textbf{roster} of agents it can propose as counterparties when mediating matches. In each period, it also observes the current-client set \(D^t\) of agents who outsourced. Broker access for the period is:
+The broker maintains a \textbf{roster} of principals it can propose as counterparties when mediating matches. In each period, it also observes the current-client set \(D^t\) of principals who outsourced. Broker access for the period is:
 
 \[\mathcal{A}_b^t = \text{Roster}^t \cup D^t.\]
 
@@ -348,9 +348,9 @@ Current clients expand broker access for the period but do not become standing r
 
 \[R^* = \lceil \alpha_R N \rceil,\]
 
-where the broker roster share \(\alpha_R\) defaults to \pv{settingroster_fracFixed}. The model draws \(R^*\) agents uniformly at random (default \pv{settingRosterSize} at \(N = \pv{settingN}\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at \pv{settingBrokerSeedCap} observed ties.
+where the broker roster share \(\alpha_R\) defaults to \pv{settingroster_fracFixed}. The model draws \(R^*\) principals uniformly at random (default \pv{settingRosterSize} at \(N = \pv{settingN}\)). The broker's history is seeded from existing roster-roster ties in the initial graph, capped at \pv{settingBrokerSeedCap} observed ties.
 
-\textbf{Roster refresh.} At the start of each period, each roster member independently exits with probability \(p_{\text{roster}}\) (default \(\pv{settingroster_churn}\)). If \(\widetilde{\text{Roster}}^t\) is the post-churn roster,
+\textbf{Roster refresh.} At the start of each period, each member independently leaves the roster with probability \(p_{\text{roster}}\) (default \(\pv{settingroster_churn}\)). If \(\widetilde{\text{Roster}}^t\) is the post-churn roster,
 
 \[\widetilde{\text{Roster}}^t = \{i \in \text{Roster}^{t-1} : u_i^t > p_{\text{roster}}\}, \qquad u_i^t \overset{iid}{\sim} \mathrm{Unif}[0,1],\]
 
@@ -360,9 +360,9 @@ then the broker samples without replacement from \(\{1,\ldots,N\}\setminus \wide
 
 For every unordered pair \(\{i,j\}\) such that one side is a broker-client demander and the other side is in \(\mathcal{A}_b^t\), the broker computes predicted match value. For each broker-client demander \(i\), it ranks accessible counterparties above \(r\), breaking equal predictions uniformly at random, and keeps the highest-ranked candidates up to \(i\)'s residual active broker demand. Directed broker offers are then processed in a global score ranking with a new, independent random ordering within score ties. If both sides are broker-client demanders with remaining active demand, the same unordered pair can generate reciprocal broker offers.
 
-\textbf{Assessment-only.} The broker scores the agent's network neighbors and an independently sampled stranger pool (§6a) using its pair predictions.
+\textbf{Assessment-only.} The broker scores the principal's network neighbors and an independently sampled stranger pool (§6a) using its pair predictions.
 
-\textbf{Access-only.} Candidates come from the broker access set \(\mathcal A_b^t\). Scores use the requesting agent's pair-specific mean for experienced neighbors and its prediction model otherwise (§6a).
+\textbf{Access-only.} Candidates come from the broker access set \(\mathcal A_b^t\). Scores use the requesting principal's pair-specific mean for experienced neighbors and its prediction model otherwise (§6a).
 
 All other rules remain as specified. The broker still records mediated matches and updates its prediction model (§3), but its predictions do not determine access-only offers.
 
@@ -382,13 +382,13 @@ All self-search and broker offers enter one shared market, grouped by unordered 
 
 A demander can have at most \(d_i\) outgoing offers, but can receive any number of acceptable incoming offers. Thus \(K\) is an active-demand bound, not a capacity constraint on receiving offers.
 
-Before the next period begins, match lists are cleared. The next period begins with no active relationships.
+Before the next period begins, match lists are cleared. The next period begins with no current-period matches.
 
 \subsection{7. The Outsourcing Decision}\label{the-outsourcing-decision}
 
 \subsubsection{7a. Satisfaction Tracking}\label{a.-satisfaction-tracking}
 
-Each agent \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an EWMA of realized match output net of search costs:
+Each principal \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an exponentially weighted moving average (EWMA) of realized match output net of search costs:
 
 \[s_{i,c}^{t+1} = (1 - \omega)\,s_{i,c}^t + \omega \cdot \tilde{q}\]
 
@@ -413,35 +413,35 @@ Brokered & \(\dfrac{\sum q_{ij} - \phi \cdot n_{i,\text{broker success}}}{d_i}\)
 \end{longtable}
 }
 
-Brokered failure gives \(\tilde{q}=0\), self-search failure gives \(\tilde{q}=-c_s\).
+Brokered failure gives \(\tilde{q}=0\); self-search failure gives \(\tilde{q}=-c_s\).
 
 \(s_{i,\text{self}}^t\) covers all self-search, including known neighbors.
 
-At initialization, self-satisfaction is the mean of seed match outcomes and broker-satisfaction is the broker's seed-data reputation (§7c). Fresh entrants set self-satisfaction to mean neighbor self-satisfaction and broker-satisfaction to current broker reputation.
+At initialization, satisfaction with self-search is the mean of seed match outcomes and satisfaction with brokerage is the broker's seed-data reputation (§7c). Fresh entrants set satisfaction with self-search to the neighbors' mean for that channel and satisfaction with brokerage to current broker reputation.
 
-The first broker choice, regardless of placement success, switches the agent from broker reputation to its own \(s_{i,\text{broker}}^t\) (§7b).
+The first broker choice, regardless of placement success, switches the principal from broker reputation to its own \(s_{i,\text{broker}}^t\) (§7b).
 
 \subsubsection{7b. Decision Rule}\label{b.-decision-rule}
 
-Each agent with \(d_i > 0\) compares:
+Each principal with \(d_i > 0\) compares:
 
 \begin{itemize}
 \tightlist
 \item \textbf{\(\text{score}_{\text{self}}\)} \(= s_{i,\text{self}}^t\)
-\item \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^t\) if the agent has tried the broker, otherwise \(\text{rep}_b^t\).
+\item \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^t\) if the principal has tried the broker, otherwise \(\text{rep}_b^t\).
 \end{itemize}
 
-The agent chooses the higher-score channel. Ties are resolved by fair coin flip.
+The principal chooses the higher-score channel. Ties are resolved by a fair coin flip.
 
 \subsubsection{7c. Broker Reputation}\label{c.-broker-reputation}
 
 \[\text{rep}_b^{t+1} = \begin{cases} \frac{1}{|D^t|} \sum_{i \in D^t} s_{i,\text{broker}}^{t+1} & \text{if } D^t \neq \emptyset \\[4pt] \text{rep}_b^{t} & \text{otherwise} \end{cases}\]
 
-where \(D^t\) is the set of agents who outsourced to the broker this period. With current clients, reputation is their mean post-update broker satisfaction; with no clients, it is unchanged. Reputation is initialized from the mean broker seed outcome.
+where \(D^t\) is the set of principals who outsourced to the broker this period. With current clients, reputation is their mean post-update broker satisfaction; with no clients, it is unchanged. Reputation is initialized from the mean broker seed outcome.
 
 \subsection{8. Period Measures}\label{period-measures}
 
-Period measures are evaluated after current-period matching, satisfaction, and reputation updates, but before agent entry/exit turnover. Agent decisions do not depend on these measures.
+Period measures are evaluated after current-period matching, satisfaction, and reputation updates, but before principal entry/exit turnover. Principal decisions do not depend on these measures.
 
 \subsubsection{Network Measures}\label{network-measures}
 
@@ -487,7 +487,7 @@ Reported measures
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Random candidate pairs & Up to \pv{settingHoldoutPrincipals} agents with non-empty histories; for each sampled agent \(i\), \(\min(\pv{settingHoldoutPartners},N-1)\) non-self partners \(j\). Each predicted match value is evaluated against \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\) for the same sampled pair. Both models use the same sample, which is deterministic conditional on seed and period. & Per-agent \(R^2\), RMSE, bias, and Spearman rank correlation, averaged across sampled agents. \\
+Random candidate pairs & Up to \pv{settingHoldoutPrincipals} principals with nonempty histories; for each sampled principal \(i\), \(\min(\pv{settingHoldoutPartners},N-1)\) non-self partners \(j\). Each predicted match value is evaluated against \(Q + f(\mathbf{x}_i,\mathbf{x}_j)\) for the same sampled pair. Both models use the same sample, which is deterministic conditional on seed and period. & Per-principal \(R^2\), root mean squared error (RMSE), bias, and Spearman rank correlation, averaged across sampled principals. \\
 \end{longtable}
 }
 
@@ -499,7 +499,7 @@ R^2 = 1 - \frac{\mathrm{MSE}}{\operatorname{Var}_{\mathrm{pop}}(q)}, \qquad
 \mathrm{Bias} = \frac{1}{n}\sum(\hat{q}-q).
 \]
 
-Rank correlation evaluates the ranking produced from predicted match value. Candidates are ordered by predicted match value, with equal predictions ordered uniformly at random. All tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with ranks of underlying match value. Thus a constant predictor would produce a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: underlying match value for random candidate pairs. Random-candidate summaries exclude an agent's candidate set from all four measures if it contains fewer than \pv{settingMinCandidatePairsWord} pairs or if the population variance of its underlying match values is below \(\sigma_\varepsilon^2/\pv{settingVarianceDivisor}\). The \(R^2\), RMSE, bias, and rank-correlation means therefore use the same valid-agent sample.
+Rank correlation evaluates the ranking produced from predicted match value. Candidates are ordered by predicted match value, with equal predictions ordered uniformly at random. All tie-breaking draws are independent. For random candidate pairs, Spearman's \(\rho_S\) compares this produced ranking with ranks of underlying match value. Thus a constant predictor would produce a random ranking with expected rank correlation zero. In the definitions above, \(q\) denotes the relevant target: underlying match value for random candidate pairs. Random-candidate summaries exclude a principal's candidate set from all four measures if it contains fewer than \pv{settingMinCandidatePairsWord} pairs or if the population variance of its underlying match values is below \(\sigma_\varepsilon^2/\pv{settingVarianceDivisor}\). The \(R^2\), RMSE, bias, and rank-correlation means therefore use the same valid-principal sample.
 
 \subsubsection{Other Measures}\label{other-measures}
 
@@ -521,11 +521,11 @@ Access vs.~assessment & For each accepted broker-directed offer, record whether 
 Realized match output by channel & Average realized match output \(\bar{q}_c^t\), where \(c \in \{\text{self}, \text{brokered}\}\). \\
 Requested-position fill rates & For each channel, accepted directed offers divided by requested positions. \\
 Net output per principal & Total realized output from completed relationships, counting each relationship once, minus all self-search costs and broker fees, divided by \(N\). Self-search costs apply to every self-search request, successful or not. Broker fees apply to each accepted broker-directed offer, including both offers when a reciprocal relationship fulfills two brokered requests. \\
-Mean channel satisfaction & Cross-agent means \(N^{-1}\sum_i s_{i,\text{self}}^t\) and \(N^{-1}\sum_i s_{i,\text{broker}}^t\). \\
+Mean channel satisfaction & Cross-principal means \(N^{-1}\sum_i s_{i,\text{self}}^t\) and \(N^{-1}\sum_i s_{i,\text{broker}}^t\). \\
 Outsourcing rate & Outsourced requested positions divided by total requested positions. \\
-Broker access size & \(\|\mathcal{A}_b^t\| = \|\text{Roster}^t \cup D^t\|\), measured after outsourcing decisions form \(D^t\) and before entry/exit. \\
-Counterparty concentration & Median and maximum current-period counterparties per agent. \\
-Agent-node degree summaries & Mean, median, minimum, and maximum degree, excluding the broker node. \\
+Broker access size & \(|\mathcal{A}_b^t| = |\text{Roster}^t \cup D^t|\), measured after outsourcing decisions form \(D^t\) and before entry/exit. \\
+Counterparty concentration & Median and maximum current-period counterparties per principal. \\
+Principal-node degree summaries & Mean, median, minimum, and maximum degree across principals. \\
 \end{longtable}
 }
 
@@ -553,7 +553,7 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 \(N\) & \pv{settingN} & §1 & \(\lambda_c\) & \pv{settingsearch_cost_rate} & §4c \\
 \(d\) & \pv{settingd} & §1 & \(k_G\) & \pv{settingk} & §5a \\
 \(d_\gamma\) & \pv{settings} & §1 & \(p_{\text{rewire}}\) & \pv{settingp_rewire} & §5a \\
-\(\sigma_x\) & \pv{settingsigma_x} & §1 & \(\eta_{\mathrm{exit}}\) & \pv{settingeta} & §5c \\
+\(\sigma_x\) & \pv{settingsigma_x} & §1 & \(\eta\) & \pv{settingeta} & §5c \\
 \(Q\) & \pv{settingQ} & §2a & \(K\) & \pv{settingK} & §6 \\
 \(\rho\) & \pv{settingrhoFixed} & §2a & \(p_{\text{demand}}\) & \pv{settingp_demandFixed} & §6 \\
 \(\delta\) & \pv{settingdelta} & §2c & \(n_{\mathrm{strangers}}\) & \pv{settingn_strangers} & §6a \\
@@ -569,7 +569,7 @@ Symbol & Baseline & Defined in & Symbol & Baseline & Defined in \\
 
 \subsubsection{9b. Reproducibility}\label{b.-reproducibility}
 
-All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, random ordering within market score ties, and subsequent model events. Random candidate samples and their independent agent and broker tie-breaking draws are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
+All model-event randomness flows from a single integer seed. The seed determines type draws, \(G\), matching function parameters (\(\mathbf{c}\), \(\mathbf{A}\), \(\mathbf{B}\)), broker seed roster, standing-roster churn and replenishment, random ordering within market score ties, and subsequent model events. Random candidate samples and their independent principal and broker tie-breaking draws are deterministic conditional on seed and period. Simulations are fully reproducible given parameters and seed.
 
 \section{References}\label{references}
 

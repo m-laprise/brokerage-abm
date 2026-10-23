@@ -152,14 +152,20 @@ end
         run(`git -C $repository commit -q -m second`)
         second_commit = readchomp(`git -C $repository rev-parse HEAD`)
         files = Dict(
-            "paper/section_source.tex" => "\\pv{example}\n\\begin{figure}\n" *
+            "paper/section_source.tex" => "\\pv{example}\n" *
+                "Figure \\ref{fig:supp-test}; tables \\ref{tab:supp-first}--\\ref{tab:supp-second}.\n" *
+                "\\begin{figure}\n" *
                 "\\includegraphics{figures/test.png}\n" *
                 "\\caption{\\pvtitle{example}. \\pvcaption{example}}\n\\end{figure}\n",
             "paper/captions.tex" => "\\begin{ptitle}{example}Title\\end{ptitle}\n" *
                 "\\begin{pcaption}{example}Caption\\end{pcaption}\n" *
                 "\\begin{ptitle}{unused}Unused title\\end{ptitle}\n" *
                 "\\begin{pcaption}{unused}Unused caption\\end{pcaption}\n",
-            "paper/supplement.tex" => "\\begin{figure}\\label{fig:supp-test}\\end{figure}\n",
+            "paper/supplement.tex" => "\\input{../output/supplement/simulation_design.tex}\n" *
+                "\\begin{figure}\\label{fig:supp-test}\\end{figure}\n",
+            "paper/simulation_design_source.tex" =>
+                "\\begin{table}\\label{tab:supp-first}\\end{table}\n" *
+                "\\begin{table}\\label{tab:supp-second}\\end{table}\n",
             "output/manuscript/settings.tex" => "% Analysis commit: $first_commit\n\\pvDefine{settingRate}{0.003}\n",
             "output/main/values.tex" => "% Analysis commit: $first_commit\n\\pvDefine{example}{1.25}\n",
             "output/main/convergence/values.tex" => "% Analysis commit: $second_commit\n",
@@ -195,6 +201,7 @@ end
         result = read(output, String)
         @test Base.invokelatest(scope.display_value, "settingRate", "0.003") == "0.003"
         @test occursin("1.25", result) && !occursin("\\pv{example}", result)
+        @test occursin("Figure S1; tables S1--S2.", result)
         @test !occursin("SHA256", result) && !occursin("analysis commit", result)
         @test !occursin("base64", result)
         record = validate_publication_output(repository, output)

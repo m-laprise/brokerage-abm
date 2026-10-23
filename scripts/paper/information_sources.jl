@@ -252,8 +252,8 @@ function render(data; difficulties=(data["meta"]["baseline_difficulty"],), outpu
     models = (
         (key="pair", label="Reference\nbroker"),
         (key="size_matched", label="Fewer\nobservations"),
-        (key="single_principal", label="One party\nrecorded"),
         (key="additive", label="No interaction\nterm"),
+        (key="single_principal", label="One party\nrecorded"),
     )
     baseline = [reference["channel_values"][m.key] for m in models]
     shares = [
@@ -383,7 +383,7 @@ function render(data; difficulties=(data["meta"]["baseline_difficulty"],), outpu
         b,
         100,
         ys[reference_index] - 0.18;
-        text="% of reference output",
+        text="% of reference total net output",
         color=:gray40,
         fontsize=FOOTER_FS,
         align=(:right, :top),

@@ -356,8 +356,8 @@ function argument_turnover_panel!(slot, estimates, kind)
         spacing = minimum(diff(collect(TURNOVER_RATES)))
         ax = Axis(plot_grid[1, column];
             xlabel=zero ? "" : "Turnover rate (η)",
-            ylabel=zero ? (output ? "Change in net output to principals\nper principal" :
-                "Change in requested positions\noutsourced (percentage points)") : "",
+            ylabel=zero ? (output ? "Change in net output\nper principal" :
+                "Change in outsourcing rate\n(percentage points)") : "",
             limits=(zero ? (-0.7, 0.7) : (-spacing, last(TURNOVER_RATES) + 2spacing), ylimits),
             xticks=(collect(rates), zero ? ["0"] : string.(collect(rates))), yticks=ticks,
             yticklabelsvisible=zero, yticksvisible=zero, leftspinevisible=zero,

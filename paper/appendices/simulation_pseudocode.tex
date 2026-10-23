@@ -21,11 +21,11 @@
 \newcommand{\Ab}{\mathcal A_b}
 \newcommand{\EG}{\mathcal E_G}
 \newcommand{\procInitialize}{Initialize}
-\newcommand{\procInitializeAgent}{InitializeAgent}
+\newcommand{\procInitializePrincipal}{InitializePrincipal}
 \newcommand{\procPeriodUpdate}{PeriodUpdate}
 \newcommand{\procTrainNN}{TrainNN}
 \newcommand{\procFitPredictor}{FitPredictor}
-\newcommand{\procPredictAgent}{PredictAgent}
+\newcommand{\procPredictPrincipal}{PredictPrincipal}
 \newcommand{\procPredictBroker}{PredictBroker}
 \newcommand{\procTrainPredictors}{TrainPredictors}
 \newcommand{\procChooseChannel}{ChooseChannel}
@@ -111,7 +111,7 @@ Symbol & Dimension/domain & Definition \\
 \midrule
 \endhead
 \multicolumn{3}{@{}l}{\textit{Core}}\\
-$N$ & scalar & Number of agents, with agent set $[N]=\{1,\ldots,N\}$. \\
+$N$ & scalar & Number of principals, with principal set $[N]=\{1,\ldots,N\}$. \\
 $\vartheta$ & parameter vector & Simulation parameter vector. \\
 $\mathrm{seed}$ & integer & Random seed. \\
 $S^t$ & state tuple & Mutable simulation state at end of period $t$. \\
@@ -119,23 +119,23 @@ $T$ & integer & Number of simulation periods. \\
 \diag{$\mathcal M=[m^1;\ldots;m^T]$} & \diag{$\R^{T\times m}$} & \diag{Measure table; row $m^t=\mathcal M_{t\cdot}\in\R^m$.} \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Parameters}}\\
-$d$ & scalar & Agent type dimension. \\
+$d$ & scalar & Principal type dimension. \\
 $k_G$ & scalar & Watts-Strogatz graph degree. \\
-$\omega$ & scalar & Satisfaction EWMA weight. \\
-$\mathsf L$ & learning function & $\mathrm{NN}$ (default) or $\mathrm{Ridge}$. \\
+$\omega$ & scalar & Satisfaction update weight (exponentially weighted moving average, EWMA). \\
+$\mathsf L$ & learning function & Neural network (NN, default) or ridge regression. \\
 $\mathsf S_b$ & broker service & Full (default), assessment-only, or access-only. \\
-$\lambda_a,\lambda_b$ & positive scalars & Agent and broker Ridge slope penalties; calibrated experiment values are $\lambda_a=\pv{settingridge_lambda_agent}$ and $\lambda_b=\pv{settingridge_lambda_broker}$. \\
-$a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
-$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Agent and broker initial training steps; both are \pv{settingE_init_agent} in the reporting simulations. \\
-$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Agent and broker minimum training steps per fitting call; both are \pv{settingtrain_steps_agent} in the reporting simulations. \\
-$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Agent and broker Adam learning rates; reporting values are \pv{settingeta_lr_agent} and \pv{settingeta_lr_broker}, respectively. \\
+$\lambda_a,\lambda_b$ & positive scalars & Principal and broker ridge slope penalties; calibrated experiment values are $\lambda_a=\pv{settingridge_lambda_agent}$ and $\lambda_b=\pv{settingridge_lambda_broker}$. \\
+$a_b$ & broker ridge variant & Pair, size-matched, single-principal, or additive. \\
+$E_{\mathrm{init},a},E_{\mathrm{init},b}$ & scalars & Principal and broker initial training steps; both are \pv{settingE_init_agent} in the reporting simulations. \\
+$E_{\mathrm{steps},a},E_{\mathrm{steps},b}$ & scalars & Principal and broker minimum training steps per fitting call; both are \pv{settingtrain_steps_agent} in the reporting simulations. \\
+$\eta_{\mathrm{lr},a},\eta_{\mathrm{lr},b}$ & scalars & Principal and broker Adam learning rates; reporting values are \pv{settingeta_lr_agent} and \pv{settingeta_lr_broker}, respectively. \\
 $W_p$ & scalar & Training-window horizon, in periods. \\
-$M$ & scalar & Per-call training observation cap. \\
+$M_{\text{train}}$ & scalar & Per-call training observation cap. \\
 \addlinespace[0.25em]
-\multicolumn{3}{@{}l}{\textit{Agent types, networks, and output}}\\
+\multicolumn{3}{@{}l}{\textit{Principal types, networks, and output}}\\
 $G^t=(V,\EG^t)$ & graph & Undirected graph, $V=[N]\cup\{N+1\}$; node $N+1$ is the broker. \\
-$X^t=[x_1^t,\ldots,x_N^t]$ & $\R^{d\times N}$ & Agent type matrix; $x_i^t=X^t_{\cdot i}\in\R^d$. \\
-$\gamma$ & $[0,1]\to\R^d$ & Agent type curve for initial and entrant draws. \\
+$X^t=[x_1^t,\ldots,x_N^t]$ & $\R^{d\times N}$ & Principal type matrix; $x_i^t=X^t_{\cdot i}\in\R^d$. \\
+$\gamma$ & $[0,1]\to\R^d$ & Principal type curve for initial and entrant draws. \\
 $q_{ij}^t$ & scalar & Realized match output for pair $(i,j)$. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Match-output function}}\\
@@ -143,7 +143,7 @@ $Q$ & scalar & Additive offset in underlying match value. \\
 $\rho$ & scalar & Controls the relative weighting of individual quality and complementarity: $\rho=0$ gives pure complementarity; $\rho=1$ gives pure individual quality. \\
 $\delta$ & scalar & Strength of the pair boundary in match-specific complementarity. \\
 $\sigma_\varepsilon$ & scalar & Output-noise standard deviation. \\
-$c$ & $\R^d$ & Common ideal agent type. \\
+$c$ & $\R^d$ & Common ideal principal type. \\
 $A$ & $\R^{d\times d}$ & Symmetric positive definite complementarity matrix. \\
 $B$ & $\R^{d\times d}$ & Symmetric boundary matrix. \\
 \addlinespace[0.25em]
@@ -154,25 +154,25 @@ $\phi$ & scalar & Broker fee. \\
 $c_s$ & scalar & Self-search cost. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Learning and predictions}}\\
-$d_b$ & integer & Broker symmetric pair-feature dimension, $d+d(d+1)/2$. \\
-$\psi_b(x_i,x_j)$ & $\R^{d_b}$ & Symmetric broker pair feature vector. \\
-$\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\in\R^{n_i^t}$ & Agent $i$ history; observation $\ell$ is partner agent type $\Xi_{i,\cdot\ell}^t$ and realized match output $y_{i\ell}^t$. \\
+$d_B$ & integer & Broker symmetric pair-feature dimension, $d+d(d+1)/2$. \\
+$\psi_b(x_i,x_j)$ & $\R^{d_B}$ & Symmetric broker pair feature vector. \\
+$\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ & $\Xi_i^t\in\R^{d\times n_i^t}$, $y_i^t\in\R^{n_i^t}$ & Principal $i$ history; observation $\ell$ is partner principal type $\Xi_{i,\cdot\ell}^t$ and realized match output $y_{i\ell}^t$. \\
 $\mathcal H_b^t=(X_{b,1}^t,X_{b,2}^t,y_b^t,n_b^t)$ & $X_{b,1}^t,X_{b,2}^t\in\R^{d\times n_b^t}$, $y_b^t\in\R^{n_b^t}$ & Broker history; observation $\ell$ stores the two party types and realized match output $y_{b\ell}^t$. \\
-$\Theta_i^t$ & predictor parameters & Agent $i$ NN weights or Ridge coefficients. \\
-$\Theta_b^t$ & predictor parameters & Broker NN weights or Ridge coefficients. \\
-$\mathcal O_i^t,\mathcal O_b^t$ & Adam states & Persistent NN optimizer moments and step counters; unused by Ridge. \\
+$\Theta_i^t$ & predictor parameters & Principal $i$ NN weights or ridge coefficients. \\
+$\Theta_b^t$ & predictor parameters & Broker NN weights or ridge coefficients. \\
+$\mathcal O_i^t,\mathcal O_b^t$ & Adam states & Persistent NN optimizer moments and step counters; unused by ridge. \\
 $\Delta_i^t,\Delta_b^t$ & nonnegative integers & Observations added since the learner's previous training call. \\
 $\mathbf p_i^t,\mathbf p_b^t$ & integer sequences & Cumulative history counts at the end of learner initialization (period 0) and each later completed period. \\
 $v_b^t(i,j)$ & scalar & Broker's predicted match value for unordered pair $\{i,j\}$. \\
-$a_{i\to j}^t$ & scalar & Agent $i$'s assessment of candidate $j$. \\
+$a_{i\to j}^t$ & scalar & Principal $i$'s assessment of candidate $j$. \\
 $w_{j\leftarrow i}^t$ & scalar & Receiver acceptance score. \\
-$\bar q_{i\cdot}^t$ & vector & Agent $i$'s mean realized match output by partner. \\
-$C_{i\cdot}^t$ & vector & Agent $i$'s partner-indexed counts. \\
+$\bar q_{i\cdot}^t$ & vector & Principal $i$'s mean realized match output by partner. \\
+$C_{i\cdot}^t$ & vector & Principal $i$'s partner-indexed counts. \\
 \addlinespace[0.25em]
 \multicolumn{3}{@{}l}{\textit{Period state and market objects}}\\
 $s_i^t$ & $\R^2$ & Satisfaction scores for self and broker channels. \\
-$\chi_i^t$ & binary & Indicator that agent $i$ has ever used the broker. \\
-$M_i^t$ & set & Agent $i$ current-period counterparties. \\
+$\chi_i^t$ & binary & Indicator that principal $i$ has ever used the broker. \\
+$M_i^t$ & set & Principal $i$ current-period counterparties. \\
 $z_i^t$ & channel & Channel chosen by demander $i$. \\
 $d_i^t$ & integer & Current-period demand. \\
 $D^t$ & subset of $[N]$ & Current broker clients, $\{i:d_i^t>0,z_i^t=\mathrm{broker}\}$. \\
@@ -202,7 +202,7 @@ X^t,G^t,\\
 \]
 This tuple includes fixed realized model objects and all variables needed for later transitions. Implementation-only scratch buffers and diagnostic-only counters are omitted.
 
-The fixed calibration moments are calculated across all unordered pairs of distinct agents within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} agents, then averaged with equal weight across markets. Define
+The fixed calibration moments are calculated across all unordered pairs of distinct principals within each of \pv{settingCalibrationMarkets} independently generated calibration markets of \pv{settingCalibrationN} principals, then averaged with equal weight across markets. Define
 \[
 U_{ij}=\frac{x_i^\top c+x_j^\top c}{2},\qquad
 V_{ij}=x_i^\top A x_j,\qquad
@@ -245,7 +245,7 @@ q_{ij}=Q+f(x_i,x_j)+\varepsilon_{ij},
 
 \section{Learning and Prediction}
 
-Let $\mathsf L\in\{\mathrm{NN},\mathrm{Ridge}\}$ select the learning function. The default is $\mathsf L=\mathrm{NN}$. Both branches use the same histories, period window, and observation cap. Inputs remain on their raw DGP scale.
+Let $\mathsf L\in\{\mathrm{NN},\mathrm{Ridge}\}$ select the learning function. The default is $\mathsf L=\mathrm{NN}$. Both branches use the same histories, period window, and observation cap. Inputs remain on their original scale.
 
 For any one-hidden-layer predictor with input dimension $p_{\mathrm{in}}$ and hidden width $h$,
 \[
@@ -254,14 +254,14 @@ For any one-hidden-layer predictor with input dimension $p_{\mathrm{in}}$ and hi
 \]
 where $\xi\in\R^{p_{\mathrm{in}}}$, $W_1\in\R^{h\times p_{\mathrm{in}}}$, $b_1,w_2\in\R^h$, and $b_2\in\R$.
 \[
-d_b=d+\frac{d(d+1)}{2},\qquad
+d_B=d+\frac{d(d+1)}{2},\qquad
 \psi_b(x_i,x_j)=
 \left[
 x_i+x_j;\;
 \operatorname{vech}\!\left(\frac{x_ix_j^\top+x_jx_i^\top}{2}\right)
 \right].
 \]
-Agent networks use $(p_{\mathrm{in}},h)=(d,2d)$; the broker network uses $(p_{\mathrm{in}},h)=(d_b,8d)$.
+Principal networks use $(p_{\mathrm{in}},h)=(d,2d)$; the broker network uses $(p_{\mathrm{in}},h)=(d_B,8d)$.
 
 \[
 \psi_b(x_i,x_j)=\psi_b(x_j,x_i)
@@ -272,22 +272,22 @@ so broker histories produce one training column per observed unordered pair.
 $p_{\mathrm{in}},h$ & integers & Predictor input dimension and hidden width. \\
 $\xi$ & $\R^{p_{\mathrm{in}}}$ & Predictor input vector. \\
 $\mathsf L$ & learning function & $\mathrm{NN}$ or $\mathrm{Ridge}$. \\
-$a_b$ & broker Ridge variant & Pair, size-matched, single-principal, or additive. \\
-$\Theta$ & predictor parameters & NN parameters $(W_1,b_1,w_2,b_2)$ or Ridge parameters $(\alpha,\beta)$. \\
-$W_1,b_1,w_2,b_2$ & matrix, vectors, scalar & One-hidden-layer MLP weights and biases. \\
-$d_b$ & integer & Broker symmetric pair-feature dimension. \\
+$a_b$ & broker ridge variant & Pair, size-matched, single-principal, or additive. \\
+$\Theta$ & predictor parameters & NN parameters $(W_1,b_1,w_2,b_2)$ or ridge parameters $(\alpha,\beta)$. \\
+$W_1,b_1,w_2,b_2$ & matrix, vectors, scalar & Neural network weights and biases. \\
+$d_B$ & integer & Broker symmetric pair-feature dimension. \\
 $\psi_b$ & function & Symmetric broker pair-feature map. \\
 $\Xi_{\mathrm{tr}},y_{\mathrm{tr}}$ & $\R^{p_{\mathrm{in}}\times n}$, $\R^n$ & Generic training inputs and targets. \\
-$\mathcal L$ & scalar & Full-batch MSE objective. \\
-$\lambda$ & positive scalar & Learner-specific Ridge slope penalty; intercepts are not penalized. \\
+$\mathcal L$ & scalar & Full-batch mean squared error (MSE) objective. \\
+$\lambda$ & positive scalar & Learner-specific ridge slope penalty; intercepts are not penalized. \\
 $e$ & integer & Update-step index. \\
-$(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $\mathcal O_i,\mathcal O_b$ are the agent and broker instances. \\
+$(m,v,\tau)$ & Adam state & Persistent Adam moments and step counter; $\mathcal O_i,\mathcal O_b$ are the principal and broker instances. \\
 $\beta_1,\beta_2,\epsilon$ & scalars & Adam constants $(\pv{settingAdamBetaOne},\,\pv{settingAdamBetaTwo},\,\pv{settingAdamEpsilon})$. \\
 $n_i,n_b$ & integers & Current values of history lengths $n_i^t$ and $n_b^t$. \\
-$L_i,L_b$ & ordered index sets & Training-window indices from the most recent $W_p$ completed simulation periods, with period 0 included only until $W_p$ later periods exist; subsampled evenly to at most $M$. \\
+$L_i,L_b$ & ordered index sets & Training-window indices from the most recent $W_p$ completed simulation periods, with period 0 included only until $W_p$ later periods exist; subsampled evenly to at most $M_{\text{train}}$. \\
 $\Delta_i,\Delta_b$ & integers & New observations since last training call. \\
-$E_i,E_b$ & integers & Agent and broker NN update-step counts. \\
-$\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}}$ & $\R^{d\times |L_i|}$, $\R^{|L_i|}$ & Agent $i$ training view of $\mathcal H_i^t$. \\
+$E_i,E_b$ & integers & Principal and broker NN update-step counts. \\
+$\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}}$ & $\R^{d\times |L_i|}$, $\R^{|L_i|}$ & Principal $i$ training view of $\mathcal H_i^t$. \\
 $Z_{b,\mathrm{tr}},y_{b,\mathrm{tr}}$ & matrix, $\R^{|L_b|}$ & Broker fitting view using the selected input map. \\
 $r_\ell$ & $\{1,2\}$ & Endpoint retained once when broker observation $\ell$ is recorded for the single-principal ablation. \\
 \end{localvartable}
@@ -311,7 +311,7 @@ $r_\ell$ & $\{1,2\}$ & Endpoint retained once when broker observation $\ell$ is 
 \caption{\procFitPredictor}
 \label{alg:fitpredictor}
 \begin{algorithmic}[1]
-\Require Learning function $\mathsf L$, learner $c\in\{a,b\}$, parameters $\Theta$, raw inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, learner-specific Ridge penalty $\lambda_c$, and fitting parameters.
+\Require Learning function $\mathsf L$, learner $c\in\{a,b\}$, parameters $\Theta$, raw inputs $\Xi_{\mathrm{tr}}\in\R^{p_{\mathrm{in}}\times n}$, targets $y_{\mathrm{tr}}\in\R^n$, learner-specific ridge penalty $\lambda_c$, and fitting parameters.
 \If{$\mathsf L=\mathrm{NN}$}
     \State $E\gets\max\{E_{\mathrm{steps},c},\lceil E_{\mathrm{init},c}\Delta/n_{\mathrm{total}}\rceil\}$.
     \State $(\Theta,\mathcal O)\gets\Call{\procTrainNN}{\Theta,\Xi_{\mathrm{tr}},y_{\mathrm{tr}},E,\eta_{\mathrm{lr},c},\mathcal O}$.
@@ -323,7 +323,7 @@ $r_\ell$ & $\{1,2\}$ & Endpoint retained once when broker observation $\ell$ is 
 \end{algorithmic}
 \end{breakablealgorithm}
 
-The agent input is always the prospective partner type. The broker Ridge training input for observation $\ell$ is
+The principal input is always the prospective partner type. The broker ridge training input for observation $\ell$ is
 \[
 z_{b\ell}=\begin{cases}
 \psi_b(x_{1\ell},x_{2\ell}), & a_b\in\{\mathrm{pair},\mathrm{size\mbox{-}matched}\},\\
@@ -331,11 +331,11 @@ x_{r_\ell,\ell}, & a_b=\mathrm{single\mbox{-}principal},\\
 x_{1\ell}+x_{2\ell}, & a_b=\mathrm{additive}.
 \end{cases}
 \]
-For size-matched history, uniformly sample without replacement from the broker's windowed and capped observations. Its sample size is the smaller of the broker sample size and the nearest-integer median agent sample size among agents with nonempty histories, with half-integers rounded up.
+For size-matched history, uniformly sample without replacement from the broker's windowed and capped observations. Its sample size is the smaller of the broker sample size and the nearest-integer median principal sample size among principals with nonempty histories, with half-integers rounded up.
 
 Prediction is modular:
 \[
-\Call{\procPredictAgent}{i,x_j}=\begin{cases}
+\Call{\procPredictPrincipal}{i,x_j}=\begin{cases}
 \mathrm{NN}_{\Theta_i}(x_j), & \mathsf L=\mathrm{NN},\\
 \alpha_i+\beta_i^\top x_j, & \mathsf L=\mathrm{Ridge},
 \end{cases}
@@ -349,7 +349,7 @@ and
 g_b(x_i)+g_b(x_j)-\bar y_{b,\mathrm{tr}}, & \mathsf L=\mathrm{Ridge},\ a_b=\mathrm{single\mbox{-}principal},
 \end{cases}
 \]
-where $g_b(x)=\alpha_b+\gamma_b^\top x$. Before any Ridge fit, $\alpha=Q$, slopes are zero, and $\bar y_{b,\mathrm{tr}}=Q$.
+where $g_b(x)=\alpha_b+\gamma_b^\top x$. Before any ridge fit, $\alpha=Q$, slopes are zero, and $\bar y_{b,\mathrm{tr}}=Q$.
 
 Within period-level routines, state variables without a superscript refer to their current-period values.
 
@@ -361,14 +361,14 @@ Within period-level routines, state variables without a superscript refer to the
 \For{$i=1,\ldots,N$ in parallel}
     \State $n_i\gets n_i^t$, $\Delta_i\gets$ observations added to $\mathcal H_i$ since its last training call.
     \If{$n_i>0$, $\Delta_i>0$, and $i\bmod 2=t\bmod 2$}
-        \State Let $P_i\gets|\mathbf p_i|$ and $b_i\gets0$ if $P_i\le W_p$, otherwise $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$. If $|L_i|>M$, keep $M$ spaced indices across $L_i$, including its first and last indices (or only its last index when $M=1$).
+        \State Let $P_i\gets|\mathbf p_i|$ and $b_i\gets0$ if $P_i\le W_p$, otherwise $b_i\gets(\mathbf p_i)_{P_i-W_p}$; set $L_i\gets\{b_i+1,\ldots,n_i\}$. If $|L_i|>M_{\text{train}}$, keep $M_{\text{train}}$ spaced indices across $L_i$, including its first and last indices (or only its last index when $M_{\text{train}}=1$).
         \State $\Xi_{i,\mathrm{tr}}\gets(\Xi_i^t)_{\cdot L_i}$, $y_{i,\mathrm{tr}}\gets(y_i^t)_{L_i}$.
         \State $\Theta_i\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i,\Xi_{i,\mathrm{tr}},y_{i,\mathrm{tr}},\lambda_a,\Delta_i,n_i,\vartheta}$; $\Delta_i\gets0$.
     \EndIf
 \EndFor
 \State $n_b\gets n_b^t$, $\Delta_b\gets$ broker observations since last training.
 \If{$n_b>0$ and $\Delta_b>0$}
-    \State Let $P_b\gets|\mathbf p_b|$ and $b_b\gets0$ if $P_b\le W_p$, otherwise $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$. If $|L_b|>M$, keep $M$ spaced indices across $L_b$, including its first and last indices (or only its last index when $M=1$).
+    \State Let $P_b\gets|\mathbf p_b|$ and $b_b\gets0$ if $P_b\le W_p$, otherwise $b_b\gets(\mathbf p_b)_{P_b-W_p}$; set $L_b\gets\{b_b+1,\ldots,n_b\}$. If $|L_b|>M_{\text{train}}$, keep $M_{\text{train}}$ spaced indices across $L_b$, including its first and last indices (or only its last index when $M_{\text{train}}=1$).
     \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{size\mbox{-}matched}$, replace $L_b$ by the uniform size-matched sample defined above.
     \State Construct $Z_{b,\mathrm{tr}}=[z_{b\ell}]_{\ell\in L_b}$ and $y_{b,\mathrm{tr}}\gets(y_b^t)_{L_b}$.
     \State $\Theta_b\gets\Call{\procFitPredictor}{\mathsf L,b,\Theta_b,Z_{b,\mathrm{tr}},y_{b,\mathrm{tr}},\lambda_b,\Delta_b,n_b,\vartheta}$; $\Delta_b\gets0$.
@@ -398,30 +398,30 @@ $p_{\mathrm{rewire}}$ & scalar & Watts-Strogatz rewiring probability. \\
 $\nu_\ell$ & integer & Frequency for active curve coordinate $\ell$. \\
 $\psi_\ell$ & scalar & Phase for active curve coordinate $\ell$. \\
 $A_0$ & $\R^{d\times d}$ & Raw matrix used to construct $A$. \\
-$\Sigma_x$ & $\R^{d\times d}$ & Empirical agent type second moment. \\
+$\Sigma_x$ & $\R^{d\times d}$ & Empirical principal type second moment. \\
 $B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric boundary matrix. \\
 $B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization boundary matrix. \\
 $Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}}$ & matrix, $\R^{n_b^0}$ & Broker seed fitting batch using the selected input map. \\
 \end{localvartable}
 
-\begin{localvartable}{\procInitializeAgent}
-$\sigma_x$ & scalar & Agent type noise scale. \\
-$u_i$ & scalar & Agent $i$ curve position. \\
-$\epsilon_i$ & $\R^d$ & Agent type noise for agent $i$. \\
+\begin{localvartable}{\procInitializePrincipal}
+$\sigma_x$ & scalar & Principal type noise scale. \\
+$u_i$ & scalar & Principal $i$ curve position. \\
+$\epsilon_i$ & $\R^d$ & Principal type noise for principal $i$. \\
 $\pi_{ij}^{\mathrm{ent}}$ & scalar & Entrant attachment probability. \\
 $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachment set. \\
 \end{localvartable}
 
 \begin{breakablealgorithm}
-\caption{\procInitializeAgent}
+\caption{\procInitializePrincipal}
 \label{alg:initializeagent}
 \begin{algorithmic}[1]
-\Require State $S$, agent slot $i$, period counter $t$, parameters $\vartheta$.
-\Ensure Agent slot $i$ is initialized in $S$.
+\Require State $S$, principal slot $i$, period counter $t$, parameters $\vartheta$.
+\Ensure Principal slot $i$ is initialized in $S$.
 \State Draw $u_i\sim\mathrm{Unif}[0,1]$ and $\epsilon_i\sim \mathcal N(0,\sigma_x^2 I_d/d)$.
 \State $x_i^t\gets(\gamma(u_i)+\epsilon_i)/\|\gamma(u_i)+\epsilon_i\|_2$.
 \State Reset $\mathcal H_i^t=(\Xi_i^t,y_i^t,n_i^t)$ to zero observations, $\bar q_{i\cdot}^t$, $C_{i\cdot}^t$, $\chi_i^t$, $M_i^t$, and $\Delta_i^t$.
-\State Initialize the selected predictor to the constant $Q$: for NN, draw $W_{1i}^t$ with He initialization and set $b_{1i}^t=0$, $w_{2i}^t=0$, $b_{2i}^t=Q$, $\mathcal O_i^t=0$; for Ridge, set $\alpha_i^t=Q$ and $\beta_i^t=0$.
+\State Initialize the selected predictor to the constant $Q$: for NN, draw $W_{1i}^t$ with He initialization and set $b_{1i}^t=0$, $w_{2i}^t=0$, $b_{2i}^t=Q$, $\mathcal O_i^t=0$; for ridge, set $\alpha_i^t=Q$ and $\beta_i^t=0$.
 \If{$t=0$}
     \State $s_i^t\gets(0,0)$.
 \Else
@@ -451,9 +451,9 @@ $\mathcal V_i^{\mathrm{ent}}$ & subset of $[N]\setminus\{i\}$ & Entrant attachme
 \Require Parameters $\vartheta$ and seed.
 \Ensure Initial state $S^0$.
 \State Draw curve frequencies $\nu_\ell\sim\mathrm{Unif}\{\pv{settingFrequencyMin},\ldots,\pv{settingFrequencyMax}\}$ and phases $\psi_\ell\sim\mathrm{Unif}[0,2\pi)$ for $\ell=1,\ldots,d_\gamma$, defining $\gamma$.
-\State Allocate empty agent and broker containers in $S^0$ and store $\gamma$.
+\State Allocate empty principal and broker containers in $S^0$ and store $\gamma$.
 \For{$i=1,\ldots,N$}
-    \State $\Call{\procInitializeAgent}{S^0,i,0,\vartheta}$.
+    \State $\Call{\procInitializePrincipal}{S^0,i,0,\vartheta}$.
 \EndFor
 \State Draw $u_c\sim\mathrm{Unif}[0,1]$ and $\epsilon_c\sim\mathcal N(0,\sigma_x^2 I_d/d)$; set $c\gets[\gamma(u_c)+\epsilon_c]/\|\gamma(u_c)+\epsilon_c\|_2$.
 \State Draw $A_0\in\R^{d\times d}$ iid standard normal and set $A\gets A_0^\top A_0\cdot d/\operatorname{tr}(A_0^\top A_0)$.
@@ -466,7 +466,7 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \]
 \State Calibrate $(\bar q_{\mathrm{cal}},r,\phi,c_s)$.
 \State Build $G^0$ as a Watts-Strogatz graph on $[N]$ with degree $k_G$ and rewiring probability $p_{\mathrm{rewire}}$; add isolated broker node $N+1$.
-\State Initialize $\mathcal H_b^0$ and the selected broker predictor to the constant $Q$ using the corresponding NN or Ridge initialization above; set $\mathrm{rep}_b^0=0$.
+\State Initialize $\mathcal H_b^0$ and the selected broker predictor to the constant $Q$ using the corresponding NN or ridge initialization above; set $\mathrm{rep}_b^0=0$.
 \State Sample $\mathrm{Roster}^0\subset[N]$ uniformly with $|\mathrm{Roster}^0|=\lceil\alpha_R N\rceil$; add broker edges $(i,N+1)$ for all roster members.
 \For{each unordered non-broker edge $\{i,j\}\in\EG^0$}
     \State Draw $q_{ij}$ once; append $(x_j^0,q_{ij})$ to $\mathcal H_i^0$ and $(x_i^0,q_{ij})$ to $\mathcal H_j^0$; update $\bar q_{ij}^0,C_{ij}^0,\bar q_{ji}^0,C_{ji}^0$.
@@ -482,7 +482,7 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
     \State Set $\mathrm{rep}_b^0\gets0$.
 \EndIf
 \State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
-\State Set $\mathbf p_i^0\gets(n_i^0)$ for every agent and $\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set $\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
+\State Set $\mathbf p_i^0\gets(n_i^0)$ for every principal and $\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set $\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
 \For{each $i$ with $n_i^0>0$}
     \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
 \EndFor
@@ -505,7 +505,7 @@ $U_{\mathrm{broker}}$ & scalar & Broker-channel score. \\
 \caption{\procChooseChannel}
 \label{alg:choosechannel}
 \begin{algorithmic}[1]
-\Require Agent $i$ state $(s_i,\chi_i)$, broker reputation $\mathrm{rep}_b$, RNG.
+\Require Principal $i$ state $(s_i,\chi_i)$, broker reputation $\mathrm{rep}_b$, RNG.
 \State $U_{\mathrm{self}}\gets s_{i,\mathrm{self}}$.
 \State $U_{\mathrm{broker}}\gets \chi_i s_{i,\mathrm{broker}}+(1-\chi_i)\mathrm{rep}_b$.
 \If{$U_{\mathrm{self}}>U_{\mathrm{broker}}$}
@@ -525,7 +525,7 @@ $K$ & integer & Active-demand bound. \\
 $p_{\mathrm{demand}}$ & scalar & Per-position demand probability. \\
 $\alpha_R$ & scalar & Standing broker roster share. \\
 $p_{\mathrm{roster}}$ & scalar & Roster-churn probability. \\
-$\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
+$\eta$ & scalar & Principal exit probability. \\
 \diag{$\Delta_{\mathrm{net}}$} & \diag{integer} & \diag{Network-measure interval.} \\
 \end{localvartable}
 
@@ -563,10 +563,10 @@ $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
     \State \diag{Recompute broker betweenness, Burt constraint, and effective size on the post-matching, pre-turnover graph $G^t$.}
 \EndIf
 \State \diag{$Y^t\gets\Call{\procCollectMeasures}{S^t,\mathcal R^t,\vartheta}$ on the post-matching, pre-turnover state.}
-\State Append $n_i^t$ to $\mathbf p_i^t$ for every agent and append $n_b^t$ to $\mathbf p_b^t$, recording the end-of-period training-window boundaries.
+\State Append $n_i^t$ to $\mathbf p_i^t$ for every principal and append $n_b^t$ to $\mathbf p_b^t$, recording the end-of-period training-window boundaries.
 \For{$i=1,\ldots,N$}
-    \If{agent $i$ exits with probability $\eta_{\mathrm{exit}}$}
-        \State $\Call{\procInitializeAgent}{S^t,i,t,\vartheta}$.
+    \If{principal $i$ exits with probability $\eta$}
+        \State $\Call{\procInitializePrincipal}{S^t,i,t,\vartheta}$.
     \EndIf
 \EndFor
 \State Synchronize broker-node edges to the post-turnover roster, clients, and active matches.
@@ -577,8 +577,8 @@ $\eta_{\mathrm{exit}}$ & scalar & Agent exit probability. \\
 \section{Offer Market}
 
 \begin{localvartable}{\procOfferMarket}
-$\hat q_i^t$ & $\R^d\to\R$ & Agent predictor. \\
-$\hat q_b^t$ & $\R^{d_b}\to\R$ & Broker predictor. \\
+$\hat q_i^t$ & $\R^d\to\R$ & Principal predictor. \\
+$\hat q_b^t$ & $\R^{d_B}\to\R$ & Broker predictor. \\
 $\mathcal N_G^t(i)$ & subset of $[N]$ & Non-broker graph neighbors of $i$. \\
 $U_i^t$ & subset of $[N]$ & Self-search stranger pool independently sampled for demander $i$. \\
 $n_{\mathrm{strangers}}$ & integer & Per-demander stranger-pool size. \\
@@ -604,12 +604,12 @@ The symmetric broker score is
 \[
 v_b^t(i,j)=\Call{\procPredictBroker}{i,j}.
 \]
-Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node. Agent $i$ assesses any presented candidate as
+Let $\mathcal N_G^t(i)=\{j\in[N]:(i,j)\in \EG^t\}$ exclude the broker node. Principal $i$ assesses any presented candidate as
 \[
 a_{i\to j}^{t}=
 \begin{cases}
 \bar q_{ij}^t, & j\in\mathcal N_G^t(i),\ C_{ij}^t>0,\\
-\Call{\procPredictAgent}{i,x_j^t}, & \text{otherwise}.
+\Call{\procPredictPrincipal}{i,x_j^t}, & \text{otherwise}.
 \end{cases}
 \]
 Self-search makes this score available only for neighbors and non-neighbors in the demander-specific stranger pool:
@@ -625,7 +625,7 @@ Thus direct pair means replace predictor extrapolations when pair-specific exper
 w_{j\leftarrow i}^t=
 \begin{cases}
 \bar q_{ji}^t, & (i,j)\in \EG^t,\ C_{ji}^t>0,\\
-\Call{\procPredictAgent}{j,x_i^t}, & \text{otherwise}.
+\Call{\procPredictPrincipal}{j,x_i^t}, & \text{otherwise}.
 \end{cases}
 \]
 
@@ -679,7 +679,7 @@ The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers 
     \State Remove from $\mathcal U_i^{\mathrm{self}}$ the elements of $\{i\}\cup M_i^t$.
     \State Draw independent $u_{i\to j}^{\mathrm{self}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
     \State $\mathcal I_i^{\mathrm{self}}\gets\argsort_{j\in\mathcal U_i^{\mathrm{self}}:\ v_{i\to j}^{\mathrm{self},t}>r} (-v_{i\to j}^{\mathrm{self},t},u_{i\to j}^{\mathrm{self}})$.
-    \For{the first $\min(\Omega_i,|\mathcal I_i^{\mathrm{self}}|)$ agents $j$ in $\mathcal I_i^{\mathrm{self}}$}
+    \For{the first $\min(\Omega_i,|\mathcal I_i^{\mathrm{self}}|)$ principals $j$ in $\mathcal I_i^{\mathrm{self}}$}
         \State $\Call{\procAddOffer}{O^t,\mathcal P_O^t,i,j,\mathrm{self},v_{i\to j}^{\mathrm{self},t}}$.
     \EndFor
 \EndFor
@@ -690,7 +690,7 @@ The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers 
     \State $(\mathcal U_{b,i},v_{b,i\to j}^t)\gets\Call{\procBrokerCandidates}{i,S,\mathsf S_b}$.
     \State Draw independent $u_{b,i\to j}^{\mathrm{local}}\sim\mathrm{Unif}(0,1)$ for each feasible $j$.
     \State $\mathcal I_{b,i}\gets\argsort_{j\in\mathcal U_{b,i}:\ v_{b,i\to j}^t>r}(-v_{b,i\to j}^t,u_{b,i\to j}^{\mathrm{local}})$.
-    \For{the first $\min(\Omega_i,|\mathcal I_{b,i}|)$ agents $j$ in $\mathcal I_{b,i}$}
+    \For{the first $\min(\Omega_i,|\mathcal I_{b,i}|)$ principals $j$ in $\mathcal I_{b,i}$}
         \State Append $(i,j,v_{b,i\to j}^t)$ to $\mathcal B_b^t$.
     \EndFor
 \EndFor
@@ -742,7 +742,7 @@ The market creates at most $d_i^t$ outgoing offers from demander $i$. Receivers 
 \section{Satisfaction and Measures}
 
 \begin{localvartable}{satisfaction}
-$Y_i$ & scalar & Agent $i$ period satisfaction numerator. \\
+$Y_i$ & scalar & Principal $i$ period satisfaction numerator. \\
 $n_{i,b}$ & integer & Accepted broker offers credited to demander $i$. \\
 $\tilde q_i^t$ & scalar & Channel-specific satisfaction input. \\
 $\zeta$ & accepted record & Iterator over $\mathcal R^t$. \\
