@@ -1,4 +1,9 @@
-"""Compare Ridge broker restrictions using manifest-defined conditions and paired seeds."""
+"""Compare Ridge broker restrictions using manifest-defined conditions and paired seeds.
+Set these variables to the corresponding sweep roots:
+BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR (reference),
+BROKERAGE_ABM_RIDGE_SIZE_MATCHED_SWEEP_DIR (fewer observations),
+BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR (one party recorded), and
+BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR (no interaction term)."""
 
 using CairoMakie
 using DataFrames: DataFrame

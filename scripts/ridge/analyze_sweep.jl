@@ -1,4 +1,5 @@
-"""Compare NN and Ridge using manifest-defined conditions and paired seeds."""
+"""Compare NN and Ridge using manifest-defined conditions and paired seeds.
+Set BROKERAGE_ABM_NN_SWEEP_DIR and BROKERAGE_ABM_RIDGE_SWEEP_DIR to their sweep roots."""
 
 using CairoMakie
 using DataFrames: DataFrame

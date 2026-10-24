@@ -48,6 +48,7 @@ paper/**/*.aux
 !output/main/access_windows.jld2
 !output/main/centrality_data.jld2
 !output/supplement/structural_figure_data.jld2
+!output/supplement/structural_comparisons.jld2
 !output/supplement/dgp_figure_data.jld2
 !output/ridge/paired/figure_data.jld2
 !output/ridge/paired/access_windows.jld2

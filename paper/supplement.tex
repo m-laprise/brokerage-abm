@@ -4,8 +4,9 @@
 %
 % The simulation design precedes the supplementary figures.
 % Figures S1--S3 describe the matching-function data-generating process. Figure S4
-% compares assessment and access across matching composition. Figures S5--S7
-% reproduce the structural analyses with two alternative network measures.
+% compares assessment and access across matching composition. Figures S5--S6
+% repeat structural comparisons with alternative measures; S7 varies difficulty
+% in the learning experiments.
 % Caption values come from retained-data reporting fragments.
 
 \documentclass[11pt]{article}
@@ -87,23 +88,23 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{alternative_measures_grid.png}
-\caption{\textbf{Alternative structural measures across the matching problem.} Burt's constraint measures the concentration of the broker's direct and indirect ties; effective size discounts contacts tied to one another. Points show ensemble late means across the $\rho\times\delta$ design, with other parameters at baseline. Whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. N/A denotes $\rho=1$, where underlying match value depends only on individual quality and difficulty is inapplicable.}
-\label{fig:supp-grid}
+\includegraphics[width=\linewidth]{alternative_measures_composition_turnover.png}
+\caption{\textbf{Structural position and access under alternative measures.} Ensemble late means from the neural-network simulations; parameters other than matching composition and turnover remain at baseline. Lines connect matching compositions at fixed turnover, with $\rho=1$ shown separately. Principal degree includes the broker tie when present. Whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals.}
+\label{fig:supp-structure}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{alternative_measures_position.png}
-\caption{\textbf{Alternative structural measures over time and against access.} A and C: baseline measures recorded every \pv{suppMeasInterval} periods and smoothed within each seed using a \pv{suppRollWin}-observation rolling mean, shown from $t=\pv{suppAxisStart}$. Lines are ensemble means; ribbons show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. B and D: ensemble late means for the \pv{suppOatN} regimes that vary one parameter at a time from baseline.}
-\label{fig:supp-position}
+\includegraphics[width=\linewidth]{alternative_measures_experiments.png}
+\caption{\textbf{Structural consequences of services and learning under alternative measures.} A--B: late-mean differences paired by seed across matching composition and turnover, with other parameters at baseline. Adding assessment is full service minus access-only; adding access is full service minus assessment-only. Dashed lines connect contrasts within each regime; the inset enlarges the region near zero. C--D: ensemble late means from the baseline ridge experiments. Whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals.}
+\label{fig:supp-experiments}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{alternative_measures_advantage.png}
-\caption{\textbf{Ranking and output differences by alternative structural measures.} Points show ensemble late means for \pv{suppRegimeN} regimes. C--D compare mean realized output per completed match (brokered minus self-search), before costs and fees.}
-\label{fig:supp-advantage}
+\includegraphics[width=\linewidth]{learning_across_difficulties.png}
+\caption{\textbf{Sources of the broker's advantage across matching difficulties.} Ensemble late means from the ridge experiments; parameters other than $\rho$ and $\delta$ remain at baseline. Ranking differences and net-output shares are calculated within seed before averaging. Whiskers show pointwise \pv{settingSuppIntervalPercent}\% Monte Carlo intervals. The same $\rho=1$ estimates appear in each column because difficulty has no effect there. Lines are visual guides.}
+\label{fig:supp-learning}
 \end{figure}
 
 \end{document}

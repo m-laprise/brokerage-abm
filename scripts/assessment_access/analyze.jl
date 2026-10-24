@@ -4,6 +4,7 @@ intervals.
 
 Set `BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR` to the completed sweep root.
 Outputs are written to `output/assessment_access/`.
+After analyzing the base sweep, run `centrality_data.jl`, then `merge_supplement.jl`.
 
 Usage: julia --project --threads=auto scripts/assessment_access/analyze.jl
 """

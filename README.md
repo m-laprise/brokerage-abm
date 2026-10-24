@@ -166,32 +166,23 @@ julia --project --threads=auto scripts/paper/export_overleaf.jl
 
 ### Regenerate analysis inputs from completed sweeps
 
-Run these scripts with `julia --project --threads=auto`. On Della, use a compute
-job and the environment described in the [sweep guide](scripts/sweep/README.md).
-Analysis source dependencies must match their recorded commit; unrelated
-manuscript and figure edits do not block analysis.
+Regenerate these inputs after new sweeps or changes to the analysis; manuscript
+builds use the retained inputs.
 
-| Analysis inputs | Scripts | Required settings |
-|---|---|---|
-| Main estimates, figure data, access windows, and convergence summaries | `scripts/paper/stats.jl`, `figdata.jl`, `access_windows.jl`, `audit_convergence.jl` | `BROKERAGE_ABM_SWEEP_DIR` points to the main sweep |
-| Ridge figure data and access windows | `scripts/paper/figdata.jl`, `access_windows.jl` | `BROKERAGE_ABM_SWEEP_DIR` points to the reference Ridge sweep; set `BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figure_data.jld2` and `BROKERAGE_ABM_ACCESS_WINDOWS_PATH=output/ridge/paired/access_windows.jld2` |
-| NN-Ridge comparisons | `scripts/ridge/analyze_sweep.jl` | `BROKERAGE_ABM_NN_SWEEP_DIR` and `BROKERAGE_ABM_RIDGE_SWEEP_DIR` |
-| Ridge learning experiments | `scripts/ridge/analyze_ablations.jl` | `BROKERAGE_ABM_RIDGE_PAIR_SWEEP_DIR`, `BROKERAGE_ABM_RIDGE_SIZE_MATCHED_SWEEP_DIR`, `BROKERAGE_ABM_RIDGE_SINGLE_PRINCIPAL_SWEEP_DIR`, and `BROKERAGE_ABM_RIDGE_ADDITIVE_SWEEP_DIR` |
-| Assessment and access comparisons | `scripts/assessment_access/analyze.jl` | `BROKERAGE_ABM_ASSESSMENT_ACCESS_SWEEP_DIR` points to the base service sweep |
-| Supplementary structural data | `scripts/paper/supp_figdata.jl` | `BROKERAGE_ABM_SWEEP_DIR` points to the main sweep |
-| Matching-function diagnostics | `scripts/paper/dgp_figdata.jl` | No sweep input; generates data from model initialization without simulation periods |
+| Analysis inputs | Scripts |
+|---|---|
+| Main estimates, figure data, access windows, and convergence summaries | [stats.jl](scripts/paper/stats.jl), [figdata.jl](scripts/paper/figdata.jl), [access_windows.jl](scripts/paper/access_windows.jl), [audit_convergence.jl](scripts/paper/audit_convergence.jl) |
+| Ridge figure data and access windows | [figdata.jl](scripts/paper/figdata.jl), [access_windows.jl](scripts/paper/access_windows.jl) |
+| NN-Ridge comparisons | [analyze_sweep.jl](scripts/ridge/analyze_sweep.jl) |
+| Ridge learning experiments | [analyze_ablations.jl](scripts/ridge/analyze_ablations.jl) |
+| Assessment and access comparisons | [analyze.jl](scripts/assessment_access/analyze.jl), [centrality_data.jl](scripts/assessment_access/centrality_data.jl), [merge_supplement.jl](scripts/assessment_access/merge_supplement.jl) |
+| Supplementary structural data | [supp_figdata.jl](scripts/paper/supp_figdata.jl) |
+| Supplementary service and learning measures | [supp_robustness.jl](scripts/paper/supp_robustness.jl) |
+| Matching-function diagnostics | [dgp_figdata.jl](scripts/paper/dgp_figdata.jl) |
 
-After analyzing the base service sweep, extract its network trajectories and
-merge the supplemental service sweep:
-
-```bash
-julia --project --threads=auto scripts/assessment_access/centrality_data.jl <base-sweep-root>
-julia --project --threads=auto scripts/assessment_access/merge_supplement.jl \
-    output/assessment_access/figure_data.jld2 <supplement-sweep-root> output/assessment_access
-```
-
-Once these inputs are available locally under `output/`, run
-`scripts/paper/build_publication.jl` to render and assemble the paper.
+Follow each script's header instructions using `julia --project --threads=auto`
+(on Della, use a compute job as described in the [sweep guide](scripts/sweep/README.md)),
+then run [build_publication.jl](scripts/paper/build_publication.jl).
 
 ## License
 

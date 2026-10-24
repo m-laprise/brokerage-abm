@@ -606,5 +606,120 @@ function render(data; difficulties=(data["meta"]["baseline_difficulty"],), outpu
     return output
 end
 
+"""Extend the ranking and output-share comparisons across all retained difficulties."""
+function render_supplement(data, output)
+    validate_data(data)
+    publication_theme!()
+    level = data["meta"]["interval_level"]
+    conditions = data["conditions"]
+    difficulties = sort(unique(c["delta"] for c in conditions if c["rho"] < 1))
+    quality = only(c for c in conditions if c["rho"] == 1)
+    models = (
+        (key="pair", label="Reference broker", color=PUB_BROKER, marker=:circle),
+        (key="size_matched", label="Fewer observations", color=PUB_PRINCIPAL, marker=:rect),
+        (
+            key="additive",
+            label="No interaction term",
+            color=PUB_CENTRALITY,
+            marker=:utriangle,
+        ),
+        (
+            key="single_principal",
+            label="One party recorded",
+            color=PUB_ACCESS,
+            marker=:diamond,
+        ),
+    )
+    fig = Figure(; size=(1400, 820), figure_padding=(20, 24, 18, 22))
+    axes = [Axis[] for _ in 1:2]
+    for (column, difficulty) in enumerate(difficulties)
+        group = sort(
+            [filter(c -> c["rho"] < 1 && c["delta"] == difficulty, conditions); quality];
+            by=c -> c["rho"],
+        )
+        rhos = [c["rho"] for c in group]
+        for row in 1:2
+            letter = Char('A' + (row - 1) * length(difficulties) + column - 1)
+            axis = Axis(
+                fig[row, column];
+                title="$letter. δ = $difficulty",
+                ylabel=if column == 1
+                    (
+                    if row == 1
+                        "Ranking advantage\n(broker minus principal)"
+                    else
+                        "Share of net output from\nbrokered matches (%)"
+                    end
+                )
+                else
+                    ""
+                end,
+                xticks=([0, 0.5, 1], ["0", "0.5", "1"]),
+                yticklabelsvisible=column == 1,
+                yticksvisible=column == 1,
+                leftspinevisible=column == 1,
+                limits=((-0.04, 1.04), nothing),
+                titlesize=22,
+                xticklabelsize=20,
+                yticklabelsize=20,
+            )
+            push!(axes[row], axis)
+            row == 1 && hlines!(axis, [0.0]; color=:gray65, linestyle=:dash, linewidth=1)
+            for model in models
+                estimates = if row == 1
+                    [monte_carlo_interval(c["rank_gaps"][model.key]; level) for c in group]
+                else
+                    [
+                        monte_carlo_interval(
+                            100 .* [
+                                v.broker / v.total for v in c["channel_values"][model.key]
+                            ];
+                            level,
+                        ) for c in group
+                    ]
+                end
+                means = getproperty.(estimates, :mean)
+                interior = findall(<(1), rhos)
+                lines!(
+                    axis, rhos[interior], means[interior]; color=model.color, linewidth=1.7
+                )
+                rangebars!(
+                    axis,
+                    rhos,
+                    getproperty.(estimates, :lower),
+                    getproperty.(estimates, :upper);
+                    color=(model.color, 0.7),
+                    whiskerwidth=5,
+                    linewidth=1.1,
+                )
+                scatter!(
+                    axis, rhos, means; color=model.color, marker=model.marker, markersize=8
+                )
+            end
+        end
+    end
+    for row in axes
+        linkyaxes!(row...)
+    end
+    Label(fig[3, 1:length(difficulties)], PUB_RHO_LABEL; fontsize=LABEL_FS)
+    Legend(
+        fig[4, 1:length(difficulties)],
+        [
+            [
+                LineElement(; color=m.color, linewidth=1.7),
+                MarkerElement(; color=m.color, marker=m.marker, markersize=9),
+            ] for m in models
+        ],
+        [m.label for m in models];
+        PUB_LEGEND...,
+        nbanks=1,
+        colgap=24,
+    )
+    colgap!(fig.layout, 20)
+    rowgap!(fig.layout, 22)
+    save(output, fig; px_per_unit=2)
+    return output
+end
+
 
 end

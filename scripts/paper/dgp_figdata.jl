@@ -1,4 +1,5 @@
-"""Generate retained DGP diagnostics using the declared diagnostic design."""
+"""Generate retained DGP diagnostics using the declared diagnostic design.
+Uses model initialization, without sweep input or simulation periods."""
 
 module DGPFigureData
 

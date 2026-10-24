@@ -1,5 +1,6 @@
 """Extract main-figure data and reporting settings from a completed sweep.
-Set BROKERAGE_ABM_SWEEP_DIR; renderers subsequently need only retained inputs."""
+Set BROKERAGE_ABM_SWEEP_DIR to the sweep root. For the reference Ridge sweep, set
+BROKERAGE_ABM_FIGDATA_PATH=output/ridge/paired/figure_data.jld2."""
 
 using JLD2, DataFrames, Statistics, Dates
 

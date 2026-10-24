@@ -1,5 +1,6 @@
 """Retain access and assessment counts for the declared reporting windows.
-Set BROKERAGE_ABM_SWEEP_DIR; no simulations are run."""
+Set BROKERAGE_ABM_SWEEP_DIR to the sweep root. For the reference Ridge sweep, set
+BROKERAGE_ABM_ACCESS_WINDOWS_PATH=output/ridge/paired/access_windows.jld2."""
 
 using JLD2
 using SHA: sha256
