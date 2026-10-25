@@ -4,12 +4,13 @@ using JLD2: load
 using Printf: @sprintf
 using SHA: sha256
 include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const OUTPUT = joinpath(ROOT, "output", "manuscript", "settings.tex")
 const PROVENANCE = manuscript_git_provenance(
-    ROOT; sources=(@__FILE__, "scripts/reporting_settings.jl")
+    ROOT; sources=(@__FILE__, "scripts/reporting_settings.jl", "scripts/analysis_settings.jl")
 )
 const INPUTS = String[]
 
@@ -136,6 +137,8 @@ epsilon = replace(@sprintf("%.0e", adam[3]), r"e(-?)0*(\d+)" => s"\\times10^{\1\
 put("AdamEpsilon", replace(epsilon, r"^1\\times" => ""))
 for (key, field) in (("EarlyWindow", "early_window"), ("LateWindow", "late_window"))
     put(key, join(main[field], "--"))
+    put(replace(key, "Window" => "NetworkSnapshot"),
+        AnalysisSettings.network_snapshot_period(main[field], main["network_measure_interval"]))
 end
 put("IntervalPercent", 100 * main["interval_level"])
 put("SuppIntervalPercent", 100 * structural["interval_level"])

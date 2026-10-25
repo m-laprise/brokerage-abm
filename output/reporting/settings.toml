@@ -7,15 +7,15 @@ nested_general = 10
 
 [artifacts."output/main/figure_data.jld2"]
 manifest_hash = "a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c"
-sha256 = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
+sha256 = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
 
 [artifacts."output/ridge/paired/figure_data.jld2"]
 manifest_hash = "fbe5bddcf4f52957843f88c345226998079fef523c259651dfb15c46d2b1f113"
-sha256 = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+sha256 = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
 
 [artifacts."output/supplement/structural_figure_data.jld2"]
 manifest_hash = "a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c"
-sha256 = "e150975ccf935e467d153e7da496c8f1c5394070aac75467e9bc273489ec66df"
+sha256 = "78ca4d8fb857615edabab23814bf9f6020fc13540594408dd259cd4fc108f730"
 
 [seed_plan]
 sets = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]]

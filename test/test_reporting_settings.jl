@@ -2,6 +2,7 @@ using Test
 using BrokerageABM
 using JLD2: load
 using TOML
+using Statistics: mean
 
 isdefined(@__MODULE__, :AnalysisSettings) ||
     include(joinpath(@__DIR__, "..", "scripts", "analysis_settings.jl"))
@@ -16,6 +17,36 @@ isdefined(@__MODULE__, :ReportingSettings) ||
         @test_throws ErrorException AnalysisSettings.windows(
             13; early=(2, 12), late_width=3
         )
+    end
+
+    @testset "network snapshots exclude held measurements" begin
+        periods = collect(1:500)
+        held = Float64.(fld.(periods, 20))
+        early, late = AnalysisSettings.windows(last(periods))
+        select(metric, window) = AnalysisSettings.reporting_indices(
+            periods, metric, window; network_interval=20
+        )
+        @test all(select(metric, early) == [60] && select(metric, late) == [500]
+            for metric in AnalysisSettings.NETWORK_MEASURES)
+        @test mean(held[select(:betweenness, early)]) == 3.0
+        @test mean(held[select(:betweenness, late)]) == 25.0
+        @test mean(held[481:500]) != mean(held[select(:betweenness, late)])
+        @test select(:mean_degree, late) == collect(481:500)
+        @test select(:outsourcing_rate, early) == collect(51:70)
+        @test AnalysisSettings.network_snapshot_period((10, 13), 3) == 12
+        @test_throws ErrorException AnalysisSettings.network_snapshot_period((61, 70), 20)
+        @test_throws ErrorException AnalysisSettings.network_snapshot_period(early, 0)
+        @test_throws ErrorException AnalysisSettings.reporting_indices(
+            1:59, :constraint, early; network_interval=20
+        )
+        @test_throws ErrorException AnalysisSettings.reporting_indices(
+            [60, 60], :effective_size, early; network_interval=20
+        )
+        root = normpath(joinpath(@__DIR__, ".."))
+        settings = ReportingSettings.retained(joinpath(root, "output/main/figure_data.jld2"),
+            load(joinpath(root, "output/main/figure_data.jld2"), "figdata"))
+        sweep = joinpath(root, "runs/sweeps", "2026-09-05_adeaa06_nn")
+        @test ReportingSettings.network_interval(sweep) == settings["network_measure_interval"]
     end
 
     @testset "baseline resolution does not depend on paths" begin

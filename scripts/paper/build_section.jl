@@ -1,8 +1,8 @@
 """
 Assemble the results section from manuscript prose, captions, and generated values.
-Retain exact parameter precision; round estimates to two decimals and percentages
-to whole points. Check referenced values, captions, and figures, then compile a
-temporary wrapper. Unused values and captions are allowed during editing.
+Retain parameter precision; round other estimates to two decimals and percentages
+to whole points. Check values, captions, and figures, then compile a temporary
+wrapper. Unused values and captions are allowed during editing.
 
 Usage: julia --project --threads=auto scripts/paper/build_section.jl
 """
@@ -15,7 +15,6 @@ const PAPER = normpath(joinpath(@__DIR__, "..", "..", "paper"))
 const GENERATED = normpath(joinpath(@__DIR__, "..", "..", "output", "main"))
 const SRC = joinpath(PAPER, "section_source.tex")
 const VALS = joinpath(GENERATED, "values.tex")
-const CONVERGENCE_VALS = joinpath(GENERATED, "convergence", "values.tex")
 const RIDGE_VALS = normpath(
     joinpath(GENERATED, "..", "ridge", "paired", "analysis", "paper_values.tex")
 )
@@ -42,7 +41,7 @@ const REPORTING_PROVENANCE = manuscript_git_provenance(
 
 fail(msg) = (println("BUILD FAILED: ", msg); exit(1))
 
-"""Round displayed estimates and percentages without changing exact parameter settings."""
+"""Round estimates while retaining parameter precision."""
 function display_value(key::AbstractString, value::AbstractString)
     (startswith(key, "setting") || key in ("aaRho", "aaDelta", "aaEta")) && return value
     decimal = match(r"^[+-]?\d+\.(\d+)$", value)
@@ -60,8 +59,6 @@ end
 
 isfile(SRC) || fail("missing $SRC")
 isfile(VALS) || fail("missing $VALS (run scripts/paper/stats.jl first)")
-isfile(CONVERGENCE_VALS) ||
-    fail("missing $CONVERGENCE_VALS (run scripts/paper/audit_convergence.jl first)")
 isfile(RIDGE_VALS) ||
     fail("missing $RIDGE_VALS (run scripts/paper/ridge_supplement.jl first)")
 isfile(ABLATION_VALS) ||
@@ -78,7 +75,6 @@ const INPUT_PROVENANCE = analysis_input_provenance(
     REPORTING_PROVENANCE,
     (
         VALS,
-        CONVERGENCE_VALS,
         RIDGE_VALS,
         ABLATION_VALS,
         ASSESSMENT_ACCESS_VALS,
@@ -100,12 +96,11 @@ SWEEP = isnothing(sweepm) ? "unknown" : sweepm[1]
 fixturem = match(r"% fixture: (.+)", valsrc)
 FIXTURE_NOTE = isnothing(fixturem) ? "" : "% Fixture status: $(fixturem[1]).\n"
 
-# Parse definitions: reported values, convergence values, and display conventions.
+# Parse definitions: reported values and display conventions.
 defs = Dict{String,String}()
 order = String[]
 for vfile in (
         VALS,
-        CONVERGENCE_VALS,
         RIDGE_VALS,
         ABLATION_VALS,
         ASSESSMENT_ACCESS_VALS,

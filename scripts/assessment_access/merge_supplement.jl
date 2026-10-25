@@ -60,18 +60,23 @@ function metric_series(df::DataFrame, metric::Symbol)
     return df[!, metric]
 end
 
-function seed_values(result::SweepResult, metric::Symbol; late_width)
+function seed_values(result::SweepResult, metric::Symbol; late_width, network_interval)
     first_period = maximum(result.mdfs[1].period) - late_width + 1
     return Dict(
         seed => finite_mean(
-            metric_series(result.mdfs[i], metric)[result.mdfs[i].period .>= first_period],
+            metric_series(result.mdfs[i], metric)[AnalysisSettings.reporting_indices(
+                result.mdfs[i].period, metric, (first_period, maximum(result.mdfs[i].period));
+                network_interval)],
         ) for (i, seed) in enumerate(result.seeds)
     )
 end
 
-function paired_interval(reference::SweepResult, comparison::SweepResult, metric::Symbol; late_width, level)
-    reference_values = seed_values(reference, metric; late_width)
-    comparison_values = seed_values(comparison, metric; late_width)
+function paired_interval(
+    reference::SweepResult, comparison::SweepResult, metric::Symbol;
+    late_width, level, network_interval,
+)
+    reference_values = seed_values(reference, metric; late_width, network_interval)
+    comparison_values = seed_values(comparison, metric; late_width, network_interval)
     seeds = sort!(collect(intersect(keys(reference_values), keys(comparison_values))))
     return paired_monte_carlo_interval(
         [reference_values[seed] for seed in seeds],
@@ -132,6 +137,7 @@ function main()
     )
 
     dataset = load_sweep_dataset(supplement_root)
+    network_interval = ReportingSettings.network_interval(supplement_root)
     output_accounting = NetOutputData.reconstruct_dataset!(dataset, supplement_root, REPO_ROOT)
     dataset.schema_version == base["schema_version"] || error("schema mismatch")
     base_provenance = joinpath(dirname(base_path), "provenance.txt")
@@ -156,7 +162,7 @@ function main()
         mode, rho, eta = key
         result = index[key]
         for metric in METRICS
-            per_seed = seed_values(result, metric; late_width)
+            per_seed = seed_values(result, metric; late_width, network_interval)
             for seed in sort!(collect(keys(per_seed)))
                 push!(seed_rows, Any[mode, rho, eta, seed, metric, per_seed[seed]])
             end
@@ -186,7 +192,8 @@ function main()
             ("assessment_vs_access", :access_only, :assessment_only),
         )
             interval = paired_interval(
-                index[(reference, rho, eta)], index[(comparison, rho, eta)], metric; late_width, level
+                index[(reference, rho, eta)], index[(comparison, rho, eta)], metric;
+                late_width, level, network_interval,
             )
             push!(
                 contrast_rows,

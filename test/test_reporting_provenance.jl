@@ -168,7 +168,6 @@ end
                 "\\begin{table}\\label{tab:supp-second}\\end{table}\n",
             "output/manuscript/settings.tex" => "% Analysis commit: $first_commit\n\\pvDefine{settingRate}{0.003}\n",
             "output/main/values.tex" => "% Analysis commit: $first_commit\n\\pvDefine{example}{1.25}\n",
-            "output/main/convergence/values.tex" => "% Analysis commit: $second_commit\n",
             "output/ridge/paired/analysis/paper_values.tex" => "% Data analysis commit: $first_commit\n" *
                 "% NN-Ridge comparison analysis commit: $second_commit\n",
             "output/ridge/ablations/analysis/paper_values.tex" => "% Analysis commit: $second_commit\n",
@@ -206,7 +205,7 @@ end
         @test !occursin("base64", result)
         record = validate_publication_output(repository, output)
         @test Set(values(record["analysis_commits"])) == Set((first_commit, second_commit))
-        @test length(record["inputs"]) == 9
+        @test length(record["inputs"]) == 8
         @test haskey(record["inputs"], "output/main/figures/test.png")
         @test publication_stage_current(repository, "scripts/paper/build_section.jl")
         write(joinpath(repository, "unrelated-note.txt"), "Unrelated change.\n")

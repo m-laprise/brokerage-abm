@@ -13,12 +13,13 @@ using JLD2
 using SHA: sha256
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
 include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const TEMPLATE = joinpath(ROOT, "paper", "simulation_design_source.tex")
 const OUTPUT = joinpath(ROOT, "output", "supplement", "simulation_design.tex")
 const PROVENANCE = manuscript_git_provenance(ROOT;
-    sources=(@__FILE__, TEMPLATE, "scripts/reporting_settings.jl"))
+    sources=(@__FILE__, TEMPLATE, "scripts/reporting_settings.jl", "scripts/analysis_settings.jl"))
 isempty(ARGS) || error("usage: build_simulation_design.jl")
 const RECORDS = Dict{String,Any}()
 
@@ -249,6 +250,9 @@ delete!(vals, "RIDGE_BROKER")
 @assert isempty(intersect(main["baseline_seeds"], vcat(nncal.NNCAL_SCREEN_SEEDS, nncal.NNCAL_CONFIRM_SEEDS, ridgecal.RIDGECAL_SCREEN_SEEDS, ridgecal.RIDGECAL_CONFIRM_SEEDS)))
 put("EARLY_WINDOW", range_text(windows["early_window"]))
 put("LATE_WINDOW", range_text(windows["late_window"]))
+for (key, field) in (("EARLY_NETWORK_SNAPSHOT", "early_window"), ("LATE_NETWORK_SNAPSHOT", "late_window"))
+    put(key, AnalysisSettings.network_snapshot_period(windows[field], ReportingSettings.sweep_metadata(ROOT, main_manifest)["network_measure_interval"]))
+end
 @assert windows["late_window"] == (design.SWEEP_T - services["late_width"] + 1, design.SWEEP_T)
 @assert ablations["meta"]["late_width"] == services["late_width"]
 @assert ablations["meta"]["interval_level"] == services["interval_level"]

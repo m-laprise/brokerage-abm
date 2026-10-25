@@ -59,6 +59,9 @@ const FIGDATA = normpath(
 )
 const BASELINE_REL = ReportingSettings.baseline_reldir(PAIR_ROOT)
 const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const NETWORK_INTERVAL = only(unique(
+    ReportingSettings.network_interval.((PAIR_ROOT, (v.root for v in VARIANTS)...))
+))
 const MC_LEVEL = AnalysisSettings.INTERVAL_LEVEL
 const SUMMARY_QUANTILES = AnalysisSettings.SUMMARY_QUANTILES
 const METRICS = (
@@ -114,9 +117,11 @@ function metric_series(df::DataFrame, metric::Symbol)
 end
 
 function seed_late(df::DataFrame, metric::Symbol)::Float64
-    first_period = maximum(df.period) - LATE_WIDTH + 1
-    mask = df.period .>= first_period
-    return nanmean(metric_series(df, metric)[mask])
+    window = (maximum(df.period) - LATE_WIDTH + 1, maximum(df.period))
+    indices = AnalysisSettings.reporting_indices(
+        df.period, metric, window; network_interval=NETWORK_INTERVAL
+    )
+    return nanmean(metric_series(df, metric)[indices])
 end
 
 function seed_values(result::SweepResult, metric::Symbol; seeds=result.seeds)

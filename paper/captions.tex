@@ -11,14 +11,14 @@
 Bridging position and bridging behavior
 \end{ptitle}
 \begin{pcaption}{position}
-Points show ensemble late means; whiskers show pointwise \pv{centralIntervalPercent}\% Monte Carlo intervals. A--C use neural-network learning; parameters not varied in each panel remain at baseline. Principal degree includes the broker tie when present; maximum degree is calculated within each period before averaging. Lines connect matching compositions at fixed turnover in A and C and serve as visual guides across learning restrictions in D.
+Points show ensemble means, using betweenness at period \pv{settingLateNetworkSnapshot} and late-window averages for other measures; whiskers show pointwise \pv{centralIntervalPercent}\% Monte Carlo intervals. A--C use neural-network learning; parameters not varied in each panel remain at baseline. Principal degree includes the broker tie when present; maximum degree is calculated within each period before averaging. Lines connect matching compositions at fixed turnover in A and C and serve as visual guides across learning restrictions in D.
 \end{pcaption}
 
 \begin{ptitle}{assessment_access}
 Brokerage with access, assessment, or both
 \end{ptitle}
 \begin{pcaption}{assessment_access}
-Parameters other than turnover remain at baseline. A--C show late-mean differences: adding assessment is full service minus access-only; adding access is full service minus assessment-only. In B, dashed lines connect contrasts within each regime; principal degree includes the broker tie when present. Zero turnover is plotted separately in A and C. D shows unsmoothed ensemble means. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C.
+Parameters other than turnover remain at baseline. A--C show differences between services: adding assessment is full service minus access-only; adding access is full service minus assessment-only. Betweenness in B uses period \pv{settingLateNetworkSnapshot}; other measures in A--C use late-window averages. Dashed lines in B connect contrasts within each regime; principal degree includes the broker tie when present. Zero turnover is plotted separately in A and C. D shows unsmoothed ensemble means. Bars and ribbons show pointwise \pv{aaIntervalPercent}\% Monte Carlo intervals, paired by seed in A--C.
 \end{pcaption}
 
 \begin{ptitle}{information}

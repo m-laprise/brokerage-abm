@@ -4,7 +4,7 @@ Extract baseline centrality and principal degree from the original service sweep
 No simulations are run. Periods before the first network measurement and cached
 copies between centrality measurements are excluded. Degree keeps every recorded
 period, including broker edges. Both measures are checked against retained
-seed-level late means and stored together in the existing trajectory input.
+seed-level summaries and stored together in the existing trajectory input.
 
 Usage: julia --project --threads=auto scripts/assessment_access/centrality_data.jl \
     <local sweep root>
@@ -15,6 +15,7 @@ using SHA: sha256
 using Statistics: mean
 
 isdefined(@__MODULE__, :ReportingSettings) || include(joinpath(@__DIR__, "..", "reporting_settings.jl"))
+isdefined(@__MODULE__, :AnalysisSettings) || include(joinpath(@__DIR__, "..", "analysis_settings.jl"))
 
 include(joinpath(@__DIR__, "..", "sweep", "sweep_results.jl"))
 include(joinpath(@__DIR__, "..", "reporting_provenance.jl"))
@@ -33,8 +34,11 @@ function measured_centrality(df, retained_late_value; interval, horizon, late_wi
     periods = collect(interval:interval:horizon)
     all(t -> values[t] == values[interval * (t ÷ interval)], interval:horizon) ||
         error("centrality changes between recorded measurement periods")
-    isapprox(mean(values[(horizon - late_width + 1):horizon]), retained_late_value; atol=1e-12) ||
-        error("raw centrality does not match the retained seed-level late value")
+    snapshot = AnalysisSettings.network_snapshot_period(
+        (horizon - late_width + 1, horizon), interval
+    )
+    isapprox(values[snapshot], retained_late_value; atol=1e-12) ||
+        error("raw centrality does not match the retained seed-level snapshot")
     return values[periods]
 end
 

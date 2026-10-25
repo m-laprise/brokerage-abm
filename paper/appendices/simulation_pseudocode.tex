@@ -401,7 +401,7 @@ $A_0$ & $\R^{d\times d}$ & Raw matrix used to construct $A$. \\
 $\Sigma_x$ & $\R^{d\times d}$ & Empirical principal type second moment. \\
 $B_0$ & $\R^{d\times d}$ & Raw zero-trace symmetric boundary matrix. \\
 $B_{\mathrm{raw}}$ & $\R^{d\times d}$ & Orthogonalized pre-normalization boundary matrix. \\
-$Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}}$ & matrix, $\R^{n_b^0}$ & Broker seed fitting batch using the selected input map. \\
+$Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}}$ & matrix, $\R^{|L_b|}$ & Broker seed fitting batch using the selected input map. \\
 \end{localvartable}
 
 \begin{localvartable}{\procInitializePrincipal}
@@ -484,10 +484,13 @@ B\gets B_{\mathrm{raw}}/\|B_{\mathrm{raw}}\|_F .
 \State Set $s_{i,\mathrm{self}}^0$ to mean own seed output and $s_{i,\mathrm{broker}}^0\gets\mathrm{rep}_b^0$.
 \State Set $\mathbf p_i^0\gets(n_i^0)$ for every principal and $\mathbf p_b^0\gets(n_b^0)$, so initialization is period 0; set $\Delta_i^0\gets n_i^0$ and $\Delta_b^0\gets n_b^0$.
 \For{each $i$ with $n_i^0>0$}
-    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i^0,\Xi_i^0,y_i^0,\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
+    \State $L_i\gets\{1,\ldots,n_i^0\}$; apply the observation cap as in Algorithm~\ref{alg:trainpredictors}.
+    \State $\Theta_i^0\gets\Call{\procFitPredictor}{\mathsf L,a,\Theta_i^0,(\Xi_i^0)_{\cdot L_i},(y_i^0)_{L_i},\lambda_a,n_i^0,n_i^0,\vartheta}$; $\Delta_i^0\gets0$.
 \EndFor
 \If{$n_b^0>0$}
-    \State $Z_{b,\mathrm{seed}}\gets[z_{b\ell}]_{\ell=1}^{n_b^0}$, $y_{b,\mathrm{seed}}\gets y_b^0$.
+    \State $L_b\gets\{1,\ldots,n_b^0\}$; apply the same observation cap and index selection.
+    \State If $\mathsf L=\mathrm{Ridge}$ and $a_b=\mathrm{size\mbox{-}matched}$, apply the size-matched rule above to $L_b$.
+    \State $Z_{b,\mathrm{seed}}\gets[z_{b\ell}]_{\ell\in L_b}$, $y_{b,\mathrm{seed}}\gets(y_b^0)_{L_b}$.
     \State $\Theta_b^0\gets\Call{\procFitPredictor}{\mathsf L,b,\Theta_b^0,Z_{b,\mathrm{seed}},y_{b,\mathrm{seed}},\lambda_b,n_b^0,n_b^0,\vartheta}$; $\Delta_b^0\gets0$.
 \EndIf
 \State \Return $S^0$.

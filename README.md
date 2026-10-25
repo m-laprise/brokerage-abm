@@ -148,6 +148,8 @@ julia --project --threads=auto scripts/paper/build_publication.jl
 
 Unchanged steps are skipped by content hash. Use `--force` to run every publication
 step. Neither command runs simulations or reanalyzes raw sweeps.
+The Monte Carlo precision assessment uses retained seed summaries for the main simulations,
+learning restrictions, and service comparisons, including paired differences.
 
 For individual figure changes, run the relevant renderer listed in
 [`build_publication.jl`](scripts/paper/build_publication.jl), then rebuild the
@@ -171,7 +173,7 @@ builds use the retained inputs.
 
 | Analysis inputs | Scripts |
 |---|---|
-| Main estimates, figure data, access windows, and convergence summaries | [stats.jl](scripts/paper/stats.jl), [figdata.jl](scripts/paper/figdata.jl), [access_windows.jl](scripts/paper/access_windows.jl), [audit_convergence.jl](scripts/paper/audit_convergence.jl) |
+| Main estimates, figure data, and access windows | [stats.jl](scripts/paper/stats.jl), [figdata.jl](scripts/paper/figdata.jl), [access_windows.jl](scripts/paper/access_windows.jl) |
 | Ridge figure data and access windows | [figdata.jl](scripts/paper/figdata.jl), [access_windows.jl](scripts/paper/access_windows.jl) |
 | NN-Ridge comparisons | [analyze_sweep.jl](scripts/ridge/analyze_sweep.jl) |
 | Ridge learning experiments | [analyze_ablations.jl](scripts/ridge/analyze_ablations.jl) |

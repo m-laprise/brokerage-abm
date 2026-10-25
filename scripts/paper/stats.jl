@@ -25,6 +25,7 @@ const REPORTING_PROVENANCE = reporting_git_provenance(
 const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
 const EARLY = AnalysisSettings.EARLY_WINDOW
 const BASELINE_REL = ReportingSettings.baseline_reldir(ROOT)
+const NETWORK_INTERVAL = ReportingSettings.network_interval(ROOT)
 
 nm(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 winm(d, v, (lo, hi)) = nm(v[(d.period .>= lo) .& (d.period .<= hi)])
@@ -34,7 +35,12 @@ late_window(m) = (maximum(m[1].period) - LATE_WIDTH + 1, maximum(m[1].period))
 late(m, f) = cellw(m, f, late_window(m));
 early(m, f) = cellw(m, f, EARLY)
 late_seed_values(m, f) = seedw(m, f, late_window(m))
-col(c) = d -> d[!, c]
+col(c) = c
+function seedw(m, column::Symbol, window)
+    return [nm(d[AnalysisSettings.reporting_indices(d.period, column, window;
+        network_interval=NETWORK_INTERVAL), column]) for d in m]
+end
+cellw(m, column::Symbol, window) = nm(seedw(m, column, window))
 # display formats (rounding conventions, not results)
 f1(x) = @sprintf("%.1f", x)
 f2(x) = @sprintf("%.2f", x)

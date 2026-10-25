@@ -16,6 +16,7 @@ ARGS in (String[], ["--force"]) || error("usage: build_publication.jl [--force]"
 const BUILD_STEPS = (
     ("scripts/paper/build_settings.jl",),
     ("scripts/paper/build_appendices.jl",),
+    ("scripts/paper/audit_convergence.jl",),
     ("scripts/paper/figures.jl", "--assessment-not-access"),
     ("scripts/paper/figures.jl", "--information-sources"),
     ("scripts/paper/figures.jl", "--metadata"),

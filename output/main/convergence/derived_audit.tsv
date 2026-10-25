@@ -1,0 +1,4 @@
+dataset	outcome	result_reldir	n_seeds	nested_n	estimate	nested_estimate	nested_change
+ridge_additive	net_output_ratio_to_reference	oat/rho=0.5	50	20	0.9018298544843869	0.8965409242900676	0.005288930194319308
+ridge_one	net_output_ratio_to_reference	oat/rho=0.5	50	20	0.9010587280660706	0.8985355507795783	0.0025231772864923174
+ridge_size	net_output_ratio_to_reference	oat/rho=0.5	50	20	0.9703488532075012	0.9719323318555471	0.0015834786480458662

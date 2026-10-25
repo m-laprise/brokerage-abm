@@ -282,7 +282,7 @@ where \(\bar{q}_{\text{cal}}\) is the calibration mean and \(f_r\) is the reserv
 
 \subsubsection{4b. Participation Constraints}\label{b.-participation-constraints}
 
-Demanders emit offers only above the reservation threshold. Self-search uses the demander evaluation \(\hat{q}_{i}(\mathbf{x}_j)>r\). Brokered search uses the broker pair prediction \(\hat{q}_b(\{i,j\})>r\). A one-sided offer is accepted only if the receiver's evaluation exceeds \(r\); reciprocal offers are accepted automatically (§6d).
+Demanders emit offers only when the candidate evaluation exceeds \(r\). In self-search, this evaluation is the pair's mean past realized output \(\bar q_{ij}\) for neighbors with prior pair-specific experience and the demander prediction \(\hat q_i(\mathbf x_j)\) otherwise (§6a). Brokered search uses the broker pair prediction \(\hat q_b(\{i,j\})\). A one-sided offer is accepted only if the receiver's evaluation exceeds \(r\); reciprocal offers are accepted automatically (§6d).
 
 \subsubsection{4c. Search Costs}\label{c.-search-costs}
 
@@ -455,10 +455,10 @@ where \(n = N+1\), \(\sigma_{uv}\) is the number of shortest paths from \(u\) to
 
 \textbf{Burt's constraint.} Broker ego-network constraint (Burt, 1992):
 
-\[\mathrm{Constraint}_b = \sum_j \left(p_{bj} + \sum_{h \neq b,j}
+\[\mathrm{Constraint}_b = \sum_{j\in\mathcal N_G(b)} \left(p_{bj} + \sum_{h\in\mathcal N_G(b)\setminus\{j\}}
 p_{bh}\, p_{hj}\right)^2\]
 
-where \(p_{bj} = 1/d_b\) and \(p_{hj} = 1/d_h\) (Everett \& Borgatti, 2020). The indirect term uses intermediary \(h\)'s degree.
+where \(\mathcal N_G(u)\) is node \(u\)'s set of neighbors in \(G\), \(d_u=|\mathcal N_G(u)|\), and \(p_{uv}=1/d_u\) when \(v\in\mathcal N_G(u)\), and zero otherwise (Everett \& Borgatti, 2020). The indirect term uses intermediary \(h\)'s degree in \(G\).
 
 \textbf{Effective size.} Non-redundant broker contacts using the Borgatti (1997) binary-undirected simplification:
 

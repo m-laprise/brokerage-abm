@@ -164,7 +164,7 @@ end
 
 """Build only the definitions used by the experiment prose and caption."""
 function manuscript_values(retained, estimates, data)
-    check_trajectory_late_means(retained, data)
+    check_trajectory_summaries(retained, data)
     comparisons = check_service_comparisons(retained, estimates)
     design = FIGURE_DESIGN
     rate_string(x) = iszero(x) ? "0" : string(x)

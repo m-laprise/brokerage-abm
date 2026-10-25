@@ -34,7 +34,14 @@ const BASELINE_REL = REPORTING_SETTINGS["baseline_reldir"]
 
 nanmean(v) = (w=filter(!isnan, Float64.(collect(v))); isempty(w) ? NaN : mean(w))
 late_mask(df) = df.period .>= maximum(df.period) - LATE_WIDTH + 1
-tailmean(df, col) = nanmean(df[late_mask(df), col])
+function tailmean(df, col)
+    window = (maximum(df.period) - LATE_WIDTH + 1, maximum(df.period))
+    indices = AnalysisSettings.reporting_indices(
+        df.period, col, window;
+        network_interval=REPORTING_SETTINGS["network_measure_interval"],
+    )
+    return nanmean(df[indices, col])
+end
 seed_values(mdfs, col) = Float64[tailmean(d, col) for d in mdfs]
 function accessf(df)
     (

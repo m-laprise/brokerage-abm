@@ -74,6 +74,17 @@ end
 
 baseline_reldir(root) = String(baseline_condition(manifest(root))[:result_reldir])
 
+"""Recover the common network measurement interval from the recorded run settings."""
+function network_interval(root)
+    data = manifest(root)
+    commit = String(data["meta"][:git_commit])
+    intervals = [
+        resolved_parameters(ROOT, commit, c[:resolved_params])["network_measure_interval"]
+        for c in data["conditions"]
+    ]
+    return only(unique(intervals))
+end
+
 """Load the analyst's selected defaults at the recorded simulation commit."""
 function default_module(repo, commit)
     occursin(r"^[0-9a-f]{40}$", commit) || error("expected an immutable simulation commit")

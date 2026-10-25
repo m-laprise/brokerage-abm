@@ -2,25 +2,25 @@
 [stages."scripts/assessment_access/figure_2.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/assessment_access/figure_2.jl".analysis_commits]
     "data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
 
     [stages."scripts/assessment_access/figure_2.jl".inputs]
     "output/assessment_access/centrality_trajectories.jld2" = "3d73d3dff3dcaad49e44a1c5bc1f9fe324419e5867015e08ea5c83af18a84c93"
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
 
     [stages."scripts/assessment_access/figure_2.jl".outputs]
-    "output/main/figures/assessment_access_3.png" = "ddf160836fb31d631752810e1d032f3173545d8833b2db1f43b348b7d23ead61"
+    "output/main/figures/assessment_access_3.png" = "97fb72ef5cf6e5c336d76c31f975f91b813a1646f7f2e461aab244bfd2c6aa9b"
 
     [stages."scripts/assessment_access/figure_2.jl".settings]
 
     [stages."scripts/assessment_access/figure_2.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
-    "scripts/assessment_access/figure_2.jl" = "1b99bf963777aa45342226bd526040a136b14f0950d4e26c731a569e4b68c1a7"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/assessment_access/figure_2.jl" = "43300a84a0e4290f31d70a71ed40798ea0b8ea0788013c4a1b27c88d20952aa4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
@@ -28,17 +28,17 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
 [stages."scripts/assessment_access/paper_values.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/assessment_access/paper_values.jl".analysis_commits]
     "data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
 
     [stages."scripts/assessment_access/paper_values.jl".inputs]
     "output/assessment_access/centrality_trajectories.jld2" = "3d73d3dff3dcaad49e44a1c5bc1f9fe324419e5867015e08ea5c83af18a84c93"
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
 
     [stages."scripts/assessment_access/paper_values.jl".outputs]
-    "output/assessment_access/paper_values.tex" = "4cc394d298158cc1b15ff16205913d8128f3d06c217e50cc4a13ea2ae0b3ab2c"
+    "output/assessment_access/paper_values.tex" = "5e9366eb4bcd79a9a243708e9bce552292882591b911681b9477f5a04f06a924"
 
     [stages."scripts/assessment_access/paper_values.jl".settings]
     simulation_commit = "eb2f77168aa31c4b113cd77c9d3caf92de5b08fa"
@@ -46,9 +46,9 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
     [stages."scripts/assessment_access/paper_values.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
-    "scripts/assessment_access/figure_2.jl" = "1b99bf963777aa45342226bd526040a136b14f0950d4e26c731a569e4b68c1a7"
-    "scripts/assessment_access/paper_values.jl" = "193f3716ab77e4368fcaf664b0c4290dc5dcfa03ce924373976cee56d4ce9e6a"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/assessment_access/figure_2.jl" = "43300a84a0e4290f31d70a71ed40798ea0b8ea0788013c4a1b27c88d20952aa4"
+    "scripts/assessment_access/paper_values.jl" = "1b18eab991b37b9c80e19b262e56f392b03358fa7b3aaafed497141248f35699"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
@@ -56,13 +56,13 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
 [stages."scripts/assessment_access/supplement_figure.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/assessment_access/supplement_figure.jl".analysis_commits]
     "data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
 
     [stages."scripts/assessment_access/supplement_figure.jl".inputs]
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
 
     [stages."scripts/assessment_access/supplement_figure.jl".outputs]
     "output/supplement/figures/complementarity_contributions.png" = "81336ac5b54edcb170b45bab46f2ecf1a523e387fe6c9fda9991781ac6c28a52"
@@ -72,16 +72,97 @@ source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
     [stages."scripts/assessment_access/supplement_figure.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/assessment_access/supplement_figure.jl" = "f773fba1880dcaf2f46ca7f6b1cbb3cd00bfea35ead6f26a14ce525cb4692dcc"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
 
+[stages."scripts/paper/audit_convergence.jl"]
+julia_version = "1.11.9"
+source_clean = false
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+
+    [stages."scripts/paper/audit_convergence.jl".analysis_commits]
+    "main seed-summary analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+    "output/assessment_access/figure_data.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/main/centrality_data.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/main/convergence/seed_values.jld2: data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+    "output/main/figure_data.jld2: data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/main/figure_data.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/reporting/settings.toml: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/ridge/ablations/figure_data.jld2: data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+    "output/ridge/paired/figure_data.jld2: data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/ridge/paired/figure_data.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/supplement/structural_comparisons.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+    "output/supplement/structural_figure_data.jld2: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+
+    [stages."scripts/paper/audit_convergence.jl".inputs]
+    "output/assessment_access/centrality_trajectories.jld2" = "3d73d3dff3dcaad49e44a1c5bc1f9fe324419e5867015e08ea5c83af18a84c93"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
+    "output/main/access_windows.jld2" = "f3c08a9f79eab78f4e1afa5ba47f0c7b370bb3c958635df9c24100680a687517"
+    "output/main/centrality_data.jld2" = "27aea90900496bdefed33cf4415b6501a84ed2d15918cfa7f3aaeec5bfe991df"
+    "output/main/convergence/seed_values.jld2" = "8d8a7c497fa9f92effad58d3369c22bf0da66e65c9112eb995416c1d1636639d"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/main/network_snapshots.jld2" = "a03ff2c0518d41f95d49514a6936c2bca0a6446e82fbcfd786b09b2f9fcd0e19"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
+    "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
+    "output/ridge/paired/access_windows.jld2" = "1d0a70bc5ba9e3576e3b003a486711b4117f4028edbb710f7fe2b0d9cd732056"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
+    "output/supplement/structural_comparisons.jld2" = "c647164b74da50999df00b6305091f34ad5e9d2e9ad45a05ba4c148f2c03dfcb"
+    "output/supplement/structural_figure_data.jld2" = "78ca4d8fb857615edabab23814bf9f6020fc13540594408dd259cd4fc108f730"
+
+    [stages."scripts/paper/audit_convergence.jl".outputs]
+    "output/main/convergence/condition_audit.tsv" = "3516b4e1466623284277b80c50cfad47853668b35a00597a31f0521e77e3346c"
+    "output/main/convergence/derived_audit.tsv" = "f071ff9554d6dfa4e92c63698ee558b3a7d7a291ddb8d00618ad13200a0ff4d8"
+    "output/main/convergence/outcome_summary.tsv" = "4f704e6b603674274743ed60c776ed3986e6db2fbe8a0f17c968c2446449c27f"
+    "output/main/convergence/summary.txt" = "ec163f5f11a72ea59397e37635de0e7f6b4a1d9e609945f39a20da90a46c6144"
+    "output/main/convergence/values.tex" = "b056d4d94721bd0dec1745adc1f804e1edad67b8b0a8a9fbd27f59e3ad259ec5"
+
+    [stages."scripts/paper/audit_convergence.jl".settings]
+    nested_seed_counts = [10, 20]
+
+    [stages."scripts/paper/audit_convergence.jl".sources]
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
+    "scripts/paper/audit_convergence.jl" = "ad9697c7d699fec3452e4dab37f1b200ced3ebd897667222ac3727502a2f34df"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
+
+[stages."scripts/paper/audit_convergence.jl --prepare"]
+julia_version = "1.11.9"
+source_clean = false
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+
+    [stages."scripts/paper/audit_convergence.jl --prepare".analysis_commits]
+    "data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
+
+    [stages."scripts/paper/audit_convergence.jl --prepare".inputs]
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/main/network_snapshots.jld2" = "a03ff2c0518d41f95d49514a6936c2bca0a6446e82fbcfd786b09b2f9fcd0e19"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
+
+    [stages."scripts/paper/audit_convergence.jl --prepare".outputs]
+    "output/main/convergence/seed_values.jld2" = "8d8a7c497fa9f92effad58d3369c22bf0da66e65c9112eb995416c1d1636639d"
+
+    [stages."scripts/paper/audit_convergence.jl --prepare".settings]
+    source_summary_sha256 = "cb40c72fbfddb6c9c82e46915c3743f6ea3445501902ff1db5564b78e7990bb1"
+
+    [stages."scripts/paper/audit_convergence.jl --prepare".sources]
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
+    "scripts/paper/audit_convergence.jl" = "ad9697c7d699fec3452e4dab37f1b200ced3ebd897667222ac3727502a2f34df"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
+
 [stages."scripts/paper/build_appendices.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_appendices.jl".analysis_commits]
     "output/manuscript/settings.tex: DGP analysis" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
@@ -90,19 +171,19 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
     "output/manuscript/settings.tex: structural simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
 
     [stages."scripts/paper/build_appendices.jl".inputs]
-    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
+    "output/manuscript/settings.tex" = "2ef20d6596bd5ed0b76b76c3e4f9fe4f48ce8aa50873c20392ab114556c877df"
 
     [stages."scripts/paper/build_appendices.jl".outputs]
-    "output/appendices/model_specifications.pdf" = "933b8013be23eb57849fbb3ec2b6a7c9e2e6944946dcc95e40e5cf1b2e4d3d08"
-    "output/appendices/simulation_pseudocode.pdf" = "a7d22bccdddce7b79c3a6e56f4e212b557c7a29bad20fd330397ce3b8d9e97aa"
+    "output/appendices/model_specifications.pdf" = "fbaf159719d9b7ca93ab04940401c517c3a5d39faf8e47c3c8875f53fbc94e61"
+    "output/appendices/simulation_pseudocode.pdf" = "1991f3d251790aa4495603d838688be04a38bb664208904cd51982ba69fdc4fb"
 
     [stages."scripts/paper/build_appendices.jl".settings]
 
     [stages."scripts/paper/build_appendices.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "paper/appendices/model_specifications.tex" = "5f2a1ec4a0a6172cf21b562850de0eb6507419e9b1d5914ea93dce8c5407e98e"
-    "paper/appendices/simulation_pseudocode.tex" = "6e241c45ff8d67b4ebd700a4a19e7ea4b3fbcefcb80ab1b9c0d13c9e397d31c7"
+    "paper/appendices/model_specifications.tex" = "607d695e9ff5915c64abe82d0f0b38981c0b11a09ac4b7fd6a03797287564a15"
+    "paper/appendices/simulation_pseudocode.tex" = "cc1d7718563e282562b600b275c20ea52a70f3ff1575c0a436389a972b3e68c7"
     "scripts/paper/build_appendices.jl" = "56153fa70eac185224d588451f33718531f0f938fc9b1f3a7152659e986e1b20"
     "scripts/paper/pdf_output.jl" = "b0f487464042a01c6fc92354f1e4c068d9deb345310fe3a3a0face31372b9f90"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
@@ -110,23 +191,23 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
 [stages."scripts/paper/build_manuscript.jl"]
 julia_version = "1.11.9"
 source_clean = true
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_manuscript.jl".analysis_commits]
 
     [stages."scripts/paper/build_manuscript.jl".inputs]
-    "output/appendices/model_specifications.pdf" = "933b8013be23eb57849fbb3ec2b6a7c9e2e6944946dcc95e40e5cf1b2e4d3d08"
-    "output/appendices/simulation_pseudocode.pdf" = "a7d22bccdddce7b79c3a6e56f4e212b557c7a29bad20fd330397ce3b8d9e97aa"
-    "output/main/figures/assessment_access_3.png" = "ddf160836fb31d631752810e1d032f3173545d8833b2db1f43b348b7d23ead61"
+    "output/appendices/model_specifications.pdf" = "fbaf159719d9b7ca93ab04940401c517c3a5d39faf8e47c3c8875f53fbc94e61"
+    "output/appendices/simulation_pseudocode.pdf" = "1991f3d251790aa4495603d838688be04a38bb664208904cd51982ba69fdc4fb"
+    "output/main/figures/assessment_access_3.png" = "97fb72ef5cf6e5c336d76c31f975f91b813a1646f7f2e461aab244bfd2c6aa9b"
     "output/main/figures/assessment_not_access.png" = "88895ca1ec59da01b64495bc2391260df122571e43900e8a3803495d6d1740a3"
-    "output/main/figures/centrality_and_assessment.png" = "24889e9765ba0cae16ca96d7d6794147ec85a9ee956c3f791a15d62a579bdd27"
+    "output/main/figures/centrality_and_assessment.png" = "5f252ae93dd392e9c4f7b66c19f46b57404e9534913ada067c7f147dbe139c9d"
     "output/main/figures/information_sources_net_output_channels.png" = "5c9efb5a8f10848c2a253876f96f3a018e6d2688dca76764da61ee76a4303f01"
-    "output/main/results_section.tex" = "139cf15310cb300da48ab063936c1e3ca584ed50ef63d33b188227e2e8c4ddc2"
-    "output/supplement/supplement.pdf" = "68f47b2b538f50558b14485b93afabf1982dceefe99256065c3352d195053c2a"
+    "output/main/results_section.tex" = "3506b846a93e7528a6c637858e595489c98162fb414cfb174240718fbf1b89db"
+    "output/supplement/supplement.pdf" = "464dd423240a7e9f1cef92d54c48b8dc238f3b689f6bec9442994c7ec7f738d5"
 
     [stages."scripts/paper/build_manuscript.jl".outputs]
-    "output/manuscript/brokers_who_do_not_bridge_with_appendices.pdf" = "2c350a05412d530077ac905830696f8e77b3d45bf2253e08545e4ab4af3eaca3"
-    "output/manuscript/brokers_who_do_not_bridge_without_appendices.pdf" = "5c39133a2f2d62561fe4145d9878aafa3daafc20e3574dcd13a1cf3f8a288504"
+    "output/manuscript/brokers_who_do_not_bridge_with_appendices.pdf" = "232d81f03367c49b9c5a6eb0c998ef40e945ba4791a28df1b68c9614d0aff6b5"
+    "output/manuscript/brokers_who_do_not_bridge_without_appendices.pdf" = "93d47321d987770b5f94992d7a55180885045bd92bb3c513a07dd18def525921"
 
     [stages."scripts/paper/build_manuscript.jl".settings]
 
@@ -142,15 +223,14 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
 [stages."scripts/paper/build_section.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_section.jl".analysis_commits]
     "output/assessment_access/paper_values.tex: data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
     "output/main/centrality_values.tex: data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
-    "output/main/convergence/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
     "output/main/figmeta.tex: data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
     "output/main/figmeta.tex: ridge ablation analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
-    "output/main/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/main/values.tex: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
     "output/manuscript/settings.tex: DGP analysis" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
     "output/manuscript/settings.tex: Ridge simulation" = "c8f181fd7b5a8c6839a1e860fa34af9d56b72e12"
     "output/manuscript/settings.tex: main simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
@@ -161,21 +241,20 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     "output/ridge/paired/analysis/paper_values.tex: nn-ridge comparison analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/build_section.jl".inputs]
-    "output/assessment_access/paper_values.tex" = "4cc394d298158cc1b15ff16205913d8128f3d06c217e50cc4a13ea2ae0b3ab2c"
-    "output/main/centrality_values.tex" = "e56a1a3aabaadfd6e5bb5d9c8271fd59f208c1b016e16919c5c587d3e707d147"
-    "output/main/convergence/values.tex" = "eb9f3bceecbaa9d30f437c39b35cd9cfc543eb808076c1fa22c334340139ff43"
+    "output/assessment_access/paper_values.tex" = "5e9366eb4bcd79a9a243708e9bce552292882591b911681b9477f5a04f06a924"
+    "output/main/centrality_values.tex" = "bcfb2db01e81864cb793c117270aed9984677a2a497ef92ac2aede7874c84bfc"
     "output/main/figmeta.tex" = "d5ac6255b908056577867bf19cec20dd728b368abddb473a385f942ccc6ae59a"
-    "output/main/figures/assessment_access_3.png" = "ddf160836fb31d631752810e1d032f3173545d8833b2db1f43b348b7d23ead61"
+    "output/main/figures/assessment_access_3.png" = "97fb72ef5cf6e5c336d76c31f975f91b813a1646f7f2e461aab244bfd2c6aa9b"
     "output/main/figures/assessment_not_access.png" = "88895ca1ec59da01b64495bc2391260df122571e43900e8a3803495d6d1740a3"
-    "output/main/figures/centrality_and_assessment.png" = "24889e9765ba0cae16ca96d7d6794147ec85a9ee956c3f791a15d62a579bdd27"
+    "output/main/figures/centrality_and_assessment.png" = "5f252ae93dd392e9c4f7b66c19f46b57404e9534913ada067c7f147dbe139c9d"
     "output/main/figures/information_sources_net_output_channels.png" = "5c9efb5a8f10848c2a253876f96f3a018e6d2688dca76764da61ee76a4303f01"
-    "output/main/values.tex" = "a83b703be50b9c810bb5764d2f578cb9766063e02a4ca518e3fb72efebf36e7e"
-    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
+    "output/main/values.tex" = "c91edf5d8167d0b7034db1c2293b8d97d50a0a860d0106852b2700d376ca2000"
+    "output/manuscript/settings.tex" = "2ef20d6596bd5ed0b76b76c3e4f9fe4f48ce8aa50873c20392ab114556c877df"
     "output/ridge/ablations/analysis/paper_values.tex" = "f3b1b9cc8e40d3c2c47670c30a373cb2808dc4dbca099115221e59031026d981"
     "output/ridge/paired/analysis/paper_values.tex" = "a00005695e2bbc1e798480db47e123ae0429f53569e3828a5e519590199ef650"
 
     [stages."scripts/paper/build_section.jl".outputs]
-    "output/main/results_section.tex" = "139cf15310cb300da48ab063936c1e3ca584ed50ef63d33b188227e2e8c4ddc2"
+    "output/main/results_section.tex" = "3506b846a93e7528a6c637858e595489c98162fb414cfb174240718fbf1b89db"
 
     [stages."scripts/paper/build_section.jl".settings]
     fixture = ""
@@ -184,17 +263,17 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     [stages."scripts/paper/build_section.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "paper/captions.tex" = "962fdd7c0bf4d545ad0cafbd11590108ecdafb54e1a182ee318daf0372ef6853"
-    "paper/section_source.tex" = "dcca3d05469c03f14d69311d27c8cf4fa897b27f254325926c3ec7e016a75a78"
-    "paper/simulation_design_source.tex" = "5b6ca4e857dcb43f9c56414c70aac98ac5fd8fc8f7b456b3b922fce31a106ed4"
-    "paper/supplement.tex" = "82048375693c0e5a5f9130c272c0440c980257ffcc10f20afbb80100054f7720"
-    "scripts/paper/build_section.jl" = "102a48ea112ba860cd55390a3cc652b556bdb614267aa22b4b12f20c0adb129d"
+    "paper/captions.tex" = "89feb043c894b1b300b6973539a42e122448027afba250e0c634c44ec12c498f"
+    "paper/section_source.tex" = "236b17e2edafe707552c9109da1c089d5978623c9c2d6e3cd9b40fa88706ec0e"
+    "paper/simulation_design_source.tex" = "4eddfc1a77ef62b843cc3c2768d2d0d12cd7b75e85c1ac41cefe2ef35f1b8316"
+    "paper/supplement.tex" = "6b9fc65be8a61db29d6440ba7e62ced305be10c59bbee07bd5ef2dc6dd45ed69"
+    "scripts/paper/build_section.jl" = "16500ba0723323df4feb2a21b3d557ecd03f1cfbbd7d5ba16532b37a0c94d9b2"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
 
 [stages."scripts/paper/build_settings.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_settings.jl".analysis_commits]
     "DGP analysis" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
@@ -203,14 +282,14 @@ source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
     "structural simulation" = "adeaa06f0b7098f8789925f0b638abddd935a16b"
 
     [stages."scripts/paper/build_settings.jl".inputs]
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
     "output/supplement/dgp_figure_data.jld2" = "5b89335b0491fbe442a13e3102a07df6b84b0512e7a19c167a8b49ff18432df8"
-    "output/supplement/structural_figure_data.jld2" = "e150975ccf935e467d153e7da496c8f1c5394070aac75467e9bc273489ec66df"
+    "output/supplement/structural_figure_data.jld2" = "78ca4d8fb857615edabab23814bf9f6020fc13540594408dd259cd4fc108f730"
 
     [stages."scripts/paper/build_settings.jl".outputs]
-    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
+    "output/manuscript/settings.tex" = "2ef20d6596bd5ed0b76b76c3e4f9fe4f48ce8aa50873c20392ab114556c877df"
 
     [stages."scripts/paper/build_settings.jl".settings.historical_sources]
     "adeaa06f0b7098f8789925f0b638abddd935a16b:scripts/calibrate_match_component_moments.jl" = "e4803587039547d3eff57910d7a13bab644f8dbc2112bb82b618ec9186a8da55"
@@ -225,33 +304,34 @@ source_commit = "1b8d126503b170987266e6fc9dd3cd95d97e2718"
     [stages."scripts/paper/build_settings.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/paper/build_settings.jl" = "b5675b0f1815143aef332762fa6f931897661141ddb335189a26f280f114bdf9"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/paper/build_settings.jl" = "5e9d8406e96637262c3602081fc78648be4e200ed9927b13fdc98bd1752d4a5a"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/build_simulation_design.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_simulation_design.jl".analysis_commits]
     "output/assessment_access/provenance.txt: analysis_git_commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
-    "output/main/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/main/values.tex: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
     "output/ridge/ablations/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
     "output/ridge/paired/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/build_simulation_design.jl".inputs]
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
     "output/assessment_access/provenance.txt" = "c82bbbcb462526ae74ec826dba27428fa45b0be9f8c5f99a13a4e53346e02468"
     "output/main/access_windows.jld2" = "f3c08a9f79eab78f4e1afa5ba47f0c7b370bb3c958635df9c24100680a687517"
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/main/values.tex" = "a83b703be50b9c810bb5764d2f578cb9766063e02a4ca518e3fb72efebf36e7e"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/main/values.tex" = "c91edf5d8167d0b7034db1c2293b8d97d50a0a860d0106852b2700d376ca2000"
     "output/ridge/ablations/analysis/provenance.txt" = "8b3af96b48ddffd1adfa9d783fae6cc369ba7c6952f69b145315f6d9fc656a08"
-    "output/ridge/ablations/analysis/values.tex" = "88c1da504202929bb6db2387974f0fcf872ced88ad48ced54fb17e8b8f47ad5d"
+    "output/ridge/ablations/analysis/values.tex" = "8217eb7d2b9ae95b9f067d0ddd794c1810f16207aabc4cbac33baff76a86b017"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
     "output/ridge/paired/analysis/provenance.txt" = "c579df4e9705372ebfa587289e05451b1214bd29afdfff2c9d42a305902877cf"
-    "output/ridge/paired/analysis/values.tex" = "f8c5ca50aff6b070aff45c526fbaf1d4c77b3c3788595d29fe814ff82656c759"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/ridge/paired/analysis/values.tex" = "9e7da3e12e024e9d4fe82e552958c0188f2abee812f8a86e70d5397180aeecb9"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
     "runs/sweeps/2026-09-05_adeaa06_nn/manifest.jld2" = "2bc7d1166d7ef8624dccd7fbc4c85a75e05062fa3507d0db9b226ef550333963"
     "runs/sweeps/2026-09-05_adeaa06_nn/manifest.json" = "a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c"
     "runs/sweeps/2026-09-05_adeaa06_nn/manifest.sha256" = "ce81f8f68777ba772ab081f10826a452b19c2fd7f1a1f8a6ff74fa251c0e2ede"
@@ -275,7 +355,7 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
     "runs/sweeps/2026-09-09_eb2f771_broker_services_eta001/manifest.sha256" = "9c0c8706094e017474aa8d8b5248e0117f3288dcc8b5c01d9da1cd1889f35718"
 
     [stages."scripts/paper/build_simulation_design.jl".outputs]
-    "output/supplement/simulation_design.tex" = "7ee22dbe47df60b178fdd8f46afb9fc700d50127d08f25bcfefc330ec4ac0312"
+    "output/supplement/simulation_design.tex" = "51983e8c9572d3a98ae9ab9e8f809ffb57221683fbea14ab063d41d95ed96dc5"
 
     [stages."scripts/paper/build_simulation_design.jl".settings.historical_sources."adeaa06f0b7098f8789925f0b638abddd935a16b:scripts/nn_calibration/calibration_config.jl"]
     commit = "adeaa06f0b7098f8789925f0b638abddd935a16b"
@@ -297,15 +377,16 @@ source_commit = "effab343ea007cd56c31e9a5bbbe90a996a263bb"
     [stages."scripts/paper/build_simulation_design.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "paper/simulation_design_source.tex" = "5b6ca4e857dcb43f9c56414c70aac98ac5fd8fc8f7b456b3b922fce31a106ed4"
-    "scripts/paper/build_simulation_design.jl" = "b487cfa0e37ead12fb8c9ac0c0ab002670773b40fc6531ae02a12f90a035fc95"
+    "paper/simulation_design_source.tex" = "4eddfc1a77ef62b843cc3c2768d2d0d12cd7b75e85c1ac41cefe2ef35f1b8316"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/paper/build_simulation_design.jl" = "6e8d5272756e9aedbf7a29b8b27a248a3d94787772afa5f9afb6c733fc7ac278"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/build_supplement.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/build_supplement.jl".analysis_commits]
     "output/assessment_access/paper_values.tex: data analysis commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
@@ -318,32 +399,32 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     "output/supplement/figmeta.tex: ridge data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
     "output/supplement/figmeta.tex: structural data analysis commit" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
     "output/supplement/simulation_design.tex: output/assessment_access/provenance.txt: analysis_git_commit" = "00e3dba59efcec8d189f1b0cc99c6471abd28e6a"
-    "output/supplement/simulation_design.tex: output/main/values.tex: analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
+    "output/supplement/simulation_design.tex: output/main/values.tex: snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
     "output/supplement/simulation_design.tex: output/ridge/ablations/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
     "output/supplement/simulation_design.tex: output/ridge/paired/analysis/provenance.txt: analysis_commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/build_supplement.jl".inputs]
-    "output/assessment_access/paper_values.tex" = "4cc394d298158cc1b15ff16205913d8128f3d06c217e50cc4a13ea2ae0b3ab2c"
-    "output/manuscript/settings.tex" = "701caa071aa87ea99661942b5172ce863da549b56d591ddc51b4acfb2bc31041"
+    "output/assessment_access/paper_values.tex" = "5e9366eb4bcd79a9a243708e9bce552292882591b911681b9477f5a04f06a924"
+    "output/manuscript/settings.tex" = "2ef20d6596bd5ed0b76b76c3e4f9fe4f48ce8aa50873c20392ab114556c877df"
     "output/supplement/figmeta.tex" = "ea742946fff68dbe0a9678da024b9a26d89ad3eba9e1bab6184fd9a2cdef6a6f"
-    "output/supplement/figures/alternative_measures_composition_turnover.png" = "53243c10e8d99568558cb8b4810bb4c524278ae25070d7052f0511a7d7d6a9ad"
-    "output/supplement/figures/alternative_measures_experiments.png" = "1cc4554bc83918eeffea05c8207c85097477dcff60b572e67f3b9ea4e766f270"
+    "output/supplement/figures/alternative_measures_composition_turnover.png" = "d39293928144cf204c9c312a978cb7a9c9ccee005d6ec8d114dcd339ef810afe"
+    "output/supplement/figures/alternative_measures_experiments.png" = "0416c2b2e5c982ab4621b12ffb59f8916c52178add31c71ddedd8077d38c966b"
     "output/supplement/figures/complementarity_contributions.png" = "81336ac5b54edcb170b45bab46f2ecf1a523e387fe6c9fda9991781ac6c28a52"
     "output/supplement/figures/effective_dimensionality.png" = "480b64cd65367ac2f7c750276f0c1128023c5bd11e50468d5eb5c393db4d6fd8"
     "output/supplement/figures/learning_across_difficulties.png" = "596593a98f0014ca32d10c3b0184284980636e54f5dc666fd68527d45d0be758"
     "output/supplement/figures/match_value_surfaces.png" = "d11444e7b7facd72005e9ce85a3903a0eae2e81150462b6f2468f610ff366993"
     "output/supplement/figures/type_geometry.png" = "96ad99968d6b5cb3bd0e149e9e7d37c4ee400653a650d36b747149c180837dfc"
-    "output/supplement/simulation_design.tex" = "7ee22dbe47df60b178fdd8f46afb9fc700d50127d08f25bcfefc330ec4ac0312"
+    "output/supplement/simulation_design.tex" = "51983e8c9572d3a98ae9ab9e8f809ffb57221683fbea14ab063d41d95ed96dc5"
 
     [stages."scripts/paper/build_supplement.jl".outputs]
-    "output/supplement/supplement.pdf" = "68f47b2b538f50558b14485b93afabf1982dceefe99256065c3352d195053c2a"
+    "output/supplement/supplement.pdf" = "464dd423240a7e9f1cef92d54c48b8dc238f3b689f6bec9442994c7ec7f738d5"
 
     [stages."scripts/paper/build_supplement.jl".settings]
 
     [stages."scripts/paper/build_supplement.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "paper/supplement.tex" = "82048375693c0e5a5f9130c272c0440c980257ffcc10f20afbb80100054f7720"
+    "paper/supplement.tex" = "6b9fc65be8a61db29d6440ba7e62ced305be10c59bbee07bd5ef2dc6dd45ed69"
     "scripts/paper/build_supplement.jl" = "a9aecab6209329652f27622319abc805118c0805ce9c41ba135d4a9f3a1fb7dc"
     "scripts/paper/pdf_output.jl" = "b0f487464042a01c6fc92354f1e4c068d9deb345310fe3a3a0face31372b9f90"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
@@ -351,35 +432,35 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
 [stages."scripts/paper/centrality_and_assessment.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/centrality_and_assessment.jl".analysis_commits]
     "data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/centrality_and_assessment.jl".inputs]
-    "output/main/centrality_data.jld2" = "d1a571a33dd2e71604b087d12a75f88832845700d07d0cd1b38b778406e7fcf9"
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
+    "output/main/centrality_data.jld2" = "27aea90900496bdefed33cf4415b6501a84ed2d15918cfa7f3aaeec5bfe991df"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
 
     [stages."scripts/paper/centrality_and_assessment.jl".outputs]
-    "output/main/centrality_values.tex" = "e56a1a3aabaadfd6e5bb5d9c8271fd59f208c1b016e16919c5c587d3e707d147"
-    "output/main/figures/centrality_and_assessment.png" = "24889e9765ba0cae16ca96d7d6794147ec85a9ee956c3f791a15d62a579bdd27"
+    "output/main/centrality_values.tex" = "bcfb2db01e81864cb793c117270aed9984677a2a497ef92ac2aede7874c84bfc"
+    "output/main/figures/centrality_and_assessment.png" = "5f252ae93dd392e9c4f7b66c19f46b57404e9534913ada067c7f147dbe139c9d"
 
     [stages."scripts/paper/centrality_and_assessment.jl".settings]
 
     [stages."scripts/paper/centrality_and_assessment.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
-    "scripts/paper/centrality_and_assessment.jl" = "3c7aae90b6633d65dad2866d108385ce955f47144609615f53618ff95f5cea7e"
+    "scripts/paper/centrality_and_assessment.jl" = "2461c3e3013e249abad05463ef76963ab49604066638cc5b03056020f19ae195"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
 
 [stages."scripts/paper/figures.jl --assessment-not-access"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/figures.jl --assessment-not-access".analysis_commits]
     "data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
@@ -388,15 +469,15 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
 
     [stages."scripts/paper/figures.jl --assessment-not-access".inputs]
     "output/main/access_windows.jld2" = "f3c08a9f79eab78f4e1afa5ba47f0c7b370bb3c958635df9c24100680a687517"
-    "output/main/convergence/condition_audit.tsv" = "100ba741aac7e95c00016970bfc348602dc1ee4e7f2ae5720b2f7c6f0738e73f"
-    "output/main/convergence/summary.txt" = "ce09d6b64e7994f7364e8553d249a221096b569780faf74f941d7ac9f7b490ad"
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
+    "output/main/convergence/condition_audit.tsv" = "3516b4e1466623284277b80c50cfad47853668b35a00597a31f0521e77e3346c"
+    "output/main/convergence/summary.txt" = "ec163f5f11a72ea59397e37635de0e7f6b4a1d9e609945f39a20da90a46c6144"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
     "output/ridge/paired/access_windows.jld2" = "1d0a70bc5ba9e3576e3b003a486711b4117f4028edbb710f7fe2b0d9cd732056"
-    "output/ridge/paired/analysis/condition_comparison.tsv" = "ed00887968ccd40ac1a25dcd6d4db2b2fa5f88c0efd6784ba3e39f96c527510e"
+    "output/ridge/paired/analysis/condition_comparison.tsv" = "e4e65080f9e28be669519e34ba6def46bc8da49065e2755e77970355b6a6a0d1"
     "output/ridge/paired/analysis/provenance.txt" = "c579df4e9705372ebfa587289e05451b1214bd29afdfff2c9d42a305902877cf"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
 
     [stages."scripts/paper/figures.jl --assessment-not-access".outputs]
     "output/main/figures/assessment_not_access.png" = "88895ca1ec59da01b64495bc2391260df122571e43900e8a3803495d6d1740a3"
@@ -406,25 +487,25 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     [stages."scripts/paper/figures.jl --assessment-not-access".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
-    "scripts/paper/figures.jl" = "dcb4c8ec20ac6389630fccd99d635d058955efe5900c5ea23a5062aa56566c17"
+    "scripts/paper/figures.jl" = "8adcbe64533d5f1d87e38d260db38eac501dd80d1ee91824071d66a28c2bf1e4"
     "scripts/paper/information_sources.jl" = "e16cf9a1a75b0d0eae8eb3b0bd580050e833ead96230adad04aef959b2b3e955"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/figures.jl --information-sources"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/figures.jl --information-sources".analysis_commits]
     "data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/figures.jl --information-sources".inputs]
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
 
     [stages."scripts/paper/figures.jl --information-sources".outputs]
@@ -435,26 +516,26 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     [stages."scripts/paper/figures.jl --information-sources".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
-    "scripts/paper/figures.jl" = "dcb4c8ec20ac6389630fccd99d635d058955efe5900c5ea23a5062aa56566c17"
+    "scripts/paper/figures.jl" = "8adcbe64533d5f1d87e38d260db38eac501dd80d1ee91824071d66a28c2bf1e4"
     "scripts/paper/information_sources.jl" = "e16cf9a1a75b0d0eae8eb3b0bd580050e833ead96230adad04aef959b2b3e955"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/figures.jl --metadata"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/figures.jl --metadata".analysis_commits]
     "data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
     "ridge ablation analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/figures.jl --metadata".inputs]
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
 
     [stages."scripts/paper/figures.jl --metadata".outputs]
@@ -465,18 +546,66 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     [stages."scripts/paper/figures.jl --metadata".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
-    "scripts/paper/figures.jl" = "dcb4c8ec20ac6389630fccd99d635d058955efe5900c5ea23a5062aa56566c17"
+    "scripts/paper/figures.jl" = "8adcbe64533d5f1d87e38d260db38eac501dd80d1ee91824071d66a28c2bf1e4"
     "scripts/paper/information_sources.jl" = "e16cf9a1a75b0d0eae8eb3b0bd580050e833ead96230adad04aef959b2b3e955"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
+
+[stages."scripts/paper/network_snapshots.jl --refresh"]
+julia_version = "1.11.9"
+source_clean = false
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+
+    [stages."scripts/paper/network_snapshots.jl --refresh".analysis_commits]
+    "snapshot revision base commit" = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
+
+    [stages."scripts/paper/network_snapshots.jl --refresh".inputs]
+    "output/main/network_snapshots.jld2" = "a03ff2c0518d41f95d49514a6936c2bca0a6446e82fbcfd786b09b2f9fcd0e19"
+
+    [stages."scripts/paper/network_snapshots.jl --refresh".outputs]
+    "output/assessment_access/condition_summary.tsv" = "252120ee4553fc2a03cbc09ed27e1b2fd88c87ca106b052358a79bbd7cdea1c6"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
+    "output/assessment_access/paired_contrasts.tsv" = "fdee5a3147db1fd3a2de38bad384132de9aac60ff37fca410fb0dd25a668d7cf"
+    "output/assessment_access/seed_level.tsv" = "7e30d36c10b8f1f895dbd800702f8cff1f36f33822977552983307f0fe92c55a"
+    "output/main/centrality_data.jld2" = "27aea90900496bdefed33cf4415b6501a84ed2d15918cfa7f3aaeec5bfe991df"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/main/values.tex" = "c91edf5d8167d0b7034db1c2293b8d97d50a0a860d0106852b2700d376ca2000"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
+    "output/ridge/ablations/analysis/baseline_common_seeds.tsv" = "ad3b41c0d723e291db546f857794865d25049af5d0498797955c2d17c7c351b2"
+    "output/ridge/ablations/analysis/condition_comparison.tsv" = "1e77faab139f6f075055f6b431277e84ae895d2a9ec662a627e0676bd147078b"
+    "output/ridge/ablations/analysis/values.tex" = "8217eb7d2b9ae95b9f067d0ddd794c1810f16207aabc4cbac33baff76a86b017"
+    "output/ridge/paired/analysis/baseline_common_seeds.tsv" = "43dc2af7ed9a3b159a51b446539aa5231c6237b7cef556c2e2ac00fe30b10b59"
+    "output/ridge/paired/analysis/condition_comparison.tsv" = "e4e65080f9e28be669519e34ba6def46bc8da49065e2755e77970355b6a6a0d1"
+    "output/ridge/paired/analysis/values.tex" = "9e7da3e12e024e9d4fe82e552958c0188f2abee812f8a86e70d5397180aeecb9"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
+    "output/supplement/structural_comparisons.jld2" = "c647164b74da50999df00b6305091f34ad5e9d2e9ad45a05ba4c148f2c03dfcb"
+    "output/supplement/structural_figure_data.jld2" = "78ca4d8fb857615edabab23814bf9f6020fc13540594408dd259cd4fc108f730"
+
+    [stages."scripts/paper/network_snapshots.jl --refresh".settings.network_snapshots]
+    measures = ["betweenness", "constraint", "effective_size"]
+    path = "output/main/network_snapshots.jld2"
+    sha256 = "a03ff2c0518d41f95d49514a6936c2bca0a6446e82fbcfd786b09b2f9fcd0e19"
+
+        [stages."scripts/paper/network_snapshots.jl --refresh".settings.network_snapshots.periods]
+        early = 60
+        late = 500
+
+    [stages."scripts/paper/network_snapshots.jl --refresh".sources]
+    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
+    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
+    "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
+    "scripts/paper/network_snapshots.jl" = "05b8155d23d58f35d6f9a903fce7e478557b23d5245549d97160303c66c54efe"
+    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/ridge_supplement.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/ridge_supplement.jl".analysis_commits]
     "data analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
@@ -484,11 +613,11 @@ source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
     "nn-ridge comparison analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
 
     [stages."scripts/paper/ridge_supplement.jl".inputs]
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
-    "output/ridge/paired/analysis/condition_comparison.tsv" = "ed00887968ccd40ac1a25dcd6d4db2b2fa5f88c0efd6784ba3e39f96c527510e"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
+    "output/ridge/paired/analysis/condition_comparison.tsv" = "e4e65080f9e28be669519e34ba6def46bc8da49065e2755e77970355b6a6a0d1"
     "output/ridge/paired/analysis/provenance.txt" = "c579df4e9705372ebfa587289e05451b1214bd29afdfff2c9d42a305902877cf"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
 
     [stages."scripts/paper/ridge_supplement.jl".outputs]
     "output/ridge/paired/analysis/paper_values.tex" = "a00005695e2bbc1e798480db47e123ae0429f53569e3828a5e519590199ef650"
@@ -498,16 +627,16 @@ source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
     [stages."scripts/paper/ridge_supplement.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/paper/ridge_supplement.jl" = "911065c180cc37c25565f7237333474a88577538773e783c594bba6154e309fc"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/paper/supp_figures.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/paper/supp_figures.jl".analysis_commits]
     "dgp data analysis commit" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
@@ -516,18 +645,18 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     "structural data analysis commit" = "e3f041b8a284bda48bf98907d9f7b42521987b07"
 
     [stages."scripts/paper/supp_figures.jl".inputs]
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
-    "output/main/centrality_data.jld2" = "d1a571a33dd2e71604b087d12a75f88832845700d07d0cd1b38b778406e7fcf9"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
+    "output/assessment_access/figure_data.jld2" = "238e0fc11ecc4712203f6dbb6cde4e33c3c63bcaad1e7934cd150e8abbcbb774"
+    "output/main/centrality_data.jld2" = "27aea90900496bdefed33cf4415b6501a84ed2d15918cfa7f3aaeec5bfe991df"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
     "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
     "output/supplement/dgp_figure_data.jld2" = "5b89335b0491fbe442a13e3102a07df6b84b0512e7a19c167a8b49ff18432df8"
-    "output/supplement/structural_comparisons.jld2" = "697e1169b1c9057a3d1311044a15bdb45be303a7fa8fb03a5d180eae55173410"
-    "output/supplement/structural_figure_data.jld2" = "e150975ccf935e467d153e7da496c8f1c5394070aac75467e9bc273489ec66df"
+    "output/supplement/structural_comparisons.jld2" = "c647164b74da50999df00b6305091f34ad5e9d2e9ad45a05ba4c148f2c03dfcb"
+    "output/supplement/structural_figure_data.jld2" = "78ca4d8fb857615edabab23814bf9f6020fc13540594408dd259cd4fc108f730"
 
     [stages."scripts/paper/supp_figures.jl".outputs]
     "output/supplement/figmeta.tex" = "ea742946fff68dbe0a9678da024b9a26d89ad3eba9e1bab6184fd9a2cdef6a6f"
-    "output/supplement/figures/alternative_measures_composition_turnover.png" = "53243c10e8d99568558cb8b4810bb4c524278ae25070d7052f0511a7d7d6a9ad"
-    "output/supplement/figures/alternative_measures_experiments.png" = "1cc4554bc83918eeffea05c8207c85097477dcff60b572e67f3b9ea4e766f270"
+    "output/supplement/figures/alternative_measures_composition_turnover.png" = "d39293928144cf204c9c312a978cb7a9c9ccee005d6ec8d114dcd339ef810afe"
+    "output/supplement/figures/alternative_measures_experiments.png" = "0416c2b2e5c982ab4621b12ffb59f8916c52178add31c71ddedd8077d38c966b"
     "output/supplement/figures/effective_dimensionality.png" = "480b64cd65367ac2f7c750276f0c1128023c5bd11e50468d5eb5c393db4d6fd8"
     "output/supplement/figures/learning_across_difficulties.png" = "596593a98f0014ca32d10c3b0184284980636e54f5dc666fd68527d45d0be758"
     "output/supplement/figures/match_value_surfaces.png" = "d11444e7b7facd72005e9ce85a3903a0eae2e81150462b6f2468f610ff366993"
@@ -540,99 +669,35 @@ source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
     [stages."scripts/paper/supp_figures.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/paper/information_sources.jl" = "e16cf9a1a75b0d0eae8eb3b0bd580050e833ead96230adad04aef959b2b3e955"
     "scripts/paper/supp_figures.jl" = "48972db53d89e4e41c42e2f844078478616ea5a51534188e14c747e4c1575e69"
-    "scripts/paper/supp_robustness.jl" = "f7108dd0bffd3e5538a0071bcf40fda208e0648b1ea2f11c5d32ffe804d1c3dc"
+    "scripts/paper/supp_robustness.jl" = "b80fd1d2a2f4d1d931508f165bf04fbaa98687a5773c2cf03c729d981ba0eb25"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
-
-[stages."scripts/paper/supp_robustness.jl --prepare"]
-julia_version = "1.11.9"
-source_clean = false
-source_commit = "758c3f1f2f88993a11fad3a7e8b4594eb6e31c74"
-
-    [stages."scripts/paper/supp_robustness.jl --prepare".analysis_commits]
-    "data analysis commit" = "de4d915ddec550d37df54fca4da1f5ba3e0af5c1"
-
-    [stages."scripts/paper/supp_robustness.jl --prepare".inputs]
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
-    "output/main/centrality_data.jld2" = "d1a571a33dd2e71604b087d12a75f88832845700d07d0cd1b38b778406e7fcf9"
-
-    [stages."scripts/paper/supp_robustness.jl --prepare".outputs]
-    "output/supplement/structural_comparisons.jld2" = "697e1169b1c9057a3d1311044a15bdb45be303a7fa8fb03a5d180eae55173410"
-
-    [stages."scripts/paper/supp_robustness.jl --prepare".settings]
-    source_summary_sha256 = "cb40c72fbfddb6c9c82e46915c3743f6ea3445501902ff1db5564b78e7990bb1"
-
-    [stages."scripts/paper/supp_robustness.jl --prepare".sources]
-    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
-    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/paper/supp_robustness.jl" = "f7108dd0bffd3e5538a0071bcf40fda208e0648b1ea2f11c5d32ffe804d1c3dc"
-    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-
-[stages."scripts/retain_reporting_settings.jl"]
-julia_version = "1.11.9"
-source_clean = false
-source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
-
-    [stages."scripts/retain_reporting_settings.jl".analysis_commits]
-
-    [stages."scripts/retain_reporting_settings.jl".inputs]
-    "output/assessment_access/figure_data.jld2" = "27539d6e5ccefba3f06115703cd35611765119ac3dcac957f7d4b667bff46fea"
-    "output/main/access_windows.jld2" = "f3c08a9f79eab78f4e1afa5ba47f0c7b370bb3c958635df9c24100680a687517"
-    "output/main/convergence/condition_audit.tsv" = "100ba741aac7e95c00016970bfc348602dc1ee4e7f2ae5720b2f7c6f0738e73f"
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/ridge/ablations/figure_data.jld2" = "e4956e7455b704ba97c30d517a140b999245b5c776a58935ce616f224c756dfb"
-    "output/ridge/paired/access_windows.jld2" = "1d0a70bc5ba9e3576e3b003a486711b4117f4028edbb710f7fe2b0d9cd732056"
-    "output/ridge/paired/analysis/provenance.txt" = "c579df4e9705372ebfa587289e05451b1214bd29afdfff2c9d42a305902877cf"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
-    "output/supplement/structural_figure_data.jld2" = "e150975ccf935e467d153e7da496c8f1c5394070aac75467e9bc273489ec66df"
-    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.jld2" = "2bc7d1166d7ef8624dccd7fbc4c85a75e05062fa3507d0db9b226ef550333963"
-    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.json" = "a28717a1eabc6d6e1de6ea5a2249bb1647856e27637d1202c084fea5c4ab9a6c"
-    "runs/sweeps/2026-09-05_adeaa06_nn/manifest.sha256" = "ce81f8f68777ba772ab081f10826a452b19c2fd7f1a1f8a6ff74fa251c0e2ede"
-    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.jld2" = "631cc95efb205119a896d8cabe4e758329cead1fac5093581ad28a00e67fedbb"
-    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.json" = "fbe5bddcf4f52957843f88c345226998079fef523c259651dfb15c46d2b1f113"
-    "runs/sweeps/2026-09-06_c8f181f_ridge_pair_lambda_a0.001_lambda_b0.001/manifest.sha256" = "a79bfe9679bdca84d6a0b715a987bbfbf0d7adb0f37db031cda0fafe02503550"
-
-    [stages."scripts/retain_reporting_settings.jl".outputs]
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
-
-    [stages."scripts/retain_reporting_settings.jl".settings.historical_sources]
-    "78aca30174ee31db965ab19cd12807a2d61d71f7:scripts/monte_carlo.jl" = "dd2fc88b57e8b8b5315fb210eee1268eb5eea4e4a2bf28dae0670d4c0730ef03"
-    "78aca30174ee31db965ab19cd12807a2d61d71f7:scripts/paper/figdata.jl" = "8166fd815f643956d71288c36899afcdc40ce58e712198d1e81df1b5ce754a9c"
-    "e3f041b8a284bda48bf98907d9f7b42521987b07:scripts/monte_carlo.jl" = "dd2fc88b57e8b8b5315fb210eee1268eb5eea4e4a2bf28dae0670d4c0730ef03"
-    "e3f041b8a284bda48bf98907d9f7b42521987b07:scripts/paper/supp_figdata.jl" = "bb6cc76a8af2703feb87cfc76bb4b5d2c6ce14fa057df668dec5172148cee85c"
-
-    [stages."scripts/retain_reporting_settings.jl".sources]
-    "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
-    "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
-    "scripts/retain_reporting_settings.jl" = "72e6798faa9b058a6dd8929cc16e964f06492337a2dcbe5db423d7f282ad2968"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
 
 [stages."scripts/ridge/paired_figures.jl"]
 julia_version = "1.11.9"
 source_clean = false
-source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
+source_commit = "f31ab64e5ace43e57ac581f6658b482ebd03bbb7"
 
     [stages."scripts/ridge/paired_figures.jl".analysis_commits]
     "nn analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
     "ridge analysis commit" = "78aca30174ee31db965ab19cd12807a2d61d71f7"
 
     [stages."scripts/ridge/paired_figures.jl".inputs]
-    "output/main/figure_data.jld2" = "59d9b9cca182918ef59b195bde6e9d24dcd21bf0b314e8e06662c47f78682a95"
-    "output/reporting/settings.toml" = "11b39cc401c878f20975f5a6db06fdcb599189a3a396048619d61badab7b79d7"
-    "output/ridge/paired/figure_data.jld2" = "fc91c1472d50be0910cc7e7a29b8decd76657c60e347656fe81a5cdee29fcb64"
+    "output/main/figure_data.jld2" = "3d7c4602537f3692e824aea8ead73419ef6ea59e98758510fc09fcbfe5f5bf9c"
+    "output/reporting/settings.toml" = "e2d0e752377a01fa252a50b65482d49385601a78d074b50c053efedad6cc25ee"
+    "output/ridge/paired/figure_data.jld2" = "ad0d6f8c7bc6b6b753df2912d85c280fbc27528b9e118acb94893e093f68de1d"
 
     [stages."scripts/ridge/paired_figures.jl".outputs]
     "output/ridge/paired/figure_values.tex" = "a9210542eab28808bd6512324966f39bb0362ff875d8b9e98a9d70a3ae463419"
     "output/ridge/paired/figures/baseline_dynamics.png" = "a2292b6b486e0e40cd4e83ccb22a448505f0abd7f75b2b8688981b78cf8ea37a"
-    "output/ridge/paired/figures/centrality_and_access.png" = "7e26e827f07465fda730bac962f35f2c1cad00ec92e49619a4ae83b0fec605b1"
-    "output/ridge/paired/figures/matching_grid.png" = "94215540bb13111821a5d3c7079f91bb82af2c9250a505c832bebcc10b58370a"
-    "output/ridge/paired/figures/structural_advantage.png" = "0f970064df241c30051593b797b8034cf76b67791ebe867d004d234bd0e3ce4f"
+    "output/ridge/paired/figures/centrality_and_access.png" = "f10a7e2d9525a7d5d54e8dd49786078b931171e46483ea1715013242af6d4f60"
+    "output/ridge/paired/figures/matching_grid.png" = "958216a7eda3d7c9e39b2da43346e28243adb6b313f999cfd7b4480ffc039322"
+    "output/ridge/paired/figures/structural_advantage.png" = "fab24e38945d5819a8bb9391566faa53b5dbaf5346dd73ae4c15139c9f6e1be7"
 
     [stages."scripts/ridge/paired_figures.jl".settings]
     display_start = 30
@@ -642,9 +707,9 @@ source_commit = "f9322808b85ffadb6e9153912b1bb73aeb449638"
     [stages."scripts/ridge/paired_figures.jl".sources]
     "Manifest.toml" = "d246d720ff8d253c1bb677c64f869d7e7dfdeb3cfa2aa1140fe6c0d13a04845d"
     "Project.toml" = "42b6a28a384a37bfc96062334c86346c4a018b6db002831eb16b13a319e59197"
-    "scripts/analysis_settings.jl" = "0e04b9fadee8bf2d1de1a1f1a4d4f85cb6247e1ab8dafbdb6db0ce44be812359"
+    "scripts/analysis_settings.jl" = "e17cb0122eebe1a9d2ea2861afdf9467b7d96ef53fda450041c30b13eafaa0e4"
     "scripts/figure_style.jl" = "294e002834efc0ba3af6cb3484fa07692c0d32a34448550c9fd4ef28283072ab"
     "scripts/monte_carlo.jl" = "cac7939cfd6727145eecc0a4eb63946e8cb052a35e57b6c70c6756fd3d0421a8"
     "scripts/reporting_provenance.jl" = "573c56bf703696a061aae3bee16ce00721fca36959fbc5e8d27f5be4afe7bd07"
-    "scripts/reporting_settings.jl" = "27a769893f0e50633756fd91aa462c123758b88ef9aa6d733c6d55037c96e15f"
+    "scripts/reporting_settings.jl" = "b5689520da8227c4c5aaad38e21cb763b0b38bc12a011b0a737898a2aa78217d"
     "scripts/ridge/paired_figures.jl" = "489f18d68534f413eb4efafad77bc9ff02ef79f0ab6811a127b63ae307e79e36"

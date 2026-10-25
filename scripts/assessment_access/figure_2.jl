@@ -171,18 +171,20 @@ function read_centrality(path=CENTRALITY_PATH; retained_path=DATA_PATH)
     for commit in (data["retained_analysis_git_commit"], retained["analysis_git_commit"])
         validate_analysis_commit((; root=ROOT), commit; artifact="assessment-access analysis")
     end
-    check_trajectory_late_means(retained, data)
+    check_trajectory_summaries(retained, data)
     return data
 end
 
-"""Validate cached trajectories against retained seed values, independently of analysis commit."""
-function check_trajectory_late_means(retained, data)
+"""Validate trajectory snapshots and degree averages against retained seed summaries."""
+function check_trajectory_summaries(retained, data)
     for service in (FULL_SERVICE, SERVICES...)
         config = data["configs"][service.mode]
         late = (config["T"] - retained["late_width"] + 1):config["T"]
         for (metric, field, indices) in (
             ("mean_degree", "degree_values", late),
-            ("betweenness", "values", searchsortedlast.(Ref(data["periods"]), late)),
+            ("betweenness", "values", AnalysisSettings.reporting_indices(
+                data["periods"], :betweenness, (first(late), last(late));
+                network_interval=data["network_measure_interval"])),
         )
             all(>(0), indices) || error("late window precedes trajectory measurements")
             rows = filter(retained["seed_rows"]) do row
@@ -195,7 +197,7 @@ function check_trajectory_late_means(retained, data)
             Set(keys(expected)) == Set(data["seeds"]) || error("trajectory seeds differ")
             all(isapprox(mean(data[field][service.mode][indices, column]), expected[seed]; atol=1e-12)
                 for (column, seed) in enumerate(data["seeds"])) ||
-                error("trajectory late means differ from retained $metric")
+                error("trajectory summaries differ from retained $metric")
         end
     end
     return nothing
@@ -305,13 +307,15 @@ function validate_argument_estimates(retained, estimates, centrality)
         contrast_count += 1
     end
     late = (FIGURE_DESIGN.horizon - FIGURE_DESIGN.late_width + 1):FIGURE_DESIGN.horizon
-    indices = searchsortedlast.(Ref(centrality["periods"]), late)
+    indices = AnalysisSettings.reporting_indices(
+        centrality["periods"], :betweenness, (first(late), last(late));
+        network_interval=centrality["network_measure_interval"])
     for service in (FULL_SERVICE, SERVICES...)
         saved = groups[(service.mode, BASELINE_RHO, BASELINE_ETA, "betweenness")]
         sort!(collect(keys(saved))) == centrality["seeds"] || error("trajectory seed coverage differs")
         all(isapprox(mean(centrality["values"][service.mode][indices, j]), saved[seed];
             atol=1e-12, rtol=1e-10) for (j, seed) in enumerate(centrality["seeds"])) ||
-            error("trajectory late means differ from retained summaries")
+            error("trajectory summaries differ from retained summaries")
     end
     return (; summary_count, contrast_count)
 end
@@ -419,7 +423,7 @@ function argument_structure_panel!(slot, estimates)
         for service in series for (rho, eta) in regimes
     ]
     grid = argument_panel_layout!(slot, "B. Structural consequences of both services",
-        "Late-mean differences · ρ = $BASELINE_RHO · $(length(regimes)) regimes")
+        "Service differences · ρ = $BASELINE_RHO · $(length(regimes)) regimes")
     xmin = min(0, floor(minimum(p.x.lower for p in points) / 5) * 5)
     xmax = max(0, ceil(maximum(p.x.upper for p in points) / 5) * 5)
     ymin = min(0, floor(minimum(p.y.lower for p in points) / 0.1) * 0.1)
@@ -456,25 +460,29 @@ function argument_structure_panel!(slot, estimates)
     return ax
 end
 
-"""Show absolute broker betweenness centrality trajectories and the late window."""
+"""Show broker betweenness trajectories and the late snapshot date."""
 function argument_trajectory_panel!(slot, centrality)
     grid = argument_panel_layout!(slot, "D. Broker betweenness centrality over time",
         "Baseline · turnover η = $BASELINE_ETA")
     horizon = FIGURE_DESIGN.horizon
+    start_period = AnalysisSettings.AXIS_START
+    shown = findall(>=(start_period), centrality["periods"])
     ax = Axis(grid[3, 1]; xlabel="Period", ylabel="Broker betweenness centrality",
-        limits=((0, 1.025horizon), (0, 1.025)),
+        limits=((start_period, 1.025horizon), (0, 1.025)),
         xticks=range(0, horizon; length=6), yticks=0:0.2:1)
-    late_start = horizon - FIGURE_DESIGN.late_width + 1
-    vspan!(ax, [late_start], [horizon]; color=(:gray40, 0.06))
-    text!(ax, horizon, 0.035; text="Late", color=:gray40, fontsize=FOOTER_FS - 1,
+    snapshot = AnalysisSettings.network_snapshot_period(
+        (horizon - FIGURE_DESIGN.late_width + 1, horizon), FIGURE_DESIGN.interval)
+    vlines!(ax, [snapshot]; color=(:gray40, 0.35), linestyle=:dash, linewidth=1)
+    text!(ax, snapshot, 0.035; text="Late snapshot", color=:gray40, fontsize=FOOTER_FS - 1,
         align=(:right, :bottom))
     for service in (FULL_SERVICE, SERVICES...)
         values = centrality_series(centrality, service.mode)
         all(0 .<= values.lower .<= values.upper .<= 1) || error("centrality interval outside bounds")
-        band!(ax, values.periods, values.lower, values.upper; color=(service.color, 0.12))
-        lines!(ax, values.periods, values.estimate; color=service.color,
+        periods = values.periods[shown]
+        band!(ax, periods, values.lower[shown], values.upper[shown]; color=(service.color, 0.12))
+        lines!(ax, periods, values.estimate[shown]; color=service.color,
             linestyle=service.linestyle, linewidth=2.7, label=service.label)
-        scatter!(ax, values.periods, values.estimate; color=service.color,
+        scatter!(ax, periods, values.estimate[shown]; color=service.color,
             marker=service.marker, markersize=5)
     end
     axislegend(ax; position=:lb, framevisible=false, labelsize=FOOTER_FS,
@@ -501,6 +509,7 @@ function main(; output_path=OUTPUT_PATH)
         ROOT;
         sources=(
             @__FILE__,
+            "scripts/analysis_settings.jl",
             "scripts/monte_carlo.jl",
             "scripts/figure_style.jl",
         ),

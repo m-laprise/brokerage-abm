@@ -47,6 +47,8 @@ paper/**/*.aux
 !output/main/net_output_channels.jld2
 !output/main/access_windows.jld2
 !output/main/centrality_data.jld2
+!output/main/network_snapshots.jld2
+!output/main/convergence/seed_values.jld2
 !output/supplement/structural_figure_data.jld2
 !output/supplement/structural_comparisons.jld2
 !output/supplement/dgp_figure_data.jld2

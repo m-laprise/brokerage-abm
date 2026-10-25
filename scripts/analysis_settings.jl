@@ -11,6 +11,28 @@ const AXIS_START = 30
 const SPECTRUM_COMPONENTS = 25
 const ENERGY_FRACTION = 0.90
 const PROJECTION_COMPONENTS = 3
+const NETWORK_MEASURES = (:betweenness, :constraint, :effective_size)
+
+"""Last scheduled network measurement within a reporting window."""
+function network_snapshot_period(window, interval)
+    interval > 0 || error("network measurement interval must be positive")
+    lo, hi = window
+    period = fld(hi, interval) * interval
+    1 <= lo <= period <= hi || error("reporting window contains no network measurement")
+    return period
+end
+
+"""Select a network snapshot or the full window for measures recorded each period."""
+function reporting_indices(periods, metric, window; network_interval)
+    if Symbol(metric) in NETWORK_MEASURES
+        period = network_snapshot_period(window, network_interval)
+        indices = findall(==(period), periods)
+        length(indices) == 1 || error("missing or duplicate network snapshot at period $period")
+        return indices
+    end
+    lo, hi = window
+    return findall(t -> lo <= t <= hi, periods)
+end
 
 """Resolve and validate the declared windows for a simulation horizon."""
 function windows(horizon; early=EARLY_WINDOW, late_width=LATE_WIDTH)

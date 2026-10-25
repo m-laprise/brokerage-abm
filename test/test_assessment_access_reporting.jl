@@ -19,7 +19,7 @@ include(joinpath(@__DIR__, "..", "scripts", "assessment_access", "centrality_dat
     config = (; interval=20, horizon=500, late_width=20)
     recorded = [t < 20 ? 0.0 : (t ÷ 20) / 25 for t in 1:500]
     df = DataFrame(; period=1:500, betweenness=recorded)
-    late = mean(recorded[481:500])
+    late = recorded[500]
     @test measured_centrality(df, late; config...) == collect(1:25) ./ 25
     @test_throws ErrorException measured_centrality(df[2:end, :], late; config...)
     @test_throws ErrorException measured_centrality(df, late + 0.01; config...)
@@ -29,7 +29,7 @@ include(joinpath(@__DIR__, "..", "scripts", "assessment_access", "centrality_dat
     changed.betweenness[21] = NaN
     @test_throws ErrorException measured_centrality(changed, late; config...)
     short = DataFrame(; period=1:13, betweenness=[t < 3 ? 0.0 : (t ÷ 3) / 4 for t in 1:13])
-    @test measured_centrality(short, mean(short.betweenness[10:13]); interval=3, horizon=13, late_width=4) == [0.25, 0.5, 0.75, 1.0]
+    @test measured_centrality(short, short.betweenness[12]; interval=3, horizon=13, late_width=4) == [0.25, 0.5, 0.75, 1.0]
 end
 
 @testset "Recorded degree extraction" begin
@@ -112,7 +112,7 @@ end
         values = data["values"][String(row[1])]
         seed = Int(row[4])
         isapprox(
-            (19 * values[24, seed] + values[25, seed]) / 20, Float64(row[6]); atol=1e-12
+            values[end, seed], Float64(row[6]); atol=1e-12
         )
     end
 
@@ -241,7 +241,7 @@ end
         final_only = mean(
             data["values"][service.mode][end, :] .- data["values"]["full"][end, :]
         )
-        !isapprox(late.estimate, final_only; atol=1e-6)
+        isapprox(late.estimate, final_only; atol=1e-12)
     end
     @test_throws ArgumentError service_effect(
         index, SERVICES[1], 0.5, 0.02, "outsourcing_rate"; scale=-1

@@ -324,7 +324,7 @@ function whiskers!(axis, x, y, intervals; color, direction=:y)
     )
 end
 
-"""Render the publication figure from seed-level late means and Monte Carlo intervals."""
+"""Render the publication figure from seed-level summaries and Monte Carlo intervals."""
 function render(data)
     validate(data)
     publication_theme!()
@@ -353,7 +353,7 @@ function render(data)
         subtitle="Ridge regression · baseline",
         subtitlesize=TICK_FS,
         subtitlecolor=:gray40,
-        xlabel="Late mean",
+        xlabel="Ensemble mean",
         yticks=(y, [v.label for v in VARIANTS]),
         xticks=0:0.2:1,
         limits=((0, 1), (0.5, 4.5)),

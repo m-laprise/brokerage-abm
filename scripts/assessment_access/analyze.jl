@@ -44,6 +44,7 @@ const OUT_DIR = normpath(
 )
 const FIGURE_DIR = joinpath(OUT_DIR, "figures")
 const LATE_WIDTH = AnalysisSettings.LATE_WIDTH
+const NETWORK_INTERVAL = ReportingSettings.network_interval(SWEEP_ROOT)
 const LEVEL = AnalysisSettings.INTERVAL_LEVEL
 const MODES = (:full, :assessment_only, :access_only)
 const MANIFEST = ReportingSettings.manifest(SWEEP_ROOT)
@@ -95,8 +96,11 @@ function metric_series(df::DataFrame, metric::Symbol)
 end
 
 function late_value(df::DataFrame, metric::Symbol)
-    first_period = maximum(df.period) - LATE_WIDTH + 1
-    return finite_mean(metric_series(df, metric)[df.period .>= first_period])
+    window = (maximum(df.period) - LATE_WIDTH + 1, maximum(df.period))
+    indices = AnalysisSettings.reporting_indices(
+        df.period, metric, window; network_interval=NETWORK_INTERVAL
+    )
+    return finite_mean(metric_series(df, metric)[indices])
 end
 
 function condition_key(result::SweepResult)

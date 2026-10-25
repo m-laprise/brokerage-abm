@@ -80,23 +80,19 @@ function information_sources()
     return nothing
 end
 
-"""Read the retained condition audit after checking analysis and sweep provenance."""
+"""Read NN late summaries from the convergence audit and validate its retained inputs."""
 function condition_audit()
     audit_dir = normpath(joinpath(OUT, "..", "convergence"))
-    metadata = Dict(
-        Tuple(split(line, '='; limit=2)) for
-        line in readlines(joinpath(audit_dir, "summary.txt"))
-    )
-    validate_analysis_commit(
-        REPORTING_PROVENANCE, metadata["analysis_commit"]; artifact="condition audit"
-    )
-    metadata["analysis_source_clean"] == "true" || error("condition audit used dirty sources")
-    metadata["manifest"] == FD["meta"]["manifest_hash"] ||
-        error("condition audit manifest mismatch")
-
-    lines = readlines(joinpath(audit_dir, "condition_audit.tsv"))
+    audit_path = joinpath(audit_dir, "condition_audit.tsv")
+    record = publication_record(REPORTING_PROVENANCE.root, audit_path)
+    record === nothing && error("missing convergence provenance")
+    validate_publication_record(REPORTING_PROVENANCE.root, record; sources=false)
+    get(record["inputs"], relpath(MAIN_FIGDATA, REPORTING_PROVENANCE.root), "") ==
+        bytes2hex(sha256(read(MAIN_FIGDATA))) || error("condition audit main input differs")
+    lines = readlines(audit_path)
     header = split(first(lines), '\t')
     rows = [Dict(zip(header, split(line, '\t'))) for line in lines[2:end]]
+    filter!(row -> row["dataset"] == "nn" && row["kind"] == "level" && row["window"] == "late", rows)
     audit = Dict((row["outcome"], row["result_reldir"]) => row for row in rows)
     length(audit) == length(rows) || error("duplicate condition audit rows")
     return audit
