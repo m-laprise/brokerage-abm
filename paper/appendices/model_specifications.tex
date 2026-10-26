@@ -52,7 +52,7 @@ Each principal \(i\) is characterized by:
 \item \textbf{Type} \(\mathbf{x}_i \in \mathbb{R}^d\): a fixed vector of observable characteristics, drawn as specified below and used by the matching function (§2).
 \item \textbf{Current-period matches} \(M_i^t\): active bilateral relationships involving \(i\) in period \(t\). Each counterparty can appear at most once in \(M_i^t\); incoming accepted offers are not capped.
 \item \textbf{Active demand bound} \(K\): the maximum number of active demands a principal can initiate in a period (default \(K = \pv{settingK}\); §6).
-\item \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3a).
+\item \textbf{Experience history} \(\mathcal{H}_{i}^t = \{(\mathbf{x}_j, q_{ij})\}\): (other party's type, realized match output) pairs from all matches involving \(i\) (§3b).
 \item \textbf{Satisfaction indices} \(s_{i,c}^t\): one scalar per search channel \(c \in \{\text{self}, \text{broker}\}\), used in the outsourcing decision (§7).
 \end{itemize}
 
@@ -226,7 +226,7 @@ Principal and broker fits minimize mean squared error plus \(\lambda_a\) and \(\
 
 Subsequent NN updates warm-start from the previous weights and persistent Adam moment state. The number of gradient steps adapts to the ratio of new observations to total history:
 
-\[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\}.\]
+\[E_{c,t} = \max\!\left(E_{\text{steps},c}, \; \left\lceil E_{\text{init},c} \cdot \frac{n_{\text{new}}}{n_{\text{total}}} \right\rceil\right), \qquad c\in\{a,b\},\]
 
 where \(n_{\text{new}}\) is the number of observations added since that model's previous fitting call, \(n_{\text{total}} = |\mathcal{H}^t|\) is full history size, and \(E_{\text{steps},c}\) is the learner-specific minimum per-call step count. For a principal, \(n_{\text{new}}\) can span multiple periods because principals fit on an alternating schedule. Principals and the broker use the same functional rule but may have different parameter values. Ridge is solved directly at each fitting call. The reporting NN values are \(\eta_{\mathrm{lr},a}=\pv{settingeta_lr_agent}\), \(\eta_{\mathrm{lr},b}=\pv{settingeta_lr_broker}\), \(E_{\mathrm{init},a}=E_{\mathrm{init},b}=\pv{settingE_init_broker}\), and \(E_{\mathrm{steps},a}=E_{\mathrm{steps},b}=\pv{settingtrain_steps_broker}\).
 
@@ -316,7 +316,7 @@ Each realized match adds an undirected \(i\)-\(j\) edge if one does not already 
 
 \subsubsection{5c. Principal Turnover}\label{c.-agent-turnover}
 
-Principals exit independently each period with probability \(\eta\) (default \pv{settingeta}). An exiting principal is removed everywhere. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing principals sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
+Principals exit independently each period with probability \(\eta\) (default \pv{settingeta}). An exiting principal is removed everywhere. Other actors retain their accumulated observations that involve it. Its node slot is reused by an entrant with a fresh type drawn from the same type process (§1). The entrant receives \(\lfloor k_G/2 \rfloor\) edges to existing principals sampled with probability proportional to \(\exp(-\|\mathbf{x}_{i'} - \mathbf{x}_j\|^2)\).
 
 \subsection{6. Search}\label{search}
 
@@ -388,11 +388,11 @@ Before the next period begins, match lists are cleared. The next period begins w
 
 \subsubsection{7a. Satisfaction Tracking}\label{a.-satisfaction-tracking}
 
-Each principal \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). For the chosen channel, the index updates once per active-demand period as an exponentially weighted moving average (EWMA) of realized match output net of search costs:
+Each principal \(i\) maintains a satisfaction index \(s_{i,c}^t\) for each search channel \(c \in \{\text{self}, \text{broker}\}\). Satisfaction and reputation are indexed by the period just completed, with initialization indexed by 0. For the chosen channel, the index updates once per active-demand period as an exponentially weighted moving average (EWMA) of realized match output net of search costs:
 
-\[s_{i,c}^{t+1} = (1 - \omega)\,s_{i,c}^t + \omega \cdot \tilde{q}\]
+\[s_{i,c}^{t} = (1 - \omega)\,s_{i,c}^{t-1} + \omega \cdot \tilde{q}\]
 
-where \(\omega = \pv{settingomega}\) and \(\tilde{q}\) is the period input in the table. The denominator is requested demand \(d_i\), so unfilled requests contribute zero output. A reciprocal relationship can update two channel-specific states, one for each directed offer.
+where \(\omega = \pv{settingomega}\) and \(\tilde{q}\) is the period-\(t\) input in the table. The denominator is requested demand \(d_i\), so unfilled requests contribute zero output. A reciprocal relationship can update two channel-specific states, one for each directed offer.
 
 {
 \begin{longtable}[]{@{}
@@ -423,19 +423,19 @@ The first broker choice, regardless of placement success, switches the principal
 
 \subsubsection{7b. Decision Rule}\label{b.-decision-rule}
 
-Each principal with \(d_i > 0\) compares:
+At the start of period \(t\), each principal with \(d_i > 0\) compares:
 
 \begin{itemize}
 \tightlist
-\item \textbf{\(\text{score}_{\text{self}}\)} \(= s_{i,\text{self}}^t\)
-\item \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^t\) if the principal has tried the broker, otherwise \(\text{rep}_b^t\).
+\item \textbf{\(\text{score}_{\text{self}}\)} \(= s_{i,\text{self}}^{t-1}\)
+\item \textbf{\(\text{score}_{\text{broker}}\)} \(= s_{i,\text{broker}}^{t-1}\) if the principal has tried the broker, otherwise \(\text{rep}_b^{t-1}\).
 \end{itemize}
 
 The principal chooses the higher-score channel. Ties are resolved by a fair coin flip.
 
 \subsubsection{7c. Broker Reputation}\label{c.-broker-reputation}
 
-\[\text{rep}_b^{t+1} = \begin{cases} \frac{1}{|D^t|} \sum_{i \in D^t} s_{i,\text{broker}}^{t+1} & \text{if } D^t \neq \emptyset \\[4pt] \text{rep}_b^{t} & \text{otherwise} \end{cases}\]
+\[\text{rep}_b^{t} = \begin{cases} \frac{1}{|D^t|} \sum_{i \in D^t} s_{i,\text{broker}}^{t} & \text{if } D^t \neq \emptyset \\[4pt] \text{rep}_b^{t-1} & \text{otherwise} \end{cases}\]
 
 where \(D^t\) is the set of principals who outsourced to the broker this period. With current clients, reputation is their mean post-update broker satisfaction; with no clients, it is unchanged. Reputation is initialized from the mean broker seed outcome.
 
@@ -448,13 +448,11 @@ Period measures are evaluated after current-period matching, satisfaction, and r
 Broker network-position measures use \(G\), including the broker node (§5a). They are computed when \(t \bmod \Delta_{\mathrm{net}}=0\) (default \pv{settingnetwork_measure_interval}). Other period measures are recorded each period.
 
 \textbf{Betweenness centrality.} Freeman betweenness (Freeman, 1977) for the broker node:
+\[\mathrm{BC}_b = \frac{1}{(n-1)(n-2)} \sum_{u \neq b} \sum_{v \notin \{u,b\}} \frac{\sigma_{uv}(b)}{\sigma_{uv}}\]
 
-\[\mathrm{BC}_b = \frac{1}{(n-1)(n-2)} \sum_{u \neq b} \sum_{v \neq u} \frac{\sigma_{uv}(b)}{\sigma_{uv}}\]
-
-where \(n = N+1\), \(\sigma_{uv}\) is the number of shortest paths from \(u\) to \(v\), and \(\sigma_{uv}(b)\) is the number passing through \(b\). The double sum counts undirected pairs from both directions, so the denominator is \((n-1)(n-2)\) (Brandes, 2001, p.~9).
+where \(n = N+1\), \(\sigma_{uv}\) is the number of shortest paths from \(u\) to \(v\), and \(\sigma_{uv}(b)\) is the number passing through \(b\). Pairs with no connecting path contribute zero. The double sum counts undirected pairs from both directions, so the denominator is \((n-1)(n-2)\) (Brandes, 2001, p.~172).
 
 \textbf{Burt's constraint.} Broker ego-network constraint (Burt, 1992):
-
 \[\mathrm{Constraint}_b = \sum_{j\in\mathcal N_G(b)} \left(p_{bj} + \sum_{h\in\mathcal N_G(b)\setminus\{j\}}
 p_{bh}\, p_{hj}\right)^2\]
 
@@ -528,6 +526,8 @@ Counterparty concentration & Median and maximum current-period counterparties pe
 Principal-node degree summaries & Mean, median, minimum, and maximum degree across principals. \\
 \end{longtable}
 }
+
+For channel accounting, each completed relationship's output is counted once per period and assigned to brokerage if at least one accepted offer used the broker; otherwise it is assigned to self-search. Brokered net output subtracts broker fees from brokered realized output. Self-search net output subtracts all self-search costs from self-search realized output. Dividing each channel's net output by \(N\) gives its net output per principal.
 
 \section{Part II. Baseline Values and Reproducibility}\label{part-ii.-baseline-values-and-reproducibility}
 

@@ -630,7 +630,7 @@ function render_supplement(data, output)
             marker=:diamond,
         ),
     )
-    fig = Figure(; size=(1400, 820), figure_padding=(20, 24, 18, 22))
+    fig = Figure(; size=(1400, 1000), figure_padding=(20, 24, 18, 22))
     axes = [Axis[] for _ in 1:2]
     for (column, difficulty) in enumerate(difficulties)
         group = sort(
@@ -659,9 +659,10 @@ function render_supplement(data, output)
                 yticksvisible=column == 1,
                 leftspinevisible=column == 1,
                 limits=((-0.04, 1.04), nothing),
-                titlesize=22,
-                xticklabelsize=20,
-                yticklabelsize=20,
+                titlesize=30,
+                ylabelsize=30,
+                xticklabelsize=27,
+                yticklabelsize=27,
             )
             push!(axes[row], axis)
             row == 1 && hlines!(axis, [0.0]; color=:gray65, linestyle=:dash, linewidth=1)
@@ -701,7 +702,7 @@ function render_supplement(data, output)
     for row in axes
         linkyaxes!(row...)
     end
-    Label(fig[3, 1:length(difficulties)], PUB_RHO_LABEL; fontsize=LABEL_FS)
+    Label(fig[3, 1:length(difficulties)], PUB_RHO_LABEL; fontsize=30)
     Legend(
         fig[4, 1:length(difficulties)],
         [
@@ -712,8 +713,10 @@ function render_supplement(data, output)
         ],
         [m.label for m in models];
         PUB_LEGEND...,
-        nbanks=1,
-        colgap=24,
+        labelsize=28,
+        nbanks=2,
+        colgap=32,
+        rowgap=10,
     )
     colgap!(fig.layout, 20)
     rowgap!(fig.layout, 22)
